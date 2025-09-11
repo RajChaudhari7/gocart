@@ -11,9 +11,9 @@ export async function GET(request) {
         const username = searchParams.get('username').toLowerCase();
 
         if (!username) {
-            if (!storeId) {
-                return NextResponse.json({ error: "missing username" }, { status: 400 })
-            }
+
+            return NextResponse.json({ error: "missing username" }, { status: 400 })
+
         }
 
         // get store info and instock products with ratings
