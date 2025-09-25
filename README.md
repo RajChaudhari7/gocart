@@ -1,85 +1,102 @@
-<div align="center">
-  <h1><img src="https://gocartshop.in/favicon.ico" width="20" height="20" alt="GoCart Favicon">
-   GoCart</h1>
-  <p>
-    An open-source multi-vendor e-commerce platform built with Next.js and Tailwind CSS.
-  </p>
-  <p>
-    <a href="https://github.com/GreatStackDev/goCart/blob/main/LICENSE.md"><img src="https://img.shields.io/github/license/GreatStackDev/goCart?style=for-the-badge" alt="License"></a>
-    <a href="https://github.com/GreatStackDev/goCart/pulls"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=for-the-badge" alt="PRs Welcome"></a>
-    <a href="https://github.com/GreatStackDev/goCart/issues"><img src="https://img.shields.io/github/issues/GreatStackDev/goCart?style=for-the-badge" alt="GitHub issues"></a>
-  </p>
-</div>
+GlobalMart
+GlobalMart is a modern multivendor ecommerce platform built with Next.js, Prisma, and PostgreSQL. It allows users to shop as customers or become sellers and manage their stores with ease.
 
----
+✨ A unique feature is its AI-powered product listing system: sellers upload a product image, and the platform automatically generates the name, description, price, and offer price, saving time and ensuring professional listings.
 
-## 📖 Table of Contents
+✨ Features
+🔑 User authentication & authorization
 
-- [✨ Features](#-features)
-- [🛠️ Tech Stack](#-tech-stack)
-- [🚀 Getting Started](#-getting-started)
-- [🤝 Contributing](#-contributing)
-- [📜 License](#-license)
+🛒 Customers can become sellers
 
----
+🤖 AI-powered product listings
 
-## Features
+📦 Product management (add, edit, delete)
 
-- **Multi-Vendor Architecture:** Allows multiple vendors to register, manage their own products, and sell on a single platform.
-- **Customer-Facing Storefront:** A beautiful and responsive user interface for customers to browse and purchase products.
-- **Vendor Dashboards:** Dedicated dashboards for vendors to manage products, view sales analytics, and track orders.
-- **Admin Panel:** A comprehensive dashboard for platform administrators to oversee vendors, products, and commissions.
+🛍 Shopping cart & checkout system
 
-## 🛠️ Tech Stack <a name="-tech-stack"></a>
+📊 Seller dashboard for orders & revenue
 
-- **Framework:** Next.js
-- **Styling:** Tailwind CSS
-- **UI Components:** Lucide React for icons
-- **State Management:** Redux Toolkit
+🔎 Smart search & filtering
 
-## 🚀 Getting Started <a name="-getting-started"></a>
+📱 Responsive design for all devices
 
-First, install the dependencies. We recommend using `npm` for this project.
+👥 Roles & Permissions
+👤 User (Customer)
 
-```bash
+Register and log in securely with the help of clerk
+
+Browse products across multiple vendors
+
+Add products to the cart and checkout
+
+Search and filter products
+
+View order history
+
+Can rate the products
+
+Can use the Coupon Code
+
+Can be the prime member
+
+🛍 Seller (Vendor)
+
+Register as a seller / switch to seller account
+
+Upload product images → AI auto-generates product details (name, description, price, offer)
+
+Add, edit, or delete products
+
+Manage orders received from customers
+
+Track sales, revenue, and performance in the seller dashboard
+
+🛠 Admin
+
+Manage all users (approve/block accounts)
+
+Approve or verify sellers
+
+Monitor and manage product listings
+
+View and manage orders across the platform
+
+Handle reports, disputes, and platform settings
+
+🛠 Tech Stack
+Frontend: Next.js, Tailwind CSS
+
+Backend: Next.js API Routes
+
+Database: PostgreSQL
+
+ORM: Prisma
+
+AI Integration: OpenAI API
+
+Deployment: Vercel
+
+⚙️ Installation & Setup
+1.Clone the repo
+
+git clone https://github.com/RajChaudhari7/gocart.git
+cd gocart
+2.Install dependencies
+
 npm install
-```
+3.Configure environment variables in .env
 
-Then, run the development server:
+DATABASE_URL="postgresql://username:password@localhost:5432/globalmart"
+NEXTAUTH_SECRET=your_secret_key
+OPENAI_API_KEY=your_openai_api_key
+4.Start development server
 
-```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+5.App will be running at 👉 http://localhost:3000
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+🙏 Acknowledgement
+Thanks to Next.js, Prisma, and PostgreSQL communities for their excellent documentation.
 
-You can start editing the page by modifying `app/(public)/page.js`. The page auto-updates as you edit the file.
+Special thanks to OpenAI API for enabling AI-powered product listing.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Outfit](https://vercel.com/font), a new font family for Vercel.
-
----
-
-## 🤝 Contributing <a name="-contributing"></a>
-
-We welcome contributions! Please see our [CONTRIBUTING.md](./CONTRIBUTING.md) for more details on how to get started.
-
----
-
-## 📜 License <a name="-license"></a>
-
-This project is licensed under the MIT License. See the [LICENSE.md](./LICENSE.md) file for details.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Appreciation to the open-source community and resources that guided this project.
