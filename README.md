@@ -92,37 +92,11 @@ OPENAI_API_KEY=your_openai_api_key
 4.Start development server
 
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+5.App will be running at 👉 http://localhost:3000
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+🙏 Acknowledgement
+Thanks to Next.js, Prisma, and PostgreSQL communities for their excellent documentation.
 
-You can start editing the page by modifying `app/(public)/page.js`. The page auto-updates as you edit the file.
+Special thanks to OpenAI API for enabling AI-powered product listing.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Outfit](https://vercel.com/font), a new font family for Vercel.
-
----
-
-## 🤝 Contributing <a name="-contributing"></a>
-
-We welcome contributions! Please see our [CONTRIBUTING.md](./CONTRIBUTING.md) for more details on how to get started.
-
----
-
-## 📜 License <a name="-license"></a>
-
-This project is licensed under the MIT License. See the [LICENSE.md](./LICENSE.md) file for details.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Appreciation to the open-source community and resources that guided this project.
