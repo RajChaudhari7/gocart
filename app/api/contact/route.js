@@ -18,8 +18,8 @@ JSON.stringify({ error: "All fields are required" }),
 
 
 await resend.emails.send({
-from: "GoCart <rajchaudharii1403@gmail.com>",
-to: [process.env.CONTACT_EMAIL || "rajchaudharii1403@gmail.com"],
+from: "GoCart <onboarding@resend.dev>",
+to: [process.env.CONTACT_EMAIL || "onboarding@resend.dev"],
 subject: "New Contact Message – GoCart",
 reply_to: email,
 html: `
