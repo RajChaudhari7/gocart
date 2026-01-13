@@ -16,12 +16,26 @@ export default function ContactPage() {
     e.preventDefault();
     setLoading(true);
 
-    // TEMP: replace with API / server action
-    setTimeout(() => {
-      alert("Thank you! We will contact you soon.");
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(form),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to send message");
+      }
+
+      alert("Message sent successfully! We’ll contact you soon.");
       setForm({ name: "", email: "", message: "" });
+    } catch (error) {
+      alert("Something went wrong. Please try again later.");
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -97,7 +111,7 @@ export default function ContactPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-pink-600 hover:bg-pink-700 text-white font-semibold py-3 rounded-xl transition"
+              className="w-full bg-pink-600 hover:bg-pink-700 text-white font-semibold py-3 rounded-xl transition disabled:opacity-60"
             >
               {loading ? "Sending..." : "Send Message"}
             </button>
