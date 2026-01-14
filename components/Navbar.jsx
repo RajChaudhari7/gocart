@@ -161,7 +161,7 @@ const Navbar = () => {
                         Shop
                     </Link>
                      <Link href="/orders" className="flex flex-col items-center gap-1">
-                        <Search size={18} />
+                        <PackageIcon size={18} />
                         Orders
                     </Link>
 
