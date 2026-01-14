@@ -23,10 +23,10 @@ export default function ContactPage() {
 
     try {
       await emailjs.sendForm(
-        import.meta.env.VITE_APP_EMAILJS_SERVICE_ID,
-        import.meta.env.VITE_APP_EMAILJS_TEMPLATE_ID,
+        process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID,
+        process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID,
         formRef.current,
-        import.meta.env.VITE_APP_EMAILJS_PUBLIC_KEY
+        process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY
       );
 
       setStatus({ type: "success", message: "Thank you! We will contact you soon." });
@@ -113,9 +113,8 @@ export default function ContactPage() {
             </div>
 
             {status && (
-              <p className={`mb-4 font-medium ${
-                status.type === "success" ? "text-green-600" : "text-red-600"
-              }`}>
+              <p className={`mb-4 font-medium ${status.type === "success" ? "text-green-600" : "text-red-600"
+                }`}>
                 {status.message}
               </p>
             )}
