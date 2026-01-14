@@ -39,7 +39,38 @@ const heroSlides = [
     image: assets.hero_product_img2,
     bg: "bg-orange-200",
   },
-]
+  {
+    id: 4,
+    badge: "NEW",
+    badgeText: "Latest wireless earbuds",
+    title: "Crystal-clear sound.",
+    subtitle: "Wireless freedom.",
+    price: 1499,
+    image: assets.product_img7,
+    bg: "bg-purple-200",
+  },
+  {
+    id: 5,
+    badge: "POPULAR",
+    badgeText: "Top-rated speaker",
+    title: "Portable power.",
+    subtitle: "Music on the go.",
+    price: 1999,
+    image: assets.product_img4,
+    bg: "bg-yellow-200",
+  },
+  {
+    id: 6,
+    badge: "PREMIUM",
+    badgeText: "Designer stylus set",
+    title: "Precision in hand.",
+    subtitle: "Create with ease.",
+    price: 2499,
+    image: assets.product_img5,
+    bg: "bg-gray-200",
+  },
+];
+
 
 const slideVariants = {
   initial: { opacity: 0, x: 60 },
