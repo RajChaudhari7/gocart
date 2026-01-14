@@ -66,6 +66,7 @@ const Navbar = () => {
                         <Link href="/shop">Shop</Link>
                         <Link href="/about">About</Link>
                         <Link href="/contact">Contact</Link>
+                        <Link href="/orders">Orders</Link>
 
                         <form
                             onSubmit={handleSearch}
@@ -158,6 +159,10 @@ const Navbar = () => {
                     <Link href="/shop" className="flex flex-col items-center gap-1">
                         <Search size={18} />
                         Shop
+                    </Link>
+                     <Link href="/orders" className="flex flex-col items-center gap-1">
+                        <Search size={18} />
+                        Orders
                     </Link>
 
                     <Link href="/cart" className="relative flex flex-col items-center gap-1">
