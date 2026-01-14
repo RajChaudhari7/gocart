@@ -8,6 +8,40 @@ import CategoriesMarquee from './CategoriesMarquee'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 
+const heroSlides = [
+  {
+    id: 1,
+    badge: "NEWS",
+    badgeText: "Free Shipping on Orders Above ₹500!",
+    title: "Gadgets you'll love.",
+    subtitle: "Prices you'll trust.",
+    price: 699,
+    image: assets.hero_model_img,
+    bg: "bg-green-200",
+  },
+  {
+    id: 2,
+    badge: "HOT",
+    badgeText: "Best deals on smart devices",
+    title: "Smart tech.",
+    subtitle: "Smarter prices.",
+    price: 999,
+    image: assets.hero_product_img1,
+    bg: "bg-blue-200",
+  },
+  {
+    id: 3,
+    badge: "SALE",
+    badgeText: "Limited time offers",
+    title: "Upgrade your lifestyle.",
+    subtitle: "Shop the future.",
+    price: 1299,
+    image: assets.hero_product_img2,
+    bg: "bg-orange-200",
+  },
+]
+
+
 const Hero = () => {
   const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '₹'
   const router = useRouter()
