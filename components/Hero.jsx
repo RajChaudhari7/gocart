@@ -41,6 +41,12 @@ const heroSlides = [
   },
 ]
 
+const slideVariants = {
+  initial: { opacity: 0, x: 60 },
+  animate: { opacity: 1, x: 0 },
+  exit: { opacity: 0, x: -60 },
+}
+
 
 const Hero = () => {
   const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '₹'
