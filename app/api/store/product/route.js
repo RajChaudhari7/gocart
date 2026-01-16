@@ -153,3 +153,38 @@ export async function PUT(request) {
         return NextResponse.json({ error: error.message }, { status: 400 })
     }
 }
+
+// ================= DELETE PRODUCT =================
+export async function DELETE(request) {
+    try {
+        const { userId } = getAuth(request)
+        const storeId = await authSeller(userId)
+
+        if (!storeId) {
+            return NextResponse.json({ error: "Not authorized" }, { status: 401 })
+        }
+
+        const { productId } = await request.json()
+
+        if (!productId) {
+            return NextResponse.json(
+                { error: "Product ID is required" },
+                { status: 400 }
+            )
+        }
+
+        await prisma.product.delete({
+            where: {
+                id: productId,
+                storeId
+            }
+        })
+
+        return NextResponse.json({ message: "Product deleted successfully" })
+
+    } catch (error) {
+        console.error(error)
+        return NextResponse.json({ error: error.message }, { status: 400 })
+    }
+}
+

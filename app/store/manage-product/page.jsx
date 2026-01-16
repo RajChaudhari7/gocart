@@ -18,6 +18,7 @@ export default function StoreManageProducts() {
     const [loading, setLoading] = useState(true)
     const [products, setProducts] = useState([])
 
+    // ================= FETCH PRODUCTS =================
     const fetchProducts = async () => {
         try {
             const token = await getToken()
@@ -40,10 +41,12 @@ export default function StoreManageProducts() {
 
         } catch (error) {
             toast.error(error?.response?.data?.error || error.message)
+        } finally {
+            setLoading(false)
         }
-        setLoading(false)
     }
 
+    // ================= SAVE PRODUCT =================
     const saveProduct = async (product) => {
         try {
             const token = await getToken()
@@ -81,6 +84,30 @@ export default function StoreManageProducts() {
         }
     }
 
+    // ================= DELETE PRODUCT =================
+    const deleteProduct = async (productId) => {
+        if (!confirm("Are you sure you want to delete this product?")) return
+
+        try {
+            const token = await getToken()
+
+            const { data } = await axios.delete(
+                '/api/store/product',
+                {
+                    headers: { Authorization: `Bearer ${token}` },
+                    data: { productId }
+                }
+            )
+
+            setProducts(prev => prev.filter(p => p.id !== productId))
+            toast.success(data.message)
+
+        } catch (error) {
+            toast.error(error?.response?.data?.error || error.message)
+        }
+    }
+
+    // ================= EDIT CONTROLS =================
     const enableEdit = (id) => {
         setProducts(prev =>
             prev.map(p =>
@@ -104,6 +131,7 @@ export default function StoreManageProducts() {
         )
     }
 
+    // ================= STOCK BADGE =================
     const getStockBadge = (qty) => {
         if (qty === 0) {
             return <span className="text-red-600 font-semibold">Out of Stock</span>
@@ -151,7 +179,7 @@ export default function StoreManageProducts() {
                                         width={40}
                                         height={40}
                                         src={product.images[0]}
-                                        alt=""
+                                        alt={product.name}
                                         className="rounded shadow"
                                     />
                                     {product.name}
@@ -205,12 +233,25 @@ export default function StoreManageProducts() {
 
                             <td className="px-4 py-3 flex gap-2">
                                 {!product.isEditing ? (
-                                    <button
-                                        onClick={() => enableEdit(product.id)}
-                                        className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                                    >
-                                        Edit
-                                    </button>
+                                    <>
+                                        <button
+                                            onClick={() => enableEdit(product.id)}
+                                            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                                        >
+                                            Edit
+                                        </button>
+
+                                        <button
+                                            onClick={() =>
+                                                toast.promise(deleteProduct(product.id), {
+                                                    loading: "Deleting..."
+                                                })
+                                            }
+                                            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                                        >
+                                            Delete
+                                        </button>
+                                    </>
                                 ) : (
                                     <>
                                         <button
@@ -240,3 +281,4 @@ export default function StoreManageProducts() {
         </>
     )
 }
+    
