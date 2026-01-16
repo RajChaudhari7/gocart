@@ -1,4 +1,5 @@
 'use client'
+
 import Counter from "@/components/Counter";
 import OrderSummary from "@/components/OrderSummary";
 import PageTitle from "@/components/PageTitle";
@@ -11,7 +12,7 @@ import { useDispatch, useSelector } from "react-redux";
 export default function Cart() {
 
     const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '₹';
-    
+
     const { cartItems } = useSelector(state => state.cart);
     const products = useSelector(state => state.product.list);
 
@@ -21,24 +22,27 @@ export default function Cart() {
     const [totalPrice, setTotalPrice] = useState(0);
 
     const createCartArray = () => {
-        setTotalPrice(0);
-        const cartArray = [];
+        let total = 0;
+        const arr = [];
+
         for (const [key, value] of Object.entries(cartItems)) {
             const product = products.find(product => product.id === key);
             if (product) {
-                cartArray.push({
+                arr.push({
                     ...product,
                     quantity: value,
                 });
-                setTotalPrice(prev => prev + product.price * value);
+                total += product.price * value;
             }
         }
-        setCartArray(cartArray);
-    }
+
+        setCartArray(arr);
+        setTotalPrice(total);
+    };
 
     const handleDeleteItemFromCart = (productId) => {
-        dispatch(deleteItemFromCart({ productId }))
-    }
+        dispatch(deleteItemFromCart({ productId }));
+    };
 
     useEffect(() => {
         if (products.length > 0) {
@@ -48,10 +52,14 @@ export default function Cart() {
 
     return cartArray.length > 0 ? (
         <div className="min-h-screen mx-6 text-slate-800">
+            <div className="max-w-7xl mx-auto">
 
-            <div className="max-w-7xl mx-auto ">
                 {/* Title */}
-                <PageTitle heading="My Cart" text="items in your cart" linkText="Add more" />
+                <PageTitle
+                    heading="My Cart"
+                    text="items in your cart"
+                    linkText="Add more"
+                />
 
                 <div className="flex items-start justify-between gap-5 max-lg:flex-col">
 
@@ -64,41 +72,81 @@ export default function Cart() {
                                 <th className="max-md:hidden">Remove</th>
                             </tr>
                         </thead>
+
                         <tbody>
-                            {
-                                cartArray.map((item, index) => (
-                                    <tr key={index} className="space-x-2">
-                                        <td className="flex gap-3 my-4">
-                                            <div className="flex gap-3 items-center justify-center bg-slate-100 size-18 rounded-md">
-                                                <Image src={item.images[0]} className="h-14 w-auto" alt="" width={45} height={45} />
-                                            </div>
-                                            <div>
-                                                <p className="max-sm:text-sm">{item.name}</p>
-                                                <p className="text-xs text-slate-500">{item.category}</p>
-                                                <p>{currency}{item.price}</p>
-                                            </div>
-                                        </td>
-                                        <td className="text-center">
+                            {cartArray.map((item) => (
+                                <tr key={item.id} className="border-b last:border-b-0">
+
+                                    {/* Product */}
+                                    <td className="flex gap-3 my-4">
+                                        <div className="flex items-center justify-center bg-slate-100 size-18 rounded-md">
+                                            <Image
+                                                src={item.images[0]}
+                                                alt={item.name}
+                                                width={45}
+                                                height={45}
+                                                className="h-14 w-auto"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <p className="max-sm:text-sm font-medium">
+                                                {item.name}
+                                            </p>
+                                            <p className="text-xs text-slate-500">
+                                                {item.category}
+                                            </p>
+                                            <p className="text-sm">
+                                                {currency}{item.price}
+                                            </p>
+                                        </div>
+                                    </td>
+
+                                    {/* Quantity + Mobile Delete */}
+                                    <td className="text-center">
+                                        <div className="flex flex-col items-center gap-2">
                                             <Counter productId={item.id} />
-                                        </td>
-                                        <td className="text-center">{currency}{(item.price * item.quantity).toLocaleString()}</td>
-                                        <td className="text-center max-md:hidden">
-                                            <button onClick={() => handleDeleteItemFromCart(item.id)} className=" text-red-500 hover:bg-red-50 p-2.5 rounded-full active:scale-95 transition-all">
-                                                <Trash2Icon size={18} />
+
+                                            {/* Mobile Remove */}
+                                            <button
+                                                onClick={() => handleDeleteItemFromCart(item.id)}
+                                                className="md:hidden flex items-center gap-1 text-red-500 text-xs"
+                                            >
+                                                <Trash2Icon size={14} />
+                                                Remove
                                             </button>
-                                        </td>
-                                    </tr>
-                                ))
-                            }
+                                        </div>
+                                    </td>
+
+                                    {/* Total Price */}
+                                    <td className="text-center">
+                                        {currency}{(item.price * item.quantity).toLocaleString()}
+                                    </td>
+
+                                    {/* Desktop Remove */}
+                                    <td className="text-center max-md:hidden">
+                                        <button
+                                            onClick={() => handleDeleteItemFromCart(item.id)}
+                                            className="text-red-500 hover:bg-red-50 p-2.5 rounded-full active:scale-95 transition-all"
+                                        >
+                                            <Trash2Icon size={18} />
+                                        </button>
+                                    </td>
+
+                                </tr>
+                            ))}
                         </tbody>
                     </table>
+
                     <OrderSummary totalPrice={totalPrice} items={cartArray} />
                 </div>
             </div>
         </div>
     ) : (
         <div className="min-h-[80vh] mx-6 flex items-center justify-center text-slate-400">
-            <h1 className="text-2xl sm:text-4xl font-semibold">Your cart is empty</h1>
+            <h1 className="text-2xl sm:text-4xl font-semibold">
+                Your cart is empty
+            </h1>
         </div>
-    )
+    );
 }
