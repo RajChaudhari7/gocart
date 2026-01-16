@@ -27,11 +27,15 @@ const ProductDetails = ({ product }) => {
 
   const maxQty = product.quantity; // stock quantity
 
+  // Add to cart handler
   const addToCartHandler = () => {
+    const currentQty = cart[productId] || 0;
+    const newQty = Math.min(currentQty + selectedQty, maxQty);
+
     dispatch(
       addToCart({
         productId,
-        quantity: selectedQty,
+        quantity: newQty,
         price: product.price,
         name: product.name,
         image: product.images[0],
@@ -106,58 +110,60 @@ const ProductDetails = ({ product }) => {
         </div>
 
         {/* QUANTITY SELECTOR */}
-        {!cart[productId] && product.quantity > 0 && (
-          <div className="mt-8">
-            <p className="text-lg font-semibold mb-2">Quantity</p>
-            <div className="flex items-center gap-3">
-              <button
-                disabled={selectedQty === 1}
-                onClick={() => setSelectedQty((q) => q - 1)}
-                className="px-3 py-1 border rounded disabled:opacity-50"
-              >
-                −
-              </button>
+        <div className="mt-8">
+          <p className="text-lg font-semibold mb-2">Quantity</p>
+          <div className="flex items-center gap-3">
+            <button
+              disabled={selectedQty === 1}
+              onClick={() => setSelectedQty((q) => q - 1)}
+              className="px-3 py-1 border rounded disabled:opacity-50"
+            >
+              −
+            </button>
 
-              <span className="font-medium">{selectedQty}</span>
+            <span className="font-medium">{selectedQty}</span>
 
-              <button
-                disabled={selectedQty === maxQty}
-                onClick={() => setSelectedQty((q) => q + 1)}
-                className="px-3 py-1 border rounded disabled:opacity-50"
-              >
-                +
-              </button>
-            </div>
-            <p className="text-sm text-slate-500 mt-1">
-              {product.quantity} items available
-            </p>
+            <button
+              disabled={selectedQty === maxQty}
+              onClick={() => setSelectedQty((q) => q + 1)}
+              className="px-3 py-1 border rounded disabled:opacity-50"
+            >
+              +
+            </button>
           </div>
-        )}
+          <p className="text-sm text-slate-500 mt-1">
+            {product.quantity} items available
+          </p>
+        </div>
 
         {/* CART ACTION */}
-        <div className="flex items-end gap-5 mt-6">
+        <div className="flex items-center gap-5 mt-6">
+          {/* Counter if already in cart */}
           {cart[productId] && (
             <div className="flex flex-col gap-3">
-              <p className="text-lg font-semibold">Quantity</p>
+              <p className="text-lg font-semibold">In Cart</p>
               <Counter productId={productId} />
             </div>
           )}
 
+          {/* Add to Cart button */}
           <button
             disabled={product.quantity === 0}
-            onClick={() =>
-              !cart[productId]
-                ? addToCartHandler()
-                : router.push("/cart")
-            }
+            onClick={addToCartHandler}
             className="bg-slate-800 text-white px-10 py-3 text-sm font-medium rounded hover:bg-slate-900 disabled:opacity-50"
           >
-            {product.quantity === 0
-              ? "Out of Stock"
-              : cart[productId]
-              ? "View Cart"
-              : "Add to Cart"}
+            {product.quantity === 0 ? "Out of Stock" : "Add to Cart"}
           </button>
+
+          {/* Optional: View Cart */}
+          {cart[productId] && (
+            <button
+              onClick={() => router.push("/cart")}
+              className="bg-slate-500 text-white px-6 py-3 text-sm font-medium rounded hover:bg-slate-600"
+            >
+              View Cart
+            </button>
+          )}
         </div>
 
         <hr className="border-gray-300 my-5" />
