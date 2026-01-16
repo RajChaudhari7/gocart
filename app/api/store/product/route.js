@@ -94,3 +94,34 @@ export async function GET(request) {
     }
 
 }
+
+export async function PUT(request) {
+    try {
+        const { userId } = getAuth(request)
+        const storeId = await authSeller(userId)
+
+        if (!storeId) {
+            return NextResponse.json({ error: "Not authorized" }, { status: 401 })
+        }
+
+        const { productId, price, quantity } = await request.json()
+
+        if (quantity < 0 || price <= 0) {
+            return NextResponse.json({ error: "Invalid values" }, { status: 400 })
+        }
+
+        await prisma.product.update({
+            where: { id: productId, storeId },
+            data: {
+                price,
+                quantity,
+                inStock: quantity > 0
+            }
+        })
+
+        return NextResponse.json({ message: "Product updated successfully" })
+
+    } catch (error) {
+        return NextResponse.json({ error: error.message }, { status: 400 })
+    }
+}
