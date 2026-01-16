@@ -2,7 +2,6 @@ import prisma from "@/lib/prisma";
 import { getAuth } from "@clerk/nextjs/server";
 import { PaymentMethod } from "@prisma/client";
 import { NextResponse } from "next/server";
-// import Stripe from "stripe"; // Stripe commented out
 import Razorpay from "razorpay";
 
 // to create a new order
@@ -21,7 +20,6 @@ export async function POST(request) {
     }
 
     let coupon = null;
-
     if (couponCode) {
       coupon = await prisma.coupon.findUnique({
         where: { code: couponCode.toUpperCase() }
@@ -31,7 +29,7 @@ export async function POST(request) {
       }
     }
 
-    if (couponCode && coupon.forNewUser) {
+    if (couponCode && coupon?.forNewUser) {
       const userOrders = await prisma.order.findMany({ where: { userId } });
       if (userOrders.length > 0) {
         return NextResponse.json({ error: "Coupon valid for new users only" }, { status: 400 });
@@ -40,19 +38,16 @@ export async function POST(request) {
 
     const isPrimeMember = has({ plan: "prime" });
 
-    if (couponCode && coupon.forMember) {
-      if (!isPrimeMember) {
-        return NextResponse.json({ error: "Coupon valid for prime members only" }, { status: 400 });
-      }
+    if (couponCode && coupon?.forMember && !isPrimeMember) {
+      return NextResponse.json({ error: "Coupon valid for prime members only" }, { status: 400 });
     }
 
-    // group orders by storeId
+    // Group items by store
     const ordersByStore = new Map();
-
     for (const item of items) {
       const product = await prisma.product.findUnique({ where: { id: item.id } });
+      if (!product) return NextResponse.json({ error: `Product not found: ${item.id}` }, { status: 400 });
       const storeId = product.storeId;
-
       if (!ordersByStore.has(storeId)) ordersByStore.set(storeId, []);
       ordersByStore.get(storeId).push({ ...item, price: product.price });
     }
@@ -61,7 +56,7 @@ export async function POST(request) {
     let fullAmount = 0;
     let isShippingFeeAdded = false;
 
-    // create separate orders per store
+    // Create orders in DB
     for (const [storeId, sellerItems] of ordersByStore.entries()) {
       let total = sellerItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
 
@@ -82,7 +77,7 @@ export async function POST(request) {
           total: parseFloat(total.toFixed(2)),
           paymentMethod,
           isCouponUsed: coupon ? true : false,
-          coupon: coupon ? coupon : {},
+          coupon: coupon || {},
           orderItems: {
             create: sellerItems.map(item => ({
               productId: item.id,
@@ -96,57 +91,38 @@ export async function POST(request) {
       orderIds.push(order.id);
     }
 
-    const origin = request.headers.get("origin");
-
-    /*
-    // Stripe Payment - Commented Out
-    if (paymentMethod === "STRIPE") {
-      const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-      const session = await stripe.checkout.sessions.create({
-        payment_method_types: ["card"],
-        line_items: [
-          {
-            price_data: {
-              currency: "inr",
-              product_data: { name: "Order" },
-              unit_amount: Math.round(fullAmount * 100)
-            },
-            quantity: 1
-          }
-        ],
-        expires_at: Math.floor(Date.now() / 1000) + 30 * 60,
-        mode: "payment",
-        success_url: `${origin}/loading?nextUrl=orders`,
-        cancel_url: `${origin}/cart`,
-        metadata: { orderIds: orderIds.join(","), userId, appId: "globalmart" }
-      });
-      return NextResponse.json({ session });
+    // Validate fullAmount before creating Razorpay order
+    if (fullAmount <= 0) {
+      return NextResponse.json({ error: "Order total must be greater than 0" }, { status: 400 });
     }
-    */
 
-    // Razorpay Payment
-    if (paymentMethod === "RAZORPAY") {
+    // Razorpay payment
+    if (paymentMethod === PaymentMethod.RAZORPAY) {
+      if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+        return NextResponse.json({ error: "Razorpay keys are not configured" }, { status: 500 });
+      }
+
       const razorpay = new Razorpay({
         key_id: process.env.RAZORPAY_KEY_ID,
         key_secret: process.env.RAZORPAY_KEY_SECRET
       });
 
       const options = {
-        amount: Math.round(fullAmount * 100), // in paise
+        amount: Math.round(fullAmount * 100), // amount in paise
         currency: "INR",
         receipt: `order_rcpt_${orderIds.join("_")}`,
-        payment_capture: 1 // auto capture
+        payment_capture: 1, // auto-capture
+        notes: { orderIds: orderIds.join(","), userId } // store orderIds & userId
       };
 
       const razorpayOrder = await razorpay.orders.create(options);
-
       return NextResponse.json({ razorpayOrder, orderIds });
     }
 
     // COD or other payment methods
     await prisma.user.update({ where: { id: userId }, data: { cart: {} } });
 
-    return NextResponse.json({ message: "Order Placed Successfully" });
+    return NextResponse.json({ message: "Order Placed Successfully", orderIds });
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: error.code || error.message }, { status: 400 });
