@@ -54,7 +54,7 @@ export async function POST(request) {
       ordersByStore.get(storeId).push({ ...item, price: product.price });
     }
 
-    let orderIds: string[] = [];
+    let orderIds = [];
     let fullAmount = 0;
     let isShippingFeeAdded = false;
 
