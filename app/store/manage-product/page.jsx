@@ -7,6 +7,8 @@ import Loading from "@/components/Loading"
 import { useAuth, useUser } from "@clerk/nextjs"
 import axios from "axios"
 
+const LOW_STOCK_LIMIT = 10
+
 export default function StoreManageProducts() {
 
     const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '₹'
@@ -29,7 +31,10 @@ export default function StoreManageProducts() {
                     .map(p => ({
                         ...p,
                         editPrice: p.price,
-                        editQuantity: p.quantity
+                        editQuantity: p.quantity,
+                        originalPrice: p.price,
+                        originalQuantity: p.quantity,
+                        isEditing: false
                     }))
             )
 
@@ -39,7 +44,7 @@ export default function StoreManageProducts() {
         setLoading(false)
     }
 
-    const updateProduct = async (product) => {
+    const saveProduct = async (product) => {
         try {
             const token = await getToken()
 
@@ -60,7 +65,10 @@ export default function StoreManageProducts() {
                             ...p,
                             price: product.editPrice,
                             quantity: product.editQuantity,
-                            inStock: product.editQuantity > 0
+                            originalPrice: product.editPrice,
+                            originalQuantity: product.editQuantity,
+                            inStock: product.editQuantity > 0,
+                            isEditing: false
                         }
                         : p
                 )
@@ -71,6 +79,43 @@ export default function StoreManageProducts() {
         } catch (error) {
             toast.error(error?.response?.data?.error || error.message)
         }
+    }
+
+    const enableEdit = (id) => {
+        setProducts(prev =>
+            prev.map(p =>
+                p.id === id ? { ...p, isEditing: true } : p
+            )
+        )
+    }
+
+    const cancelEdit = (id) => {
+        setProducts(prev =>
+            prev.map(p =>
+                p.id === id
+                    ? {
+                        ...p,
+                        editPrice: p.originalPrice,
+                        editQuantity: p.originalQuantity,
+                        isEditing: false
+                    }
+                    : p
+            )
+        )
+    }
+
+    const getStockBadge = (qty) => {
+        if (qty === 0) {
+            return <span className="text-red-600 font-semibold">Out of Stock</span>
+        }
+        if (qty < LOW_STOCK_LIMIT) {
+            return (
+                <span className="text-yellow-600 font-semibold">
+                    Low Stock ({qty})
+                </span>
+            )
+        }
+        return <span className="text-green-600 font-semibold">In Stock</span>
     }
 
     useEffect(() => {
@@ -100,7 +145,6 @@ export default function StoreManageProducts() {
                 <tbody className="text-slate-700">
                     {products.map(product => (
                         <tr key={product.id} className="border-t hover:bg-gray-50">
-                            {/* NAME */}
                             <td className="px-4 py-3">
                                 <div className="flex gap-2 items-center">
                                     <Image
@@ -114,15 +158,14 @@ export default function StoreManageProducts() {
                                 </div>
                             </td>
 
-                            {/* MRP */}
                             <td className="px-4 py-3 hidden md:table-cell">
                                 {currency}{product.mrp}
                             </td>
 
-                            {/* EDIT PRICE */}
                             <td className="px-4 py-3">
                                 <input
                                     type="number"
+                                    disabled={!product.isEditing}
                                     value={product.editPrice}
                                     onChange={e =>
                                         setProducts(prev =>
@@ -133,15 +176,15 @@ export default function StoreManageProducts() {
                                             )
                                         )
                                     }
-                                    className="w-24 px-2 py-1 border rounded"
+                                    className={`w-24 px-2 py-1 border rounded ${!product.isEditing && 'bg-gray-100 cursor-not-allowed'}`}
                                 />
                             </td>
 
-                            {/* EDIT QUANTITY */}
                             <td className="px-4 py-3">
                                 <input
                                     type="number"
                                     min={0}
+                                    disabled={!product.isEditing}
                                     value={product.editQuantity}
                                     onChange={e =>
                                         setProducts(prev =>
@@ -152,31 +195,43 @@ export default function StoreManageProducts() {
                                             )
                                         )
                                     }
-                                    className="w-20 px-2 py-1 border rounded"
+                                    className={`w-20 px-2 py-1 border rounded ${!product.isEditing && 'bg-gray-100 cursor-not-allowed'}`}
                                 />
                             </td>
 
-                            {/* STOCK STATUS */}
                             <td className="px-4 py-3">
-                                {product.inStock ? (
-                                    <span className="text-green-600 font-medium">In Stock</span>
-                                ) : (
-                                    <span className="text-red-600 font-medium">Out</span>
-                                )}
+                                {getStockBadge(product.quantity)}
                             </td>
 
-                            {/* SAVE */}
-                            <td className="px-4 py-3">
-                                <button
-                                    onClick={() =>
-                                        toast.promise(updateProduct(product), {
-                                            loading: "Saving...",
-                                        })
-                                    }
-                                    className="px-4 py-2 bg-slate-800 text-white rounded hover:bg-slate-900"
-                                >
-                                    Save
-                                </button>
+                            <td className="px-4 py-3 flex gap-2">
+                                {!product.isEditing ? (
+                                    <button
+                                        onClick={() => enableEdit(product.id)}
+                                        className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                                    >
+                                        Edit
+                                    </button>
+                                ) : (
+                                    <>
+                                        <button
+                                            onClick={() =>
+                                                toast.promise(saveProduct(product), {
+                                                    loading: "Saving..."
+                                                })
+                                            }
+                                            className="px-4 py-2 bg-slate-800 text-white rounded hover:bg-slate-900"
+                                        >
+                                            Save
+                                        </button>
+
+                                        <button
+                                            onClick={() => cancelEdit(product.id)}
+                                            className="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400"
+                                        >
+                                            Cancel
+                                        </button>
+                                    </>
+                                )}
                             </td>
                         </tr>
                     ))}
