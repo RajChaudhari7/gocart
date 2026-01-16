@@ -20,7 +20,7 @@ async function main(base64Image, mimeType) {
                     "description":string,
                     "mrp":number,
                     "price":number,
-                    "category":string
+                    "category":string,
                     "quantity": number
                 }
             `
