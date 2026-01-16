@@ -1,16 +1,15 @@
-import { imagekit } from "@/configs/imageKit"
-import prisma from "@/lib/prisma"
-import { getAuth } from "@clerk/nextjs/server"
-import { NextResponse } from "next/server"
+import { imagekit } from "@/configs/imageKit";
+import prisma from "@/lib/prisma";
+import { getAuth } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
 
+// create the Store
 export async function POST(request) {
+
     try {
+
         const { userId } = getAuth(request)
-
-        if (!userId) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-        }
-
+        // get the data from the form
         const formData = await request.formData()
 
         const name = formData.get("name")
@@ -25,35 +24,43 @@ export async function POST(request) {
             return NextResponse.json({ error: "Missing Store info" }, { status: 400 })
         }
 
-        const existingStore = await prisma.store.findFirst({
-            where: { userId }
-        })
+        // check is user have already regsitered a store
+        const store = await prisma.store.findFirst({
+            where: { userId: userId }
+        });
 
-        if (existingStore) {
-            return NextResponse.json({ status: existingStore.status })
+        // if store is already
+        if (store) {
+            return NextResponse.json({ status: store.status });
         }
 
-        const usernameTaken = await prisma.store.findFirst({
+        // check is username ois already taken
+        const isUsernameTaken = await prisma.store.findFirst({
             where: { username: username.toLowerCase() }
         })
 
-        if (usernameTaken) {
-            return NextResponse.json({ error: "Username already taken" }, { status: 400 })
+        if (isUsernameTaken) {
+            return NextResponse.json({ error: "Username Already Taken" }, { status: 400 })
         }
 
-        const buffer = Buffer.from(await image.arrayBuffer())
-        const upload = await imagekit.upload({
+        // image upload to imageKit
+        const buffer = Buffer.from(await image.arrayBuffer());
+        const response = await imagekit.upload({
             file: buffer,
             fileName: image.name,
-            folder: "logos"
+            folder: 'logos'
         })
 
-        const logo = imagekit.url({
-            path: upload.filePath,
-            transformation: [{ quality: "auto" }, { format: "webp" }, { width: "512" }]
+        const optimizedImage = imagekit.url({
+            path: response.filePath,
+            transformation: [
+                { quality: 'auto' },
+                { format: 'webp' },
+                { width: '512' }
+            ]
         })
 
-        await prisma.store.create({
+        const newStore = await prisma.store.create({
             data: {
                 userId,
                 name,
@@ -62,14 +69,45 @@ export async function POST(request) {
                 email,
                 contact,
                 address,
-                logo
+                logo: optimizedImage
             }
         })
 
-        return NextResponse.json({ message: "Applied, waiting for approval" })
+        // link store to user
+        await prisma.user.update({
+            where: { id: userId },
+            data: { store: { connect: { id: newStore.id } } }
+        })
+
+        return NextResponse.json({ message: "applied , waiting for approval" })
 
     } catch (error) {
-        console.error(error)
-        return NextResponse.json({ error: error.message }, { status: 400 })
+        console.error(error);
+        return NextResponse.json({ error: error.code || error.message }, { status: 400 })
+    }
+
+}
+
+// get the status of the store
+export async function GET(request) {
+    try {
+
+        const { userId } = getAuth(request)
+
+        // check is user have already regsitered a store
+        const store = await prisma.store.findFirst({
+            where: { userId: userId }
+        });
+
+        // if store is already
+        if (store) {
+            return NextResponse.json({ status: store.status });
+        }
+
+        return NextResponse.json({ status: "not registered" })
+
+    } catch (error) {
+        console.error(error);
+        return NextResponse.json({ error: error.code || error.message }, { status: 400 })
     }
 }
