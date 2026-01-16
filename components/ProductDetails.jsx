@@ -22,24 +22,24 @@ const ProductDetails = ({ product }) => {
   const router = useRouter();
 
   const [mainImage, setMainImage] = useState(product.images[0]);
-  const [quantity, setQuantity] = useState(1); // Single quantity control
+  const [quantity, setQuantity] = useState(1);
 
   const maxQty = product.quantity;
 
-  // Sync with cart if already in cart
+  // Sync quantity with cart (but never exceed stock)
   useEffect(() => {
     if (cart[productId]) {
-      setQuantity(cart[productId]);
+      setQuantity(Math.min(cart[productId], maxQty));
     }
-  }, [cart, productId]);
+  }, [cart, productId, maxQty]);
 
   const handleAddToCart = () => {
-    const newQty = Math.min(quantity, maxQty);
+    const safeQty = Math.min(quantity, maxQty);
 
     dispatch(
       addToCart({
         productId,
-        quantity: newQty,
+        quantity: safeQty,
         price: product.price,
         name: product.name,
         image: product.images[0],
@@ -70,7 +70,7 @@ const ProductDetails = ({ product }) => {
         </div>
 
         <div className="flex justify-center items-center h-100 sm:size-113 bg-slate-100 rounded-lg">
-          <Image src={mainImage} alt="" width={250} height={250} />
+          <Image src={mainImage} alt={product.name} width={250} height={250} />
         </div>
       </div>
 
@@ -113,13 +113,13 @@ const ProductDetails = ({ product }) => {
           </p>
         </div>
 
-        {/* SINGLE QUANTITY CONTROL */}
+        {/* QUANTITY CONTROL */}
         <div className="mt-8">
           <p className="text-lg font-semibold mb-2">Quantity</p>
           <div className="flex items-center gap-3">
             <button
-              disabled={quantity === 1}
-              onClick={() => setQuantity((q) => q - 1)}
+              disabled={quantity <= 1}
+              onClick={() => setQuantity((q) => Math.max(1, q - 1))}
               className="px-3 py-1 border rounded disabled:opacity-50"
             >
               −
@@ -128,26 +128,28 @@ const ProductDetails = ({ product }) => {
             <span className="font-medium">{quantity}</span>
 
             <button
-              disabled={quantity === maxQty}
-              onClick={() => setQuantity((q) => q + 1)}
+              disabled={quantity >= maxQty}
+              onClick={() =>
+                setQuantity((q) => Math.min(q + 1, maxQty))
+              }
               className="px-3 py-1 border rounded disabled:opacity-50"
             >
               +
             </button>
           </div>
           <p className="text-sm text-slate-500 mt-1">
-            {product.quantity} items available
+            {maxQty} items available
           </p>
         </div>
 
-        {/* CART ACTION */}
+        {/* CART ACTIONS */}
         <div className="flex items-center gap-5 mt-6">
           <button
-            disabled={product.quantity === 0}
+            disabled={maxQty === 0}
             onClick={handleAddToCart}
             className="bg-slate-800 text-white px-10 py-3 text-sm font-medium rounded hover:bg-slate-900 disabled:opacity-50"
           >
-            {cart[productId] ? "Update Cart" : "Add to Cart"}
+            Add to Cart
           </button>
 
           {cart[productId] && (
