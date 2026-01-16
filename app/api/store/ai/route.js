@@ -21,6 +21,7 @@ async function main(base64Image, mimeType) {
                     "mrp":number,
                     "price":number,
                     "category":string
+                    "quantity": number
                 }
             `
         },
@@ -29,7 +30,7 @@ async function main(base64Image, mimeType) {
             "content": [
                 {
                     "type": "text",
-                    "text": "Analyze this image and return name + description + mrp + price + category.",
+                    "text": "Analyze this image and return name + description + mrp + price + category + quantity.",
                 },
                 {
                     "type": "image_url",
