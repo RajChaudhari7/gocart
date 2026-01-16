@@ -9,9 +9,8 @@ import {
   UserIcon
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
-import Counter from "./Counter";
 import { useDispatch, useSelector } from "react-redux";
 
 const ProductDetails = ({ product }) => {
@@ -23,14 +22,19 @@ const ProductDetails = ({ product }) => {
   const router = useRouter();
 
   const [mainImage, setMainImage] = useState(product.images[0]);
-  const [selectedQty, setSelectedQty] = useState(1);
+  const [quantity, setQuantity] = useState(1); // Single quantity control
 
-  const maxQty = product.quantity; // stock quantity
+  const maxQty = product.quantity;
 
-  // Add to cart handler
-  const addToCartHandler = () => {
-    const currentQty = cart[productId] || 0;
-    const newQty = Math.min(currentQty + selectedQty, maxQty);
+  // Sync with cart if already in cart
+  useEffect(() => {
+    if (cart[productId]) {
+      setQuantity(cart[productId]);
+    }
+  }, [cart, productId]);
+
+  const handleAddToCart = () => {
+    const newQty = Math.min(quantity, maxQty);
 
     dispatch(
       addToCart({
@@ -109,23 +113,23 @@ const ProductDetails = ({ product }) => {
           </p>
         </div>
 
-        {/* QUANTITY SELECTOR */}
+        {/* SINGLE QUANTITY CONTROL */}
         <div className="mt-8">
           <p className="text-lg font-semibold mb-2">Quantity</p>
           <div className="flex items-center gap-3">
             <button
-              disabled={selectedQty === 1}
-              onClick={() => setSelectedQty((q) => q - 1)}
+              disabled={quantity === 1}
+              onClick={() => setQuantity((q) => q - 1)}
               className="px-3 py-1 border rounded disabled:opacity-50"
             >
               −
             </button>
 
-            <span className="font-medium">{selectedQty}</span>
+            <span className="font-medium">{quantity}</span>
 
             <button
-              disabled={selectedQty === maxQty}
-              onClick={() => setSelectedQty((q) => q + 1)}
+              disabled={quantity === maxQty}
+              onClick={() => setQuantity((q) => q + 1)}
               className="px-3 py-1 border rounded disabled:opacity-50"
             >
               +
@@ -138,24 +142,14 @@ const ProductDetails = ({ product }) => {
 
         {/* CART ACTION */}
         <div className="flex items-center gap-5 mt-6">
-          {/* Counter if already in cart */}
-          {cart[productId] && (
-            <div className="flex flex-col gap-3">
-              <p className="text-lg font-semibold">In Cart</p>
-              <Counter productId={productId} />
-            </div>
-          )}
-
-          {/* Add to Cart button */}
           <button
             disabled={product.quantity === 0}
-            onClick={addToCartHandler}
+            onClick={handleAddToCart}
             className="bg-slate-800 text-white px-10 py-3 text-sm font-medium rounded hover:bg-slate-900 disabled:opacity-50"
           >
-            {product.quantity === 0 ? "Out of Stock" : "Add to Cart"}
+            {cart[productId] ? "Update Cart" : "Add to Cart"}
           </button>
 
-          {/* Optional: View Cart */}
           {cart[productId] && (
             <button
               onClick={() => router.push("/cart")}
