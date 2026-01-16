@@ -4,6 +4,7 @@ import { authSeller } from "@/middlewares/authSeller"
 import { getAuth } from "@clerk/nextjs/server"
 import { NextResponse } from "next/server"
 
+// ================= ADD PRODUCT =================
 export async function POST(request) {
     try {
         const { userId } = getAuth(request)
@@ -23,11 +24,15 @@ export async function POST(request) {
         const category = formData.get("category")
         const images = formData.getAll("images")
 
-        if (quantity === 0) {
-            return NextResponse.json({ error: "Product is out of stock" }, { status: 400 })
-        }
-
-        if (!name || !description || !mrp || !price || quantity < 0 || !category || images.length < 1) {
+        if (
+            !name ||
+            !description ||
+            mrp <= 0 ||
+            price <= 0 ||
+            quantity < 0 ||
+            !category ||
+            images.length === 0
+        ) {
             return NextResponse.json({ error: "Missing product details" }, { status: 400 })
         }
 
@@ -42,7 +47,11 @@ export async function POST(request) {
 
                 return imagekit.url({
                     path: upload.filePath,
-                    transformation: [{ quality: "auto" }, { format: "webp" }, { width: "1024" }]
+                    transformation: [
+                        { quality: "auto" },
+                        { format: "webp" },
+                        { width: "1024" }
+                    ]
                 })
             })
         )
@@ -69,32 +78,30 @@ export async function POST(request) {
     }
 }
 
-
-// get the products for a seller
+// ================= GET SELLER PRODUCTS =================
 export async function GET(request) {
-
     try {
-
         const { userId } = getAuth(request)
         const storeId = await authSeller(userId)
 
         if (!storeId) {
-            return NextResponse.json({ error: "not authorized" }, { status: 401 })
+            return NextResponse.json({ error: "Not authorized" }, { status: 401 })
         }
 
         const products = await prisma.product.findMany({
-            where: { storeId }
+            where: { storeId },
+            orderBy: { createdAt: "desc" }
         })
 
         return NextResponse.json({ products })
 
     } catch (error) {
-        console.error(error);
-        return NextResponse.json({ error: error.code || error.message }, { status: 400 })
+        console.error(error)
+        return NextResponse.json({ error: error.message }, { status: 400 })
     }
-
 }
 
+// ================= UPDATE PRODUCT =================
 export async function PUT(request) {
     try {
         const { userId } = getAuth(request)
@@ -106,7 +113,7 @@ export async function PUT(request) {
 
         const { productId, price, quantity } = await request.json()
 
-        if (quantity < 0 || price <= 0) {
+        if (!productId || price <= 0 || quantity < 0) {
             return NextResponse.json({ error: "Invalid values" }, { status: 400 })
         }
 
