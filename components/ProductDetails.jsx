@@ -1,45 +1,28 @@
 'use client'
 
 import { addToCart } from "@/lib/features/cart/cartSlice";
-import {
-  StarIcon,
-  TagIcon,
-  EarthIcon,
-  CreditCardIcon,
-  UserIcon
-} from "lucide-react";
+import { StarIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import { useDispatch, useSelector } from "react-redux";
 
 const ProductDetails = ({ product }) => {
-  const productId = product.id;
   const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || "₹";
-
-  const cart = useSelector((state) => state.cart.cartItems);
   const dispatch = useDispatch();
   const router = useRouter();
+  const cart = useSelector((state) => state.cart.cartItems);
 
   const [mainImage, setMainImage] = useState(product.images[0]);
-  const [quantity, setQuantity] = useState(1); // Single quantity control
+  const [quantity, setQuantity] = useState(1);
 
-  const maxQty = product.quantity;
-
-  // Sync with cart if already in cart
-  useEffect(() => {
-    if (cart[productId]) {
-      setQuantity(cart[productId]);
-    }
-  }, [cart, productId]);
+  const isOutOfStock = !product.inStock || product.quantity === 0;
 
   const handleAddToCart = () => {
-    const newQty = Math.min(quantity, maxQty);
-
     dispatch(
       addToCart({
-        productId,
-        quantity: newQty,
+        productId: product.id,
+        quantity,
         price: product.price,
         name: product.name,
         image: product.images[0],
@@ -47,133 +30,52 @@ const ProductDetails = ({ product }) => {
     );
   };
 
-  const averageRating =
-    product.rating.length > 0
-      ? product.rating.reduce((acc, item) => acc + item.rating, 0) /
-        product.rating.length
-      : 0;
-
   return (
-    <div className="flex max-lg:flex-col gap-12">
-      {/* IMAGES */}
-      <div className="flex max-sm:flex-col-reverse gap-3">
-        <div className="flex sm:flex-col gap-3">
-          {product.images.map((image, index) => (
-            <div
-              key={index}
-              onClick={() => setMainImage(image)}
-              className="bg-slate-100 flex items-center justify-center size-26 rounded-lg cursor-pointer"
-            >
-              <Image src={image} alt="" width={45} height={45} />
-            </div>
-          ))}
-        </div>
-
-        <div className="flex justify-center items-center h-100 sm:size-113 bg-slate-100 rounded-lg">
-          <Image src={mainImage} alt="" width={250} height={250} />
-        </div>
-      </div>
+    <div className="flex gap-12">
+      {/* IMAGE */}
+      <Image src={mainImage} width={250} height={250} alt="" />
 
       {/* DETAILS */}
-      <div className="flex-1">
-        <h1 className="text-3xl font-semibold text-slate-800">
-          {product.name}
-        </h1>
+      <div>
+        <h1 className="text-3xl">{product.name}</h1>
 
-        {/* RATING */}
-        <div className="flex items-center mt-2">
-          {Array(5)
-            .fill("")
-            .map((_, index) => (
-              <StarIcon
-                key={index}
-                size={14}
-                fill={averageRating >= index + 1 ? "#00C950" : "#D1D5DB"}
-                className="text-transparent"
-              />
-            ))}
-          <p className="text-sm ml-3 text-slate-500">
-            {product.rating.length} Reviews
-          </p>
-        </div>
+        {isOutOfStock && (
+          <p className="text-red-600 font-semibold mt-2">Out of Stock</p>
+        )}
 
-        {/* PRICE */}
-        <div className="flex items-start my-6 gap-3 text-2xl font-semibold">
-          <p>{currency}{product.price}</p>
-          <p className="text-xl text-slate-500 line-through">
-            {currency}{product.mrp}
-          </p>
-        </div>
+        <p className="text-2xl mt-4">
+          {currency}{product.price}
+        </p>
 
-        <div className="flex items-center gap-2 text-slate-500">
-          <TagIcon size={14} />
-          <p>
-            Save{" "}
-            {((product.mrp - product.price) / product.mrp * 100).toFixed(0)}%
-          </p>
-        </div>
-
-        {/* SINGLE QUANTITY CONTROL */}
-        <div className="mt-8">
-          <p className="text-lg font-semibold mb-2">Quantity</p>
-          <div className="flex items-center gap-3">
-            <button
-              disabled={quantity === 1}
-              onClick={() => setQuantity((q) => q - 1)}
-              className="px-3 py-1 border rounded disabled:opacity-50"
-            >
-              −
-            </button>
-
-            <span className="font-medium">{quantity}</span>
-
-            <button
-              disabled={quantity === maxQty}
-              onClick={() => setQuantity((q) => q + 1)}
-              className="px-3 py-1 border rounded disabled:opacity-50"
-            >
-              +
-            </button>
-          </div>
-          <p className="text-sm text-slate-500 mt-1">
-            {product.quantity} items available
-          </p>
-        </div>
-
-        {/* CART ACTION */}
-        <div className="flex items-center gap-5 mt-6">
+        {/* QUANTITY */}
+        <div className="mt-6">
           <button
-            disabled={product.quantity === 0}
-            onClick={handleAddToCart}
-            className="bg-slate-800 text-white px-10 py-3 text-sm font-medium rounded hover:bg-slate-900 disabled:opacity-50"
-          >
-            {cart[productId] ? "Update Cart" : "Add to Cart"}
+            disabled={isOutOfStock || quantity === 1}
+            onClick={() => setQuantity(q => q - 1)}
+          >−</button>
+
+          <span className="mx-4">{quantity}</span>
+
+          <button
+            disabled={isOutOfStock || quantity === product.quantity}
+            onClick={() => setQuantity(q => q + 1)}
+          >+</button>
+        </div>
+
+        {/* ACTION */}
+        <button
+          disabled={isOutOfStock}
+          onClick={handleAddToCart}
+          className="mt-6 px-8 py-3 bg-slate-800 text-white disabled:opacity-50"
+        >
+          {isOutOfStock ? "Out of Stock" : "Add to Cart"}
+        </button>
+
+        {cart[product.id] && (
+          <button onClick={() => router.push("/cart")} className="ml-4">
+            View Cart
           </button>
-
-          {cart[productId] && (
-            <button
-              onClick={() => router.push("/cart")}
-              className="bg-slate-500 text-white px-6 py-3 text-sm font-medium rounded hover:bg-slate-600"
-            >
-              View Cart
-            </button>
-          )}
-        </div>
-
-        <hr className="border-gray-300 my-5" />
-
-        {/* INFO */}
-        <div className="flex flex-col gap-4 text-slate-500">
-          <p className="flex gap-3">
-            <EarthIcon /> Free shipping worldwide
-          </p>
-          <p className="flex gap-3">
-            <CreditCardIcon /> 100% Secured Payment
-          </p>
-          <p className="flex gap-3">
-            <UserIcon /> Trusted by top brands
-          </p>
-        </div>
+        )}
       </div>
     </div>
   );
