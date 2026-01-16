@@ -1,52 +1,65 @@
-import { imagekit } from "@/configs/imageKit";
-import prisma from "@/lib/prisma";
-import { authSeller } from "@/middlewares/authSeller";
-import { getAuth } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
+import { imagekit } from "@/configs/imageKit"
+import prisma from "@/lib/prisma"
+import { authSeller } from "@/middlewares/authSeller"
+import { getAuth } from "@clerk/nextjs/server"
+import { NextResponse } from "next/server"
 
-// add a new product
+const LOW_STOCK_LIMIT = 10
+
+// ================= ADD PRODUCT =================
 export async function POST(request) {
-
     try {
-
         const { userId } = getAuth(request)
         const storeId = await authSeller(userId)
 
         if (!storeId) {
-            return NextResponse.json({ error: "not authorized" }, { status: 401 })
+            return NextResponse.json({ error: "Not authorized" }, { status: 401 })
         }
 
-        // get the data from the form
         const formData = await request.formData()
+
         const name = formData.get("name")
         const description = formData.get("description")
         const mrp = Number(formData.get("mrp"))
         const price = Number(formData.get("price"))
+        const quantity = Number(formData.get("quantity"))
         const category = formData.get("category")
         const images = formData.getAll("images")
 
-        if (!name || !description || !mrp || !price || !category || images.length < 1) {
-            return NextResponse.json({ error: "missing product details" }, { status: 400 })
+        if (
+            !name ||
+            !description ||
+            mrp <= 0 ||
+            price <= 0 ||
+            quantity < 0 ||
+            !category ||
+            images.length === 0
+        ) {
+            return NextResponse.json(
+                { error: "Missing product details" },
+                { status: 400 }
+            )
         }
 
-        // upload image to imagekit
-        const imagesUrl = await Promise.all(images.map(async (image) => {
-            const buffer = Buffer.from(await image.arrayBuffer());
-            const response = await imagekit.upload({
-                file: buffer,
-                fileName: image.name,
-                folder: 'products',
+        const imagesUrl = await Promise.all(
+            images.map(async (image) => {
+                const buffer = Buffer.from(await image.arrayBuffer())
+                const upload = await imagekit.upload({
+                    file: buffer,
+                    fileName: image.name,
+                    folder: "products",
+                })
+
+                return imagekit.url({
+                    path: upload.filePath,
+                    transformation: [
+                        { quality: "auto" },
+                        { format: "webp" },
+                        { width: "1024" }
+                    ]
+                })
             })
-            const url = imagekit.url({
-                path: response.filePath,
-                transformation: [
-                    { quality: 'auto' },
-                    { format: 'webp' },
-                    { width: '1024' }
-                ]
-            })
-            return url;
-        }))
+        )
 
         await prisma.product.create({
             data: {
@@ -54,42 +67,89 @@ export async function POST(request) {
                 description,
                 mrp,
                 price,
+                quantity,
                 category,
                 images: imagesUrl,
-                storeId
+                storeId,
+                inStock: quantity > 0
             }
         })
 
         return NextResponse.json({ message: "Product added successfully" })
 
     } catch (error) {
-        console.error(error);
-        return NextResponse.json({ error: error.code || error.message }, { status: 400 })
+        console.error(error)
+        return NextResponse.json({ error: error.message }, { status: 400 })
     }
-
 }
 
-// get the products for a seller
+// ================= GET SELLER PRODUCTS =================
 export async function GET(request) {
-
     try {
-
         const { userId } = getAuth(request)
         const storeId = await authSeller(userId)
 
         if (!storeId) {
-            return NextResponse.json({ error: "not authorized" }, { status: 401 })
+            return NextResponse.json({ error: "Not authorized" }, { status: 401 })
         }
 
         const products = await prisma.product.findMany({
-            where: { storeId }
+            where: { storeId },
+            orderBy: { createdAt: "desc" }
         })
 
-        return NextResponse.json({ products })
+        // ⬇️ Add lowStock flag dynamically
+        const formattedProducts = products.map(product => ({
+            ...product,
+            lowStock:
+                product.quantity > 0 &&
+                product.quantity < LOW_STOCK_LIMIT
+        }))
+
+        return NextResponse.json({ products: formattedProducts })
 
     } catch (error) {
-        console.error(error);
-        return NextResponse.json({ error: error.code || error.message }, { status: 400 })
+        console.error(error)
+        return NextResponse.json({ error: error.message }, { status: 400 })
     }
+}
 
+// ================= UPDATE PRODUCT =================
+export async function PUT(request) {
+    try {
+        const { userId } = getAuth(request)
+        const storeId = await authSeller(userId)
+
+        if (!storeId) {
+            return NextResponse.json({ error: "Not authorized" }, { status: 401 })
+        }
+
+        const { productId, price, quantity } = await request.json()
+
+        if (!productId || price <= 0 || quantity < 0) {
+            return NextResponse.json(
+                { error: "Invalid values" },
+                { status: 400 }
+            )
+        }
+
+        await prisma.product.update({
+            where: { id: productId, storeId },
+            data: {
+                price,
+                quantity,
+                inStock: quantity > 0
+            }
+        })
+
+        return NextResponse.json({
+            message: "Product updated successfully",
+            inStock: quantity > 0,
+            lowStock: quantity > 0 && quantity < LOW_STOCK_LIMIT
+        })
+
+    } catch (error) {
+        console.error(error)
+        return NextResponse.json({ error: error.message }, { status: 400 })
+    }
 }
