@@ -60,7 +60,7 @@ const OrderSummary = ({ totalPrice, items }) => {
             // Razorpay Payment
             if (paymentMethod === 'RAZORPAY') {
                 const options = {
-                    key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+                    key: process.env.RAZORPAY_KEY_ID,
                     amount: data.razorpayOrder.amount,
                     currency: data.razorpayOrder.currency,
                     name: 'GlobalMart',
