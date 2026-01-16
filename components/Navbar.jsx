@@ -76,9 +76,8 @@ const Navbar = () => {
                             <Link
                                 key={link.href}
                                 href={link.href}
-                                className={`relative px-2 py-1 ${
-                                    pathname === link.href ? "text-green-600 font-semibold" : "hover:text-green-600"
-                                }`}
+                                className={`relative px-2 py-1 ${pathname === link.href ? "text-green-600 font-semibold" : "hover:text-green-600"
+                                    }`}
                             >
                                 {link.name}
                                 {pathname === link.href && (
@@ -126,6 +125,42 @@ const Navbar = () => {
                     </div>
                 </div>
             </nav>
+
+            {/* ================= MOBILE TOP NAV ================= */}
+            <div className="sm:hidden sticky top-0 z-50 bg-white border-b">
+                <div className="flex items-center justify-between px-4 py-3">
+                    {/* LOGO */}
+                    <Link href="/" className="text-xl font-semibold text-slate-700">
+                        <span className="text-green-600">Global</span>Mart
+                        <span className="text-green-600">.</span>
+                    </Link>
+
+                    {/* RIGHT ACTIONS */}
+                    <div className="flex items-center gap-3">
+                        <form onSubmit={handleSearch} className="flex items-center bg-slate-100 px-3 py-1.5 rounded-full">
+                            <Search size={16} />
+                            <input
+                                className="bg-transparent outline-none w-24 text-sm"
+                                placeholder="Search"
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                            />
+                        </form>
+
+                        {!user ? (
+                            <button
+                                onClick={openSignIn}
+                                className="text-sm font-medium text-indigo-600"
+                            >
+                                Login
+                            </button>
+                        ) : (
+                            <UserButton />
+                        )}
+                    </div>
+                </div>
+            </div>
+
 
             {/* ================= MOBILE BOTTOM NAV ================= */}
             <div className="sm:hidden fixed bottom-0 inset-x-0 z-40 bg-white border-t">
