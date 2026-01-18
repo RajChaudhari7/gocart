@@ -6,6 +6,18 @@ import { MoveLeftIcon } from "lucide-react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useSelector } from "react-redux"
 
+const CATEGORIES = [
+  "Electronics",
+  "Clothing",
+  "Home & Kitchen",
+  "Beauty & Health",
+  "Toys & Games",
+  "Sports & Outdoors",
+  "Books & Media",
+  "Food & Drink",
+  "Hobbies & Crafts"
+]
+
 function ShopContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -16,7 +28,7 @@ function ShopContent() {
   // FILTER STATES
   const [category, setCategory] = useState("all")
   const [sort, setSort] = useState("")
-  const [price, setPrice] = useState(100000)
+  const [maxPrice, setMaxPrice] = useState("")
   const [showMobileFilter, setShowMobileFilter] = useState(false)
 
   // FILTER LOGIC
@@ -29,7 +41,9 @@ function ShopContent() {
     .filter(product =>
       category === "all" ? true : product.category === category
     )
-    .filter(product => product.price <= price)
+    .filter(product =>
+      maxPrice ? product.price <= Number(maxPrice) : true
+    )
     .sort((a, b) => {
       if (sort === "low-high") return a.price - b.price
       if (sort === "high-low") return b.price - a.price
@@ -71,22 +85,22 @@ function ShopContent() {
                 value={category}
                 onChange={e => setCategory(e.target.value)}
               >
-                <option value="all">All</option>
-                <option value="electronics">Electronics</option>
-                <option value="fashion">Fashion</option>
+                <option value="all">Select category</option>
+                {CATEGORIES.map(cat => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
               </select>
             </div>
 
-            {/* PRICE */}
+            {/* PRICE INPUT */}
             <div className="mb-4">
-              <p className="font-medium mb-2">Max Price: ₹{price}</p>
+              <p className="font-medium mb-2">Max Price</p>
               <input
-                type="range"
-                min="0"
-                max="100000"
-                value={price}
-                onChange={e => setPrice(Number(e.target.value))}
-                className="w-full"
+                type="number"
+                placeholder="Enter max price"
+                value={maxPrice}
+                onChange={e => setMaxPrice(e.target.value)}
+                className="w-full border rounded-md p-2"
               />
             </div>
 
@@ -130,20 +144,19 @@ function ShopContent() {
                 value={category}
                 onChange={e => setCategory(e.target.value)}
               >
-                <option value="all">All Categories</option>
-                <option value="electronics">Electronics</option>
-                <option value="fashion">Fashion</option>
+                <option value="all">Select category</option>
+                {CATEGORIES.map(cat => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
               </select>
 
-              {/* PRICE */}
-              <p className="mb-1">Max Price: ₹{price}</p>
+              {/* PRICE INPUT */}
               <input
-                type="range"
-                min="0"
-                max="100000"
-                value={price}
-                onChange={e => setPrice(Number(e.target.value))}
-                className="w-full mb-4"
+                type="number"
+                placeholder="Enter max price"
+                value={maxPrice}
+                onChange={e => setMaxPrice(e.target.value)}
+                className="w-full border p-2 mb-4"
               />
 
               {/* SORT */}
