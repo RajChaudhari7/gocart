@@ -1,21 +1,21 @@
 'use client'
 
-import { Suspense, useState } from "react"
-import ProductCard from "@/components/ProductCard"
-import { MoveLeftIcon } from "lucide-react"
-import { useRouter, useSearchParams } from "next/navigation"
-import { useSelector } from "react-redux"
+import { Suspense, useState } from 'react'
+import ProductCard from '@/components/ProductCard'
+import { MoveLeftIcon, SlidersHorizontal, X } from 'lucide-react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { useSelector } from 'react-redux'
 
 const CATEGORIES = [
-  "Electronics",
-  "Clothing",
-  "Home & Kitchen",
-  "Beauty & Health",
-  "Toys & Games",
-  "Sports & Outdoors",
-  "Books & Media",
-  "Food & Drink",
-  "Hobbies & Crafts"
+  'Electronics',
+  'Clothing',
+  'Home & Kitchen',
+  'Beauty & Health',
+  'Toys & Games',
+  'Sports & Outdoors',
+  'Books & Media',
+  'Food & Drink',
+  'Hobbies & Crafts',
 ]
 
 function ShopContent() {
@@ -23,180 +23,184 @@ function ShopContent() {
   const searchParams = useSearchParams()
   const search = searchParams.get('search')
 
-  const products = useSelector(state => state.product.list)
+  const products = useSelector((state) => state.product.list)
 
   // FILTER STATES
-  const [category, setCategory] = useState("all")
-  const [sort, setSort] = useState("")
-  const [maxPrice, setMaxPrice] = useState("")
+  const [category, setCategory] = useState('all')
+  const [sort, setSort] = useState('')
+  const [maxPrice, setMaxPrice] = useState('')
   const [showMobileFilter, setShowMobileFilter] = useState(false)
 
   // FILTER LOGIC
   const filteredProducts = products
-    .filter(product =>
+    .filter((product) =>
       search
         ? product.name.toLowerCase().includes(search.toLowerCase())
         : true
     )
-    .filter(product =>
-      category === "all" ? true : product.category === category
+    .filter((product) =>
+      category === 'all' ? true : product.category === category
     )
-    .filter(product =>
+    .filter((product) =>
       maxPrice ? product.price <= Number(maxPrice) : true
     )
     .sort((a, b) => {
-      if (sort === "low-high") return a.price - b.price
-      if (sort === "high-low") return b.price - a.price
+      if (sort === 'low-high') return a.price - b.price
+      if (sort === 'high-low') return b.price - a.price
       return 0
     })
 
   return (
-    <div className="min-h-[70vh] mx-4 sm:mx-6">
-      <div className="max-w-7xl mx-auto">
+    <section className="min-h-screen bg-gradient-to-b from-[#020617] to-black text-white px-4 sm:px-6">
+      <div className="max-w-7xl mx-auto py-12">
 
         {/* HEADER */}
         <h1
           onClick={() => router.push('/shop')}
-          className="text-2xl text-slate-500 my-6 flex items-center gap-2 cursor-pointer"
+          className="text-xl sm:text-2xl text-white/60 mb-8 flex items-center gap-2 cursor-pointer hover:text-white transition"
         >
           {search && <MoveLeftIcon size={20} />}
-          All <span className="text-slate-700 font-medium">Products</span>
+          All <span className="text-white font-semibold">Products</span>
         </h1>
 
         {/* MOBILE FILTER BUTTON */}
         <button
           onClick={() => setShowMobileFilter(true)}
-          className="md:hidden w-full border rounded-lg py-2 mb-4"
+          className="lg:hidden flex items-center gap-2 px-4 py-2 mb-6
+          rounded-lg bg-white/10 backdrop-blur border border-white/10"
         >
+          <SlidersHorizontal size={18} />
           Filters
         </button>
 
-        <div className="flex gap-8">
+        <div className="grid lg:grid-cols-[280px_1fr] gap-10">
 
           {/* DESKTOP FILTER */}
-          <div className="hidden md:block w-64 p-4 border rounded-xl h-fit">
-            <h2 className="font-semibold text-lg mb-4">Filters</h2>
+          <aside
+            className="hidden lg:block sticky top-28 h-fit rounded-2xl
+            bg-white/5 backdrop-blur-xl border border-white/10 p-6"
+          >
+            <h2 className="text-lg font-semibold mb-6">Filters</h2>
 
             {/* CATEGORY */}
-            <div className="mb-4">
-              <p className="font-medium mb-2">Category</p>
+            <div className="mb-6">
+              <p className="font-medium mb-2 text-white/80">Category</p>
               <select
-                className="w-full border rounded-md p-2"
+                className="w-full bg-black/40 border border-white/10 rounded-lg p-2"
                 value={category}
-                onChange={e => setCategory(e.target.value)}
+                onChange={(e) => setCategory(e.target.value)}
               >
-                <option value="all">Select category</option>
-                {CATEGORIES.map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
+                <option value="all">All categories</option>
+                {CATEGORIES.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
                 ))}
               </select>
             </div>
 
-            {/* PRICE INPUT */}
-            <div className="mb-4">
-              <p className="font-medium mb-2">Max Price</p>
+            {/* PRICE */}
+            <div className="mb-6">
+              <p className="font-medium mb-2 text-white/80">Max Price</p>
               <input
                 type="number"
                 placeholder="Enter max price"
                 value={maxPrice}
-                onChange={e => setMaxPrice(e.target.value)}
-                className="w-full border rounded-md p-2"
+                onChange={(e) => setMaxPrice(e.target.value)}
+                className="w-full bg-black/40 border border-white/10 rounded-lg p-2"
               />
             </div>
 
             {/* SORT */}
             <div>
-              <p className="font-medium mb-2">Sort</p>
+              <p className="font-medium mb-2 text-white/80">Sort</p>
               <select
-                className="w-full border rounded-md p-2"
+                className="w-full bg-black/40 border border-white/10 rounded-lg p-2"
                 value={sort}
-                onChange={e => setSort(e.target.value)}
+                onChange={(e) => setSort(e.target.value)}
               >
                 <option value="">Default</option>
                 <option value="low-high">Price: Low → High</option>
                 <option value="high-low">Price: High → Low</option>
               </select>
             </div>
-          </div>
+          </aside>
 
           {/* PRODUCTS */}
-          <div className="grid grid-cols-2 sm:flex flex-wrap gap-6 xl:gap-12 mx-auto mb-32">
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredProducts.length > 0 ? (
-              filteredProducts.map(product => (
+              filteredProducts.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))
             ) : (
-              <p className="text-slate-500">No products found</p>
+              <p className="text-white/50">No products found</p>
             )}
           </div>
         </div>
-
-        {/* MOBILE FILTER MODAL */}
-        {showMobileFilter && (
-          <div className="fixed inset-0 bg-black/40 z-50 flex items-end">
-            <div className="bg-white w-full p-4 rounded-t-2xl">
-
-              <h2 className="text-lg font-semibold mb-4">Filters</h2>
-
-              {/* CATEGORY */}
-              <select
-                className="w-full border p-2 mb-3"
-                value={category}
-                onChange={e => setCategory(e.target.value)}
-              >
-                <option value="all">Select category</option>
-                {CATEGORIES.map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
-
-              {/* PRICE INPUT */}
-              <input
-                type="number"
-                placeholder="Enter max price"
-                value={maxPrice}
-                onChange={e => setMaxPrice(e.target.value)}
-                className="w-full border p-2 mb-4"
-              />
-
-              {/* SORT */}
-              <select
-                className="w-full border p-2 mb-4"
-                value={sort}
-                onChange={e => setSort(e.target.value)}
-              >
-                <option value="">Default</option>
-                <option value="low-high">Low → High</option>
-                <option value="high-low">High → Low</option>
-              </select>
-
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setShowMobileFilter(false)}
-                  className="w-full border py-2 rounded-lg"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => setShowMobileFilter(false)}
-                  className="w-full bg-black text-white py-2 rounded-lg"
-                >
-                  Apply
-                </button>
-              </div>
-
-            </div>
-          </div>
-        )}
-
       </div>
-    </div>
+
+      {/* MOBILE FILTER DRAWER */}
+      {showMobileFilter && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur">
+          <div
+            className="absolute bottom-0 left-0 right-0 rounded-t-2xl
+            bg-[#020617] border-t border-white/10 p-6"
+          >
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-lg font-semibold">Filters</h2>
+              <button onClick={() => setShowMobileFilter(false)}>
+                <X />
+              </button>
+            </div>
+
+            <select
+              className="w-full bg-black/40 border border-white/10 rounded-lg p-2 mb-4"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+            >
+              <option value="all">All categories</option>
+              {CATEGORIES.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
+            </select>
+
+            <input
+              type="number"
+              placeholder="Max price"
+              value={maxPrice}
+              onChange={(e) => setMaxPrice(e.target.value)}
+              className="w-full bg-black/40 border border-white/10 rounded-lg p-2 mb-4"
+            />
+
+            <select
+              className="w-full bg-black/40 border border-white/10 rounded-lg p-2 mb-6"
+              value={sort}
+              onChange={(e) => setSort(e.target.value)}
+            >
+              <option value="">Default</option>
+              <option value="low-high">Low → High</option>
+              <option value="high-low">High → Low</option>
+            </select>
+
+            <button
+              onClick={() => setShowMobileFilter(false)}
+              className="w-full py-3 rounded-lg bg-gradient-to-r
+              from-cyan-400 to-emerald-400 text-black font-semibold"
+            >
+              Apply Filters
+            </button>
+          </div>
+        </div>
+      )}
+    </section>
   )
 }
 
 export default function Shop() {
   return (
-    <Suspense fallback={<div>Loading shop...</div>}>
+    <Suspense fallback={<div className="text-white p-10">Loading shop...</div>}>
       <ShopContent />
     </Suspense>
   )
