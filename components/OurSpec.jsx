@@ -1,49 +1,43 @@
-import React from "react";
-import Title from "./Title";
-import { ourSpecsData } from "@/assets/assets";
+'use client'
+
+import { motion } from "framer-motion"
+import Title from "./Title"
+import { ourSpecsData } from "@/assets/assets"
 
 const OurSpecs = () => {
   return (
-    <section className="px-5 md:px-8 my-20 max-w-7xl mx-auto">
+    <section className="px-6 md:px-8 my-24 max-w-7xl mx-auto">
       <Title
         visibleButton={false}
         title="Our Specifications"
-        description="We offer top-tier service and convenience to ensure your shopping experience is smooth, secure and completely hassle-free."
+        description="We provide smooth, secure, and hassle-free shopping experiences for modern users."
       />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 mt-14">
-        {ourSpecsData.map((spec, index) => (
-          <div
-            key={index}
-            className="group relative rounded-2xl border bg-white p-8 text-center transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
-            style={{ borderColor: spec.accent + "30" }}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mt-16">
+        {ourSpecsData.map((spec, i) => (
+          <motion.div
+            key={i}
+            whileHover={{ y: -5 }}
+            className="relative rounded-2xl bg-white p-8 text-center shadow-md hover:shadow-xl transition-shadow duration-300"
           >
             {/* Icon */}
             <div
-              className="absolute -top-6 left-1/2 -translate-x-1/2 size-12 rounded-xl flex items-center justify-center shadow-lg transition-transform duration-300 group-hover:scale-110"
+              className="w-14 h-14 rounded-xl flex items-center justify-center mx-auto mb-6 shadow-lg"
               style={{ backgroundColor: spec.accent }}
             >
-              <spec.icon size={22} className="text-white" />
+              <spec.icon size={24} className="text-white" />
             </div>
 
-            {/* Content */}
-            <h3 className="mt-6 text-lg font-semibold text-slate-800">
-              {spec.title}
-            </h3>
-            <p className="mt-3 text-sm leading-relaxed text-slate-600">
-              {spec.description}
-            </p>
+            {/* Title */}
+            <h3 className="text-lg font-semibold text-slate-800 mb-2">{spec.title}</h3>
 
-            {/* Accent glow */}
-            <div
-              className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 blur-xl transition-opacity duration-300 group-hover:opacity-30"
-              style={{ backgroundColor: spec.accent }}
-            />
-          </div>
+            {/* Description */}
+            <p className="text-sm text-slate-600 leading-relaxed">{spec.description}</p>
+          </motion.div>
         ))}
       </div>
     </section>
-  );
-};
+  )
+}
 
-export default OurSpecs;
+export default OurSpecs
