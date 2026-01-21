@@ -1,87 +1,156 @@
-"use client";
+'use client'
 
-import { motion } from "framer-motion";
-import { Heart, ShoppingBag, Users, Sparkles } from "lucide-react";
+import { motion } from 'framer-motion'
+import {
+  Heart,
+  ShoppingBag,
+  Users,
+  Sparkles,
+  ShieldCheck,
+  Store
+} from 'lucide-react'
+
+const fadeUp = {
+  initial: { opacity: 0, y: 40 },
+  animate: { opacity: 1, y: 0 },
+}
 
 export default function AboutPage() {
   return (
-    <div className="min-h-screen bg-gray-50 px-6 py-14">
-      <div className="max-w-6xl mx-auto">
-        
-        {/* Hero Section */}
+    <section className="relative overflow-hidden bg-gradient-to-br from-[#0f172a] via-[#020617] to-black text-white">
+      <div className="max-w-7xl mx-auto px-6 py-24">
+
+        {/* HERO */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-16"
+          variants={fadeUp}
+          initial="initial"
+          whileInView="animate"
+          viewport={{ once: true }}
+          transition={{ duration: 0.7 }}
+          className="text-center max-w-4xl mx-auto"
         >
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-            Empowering Women Through Commerce
+          <span className="inline-block px-4 py-1 mb-6 rounded-full text-xs font-semibold
+            bg-gradient-to-r from-cyan-400 to-emerald-400 text-black">
+            ABOUT GOCART
+          </span>
+
+          <h1 className="text-4xl sm:text-6xl font-semibold leading-tight">
+            Empowering Women
+            <br />
+            <span className="text-white/60">Through Commerce</span>
           </h1>
-          <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-            GoCart is a women-focused multi-vendor eCommerce platform where
-            fashion, beauty, and lifestyle brands come together to empower
+
+          <p className="mt-6 text-lg text-white/70">
+            GoCart is a women-focused multi-vendor marketplace where fashion,
+            beauty, wellness, and lifestyle brands come together to support
             women shoppers and women entrepreneurs.
           </p>
         </motion.div>
 
-        {/* About Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
-          <div className="bg-white rounded-2xl p-6 shadow-sm">
-            <h2 className="text-2xl font-semibold mb-3">Who We Are</h2>
-            <p className="text-gray-600 leading-relaxed">
-              GoCart is a secure and scalable multi-vendor marketplace built
-              especially for women. We connect customers with trusted sellers
-              offering fashion, beauty, wellness, and lifestyle products.
-            </p>
-          </div>
-
-          <div className="bg-white rounded-2xl p-6 shadow-sm">
-            <h2 className="text-2xl font-semibold mb-3">Our Mission</h2>
-            <p className="text-gray-600 leading-relaxed">
-              Our mission is to support women-led businesses while providing a
-              safe, stylish, and seamless shopping experience for modern women.
-            </p>
-          </div>
+        {/* STATS */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-20">
+          <StatCard title="1000+" subtitle="Women Sellers" />
+          <StatCard title="50k+" subtitle="Happy Customers" />
+          <StatCard title="100%" subtitle="Verified Vendors" />
         </div>
 
-        {/* Values */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <ValueCard
-            icon={<Heart className="h-8 w-8" />}
-            title="Women First"
-            text="Designed with women’s comfort, security, and confidence in mind."
+        {/* WHO WE ARE */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 mt-24">
+          <GlassCard
+            title="Who We Are"
+            icon={<Store />}
+            text="GoCart is a secure, scalable, women-first multi-vendor platform built
+            to connect trusted sellers with modern women shoppers. We focus on
+            safety, trust, and premium experience."
           />
-          <ValueCard
-            icon={<ShoppingBag className="h-8 w-8" />}
-            title="Trusted Vendors"
-            text="Supporting verified sellers and women entrepreneurs."
-          />
-          <ValueCard
-            icon={<Users className="h-8 w-8" />}
-            title="Community"
-            text="More than shopping — a growing women-first community."
-          />
-          <ValueCard
-            icon={<Sparkles className="h-8 w-8" />}
-            title="Quality & Style"
-            text="Curated products that match modern trends and quality standards."
+
+          <GlassCard
+            title="Our Mission"
+            icon={<Heart />}
+            text="Our mission is to empower women-led businesses while delivering a
+            stylish, safe, and seamless shopping experience tailored for women."
           />
         </div>
+
+        {/* VALUES */}
+        <motion.div
+          variants={fadeUp}
+          initial="initial"
+          whileInView="animate"
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="mt-28"
+        >
+          <h2 className="text-3xl font-semibold text-center mb-12">
+            What We Stand For
+          </h2>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <ValueCard
+              icon={<ShieldCheck />}
+              title="Women First"
+              text="Designed with women’s comfort, safety, and confidence in mind."
+            />
+            <ValueCard
+              icon={<ShoppingBag />}
+              title="Trusted Sellers"
+              text="Supporting verified vendors and women entrepreneurs."
+            />
+            <ValueCard
+              icon={<Users />}
+              title="Community"
+              text="More than shopping — a growing women-first ecosystem."
+            />
+            <ValueCard
+              icon={<Sparkles />}
+              title="Quality & Style"
+              text="Curated products aligned with modern trends and quality standards."
+            />
+          </div>
+        </motion.div>
 
       </div>
-    </div>
-  );
+    </section>
+  )
+}
+
+/* ------------------ Components ------------------ */
+
+function GlassCard({ title, text, icon }) {
+  return (
+    <motion.div
+      whileHover={{ y: -6 }}
+      className="rounded-3xl bg-white/5 backdrop-blur-xl border border-white/10 p-8"
+    >
+      <div className="flex items-center gap-4 mb-4 text-cyan-400">
+        {icon}
+        <h3 className="text-2xl font-semibold">{title}</h3>
+      </div>
+      <p className="text-white/70 leading-relaxed">{text}</p>
+    </motion.div>
+  )
 }
 
 function ValueCard({ icon, title, text }) {
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-sm text-center hover:shadow-md transition">
-      <div className="flex justify-center mb-4 text-pink-600">
+    <motion.div
+      whileHover={{ scale: 1.05 }}
+      className="rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 p-6 text-center"
+    >
+      <div className="flex justify-center mb-4 text-emerald-400">
         {icon}
       </div>
-      <h3 className="font-semibold text-lg mb-2">{title}</h3>
-      <p className="text-gray-600 text-sm">{text}</p>
+      <h4 className="font-semibold text-lg mb-2">{title}</h4>
+      <p className="text-sm text-white/60">{text}</p>
+    </motion.div>
+  )
+}
+
+function StatCard({ title, subtitle }) {
+  return (
+    <div className="rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 p-8 text-center">
+      <p className="text-4xl font-bold text-cyan-400">{title}</p>
+      <p className="mt-2 text-white/60">{subtitle}</p>
     </div>
-  );
+  )
 }

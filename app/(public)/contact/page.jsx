@@ -1,25 +1,29 @@
-"use client";
+'use client'
 
-import { useState, useRef } from "react";
-import emailjs from "@emailjs/browser";
-import { Mail, Phone, MapPin } from "lucide-react";
-import { motion } from "framer-motion";
+import { useState, useRef } from 'react'
+import emailjs from '@emailjs/browser'
+import { Mail, Phone, MapPin, Send } from 'lucide-react'
+import { motion } from 'framer-motion'
 
 export default function ContactPage() {
-  const formRef = useRef(null);
+  const formRef = useRef(null)
 
-  const [form, setForm] = useState({ name: "", email: "", message: "" });
-  const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState(null);
+  const [form, setForm] = useState({
+    name: '',
+    email: '',
+    message: '',
+  })
+  const [loading, setLoading] = useState(false)
+  const [status, setStatus] = useState(null)
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
+  const handleChange = e => {
+    setForm({ ...form, [e.target.name]: e.target.value })
+  }
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setStatus(null);
+  const handleSubmit = async e => {
+    e.preventDefault()
+    setLoading(true)
+    setStatus(null)
 
     try {
       await emailjs.sendForm(
@@ -27,94 +31,124 @@ export default function ContactPage() {
         process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID,
         formRef.current,
         process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY
-      );
+      )
 
-      setStatus({ type: "success", message: "Thank you! We will contact you soon." });
-      setForm({ name: "", email: "", message: "" });
+      setStatus({
+        type: 'success',
+        message: 'Message sent successfully. We’ll get back to you shortly.',
+      })
+      setForm({ name: '', email: '', message: '' })
     } catch (error) {
-      console.error("EmailJS Error:", error);
-      setStatus({ type: "error", message: "Failed to send message. Please try again." });
+      setStatus({
+        type: 'error',
+        message: 'Something went wrong. Please try again.',
+      })
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 px-6 py-14">
-      <div className="max-w-6xl mx-auto">
+    <section className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#020617] to-black text-white px-6">
+      <div className="max-w-7xl mx-auto py-24">
 
-        {/* Header */}
+        {/* HEADER */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="text-center mb-16"
+          transition={{ duration: 0.6 }}
+          className="text-center max-w-3xl mx-auto mb-20"
         >
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-            Contact Us
+          <span className="inline-block px-4 py-1 mb-6 rounded-full text-xs font-semibold
+            bg-gradient-to-r from-cyan-400 to-emerald-400 text-black">
+            CONTACT GOCART
+          </span>
+
+          <h1 className="text-4xl sm:text-6xl font-semibold leading-tight">
+            Let’s Talk
+            <br />
+            <span className="text-white/60">We’re Here to Help</span>
           </h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Have questions about orders, vendors, or partnerships? We’d love to hear from you.
+
+          <p className="mt-6 text-lg text-white/70">
+            Questions about orders, vendors, partnerships, or support?
+            Reach out to us anytime.
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
 
-          {/* Contact Info */}
-          <div className="space-y-6">
-            <InfoCard icon={<Mail />} title="Email" text="support@gocart.com" />
-            <InfoCard icon={<Phone />} title="Phone" text="+91 90000 00000" />
-            <InfoCard icon={<MapPin />} title="Address" text="India" />
-          </div>
+          {/* CONTACT INFO */}
+          <motion.div
+            initial={{ opacity: 0, x: -40 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6 }}
+            className="space-y-6"
+          >
+            <InfoCard
+              icon={<Mail />}
+              title="Email Support"
+              text="support@gocart.com"
+            />
+            <InfoCard
+              icon={<Phone />}
+              title="Customer Care"
+              text="+91 90000 00000"
+            />
+            <InfoCard
+              icon={<MapPin />}
+              title="Office Location"
+              text="India"
+            />
+          </motion.div>
 
-          {/* Contact Form */}
+          {/* FORM */}
           <motion.form
             ref={formRef}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
             onSubmit={handleSubmit}
-            className="bg-white rounded-2xl p-8 shadow-sm"
+            initial={{ opacity: 0, x: 40 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6 }}
+            className="rounded-3xl bg-white/5 backdrop-blur-xl border border-white/10 p-8"
           >
-            <div className="mb-5">
-              <label className="block text-sm font-medium mb-1">Name</label>
-              <input
-                type="text"
-                name="name"
-                value={form.name}
-                onChange={handleChange}
-                required
-                className="w-full rounded-lg border px-4 py-2 focus:ring-2 focus:ring-pink-500"
-              />
-            </div>
+            <Input
+              label="Full Name"
+              name="name"
+              value={form.name}
+              onChange={handleChange}
+            />
 
-            <div className="mb-5">
-              <label className="block text-sm font-medium mb-1">Email</label>
-              <input
-                type="email"
-                name="email"
-                value={form.email}
-                onChange={handleChange}
-                required
-                className="w-full rounded-lg border px-4 py-2 focus:ring-2 focus:ring-pink-500"
-              />
-            </div>
+            <Input
+              label="Email Address"
+              name="email"
+              type="email"
+              value={form.email}
+              onChange={handleChange}
+            />
 
             <div className="mb-6">
-              <label className="block text-sm font-medium mb-1">Message</label>
+              <label className="block text-sm mb-2 text-white/70">
+                Message
+              </label>
               <textarea
                 name="message"
-                rows="4"
+                rows={5}
                 value={form.message}
                 onChange={handleChange}
                 required
-                className="w-full rounded-lg border px-4 py-2 focus:ring-2 focus:ring-pink-500"
+                className="w-full rounded-xl bg-white/10 border border-white/10 px-4 py-3
+                focus:outline-none focus:ring-2 focus:ring-cyan-400 text-white"
               />
             </div>
 
             {status && (
-              <p className={`mb-4 font-medium ${status.type === "success" ? "text-green-600" : "text-red-600"
-                }`}>
+              <p
+                className={`mb-4 text-sm ${
+                  status.type === 'success'
+                    ? 'text-emerald-400'
+                    : 'text-red-400'
+                }`}
+              >
                 {status.message}
               </p>
             )}
@@ -122,25 +156,50 @@ export default function ContactPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-pink-600 hover:bg-pink-700 text-white font-semibold py-3 rounded-xl transition"
+              className="w-full inline-flex items-center justify-center gap-2
+              bg-gradient-to-r from-cyan-400 to-emerald-400
+              text-black font-semibold py-3 rounded-xl
+              hover:scale-105 active:scale-95 transition"
             >
-              {loading ? "Sending..." : "Send Message"}
+              {loading ? 'Sending...' : 'Send Message'}
+              <Send size={18} />
             </button>
           </motion.form>
         </div>
       </div>
-    </div>
-  );
+    </section>
+  )
 }
+
+/* ---------------- Components ---------------- */
 
 function InfoCard({ icon, title, text }) {
   return (
-    <div className="flex items-center gap-4 bg-white p-5 rounded-2xl shadow-sm">
-      <div className="text-pink-600">{icon}</div>
+    <div className="flex items-center gap-4 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 p-6">
+      <div className="text-cyan-400">{icon}</div>
       <div>
         <h3 className="font-semibold">{title}</h3>
-        <p className="text-gray-600 text-sm">{text}</p>
+        <p className="text-white/60 text-sm">{text}</p>
       </div>
     </div>
-  );
+  )
+}
+
+function Input({ label, name, type = 'text', value, onChange }) {
+  return (
+    <div className="mb-5">
+      <label className="block text-sm mb-2 text-white/70">
+        {label}
+      </label>
+      <input
+        type={type}
+        name={name}
+        value={value}
+        onChange={onChange}
+        required
+        className="w-full rounded-xl bg-white/10 border border-white/10 px-4 py-3
+        focus:outline-none focus:ring-2 focus:ring-cyan-400 text-white"
+      />
+    </div>
+  )
 }
