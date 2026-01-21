@@ -26,33 +26,31 @@ export default function StoreShop() {
         setLoading(false)
     }
 
-    useEffect(() => {
-        fetchStoreData()
-    }, [])
+    useEffect(() => { fetchStoreData() }, [])
 
     if (loading) return <Loading />
 
     return (
-        <div className="min-h-[70vh] px-6 py-10">
+        <div className="min-h-[70vh] px-6 py-12 bg-gradient-to-b from-[#0f172a] to-[#020617] text-white">
             {storeInfo && (
-                <div className="max-w-7xl mx-auto bg-white rounded-2xl shadow-md p-6 md:p-10 flex flex-col md:flex-row items-center gap-6">
+                <div className="max-w-7xl mx-auto bg-white/5 backdrop-blur-lg rounded-3xl p-8 md:p-12 flex flex-col md:flex-row items-center gap-6 border border-white/10 shadow-xl">
                     <Image
                         src={storeInfo.logo}
                         alt={storeInfo.name}
                         width={200}
                         height={200}
-                        className="rounded-xl border border-slate-200 object-cover"
+                        className="rounded-xl border border-white/20 object-cover"
                     />
                     <div className="text-center md:text-left flex-1">
-                        <h1 className="text-3xl font-bold text-slate-900">{storeInfo.name}</h1>
-                        <p className="text-slate-600 mt-3 max-w-lg">{storeInfo.description}</p>
+                        <h1 className="text-3xl md:text-5xl font-bold text-white">{storeInfo.name}</h1>
+                        <p className="text-slate-300 mt-3 max-w-lg">{storeInfo.description}</p>
 
-                        <div className="mt-5 flex flex-col gap-2 text-sm text-slate-500">
+                        <div className="mt-5 flex flex-col gap-2 text-slate-400 text-sm">
                             <div className="flex items-center gap-2">
-                                <MapPinIcon className="w-4 h-4 text-gray-500" /> {storeInfo.address}
+                                <MapPinIcon className="w-4 h-4 text-slate-400" /> {storeInfo.address}
                             </div>
                             <div className="flex items-center gap-2">
-                                <MailIcon className="w-4 h-4 text-gray-500" /> {storeInfo.email}
+                                <MailIcon className="w-4 h-4 text-slate-400" /> {storeInfo.email}
                             </div>
                         </div>
                     </div>
@@ -61,10 +59,10 @@ export default function StoreShop() {
 
             {/* Products */}
             <div className="max-w-7xl mx-auto mt-12">
-                <h2 className="text-2xl font-semibold text-slate-800 mb-6">Shop Products</h2>
+                <h2 className="text-2xl md:text-3xl font-semibold text-white mb-6">Shop Products</h2>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
                     {products.map(product => (
-                        <ProductCard key={product.id} product={product} />
+                        <ProductCard key={product.id} product={product} theme="dark" />
                     ))}
                 </div>
             </div>
