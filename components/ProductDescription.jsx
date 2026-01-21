@@ -12,12 +12,12 @@ const ProductDescription = ({ product }) => {
         <div className="my-14 px-6 max-w-7xl mx-auto text-white">
 
             {/* Tabs */}
-            <div className="flex border-b border-white/20 mb-6 rounded-xl overflow-hidden">
+            <div className="flex border-b border-white/20 mb-6 rounded-xl overflow-hidden max-w-xs">
                 {['Description', 'Reviews'].map((tab, index) => (
                     <button
                         key={index}
                         onClick={() => setSelectedTab(tab)}
-                        className={`px-4 py-2 font-medium text-sm transition-all ${
+                        className={`px-4 py-2 text-sm font-medium transition-all ${
                             tab === selectedTab 
                                 ? 'bg-gradient-to-r from-cyan-400 to-emerald-400 text-black' 
                                 : 'text-white/60 hover:text-white'
@@ -30,7 +30,7 @@ const ProductDescription = ({ product }) => {
 
             {/* Description */}
             {selectedTab === "Description" && (
-                <div className="bg-white/5 p-6 rounded-2xl shadow-lg">
+                <div className="bg-white/5 p-6 rounded-2xl shadow-lg mb-6">
                     <p className="text-slate-200">{product.description}</p>
                 </div>
             )}
