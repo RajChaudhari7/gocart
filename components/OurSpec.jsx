@@ -1,31 +1,49 @@
-import React from 'react'
-import Title from './Title'
-import { ourSpecsData } from '@/assets/assets'
+import React from "react";
+import Title from "./Title";
+import { ourSpecsData } from "@/assets/assets";
 
 const OurSpecs = () => {
+  return (
+    <section className="px-5 md:px-8 my-20 max-w-7xl mx-auto">
+      <Title
+        visibleButton={false}
+        title="Our Specifications"
+        description="We offer top-tier service and convenience to ensure your shopping experience is smooth, secure and completely hassle-free."
+      />
 
-    return (
-        <div className='px-6 my-20 max-w-6xl mx-auto'>
-            <Title visibleButton={false} title='Our Specifications' description="We offer top-tier service and convenience to ensure your shopping experience is smooth, secure and completely hassle-free." />
-
-            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-7 gap-y-10 mt-26'>
-                {
-                    ourSpecsData.map((spec, index) => {
-                        return (
-                            <div className='relative h-44 px-8 flex flex-col items-center justify-center w-full text-center border rounded-lg group' style={{ backgroundColor: spec.accent + 10, borderColor: spec.accent + 30 }} key={index}>
-                                <h3 className='text-slate-800 font-medium'>{spec.title}</h3>
-                                <p className='text-sm text-slate-600 mt-3'>{spec.description}</p>
-                                <div className='absolute -top-5 text-white size-10 flex items-center justify-center rounded-md group-hover:scale-105 transition' style={{ backgroundColor: spec.accent }}>
-                                    <spec.icon size={20} />
-                                </div>
-                            </div>
-                        )
-                    })
-                }
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 mt-14">
+        {ourSpecsData.map((spec, index) => (
+          <div
+            key={index}
+            className="group relative rounded-2xl border bg-white p-8 text-center transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+            style={{ borderColor: spec.accent + "30" }}
+          >
+            {/* Icon */}
+            <div
+              className="absolute -top-6 left-1/2 -translate-x-1/2 size-12 rounded-xl flex items-center justify-center shadow-lg transition-transform duration-300 group-hover:scale-110"
+              style={{ backgroundColor: spec.accent }}
+            >
+              <spec.icon size={22} className="text-white" />
             </div>
 
-        </div>
-    )
-}
+            {/* Content */}
+            <h3 className="mt-6 text-lg font-semibold text-slate-800">
+              {spec.title}
+            </h3>
+            <p className="mt-3 text-sm leading-relaxed text-slate-600">
+              {spec.description}
+            </p>
 
-export default OurSpecs
+            {/* Accent glow */}
+            <div
+              className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 blur-xl transition-opacity duration-300 group-hover:opacity-30"
+              style={{ backgroundColor: spec.accent }}
+            />
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+};
+
+export default OurSpecs;
