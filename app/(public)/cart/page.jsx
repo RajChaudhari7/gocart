@@ -43,12 +43,12 @@ export default function Cart() {
 
   if (!cartArray.length) {
     return (
-      <div className="min-h-[80vh] flex items-center justify-center text-center">
+      <div className="min-h-[80vh] flex items-center justify-center text-center bg-[#0f172a]">
         <div>
-          <h1 className="text-3xl font-semibold text-slate-700">
+          <h1 className="text-3xl font-semibold text-white">
             Your cart is empty 🛒
           </h1>
-          <p className="text-slate-500 mt-2">
+          <p className="text-slate-400 mt-2">
             Looks like you haven’t added anything yet
           </p>
         </div>
@@ -57,7 +57,7 @@ export default function Cart() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 py-10 px-6">
+    <div className="min-h-screen bg-[#0f172a] py-10 px-6 text-white">
       <div className="max-w-7xl mx-auto">
 
         {/* Page Title */}
@@ -65,6 +65,7 @@ export default function Cart() {
           heading="Shopping Cart"
           text={`${cartArray.length} items in your cart`}
           linkText="Continue shopping"
+          textColor="text-slate-300"
         />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -74,11 +75,11 @@ export default function Cart() {
             {cartArray.map(item => (
               <div
                 key={item.id}
-                className="flex flex-col sm:flex-row items-center justify-between gap-5 bg-white p-5 rounded-2xl shadow-sm"
+                className="flex flex-col sm:flex-row items-center justify-between gap-5 bg-white/5 p-5 rounded-2xl shadow-lg"
               >
                 {/* Product Info */}
                 <div className="flex items-center gap-4 w-full">
-                  <div className="bg-slate-100 p-3 rounded-xl">
+                  <div className="bg-white/10 p-3 rounded-xl">
                     <Image
                       src={item.images[0]}
                       alt={item.name}
@@ -89,10 +90,10 @@ export default function Cart() {
                   </div>
 
                   <div className="flex-1">
-                    <h3 className="font-semibold text-slate-800">
+                    <h3 className="font-semibold text-white">
                       {item.name}
                     </h3>
-                    <p className="text-sm text-slate-500">
+                    <p className="text-slate-400 text-sm">
                       {item.category}
                     </p>
                     <p className="font-medium mt-1">
@@ -112,7 +113,7 @@ export default function Cart() {
                 {/* Remove */}
                 <button
                   onClick={() => handleDeleteItemFromCart(item.id)}
-                  className="text-red-500 hover:bg-red-50 p-3 rounded-full transition active:scale-95"
+                  className="text-red-400 hover:bg-red-600/20 p-3 rounded-full transition active:scale-95"
                 >
                   <Trash2Icon size={18} />
                 </button>
@@ -123,10 +124,14 @@ export default function Cart() {
           {/* Order Summary + Trust Badges */}
           <div className="lg:sticky top-24 h-fit space-y-4">
 
-            <OrderSummary totalPrice={totalPrice} items={cartArray} />
+            <OrderSummary 
+              totalPrice={totalPrice} 
+              items={cartArray} 
+              className="bg-white/5 text-white shadow-lg rounded-2xl p-6"
+            />
 
             {/* 🔐 Trust Badges */}
-            <div className="flex justify-center gap-4 text-xs text-slate-500">
+            <div className="flex justify-center gap-4 text-xs text-slate-300">
               <span>🔐 Secure Checkout</span>
               <span>💳 Stripe Verified</span>
               <span>🛡️ Clerk Auth</span>
