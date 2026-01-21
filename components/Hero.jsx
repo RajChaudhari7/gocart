@@ -1,7 +1,7 @@
 'use client'
 
 import { assets } from '@/assets/assets'
-import { ArrowRightIcon, ChevronRightIcon } from 'lucide-react'
+import { ArrowRightIcon } from 'lucide-react'
 import Image from 'next/image'
 import React, { useEffect, useState } from 'react'
 import CategoriesMarquee from './CategoriesMarquee'
@@ -11,182 +11,166 @@ import { motion, AnimatePresence } from 'framer-motion'
 const heroSlides = [
   {
     id: 1,
-    badge: "NEWS",
-    badgeText: "Free Shipping on Orders Above ₹500!",
-    title: "Gadgets you'll love.",
-    subtitle: "Prices you'll trust.",
+    tag: 'NEW DROP',
+    title: 'Gadgets you’ll love',
+    subtitle: 'Built for the future',
     price: 699,
     image: assets.hero_model_img,
-    bg: "bg-green-200",
+    accent: 'from-emerald-400 to-cyan-400',
   },
   {
     id: 2,
-    badge: "HOT",
-    badgeText: "Best deals on smart devices",
-    title: "Smart tech.",
-    subtitle: "Smarter prices.",
+    tag: 'HOT DEAL',
+    title: 'Smart technology',
+    subtitle: 'Smarter prices',
     price: 999,
     image: assets.hero_product_img1,
-    bg: "bg-blue-200",
+    accent: 'from-blue-400 to-violet-400',
   },
   {
     id: 3,
-    badge: "SALE",
-    badgeText: "Limited time offers",
-    title: "Upgrade your lifestyle.",
-    subtitle: "Shop the future.",
+    tag: 'LIMITED',
+    title: 'Upgrade your lifestyle',
+    subtitle: 'Feel the innovation',
     price: 1299,
     image: assets.hero_product_img2,
-    bg: "bg-orange-200",
+    accent: 'from-orange-400 to-pink-400',
   },
-  {
-    id: 4,
-    badge: "NEW",
-    badgeText: "Latest wireless earbuds",
-    title: "Crystal-clear sound.",
-    subtitle: "Wireless freedom.",
-    price: 1499,
-    image: assets.product_img7,
-    bg: "bg-purple-200",
-  },
-  {
-    id: 5,
-    badge: "POPULAR",
-    badgeText: "Top-rated speaker",
-    title: "Portable power.",
-    subtitle: "Music on the go.",
-    price: 1999,
-    image: assets.product_img4,
-    bg: "bg-yellow-200",
-  },
-  {
-    id: 6,
-    badge: "PREMIUM",
-    badgeText: "Designer stylus set",
-    title: "Precision in hand.",
-    subtitle: "Create with ease.",
-    price: 2499,
-    image: assets.product_img5,
-    bg: "bg-gray-200",
-  },
-];
-
+]
 
 const slideVariants = {
-  initial: { opacity: 0, x: 60 },
-  animate: { opacity: 1, x: 0 },
-  exit: { opacity: 0, x: -60 },
+  initial: { opacity: 0, y: 40 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -40 },
 }
 
-
 const Hero = () => {
-  const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '₹'
   const router = useRouter()
+  const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '₹'
   const [index, setIndex] = useState(0)
 
-  const handleLearnMore = () => router.push('/shop')
-
   useEffect(() => {
-    const interval = setInterval(() => {
-      setIndex((prev) => (prev + 1) % heroSlides.length)
-    }, 4000)
-
-    return () => clearInterval(interval)
+    const timer = setInterval(
+      () => setIndex((prev) => (prev + 1) % heroSlides.length),
+      4500
+    )
+    return () => clearInterval(timer)
   }, [])
 
   const slide = heroSlides[index]
 
   return (
-    <div className="mx-6">
-      <div className="flex max-xl:flex-col gap-8 max-w-7xl mx-auto my-10">
+    <section className="relative overflow-hidden bg-gradient-to-br from-[#0f172a] via-[#020617] to-black text-white">
+      <div className="max-w-7xl mx-auto px-6 py-16">
 
-        {/* LEFT SLIDER */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={slide.id}
-            variants={slideVariants}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            transition={{ duration: 0.6 }}
-            className={`relative flex-1 flex flex-col rounded-3xl xl:min-h-100 group ${slide.bg}`}
-          >
-            <div className="p-5 sm:p-16">
-              <div className="inline-flex items-center gap-3 bg-white/60 text-slate-700 pr-4 p-1 rounded-full text-xs sm:text-sm">
-                <span className="bg-slate-800 px-3 py-1 rounded-full text-white text-xs">
-                  {slide.badge}
+        <div className="grid xl:grid-cols-3 gap-10 items-center">
+
+          {/* LEFT GLASS SLIDER */}
+          <div className="xl:col-span-2">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={slide.id}
+                variants={slideVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                transition={{ duration: 0.6 }}
+                className="relative rounded-3xl bg-white/5 backdrop-blur-xl border border-white/10 p-8 sm:p-14"
+              >
+                {/* Tag */}
+                <span
+                  className={`inline-block px-4 py-1 rounded-full text-xs font-semibold bg-gradient-to-r ${slide.accent} text-black`}
+                >
+                  {slide.tag}
                 </span>
-                {slide.badgeText}
-                <ChevronRightIcon size={16} />
-              </div>
 
-              <h2 className="text-3xl sm:text-5xl leading-[1.2] my-3 font-medium bg-gradient-to-r from-slate-700 to-slate-500 bg-clip-text text-transparent max-w-xs sm:max-w-md">
-                {slide.title}
-                <br />
-                {slide.subtitle}
-              </h2>
+                <h1 className="text-4xl sm:text-6xl font-semibold mt-6 leading-tight">
+                  {slide.title}
+                  <br />
+                  <span className="text-white/60">{slide.subtitle}</span>
+                </h1>
 
-              <div className="text-slate-800 text-sm font-medium mt-4 sm:mt-8">
-                <p>Starts from</p>
-                <p className="text-3xl">
+                <p className="mt-6 text-lg text-white/70">
+                  Starting from
+                </p>
+                <p className="text-4xl font-bold">
                   {currency}{slide.price}
                 </p>
-              </div>
 
+                <button
+                  onClick={() => router.push('/shop')}
+                  className="mt-8 inline-flex items-center gap-3 px-8 py-4 rounded-xl 
+                  bg-gradient-to-r from-cyan-400 to-emerald-400 text-black font-semibold
+                  hover:scale-105 active:scale-95 transition"
+                >
+                  Shop Now
+                  <ArrowRightIcon size={20} />
+                </button>
+
+                {/* Product Image */}
+                <motion.div
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ delay: 0.2 }}
+                  className="mt-10 sm:absolute sm:right-10 sm:bottom-0"
+                >
+                  <Image
+                    src={slide.image}
+                    alt="Product"
+                    className="max-w-xs sm:max-w-sm drop-shadow-2xl"
+                  />
+                </motion.div>
+              </motion.div>
+            </AnimatePresence>
+
+            {/* Indicators */}
+            <div className="flex gap-2 mt-6">
+              {heroSlides.map((_, i) => (
+                <span
+                  key={i}
+                  onClick={() => setIndex(i)}
+                  className={`h-2 w-8 rounded-full cursor-pointer transition ${
+                    i === index ? 'bg-cyan-400' : 'bg-white/20'
+                  }`}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* RIGHT FEATURE CARDS */}
+          <div className="flex xl:flex-col gap-6">
+            <div className="flex-1 rounded-2xl bg-gradient-to-br from-cyan-400/20 to-blue-500/10 p-6 backdrop-blur border border-white/10">
+              <h3 className="text-2xl font-semibold">Top Products</h3>
+              <p className="text-white/60 mt-2">
+                Curated premium tech
+              </p>
               <button
-                onClick={handleLearnMore}
-                className="bg-slate-800 text-white text-sm py-2.5 px-7 sm:py-5 sm:px-12 mt-4 sm:mt-10 rounded-md hover:bg-slate-900 hover:scale-105 active:scale-95 transition"
+                onClick={() => router.push('/shop')}
+                className="mt-4 text-cyan-400 flex items-center gap-2"
               >
-                LEARN MORE
+                Explore <ArrowRightIcon size={16} />
               </button>
             </div>
 
-            <motion.div
-              initial={{ scale: 0.9 }}
-              animate={{ scale: 1 }}
-              transition={{ duration: 0.6 }}
-            >
-              <Image
-                className="sm:absolute bottom-0 right-0 md:right-10 w-full sm:max-w-sm"
-                src={slide.image}
-                alt="Hero"
-              />
-            </motion.div>
-          </motion.div>
-        </AnimatePresence>
-
-        {/* RIGHT STATIC SECTION */}
-        <div className="flex flex-col md:flex-row xl:flex-col gap-5 w-full xl:max-w-sm text-sm text-slate-600">
-          <div className="flex-1 flex items-center justify-between bg-orange-200 rounded-3xl p-6 px-8 group">
-            <div>
-              <p className="text-3xl font-medium bg-gradient-to-r from-slate-800 to-[#FFAD51] bg-clip-text text-transparent max-w-40">
-                Best products
+            <div className="flex-1 rounded-2xl bg-gradient-to-br from-emerald-400/20 to-green-500/10 p-6 backdrop-blur border border-white/10">
+              <h3 className="text-2xl font-semibold">20% Off</h3>
+              <p className="text-white/60 mt-2">
+                Limited-time deals
               </p>
-              <p onClick={handleLearnMore} className="flex items-center gap-1 mt-4 cursor-pointer">
-                View more <ArrowRightIcon size={18} />
-              </p>
+              <button
+                onClick={() => router.push('/shop')}
+                className="mt-4 text-emerald-400 flex items-center gap-2"
+              >
+                Grab Now <ArrowRightIcon size={16} />
+              </button>
             </div>
-            <Image className="w-35" src={assets.hero_product_img1} alt="" />
-          </div>
-
-          <div className="flex-1 flex items-center justify-between bg-blue-200 rounded-3xl p-6 px-8 group">
-            <div>
-              <p className="text-3xl font-medium bg-gradient-to-r from-slate-800 to-[#78B2FF] bg-clip-text text-transparent max-w-40">
-                20% discounts
-              </p>
-              <p onClick={handleLearnMore} className="flex items-center gap-1 mt-4 cursor-pointer">
-                View more <ArrowRightIcon size={18} />
-              </p>
-            </div>
-            <Image className="w-35" src={assets.hero_product_img2} alt="" />
           </div>
         </div>
       </div>
 
       <CategoriesMarquee />
-    </div>
+    </section>
   )
 }
 
 export default Hero
-
