@@ -46,9 +46,13 @@ const ProductDescription = ({ product }) => {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 10 }}
                         transition={{ duration: 0.4 }}
-                        className="bg-gradient-to-tr from-gray-900/30 via-gray-800/30 to-gray-900/30 p-8 rounded-3xl shadow-xl backdrop-blur-md border border-gray-700 mb-8"
+                        className="relative bg-gradient-to-tr from-gray-900/30 via-gray-800/30 to-gray-900/30 p-8 rounded-3xl shadow-xl backdrop-blur-md border border-gray-700 mb-8"
                     >
-                        <p className="text-gray-300 text-lg leading-relaxed">{product.description}</p>
+                        {/* Dark overlay for text contrast */}
+                        <div className="absolute inset-0 bg-black/20 rounded-3xl"></div>
+                        <p className="relative text-white text-lg leading-relaxed drop-shadow-md">
+                            {product.description}
+                        </p>
                     </motion.div>
                 )}
 
@@ -62,22 +66,25 @@ const ProductDescription = ({ product }) => {
                         className="flex flex-col gap-6"
                     >
                         {product.rating.length === 0 && (
-                            <p className="text-gray-500 text-center py-6 italic">No reviews yet</p>
+                            <p className="text-gray-400 text-center py-6 italic">No reviews yet</p>
                         )}
                         {product.rating.map((item, index) => (
                             <motion.div
                                 key={index}
                                 whileHover={{ scale: 1.02 }}
-                                className="flex gap-4 p-5 rounded-2xl shadow-lg bg-gradient-to-r from-gray-800/40 to-gray-900/50 backdrop-blur-md border border-gray-700 transition-all duration-300"
+                                className="relative flex gap-4 p-5 rounded-2xl shadow-lg bg-gradient-to-r from-gray-800/40 to-gray-900/50 backdrop-blur-md border border-gray-700 transition-all duration-300"
                             >
+                                {/* Overlay for text visibility */}
+                                <div className="absolute inset-0 bg-black/20 rounded-2xl"></div>
+
                                 <Image
                                     src={item.user.image}
                                     alt={item.user.name}
                                     width={60}
                                     height={60}
-                                    className="rounded-full border border-gray-600"
+                                    className="relative z-10 rounded-full border border-gray-600"
                                 />
-                                <div className="flex-1">
+                                <div className="flex-1 relative z-10">
                                     <div className="flex items-center gap-2 mb-2">
                                         {Array(5).fill('').map((_, i) => (
                                             <StarIcon
@@ -87,10 +94,10 @@ const ProductDescription = ({ product }) => {
                                                 className="text-transparent"
                                             />
                                         ))}
-                                        <span className="text-gray-500 text-sm">{new Date(item.createdAt).toDateString()}</span>
+                                        <span className="text-gray-400 text-sm">{new Date(item.createdAt).toDateString()}</span>
                                     </div>
-                                    <p className="text-gray-300 mb-1">{item.review}</p>
-                                    <p className="font-medium text-white">{item.user.name}</p>
+                                    <p className="text-white mb-1 drop-shadow-md">{item.review}</p>
+                                    <p className="font-medium text-white drop-shadow-md">{item.user.name}</p>
                                 </div>
                             </motion.div>
                         ))}
@@ -99,19 +106,24 @@ const ProductDescription = ({ product }) => {
             </AnimatePresence>
 
             {/* Store Info */}
-            <div className="flex items-center gap-4 mt-12 p-6 bg-gradient-to-r from-purple-800/40 via-pink-800/40 to-red-800/40 rounded-3xl shadow-xl backdrop-blur-md border border-gray-700 transition-transform hover:scale-105 duration-300">
+            <div className="relative flex items-center gap-4 mt-12 p-6 rounded-3xl shadow-xl bg-gradient-to-r from-purple-700 via-pink-600 to-red-500 overflow-hidden transition-transform hover:scale-105 duration-300">
+                {/* Dark overlay for text contrast */}
+                <div className="absolute inset-0 bg-black/25 rounded-3xl"></div>
+
                 <Image
                     src={product.store.logo}
                     alt={product.store.name}
                     width={70}
                     height={70}
-                    className="rounded-full border border-gray-600"
+                    className="relative z-10 rounded-full border border-gray-600"
                 />
-                <div>
-                    <p className="text-gray-200 font-semibold text-lg">Product by {product.store.name}</p>
+                <div className="relative z-10">
+                    <p className="text-white font-semibold text-lg drop-shadow-md">
+                        Product by {product.store.name}
+                    </p>
                     <Link
                         href={`/shop/${product.store.username}`}
-                        className="inline-flex items-center gap-1 text-pink-400 font-semibold mt-1 hover:underline"
+                        className="inline-flex items-center gap-1 text-pink-300 font-semibold mt-1 hover:underline drop-shadow-md"
                     >
                         Visit Store <ArrowRight size={18} />
                     </Link>
