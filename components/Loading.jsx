@@ -20,7 +20,7 @@ const Loading = () => {
 
         {/* Text */}
         <p className="text-sm font-medium tracking-wide text-gray-200 animate-pulse">
-          Preparing your dashboard…
+          Preparing…
         </p>
       </div>
     </div>

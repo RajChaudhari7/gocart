@@ -10,62 +10,99 @@ import axios from "axios"
 import toast from "react-hot-toast"
 
 export default function StoreShop() {
-    const { username } = useParams()
-    const [products, setProducts] = useState([])
-    const [storeInfo, setStoreInfo] = useState(null)
-    const [loading, setLoading] = useState(true)
+  const { username } = useParams()
+  const [products, setProducts] = useState([])
+  const [storeInfo, setStoreInfo] = useState(null)
+  const [loading, setLoading] = useState(true)
 
-    const fetchStoreData = async () => {
-        try {
-            const { data } = await axios.get(`/api/store/data?username=${username}`)
-            setStoreInfo(data.store)
-            setProducts(data.store.Product)
-        } catch (error) {
-            toast.error(error?.response?.data?.error || error.message)
-        }
-        setLoading(false)
+  const fetchStoreData = async () => {
+    try {
+      const { data } = await axios.get(`/api/store/data?username=${username}`)
+      setStoreInfo(data.store)
+      setProducts(data.store.Product)
+    } catch (error) {
+      toast.error(error?.response?.data?.error || error.message)
     }
+    setLoading(false)
+  }
 
-    useEffect(() => { fetchStoreData() }, [])
+  useEffect(() => {
+    fetchStoreData()
+  }, [])
 
-    if (loading) return <Loading />
+  if (loading) return <Loading />
 
-    return (
-        <div className="min-h-[70vh] px-6 py-12 bg-gradient-to-b from-[#0f172a] to-[#020617] text-white">
-            {storeInfo && (
-                <div className="max-w-7xl mx-auto bg-white/5 backdrop-blur-lg rounded-3xl p-8 md:p-12 flex flex-col md:flex-row items-center gap-6 border border-white/10 shadow-xl">
-                    <Image
-                        src={storeInfo.logo}
-                        alt={storeInfo.name}
-                        width={200}
-                        height={200}
-                        className="rounded-xl border border-white/20 object-cover"
-                    />
-                    <div className="text-center md:text-left flex-1">
-                        <h1 className="text-3xl md:text-5xl font-bold text-white">{storeInfo.name}</h1>
-                        <p className="text-slate-300 mt-3 max-w-lg">{storeInfo.description}</p>
+  return (
+    <section className="min-h-[70vh] px-4 sm:px-6 py-12 bg-gradient-to-br from-[#020617] via-[#020617] to-black text-white animate-fade-in">
 
-                        <div className="mt-5 flex flex-col gap-2 text-slate-400 text-sm">
-                            <div className="flex items-center gap-2">
-                                <MapPinIcon className="w-4 h-4 text-slate-400" /> {storeInfo.address}
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <MailIcon className="w-4 h-4 text-slate-400" /> {storeInfo.email}
-                            </div>
-                        </div>
-                    </div>
+      {/* STORE HEADER */}
+      {storeInfo && (
+        <div className="max-w-7xl mx-auto bg-gradient-to-br from-white/10 to-white/5 
+                        backdrop-blur-xl rounded-3xl p-6 sm:p-10 
+                        flex flex-col md:flex-row items-center gap-8 
+                        border border-white/10 shadow-2xl">
+
+          {/* LOGO */}
+          <div className="relative w-40 h-40 sm:w-48 sm:h-48 rounded-2xl overflow-hidden border border-white/20">
+            <Image
+              src={storeInfo.logo}
+              alt={storeInfo.name}
+              fill
+              className="object-cover hover:scale-110 transition-transform duration-500"
+            />
+          </div>
+
+          {/* INFO */}
+          <div className="flex-1 text-center md:text-left">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold">
+              {storeInfo.name}
+            </h1>
+
+            <p className="text-slate-300 mt-4 max-w-xl mx-auto md:mx-0">
+              {storeInfo.description}
+            </p>
+
+            <div className="mt-6 flex flex-col gap-3 text-slate-400 text-sm">
+              {storeInfo.address && (
+                <div className="flex items-center justify-center md:justify-start gap-2">
+                  <MapPinIcon size={16} />
+                  <span>{storeInfo.address}</span>
                 </div>
-            )}
+              )}
 
-            {/* Products */}
-            <div className="max-w-7xl mx-auto mt-12">
-                <h2 className="text-2xl md:text-3xl font-semibold text-white mb-6">Shop Products</h2>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
-                    {products.map(product => (
-                        <ProductCard key={product.id} product={product} theme="dark" />
-                    ))}
+              {storeInfo.email && (
+                <div className="flex items-center justify-center md:justify-start gap-2">
+                  <MailIcon size={16} />
+                  <span>{storeInfo.email}</span>
                 </div>
+              )}
             </div>
+          </div>
         </div>
-    )
+      )}
+
+      {/* PRODUCTS */}
+      <div className="max-w-7xl mx-auto mt-16">
+        <h2 className="text-2xl sm:text-3xl font-semibold mb-8">
+          Shop Products
+        </h2>
+
+        {products.length === 0 ? (
+          <p className="text-slate-400 text-center py-20">
+            No products available
+          </p>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6 sm:gap-8">
+            {products.map(product => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                theme="dark"
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </section>
+  )
 }
