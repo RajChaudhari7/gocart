@@ -1,177 +1,274 @@
 'use client'
 
 import {
+  PackageIcon,
   Search,
   ShoppingCart,
+  Menu,
+  X,
   HomeIcon,
-  PackageIcon,
-  Info,
-  Phone,
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
-import { useUser, useClerk, UserButton } from '@clerk/nextjs'
+import { useUser, useClerk, UserButton, Protect } from '@clerk/nextjs'
+import { motion, AnimatePresence } from 'framer-motion'
 
-export default function Navbar() {
+/* ================= ANIMATION VARIANTS ================= */
+
+const cartPulse = {
+  idle: { scale: 1 },
+  active: {
+    scale: [1, 1.2, 1],
+    transition: { duration: 0.4 }
+  }
+}
+
+const drawerVariants = {
+  hidden: { x: '100%' },
+  visible: {
+    x: 0,
+    transition: { type: 'spring', stiffness: 260, damping: 25 }
+  },
+  exit: { x: '100%', transition: { duration: 0.2 } }
+}
+
+/* ================= NAVBAR ================= */
+
+const Navbar = () => {
   const { user } = useUser()
   const { openSignIn } = useClerk()
   const router = useRouter()
   const pathname = usePathname()
+
   const cartCount = useSelector(state => state.cart.total)
 
+  const prevCartCount = useRef(cartCount)
+  const [pulse, setPulse] = useState(false)
+
   const [search, setSearch] = useState('')
+  const [menuOpen, setMenuOpen] = useState(false)
 
-  const handleSearch = e => {
-    if (e.key === 'Enter' && search.trim()) {
-      router.push(`/shop?search=${search}`)
-      setSearch('')
+  /* ===== SMART CART SYNC ===== */
+  useEffect(() => {
+    if (cartCount !== prevCartCount.current) {
+      setPulse(true)
+      prevCartCount.current = cartCount
+
+      const timer = setTimeout(() => setPulse(false), 400)
+      return () => clearTimeout(timer)
     }
+  }, [cartCount])
+
+  const handleSearch = (e) => {
+    e.preventDefault()
+    if (!search.trim()) return
+    router.push(`/shop?search=${search}`)
+    setMenuOpen(false)
   }
 
-  const breadcrumbMap = {
-    shop: 'Shop',
-    orders: 'Orders',
-    about: 'About',
-    contact: 'Contact',
-  }
+  const desktopLinks = [
+    { name: 'Home', href: '/' },
+    { name: 'Shop', href: '/shop' },
+    { name: 'About', href: '/about' },
+    { name: 'Contact', href: '/contact' },
+    { name: 'Orders', href: '/orders' },
+  ]
+
+  const mobileLinks = [
+    { id: 'home', href: '/', icon: <HomeIcon size={18} />, label: 'Home' },
+    { id: 'shop', href: '/shop', icon: <Search size={18} />, label: 'Shop' },
+    { id: 'orders', href: '/orders', icon: <PackageIcon size={18} />, label: 'Orders' },
+    { id: 'cart', href: '/cart', icon: <ShoppingCart size={18} />, label: 'Cart' },
+  ]
 
   return (
     <>
-      {/* ================= TOP NAV ================= */}
-      <nav className="fixed top-0 inset-x-0 z-50
-        bg-black/80 backdrop-blur-xl border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-4 py-4
-          flex items-center justify-between gap-4">
+      {/* ================= DESKTOP NAV ================= */}
+      <nav className="hidden sm:block backdrop-blur-xl bg-black/60 border-b border-white/10">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
 
           {/* LOGO */}
-          <Link href="/" className="text-2xl font-semibold text-white">
+          <Link href="/" className="relative text-2xl font-semibold text-white">
             <span className="text-cyan-400">Global</span>Mart
             <span className="text-cyan-400">.</span>
+            <Protect plan="prime">
+              <span className="absolute -top-2 -right-10 text-xs px-2 py-0.5
+                bg-gradient-to-r from-cyan-400 to-emerald-400 text-black rounded-full">
+                prime
+              </span>
+            </Protect>
           </Link>
 
-          {/* DESKTOP LINKS */}
-          <div className="hidden md:flex items-center gap-6 text-sm text-white/80">
-            <Link href="/" className="hover:text-cyan-400">Home</Link>
-            <Link href="/shop" className="hover:text-cyan-400">Shop</Link>
-            <Link href="/orders" className="hover:text-cyan-400">Orders</Link>
-            <Link href="/about" className="hover:text-cyan-400">About</Link>
-            <Link href="/contact" className="hover:text-cyan-400">Contact</Link>
-          </div>
+          {/* MENU */}
+          <div className="flex items-center gap-6 text-white/70">
 
-          {/* SEARCH */}
-          <div className="relative hidden md:block w-72">
-            <Search
-              size={16}
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40"
-            />
-            <input
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              onKeyDown={handleSearch}
-              placeholder="Search products"
-              className="w-full pl-10 pr-4 py-2 rounded-full
-              bg-white/10 text-white placeholder-white/40 outline-none"
-            />
-          </div>
+            {desktopLinks.map(link => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`relative px-2 py-1 transition
+                  ${pathname === link.href ? 'text-cyan-400' : 'hover:text-cyan-400'}`}
+              >
+                {link.name}
+                {pathname === link.href && (
+                  <motion.span
+                    layoutId="nav-underline"
+                    className="absolute -bottom-1 left-0 w-full h-[2px] bg-cyan-400 rounded"
+                  />
+                )}
+              </Link>
+            ))}
 
-          {/* CART + AUTH */}
-          <div className="flex items-center gap-4">
-            <Link href="/cart" className="relative text-white">
-              <ShoppingCart size={20} />
-              {cartCount > 0 && (
-                <span className="absolute -top-2 -right-2 text-xs
-                  bg-cyan-400 text-black px-1.5 rounded-full">
-                  {cartCount}
-                </span>
-              )}
+            {/* SEARCH */}
+            <form
+              onSubmit={handleSearch}
+              className="hidden xl:flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full"
+            >
+              <Search size={16} />
+              <input
+                className="bg-transparent outline-none text-sm text-white placeholder-white/50"
+                placeholder="Search products"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+              />
+            </form>
+
+            {/* CART */}
+            <Link href="/cart" className="relative">
+              <motion.div
+                variants={cartPulse}
+                animate={pulse ? 'active' : 'idle'}
+                className="flex items-center gap-1"
+              >
+                <ShoppingCart size={18} />
+                Cart
+              </motion.div>
+
+              <AnimatePresence>
+                {cartCount > 0 && (
+                  <motion.span
+                    key={cartCount}
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    exit={{ scale: 0 }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 18 }}
+                    className="absolute -top-2 -right-3 text-xs px-1.5 rounded-full
+                    bg-gradient-to-r from-cyan-400 to-emerald-400 text-black"
+                  >
+                    {cartCount}
+                  </motion.span>
+                )}
+              </AnimatePresence>
             </Link>
 
+            {/* AUTH */}
             {!user ? (
               <button
                 onClick={openSignIn}
-                className="hidden sm:block px-5 py-2 rounded-full
-                bg-gradient-to-r from-cyan-400 to-emerald-400
-                text-black font-medium">
-                Sign in
+                className="px-5 py-2 rounded-full
+                bg-gradient-to-r from-cyan-400 to-emerald-400 text-black font-medium"
+              >
+                Login
               </button>
             ) : (
               <UserButton />
             )}
           </div>
         </div>
-
-        {/* BREADCRUMB */}
-        {pathname !== '/' && (
-          <div className="max-w-7xl mx-auto px-4 py-2
-            text-sm text-white/50">
-            <Link href="/" className="hover:text-cyan-400">
-              Home
-            </Link>
-            {pathname.split('/').map((seg, i) =>
-              seg && (
-                <span key={i}>
-                  {' / '}
-                  <span className="text-white">
-                    {breadcrumbMap[seg] || seg}
-                  </span>
-                </span>
-              )
-            )}
-          </div>
-        )}
       </nav>
 
-      {/* ================= MOBILE TOP SEARCH ================= */}
-      <div className="md:hidden fixed top-[72px] inset-x-0 z-40
-        px-4 py-3 bg-black/80 backdrop-blur border-b border-white/10">
-        <input
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          onKeyDown={handleSearch}
-          placeholder="Search products"
-          className="w-full px-4 py-3 rounded-xl
-          bg-white/10 text-white placeholder-white/40 outline-none"
-        />
-      </div>
-
       {/* ================= MOBILE BOTTOM NAV ================= */}
-      <div className="md:hidden fixed bottom-0 inset-x-0 z-50
-        bg-black/90 backdrop-blur border-t border-white/10">
+      <div className="sm:hidden fixed bottom-0 inset-x-0 z-50
+        bg-black/70 backdrop-blur-xl border-t border-white/10">
         <div className="flex justify-around py-2 text-xs text-white/70">
+          {mobileLinks.map(link => (
+            <Link
+              key={link.id}
+              href={link.href}
+              className="relative flex flex-col items-center gap-1"
+            >
+              <motion.div
+                variants={cartPulse}
+                animate={link.id === 'cart' && pulse ? 'active' : 'idle'}
+              >
+                {link.icon}
+              </motion.div>
 
-          <Link href="/" className="flex flex-col items-center gap-1">
-            <HomeIcon size={18} />
-            Home
-          </Link>
+              {link.label}
 
-          <Link href="/shop" className="flex flex-col items-center gap-1">
-            <PackageIcon size={18} />
-            Shop
-          </Link>
+              <AnimatePresence>
+                {link.id === 'cart' && cartCount > 0 && (
+                  <motion.span
+                    key={cartCount}
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    exit={{ scale: 0 }}
+                    className="absolute -top-1 right-2 text-[10px] px-1 rounded-full
+                    bg-gradient-to-r from-cyan-400 to-emerald-400 text-black"
+                  >
+                    {cartCount}
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </Link>
+          ))}
 
-          <Link href="/cart" className="relative flex flex-col items-center gap-1">
-            <ShoppingCart size={18} />
-            Cart
-            {cartCount > 0 && (
-              <span className="absolute -top-1 right-3 text-[10px]
-                bg-cyan-400 text-black px-1 rounded-full">
-                {cartCount}
-              </span>
-            )}
-          </Link>
-
-          <Link href="/orders" className="flex flex-col items-center gap-1">
-            <PackageIcon size={18} />
-            Orders
-          </Link>
+          <button
+            onClick={() => setMenuOpen(true)}
+            className="flex flex-col items-center gap-1"
+          >
+            <Menu size={18} />
+            Menu
+          </button>
         </div>
       </div>
 
-      {/* SPACERS */}
-      <div className="h-[140px] md:h-[96px]" />
-      <div className="md:hidden h-16" />
+      {/* ================= MOBILE DRAWER ================= */}
+      <AnimatePresence>
+        {menuOpen && (
+          <>
+            <motion.div
+              className="fixed inset-0 bg-black/50 z-40"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setMenuOpen(false)}
+            />
+
+            <motion.div
+              className="fixed top-0 right-0 h-full w-72
+              bg-black/90 backdrop-blur-xl z-50 p-6"
+              variants={drawerVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+            >
+              <div className="flex justify-between mb-6">
+                <h3 className="text-lg text-white font-semibold">Menu</h3>
+                <button onClick={() => setMenuOpen(false)}>
+                  <X size={22} className="text-white" />
+                </button>
+              </div>
+
+              <div className="flex flex-col gap-5 text-white/70">
+                {desktopLinks.map(link => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    {link.name}
+                  </Link>
+                ))}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </>
   )
 }
+
+export default Navbar
