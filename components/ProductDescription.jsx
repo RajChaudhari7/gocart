@@ -15,41 +15,32 @@ const ProductDescription = ({ product }) => {
         <div className="my-14 px-6 max-w-7xl mx-auto text-gray-900">
 
             {/* PREMIUM TABS */}
-            <div className="relative flex gap-8 border-b border-gray-200 mb-12 max-w-md">
+            <div className="flex gap-8 border-b border-gray-200 mb-12">
                 {tabs.map((tab) => (
                     <button
                         key={tab}
                         onClick={() => setSelectedTab(tab)}
-                        className={`relative pb-3 text-sm font-semibold transition-all duration-300
-                            ${
-                                selectedTab === tab
-                                    ? 'bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent'
-                                    : 'text-gray-400 hover:text-gray-700'
+                        className={`relative pb-3 text-sm font-semibold transition-colors duration-300
+                ${selectedTab === tab
+                                ? 'bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent'
+                                : 'text-gray-400 hover:text-gray-700'
                             }
-                        `}
+            `}
                     >
                         {tab}
 
-                        {/* ACTIVE DOT */}
+                        {/* PERFECTLY SIZED ACTIVE BAR */}
                         {selectedTab === tab && (
                             <motion.span
-                                layoutId="active-dot"
-                                className="absolute -bottom-[6px] left-1/2 h-2 w-2 -translate-x-1/2 rounded-full bg-gradient-to-r from-purple-600 to-pink-500"
+                                layoutId="active-underline"
+                                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                                className="absolute left-0 -bottom-[2px] h-[3px] w-full rounded-full bg-gradient-to-r from-purple-600 via-pink-500 to-red-500"
                             />
                         )}
                     </button>
                 ))}
-
-                {/* SLIDING UNDERLINE */}
-                <motion.div
-                    layout
-                    transition={{ type: "spring", stiffness: 450, damping: 35 }}
-                    className="absolute bottom-0 h-[3px] w-1/2 rounded-full bg-gradient-to-r from-purple-600 via-pink-500 to-red-500"
-                    style={{
-                        left: selectedTab === 'Description' ? '0%' : '50%',
-                    }}
-                />
             </div>
+
 
             {/* TAB CONTENT */}
             <AnimatePresence mode="wait">
