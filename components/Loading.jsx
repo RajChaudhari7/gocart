@@ -1,12 +1,13 @@
 'use client'
 
 const Loading = () => {
-
-    return (
-        <div className='flex items-center justify-center h-screen'>
-            <div className='w-11 h-11 rounded-full border-3 border-gray-300 border-t-green-500 animate-spin'></div>
-        </div>
-    )
+  return (
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="w-12 h-12 rounded-full bg-gradient-to-r from-green-400 to-green-600 animate-spin p-1">
+        <div className="w-full h-full bg-white rounded-full" />
+      </div>
+    </div>
+  )
 }
 
 export default Loading
