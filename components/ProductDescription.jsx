@@ -18,8 +18,10 @@ const ProductDescription = ({ product }) => {
                     <button
                         key={index}
                         onClick={() => setSelectedTab(tab)}
-                        className={`px-6 py-3 text-sm font-semibold transition-colors z-10 ${
-                            tab === selectedTab ? 'text-white' : 'text-gray-400 hover:text-white'
+                        className={`px-6 py-3 text-sm font-semibold transition-colors z-10 relative ${
+                            tab === selectedTab 
+                                ? 'text-white drop-shadow-[0_0_6px_rgba(255,255,255,0.8)]' 
+                                : 'text-gray-400 hover:text-white'
                         }`}
                     >
                         {tab}
@@ -87,12 +89,16 @@ const ProductDescription = ({ product }) => {
                                 <div className="flex-1 relative z-10">
                                     <div className="flex items-center gap-2 mb-2">
                                         {Array(5).fill('').map((_, i) => (
-                                            <StarIcon
+                                            <motion.div
                                                 key={i}
-                                                size={16}
-                                                fill={item.rating >= i + 1 ? "#FFD700" : "#555555"}
-                                                className="text-transparent"
-                                            />
+                                                whileHover={{ scale: 1.3, filter: "drop-shadow(0 0 8px #FFD700)" }}
+                                            >
+                                                <StarIcon
+                                                    size={16}
+                                                    fill={item.rating >= i + 1 ? "#FFD700" : "#555555"}
+                                                    className="text-transparent"
+                                                />
+                                            </motion.div>
                                         ))}
                                         <span className="text-gray-400 text-sm">{new Date(item.createdAt).toDateString()}</span>
                                     </div>
