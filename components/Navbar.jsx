@@ -16,11 +16,14 @@ import { useUser, useClerk, UserButton, Protect } from '@clerk/nextjs'
 import { motion, AnimatePresence } from 'framer-motion'
 
 const navVariants = {
-  visible: { y: 0 },
-  hidden: { y: '-100%' },
+  hidden: { y: -100 },
+  visible: {
+    y: 0,
+    transition: { duration: 0.3, ease: 'easeOut' },
+  },
 }
 
-const Navbar = () => {
+export default function Navbar() {
   const { user } = useUser()
   const { openSignIn } = useClerk()
   const router = useRouter()
@@ -34,15 +37,15 @@ const Navbar = () => {
 
   const lastScroll = useRef(0)
 
-  /* ===== HIDE ON SCROLL ===== */
   useEffect(() => {
     const handleScroll = () => {
-      if (window.scrollY > lastScroll.current && window.scrollY > 80) {
+      const current = window.scrollY
+      if (current > lastScroll.current && current > 80) {
         setShowNav(false)
       } else {
         setShowNav(true)
       }
-      lastScroll.current = window.scrollY
+      lastScroll.current = current
     }
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
@@ -55,75 +58,65 @@ const Navbar = () => {
     setSearchOpen(false)
   }
 
-  const suggestions = [
-    'Wireless Earbuds',
-    'Smart Watch',
-    'Hoodies',
-    'Headphones',
-    'Gaming Mouse',
-  ]
-
   return (
     <>
       {/* ================= TOP NAV ================= */}
       <motion.nav
         variants={navVariants}
+        initial="visible"
         animate={showNav ? 'visible' : 'hidden'}
-        className="fixed top-0 inset-x-0 z-40
-        bg-black/70 backdrop-blur-xl border-b border-white/10"
+        className="fixed top-0 inset-x-0 z-50
+        bg-black/80 backdrop-blur-xl border-b border-white/10"
       >
-        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+        <div className="max-w-7xl mx-auto px-4 py-4
+        flex items-center justify-between">
 
           {/* LOGO */}
-          <Link href="/" className="relative text-2xl font-semibold text-white">
+          <Link href="/" className="relative text-2xl font-semibold">
             <span className="text-cyan-400">Global</span>Mart
             <span className="text-cyan-400">.</span>
+
             <Protect plan="prime">
               <span className="absolute -top-2 -right-10 text-xs px-2 py-0.5
-                bg-gradient-to-r from-cyan-400 to-emerald-400 text-black rounded-full">
+              bg-gradient-to-r from-cyan-400 to-emerald-400
+              text-black rounded-full">
                 prime
               </span>
             </Protect>
           </Link>
 
           {/* DESKTOP SEARCH */}
-          <div className="relative hidden md:block w-72">
+          <div className="hidden md:block relative w-80">
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Search products"
               className="w-full px-4 py-2 rounded-full
-              bg-white/10 text-white outline-none"
+              bg-white/10 text-white
+              placeholder-white/40
+              caret-cyan-400
+              outline-none"
             />
-
-            {/* SUGGESTIONS */}
-            {search.length > 1 && (
-              <div className="absolute top-11 w-full bg-black/90
-              border border-white/10 rounded-xl overflow-hidden">
-                {suggestions
-                  .filter(item =>
-                    item.toLowerCase().includes(search.toLowerCase())
-                  )
-                  .map(item => (
-                    <button
-                      key={item}
-                      onClick={() => handleSearch(item)}
-                      className="w-full text-left px-4 py-3 hover:bg-white/10"
-                    >
-                      {item}
-                    </button>
-                  ))}
-              </div>
-            )}
           </div>
 
           {/* AUTH */}
-          <div className="hidden sm:flex gap-4 items-center">
+          <div className="hidden sm:flex items-center gap-4">
+            <Link href="/cart" className="relative">
+              <ShoppingCart size={20} />
+              {cartCount > 0 && (
+                <span className="absolute -top-2 -right-2 text-xs
+                bg-cyan-400 text-black px-1.5 rounded-full">
+                  {cartCount}
+                </span>
+              )}
+            </Link>
+
             {!user ? (
               <button
                 onClick={openSignIn}
                 className="px-5 py-2 rounded-full
-                bg-gradient-to-r from-cyan-400 to-emerald-400 text-black"
+                bg-gradient-to-r from-cyan-400 to-emerald-400
+                text-black font-medium"
               >
                 Login
               </button>
@@ -136,21 +129,25 @@ const Navbar = () => {
 
       {/* ================= MOBILE BOTTOM NAV ================= */}
       <div className="sm:hidden fixed bottom-0 inset-x-0 z-50
-        bg-black/80 backdrop-blur-xl border-t border-white/10">
-        <div className="flex justify-around py-2 text-xs text-white/70">
+      bg-black/90 backdrop-blur-xl border-t border-white/10">
+        <div className="flex justify-around py-2 text-xs">
+
           {[
-            { id: 'home', href: '/', icon: <HomeIcon size={18} />, label: 'Home' },
-            { id: 'search', icon: <Search size={18} />, label: 'Search' },
-            { id: 'cart', href: '/cart', icon: <ShoppingCart size={18} />, label: 'Cart' },
-          ].map(item =>
+            { href: '/', icon: <HomeIcon size={18} />, label: 'Home' },
+            { icon: <Search size={18} />, label: 'Search', action: () => setSearchOpen(true) },
+            { href: '/cart', icon: <ShoppingCart size={18} />, label: 'Cart' },
+          ].map((item, i) =>
             item.href ? (
-              <Link key={item.id} href={item.href}
-                className={`flex flex-col items-center gap-1
-                ${pathname === item.href ? 'text-cyan-400' : ''}`}>
+              <Link
+                key={i}
+                href={item.href}
+                className={`relative flex flex-col items-center gap-1
+                ${pathname === item.href ? 'text-cyan-400' : 'text-white/70'}`}
+              >
                 {item.icon}
                 {item.label}
-                {item.id === 'cart' && cartCount > 0 && (
-                  <span className="absolute top-1 right-4 text-[10px]
+                {item.label === 'Cart' && cartCount > 0 && (
+                  <span className="absolute -top-1 right-2 text-[10px]
                   bg-cyan-400 text-black px-1 rounded-full">
                     {cartCount}
                   </span>
@@ -158,9 +155,9 @@ const Navbar = () => {
               </Link>
             ) : (
               <button
-                key={item.id}
-                onClick={() => setSearchOpen(true)}
-                className="flex flex-col items-center gap-1"
+                key={i}
+                onClick={item.action}
+                className="flex flex-col items-center gap-1 text-white/70"
               >
                 {item.icon}
                 {item.label}
@@ -168,22 +165,24 @@ const Navbar = () => {
             )
           )}
 
-          <button onClick={() => setMenuOpen(true)}
-            className="flex flex-col items-center gap-1">
+          <button
+            onClick={() => setMenuOpen(true)}
+            className="flex flex-col items-center gap-1 text-white/70"
+          >
             <Menu size={18} />
             Menu
           </button>
         </div>
       </div>
 
-      {/* ================= MOBILE SEARCH MODAL ================= */}
+      {/* ================= MOBILE SEARCH ================= */}
       <AnimatePresence>
         {searchOpen && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/70 z-50 p-6"
+            className="fixed inset-0 bg-black/80 z-50 p-6"
           >
             <input
               autoFocus
@@ -191,49 +190,12 @@ const Navbar = () => {
               onChange={e => setSearch(e.target.value)}
               placeholder="Search products..."
               className="w-full px-4 py-3 rounded-xl
-              bg-white/10 text-white outline-none"
+              bg-white/10 text-white
+              placeholder-white/40 outline-none"
             />
-            <div className="mt-4 space-y-2">
-              {suggestions
-                .filter(i => i.toLowerCase().includes(search.toLowerCase()))
-                .map(i => (
-                  <button
-                    key={i}
-                    onClick={() => handleSearch(i)}
-                    className="block w-full text-left px-4 py-3
-                    bg-white/5 rounded-lg"
-                  >
-                    {i}
-                  </button>
-                ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ================= MOBILE DRAWER ================= */}
-      <AnimatePresence>
-        {menuOpen && (
-          <motion.div
-            initial={{ x: '100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '100%' }}
-            className="fixed top-0 right-0 h-full w-72
-            bg-black/90 z-50 p-6"
-          >
-            <button onClick={() => setMenuOpen(false)}>
-              <X size={22} />
-            </button>
-            <div className="mt-6 flex flex-col gap-4">
-              <Link href="/">Home</Link>
-              <Link href="/shop">Shop</Link>
-              <Link href="/orders">Orders</Link>
-            </div>
           </motion.div>
         )}
       </AnimatePresence>
     </>
   )
 }
-
-export default Navbar
