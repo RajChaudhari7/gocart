@@ -21,17 +21,17 @@ const cartPulse = {
   idle: { scale: 1 },
   active: {
     scale: [1, 1.2, 1],
-    transition: { duration: 0.4 }
-  }
+    transition: { duration: 0.4 },
+  },
 }
 
 const drawerVariants = {
   hidden: { x: '100%' },
   visible: {
     x: 0,
-    transition: { type: 'spring', stiffness: 260, damping: 25 }
+    transition: { type: 'spring', stiffness: 260, damping: 25 },
   },
-  exit: { x: '100%', transition: { duration: 0.2 } }
+  exit: { x: '100%', transition: { duration: 0.2 } },
 }
 
 /* ================= NAVBAR ================= */
@@ -42,7 +42,7 @@ const Navbar = () => {
   const router = useRouter()
   const pathname = usePathname()
 
-  const cartCount = useSelector(state => state.cart.total)
+  const cartCount = useSelector((state) => state.cart.total)
 
   const prevCartCount = useRef(cartCount)
   const [pulse, setPulse] = useState(false)
@@ -50,12 +50,13 @@ const Navbar = () => {
   const [search, setSearch] = useState('')
   const [menuOpen, setMenuOpen] = useState(false)
 
-  /* ===== SMART CART SYNC ===== */
+  const isActive = (href) => pathname === href
+
+  /* ===== CART PULSE ===== */
   useEffect(() => {
     if (cartCount !== prevCartCount.current) {
       setPulse(true)
       prevCartCount.current = cartCount
-
       const timer = setTimeout(() => setPulse(false), 400)
       return () => clearTimeout(timer)
     }
@@ -85,6 +86,47 @@ const Navbar = () => {
 
   return (
     <>
+      {/* ================= MOBILE TOP NAV ================= */}
+      <nav className="sm:hidden sticky top-0 z-50
+        bg-black/70 backdrop-blur-xl border-b border-white/10">
+        <div className="flex items-center justify-between px-4 py-3">
+
+          {/* LOGO */}
+          <Link href="/" className="text-lg font-semibold text-white">
+            <span className="text-cyan-400">Global</span>Mart
+            <span className="text-cyan-400">.</span>
+          </Link>
+
+          {/* SEARCH */}
+          <form
+            onSubmit={handleSearch}
+            className="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-full"
+          >
+            <Search size={14} />
+            <input
+              className="bg-transparent outline-none text-sm w-24
+              text-white placeholder-white/50"
+              placeholder="Search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </form>
+
+          {/* AUTH */}
+          {!user ? (
+            <button
+              onClick={openSignIn}
+              className="text-sm px-3 py-1.5 rounded-full
+              bg-gradient-to-r from-cyan-400 to-emerald-400 text-black"
+            >
+              Login
+            </button>
+          ) : (
+            <UserButton />
+          )}
+        </div>
+      </nav>
+
       {/* ================= DESKTOP NAV ================= */}
       <nav className="hidden sm:block backdrop-blur-xl bg-black/60 border-b border-white/10">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
@@ -94,8 +136,10 @@ const Navbar = () => {
             <span className="text-cyan-400">Global</span>Mart
             <span className="text-cyan-400">.</span>
             <Protect plan="prime">
-              <span className="absolute -top-2 -right-10 text-xs px-2 py-0.5
-                bg-gradient-to-r from-cyan-400 to-emerald-400 text-black rounded-full">
+              <span
+                className="absolute -top-2 -right-10 text-xs px-2 py-0.5
+                bg-gradient-to-r from-cyan-400 to-emerald-400 text-black rounded-full"
+              >
                 prime
               </span>
             </Protect>
@@ -104,18 +148,22 @@ const Navbar = () => {
           {/* MENU */}
           <div className="flex items-center gap-6 text-white/70">
 
-            {desktopLinks.map(link => (
+            {desktopLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
                 className={`relative px-2 py-1 transition
-                  ${pathname === link.href ? 'text-cyan-400' : 'hover:text-cyan-400'}`}
+                ${isActive(link.href)
+                    ? 'text-cyan-400'
+                    : 'hover:text-cyan-400'
+                  }`}
               >
                 {link.name}
-                {pathname === link.href && (
+                {isActive(link.href) && (
                   <motion.span
                     layoutId="nav-underline"
-                    className="absolute -bottom-1 left-0 w-full h-[2px] bg-cyan-400 rounded"
+                    className="absolute -bottom-1 left-0 w-full h-[2px]
+                    bg-cyan-400 rounded"
                   />
                 )}
               </Link>
@@ -124,14 +172,16 @@ const Navbar = () => {
             {/* SEARCH */}
             <form
               onSubmit={handleSearch}
-              className="hidden xl:flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full"
+              className="hidden xl:flex items-center gap-2
+              bg-white/10 px-4 py-2 rounded-full"
             >
               <Search size={16} />
               <input
-                className="bg-transparent outline-none text-sm text-white placeholder-white/50"
+                className="bg-transparent outline-none text-sm
+                text-white placeholder-white/50"
                 placeholder="Search products"
                 value={search}
-                onChange={e => setSearch(e.target.value)}
+                onChange={(e) => setSearch(e.target.value)}
               />
             </form>
 
@@ -168,7 +218,8 @@ const Navbar = () => {
               <button
                 onClick={openSignIn}
                 className="px-5 py-2 rounded-full
-                bg-gradient-to-r from-cyan-400 to-emerald-400 text-black font-medium"
+                bg-gradient-to-r from-cyan-400 to-emerald-400
+                text-black font-medium"
               >
                 Login
               </button>
@@ -180,15 +231,29 @@ const Navbar = () => {
       </nav>
 
       {/* ================= MOBILE BOTTOM NAV ================= */}
-      <div className="sm:hidden fixed bottom-0 inset-x-0 z-50
-        bg-black/70 backdrop-blur-xl border-t border-white/10">
-        <div className="flex justify-around py-2 text-xs text-white/70">
-          {mobileLinks.map(link => (
+      <div
+        className="sm:hidden fixed bottom-0 inset-x-0 z-50
+        bg-black/70 backdrop-blur-xl border-t border-white/10"
+      >
+        <div className="flex justify-around py-2 text-xs">
+          {mobileLinks.map((link) => (
             <Link
               key={link.id}
               href={link.href}
-              className="relative flex flex-col items-center gap-1"
+              className={`relative flex flex-col items-center gap-1
+              ${isActive(link.href)
+                  ? 'text-cyan-400'
+                  : 'text-white/70'
+                }`}
             >
+              {isActive(link.href) && (
+                <motion.span
+                  layoutId="mobile-active"
+                  className="absolute -top-1 w-8 h-1 rounded-full
+                  bg-gradient-to-r from-cyan-400 to-emerald-400"
+                />
+              )}
+
               <motion.div
                 variants={cartPulse}
                 animate={link.id === 'cart' && pulse ? 'active' : 'idle'}
@@ -205,7 +270,8 @@ const Navbar = () => {
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     exit={{ scale: 0 }}
-                    className="absolute -top-1 right-2 text-[10px] px-1 rounded-full
+                    className="absolute -top-1 right-2 text-[10px]
+                    px-1 rounded-full
                     bg-gradient-to-r from-cyan-400 to-emerald-400 text-black"
                   >
                     {cartCount}
@@ -217,7 +283,7 @@ const Navbar = () => {
 
           <button
             onClick={() => setMenuOpen(true)}
-            className="flex flex-col items-center gap-1"
+            className="flex flex-col items-center gap-1 text-white/70"
           >
             <Menu size={18} />
             Menu
@@ -253,7 +319,7 @@ const Navbar = () => {
               </div>
 
               <div className="flex flex-col gap-5 text-white/70">
-                {desktopLinks.map(link => (
+                {desktopLinks.map((link) => (
                   <Link
                     key={link.href}
                     href={link.href}
