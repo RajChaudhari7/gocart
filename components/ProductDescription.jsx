@@ -13,12 +13,12 @@ const ProductDescription = ({ product }) => {
         <div className="my-14 px-6 max-w-7xl mx-auto text-white">
 
             {/* Tabs with sliding indicator */}
-            <div className="relative flex border-b border-gray-700 mb-10 max-w-xs">
+            <div className="relative flex border-b border-gray-700 mb-10 max-w-xs z-20">
                 {['Description', 'Reviews'].map((tab, index) => (
                     <button
                         key={index}
                         onClick={() => setSelectedTab(tab)}
-                        className={`px-6 py-3 text-sm font-semibold transition-colors z-10 relative ${
+                        className={`px-6 py-3 text-sm font-semibold transition-colors relative z-10 ${
                             tab === selectedTab 
                                 ? 'text-white drop-shadow-[0_0_6px_rgba(255,255,255,0.8)]' 
                                 : 'text-gray-400 hover:text-white'
@@ -31,7 +31,7 @@ const ProductDescription = ({ product }) => {
                 <motion.div
                     layout
                     transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                    className="absolute bottom-0 h-1 rounded-full bg-gradient-to-r from-purple-600 via-pink-500 to-red-500"
+                    className="absolute bottom-0 h-1 rounded-full bg-gradient-to-r from-purple-600 via-pink-500 to-red-500 z-0"
                     style={{
                         width: '50%',
                         left: selectedTab === 'Description' ? '0%' : '50%',
@@ -52,7 +52,7 @@ const ProductDescription = ({ product }) => {
                     >
                         {/* Dark overlay for text contrast */}
                         <div className="absolute inset-0 bg-black/20 rounded-3xl"></div>
-                        <p className="relative text-white text-lg leading-relaxed drop-shadow-md">
+                        <p className="relative z-10 text-white text-lg leading-relaxed drop-shadow-md">
                             {product.description}
                         </p>
                     </motion.div>
@@ -65,7 +65,7 @@ const ProductDescription = ({ product }) => {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 10 }}
                         transition={{ duration: 0.4 }}
-                        className="flex flex-col gap-6"
+                        className="flex flex-col gap-6 relative z-10"
                     >
                         {product.rating.length === 0 && (
                             <p className="text-gray-400 text-center py-6 italic">No reviews yet</p>
