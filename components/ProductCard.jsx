@@ -1,12 +1,9 @@
 'use client'
-
 import { StarIcon, ShoppingCart, Eye } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useDispatch } from 'react-redux'
-import { addToCart } from '../redux/cartSlice' // ✅ RELATIVE PATH (IMPORTANT)
 
 /* ---------------- TOAST ---------------- */
 const Toast = ({ message }) => (
@@ -22,12 +19,11 @@ const Toast = ({ message }) => (
 )
 
 const ProductCard = ({ product }) => {
-  const dispatch = useDispatch()
   const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '₹'
   const [showToast, setShowToast] = useState(false)
 
   const rating =
-    product.rating?.length > 0
+    product.rating.length > 0
       ? Math.round(
           product.rating.reduce((acc, curr) => acc + curr.rating, 0) /
             product.rating.length
@@ -39,12 +35,7 @@ const ProductCard = ({ product }) => {
     e.preventDefault()
     e.stopPropagation()
 
-    dispatch(
-      addToCart({
-        productId: product.id,
-        maxQuantity: product.stock ?? 10
-      })
-    )
+    // 👉 add your redux addToCart(product) here
 
     setShowToast(true)
     setTimeout(() => setShowToast(false), 2000)
@@ -62,7 +53,7 @@ const ProductCard = ({ product }) => {
         <div className="relative h-44 flex items-center justify-center
           bg-gradient-to-br from-white/10 to-white/5">
           <Image
-            src={product.images?.[0]}
+            src={product.images[0]}
             alt={product.name}
             width={400}
             height={400}
@@ -117,11 +108,12 @@ const ProductCard = ({ product }) => {
           <div className="flex flex-col sm:flex-row sm:items-center
             sm:justify-between mt-3 gap-1">
             <p className="text-lg font-semibold text-cyan-400">
-              {currency}{product.price}
+              {currency}
+              {product.price}
             </p>
 
             <span className="text-xs text-white/50">
-              {product.rating?.length || 0} reviews
+              {product.rating.length} reviews
             </span>
           </div>
         </div>
