@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useDispatch, useSelector } from "react-redux"
 import Image from "next/image"
-import { StarIcon, TagIcon, EarthIcon, CreditCardIcon, UserIcon } from "lucide-react"
+import { StarIcon, EarthIcon, CreditCardIcon, UserIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { setCartItemQuantity } from "@/lib/features/cart/cartSlice"
 
@@ -18,13 +18,36 @@ const ProductDetails = ({ product }) => {
 
     const [mainImage, setMainImage] = useState(product.images[0])
     const [quantity, setQuantity] = useState(1)
+    const [inCart, setInCart] = useState(false)
 
+    // Initialize quantity based on cart
     useEffect(() => {
-        if (cart[productId]) setQuantity(Math.min(cart[productId], maxQty))
-    }, [cart, productId, maxQty])
+        if (cart[productId]) {
+            setQuantity(cart[productId])
+            setInCart(true)
+        } else {
+            setQuantity(1)
+            setInCart(false)
+        }
+    }, [cart, productId])
 
+    // Add to cart handler
     const handleAddToCart = () => {
-        dispatch(setCartItemQuantity({ productId, quantity, maxQuantity: maxQty }))
+        dispatch(setCartItemQuantity({ productId, quantity: 1, maxQuantity: maxQty }))
+        setInCart(true)
+    }
+
+    // Update quantity in cart
+    const handleQuantityChange = (newQty) => {
+        if (newQty < 1) {
+            // Remove from cart
+            dispatch(setCartItemQuantity({ productId, quantity: 0, maxQuantity: maxQty }))
+            setInCart(false)
+            setQuantity(1)
+        } else {
+            setQuantity(newQty)
+            dispatch(setCartItemQuantity({ productId, quantity: newQty, maxQuantity: maxQty }))
+        }
     }
 
     const averageRating = product.rating.length
@@ -73,28 +96,46 @@ const ProductDetails = ({ product }) => {
                     </span>
                 </div>
 
-                {/* QUANTITY */}
+                {/* QUANTITY / ADD TO CART */}
                 <div className="mt-6">
-                    <p className="font-semibold mb-2">Quantity</p>
-                    <div className="flex items-center gap-3">
-                        <button disabled={quantity <= 1} onClick={() => setQuantity(q => Math.max(1, q - 1))}
-                            className="border px-3 py-1 rounded hover:bg-white/10 transition">−</button>
-                        <span>{quantity}</span>
-                        <button disabled={quantity >= maxQty} onClick={() => setQuantity(q => Math.min(maxQty, q + 1))}
-                            className="border px-3 py-1 rounded hover:bg-white/10 transition">+</button>
-                    </div>
-                    <p className="text-sm text-slate-400 mt-1">{maxQty} items available</p>
-                </div>
-
-                {/* ACTIONS */}
-                <div className="flex gap-4 mt-6">
-                    <button onClick={handleAddToCart} disabled={maxQty === 0}
-                        className="bg-cyan-400 text-black px-8 py-3 rounded-xl hover:scale-105 transition font-semibold">Add to Cart</button>
-                    {cart[productId] && (
-                        <button onClick={() => router.push("/cart")}
-                            className="bg-white/10 px-6 py-3 rounded-xl hover:bg-white/20 transition">View Cart</button>
+                    {inCart ? (
+                        <>
+                            <p className="font-semibold mb-2">Quantity</p>
+                            <div className="flex items-center gap-3">
+                                <button
+                                    onClick={() => handleQuantityChange(quantity - 1)}
+                                    className="border px-3 py-1 rounded hover:bg-white/10 transition"
+                                >−</button>
+                                <span>{quantity}</span>
+                                <button
+                                    onClick={() => handleQuantityChange(quantity + 1)}
+                                    disabled={quantity >= maxQty}
+                                    className="border px-3 py-1 rounded hover:bg-white/10 transition"
+                                >+</button>
+                            </div>
+                            <p className="text-sm text-slate-400 mt-1">{maxQty} items available</p>
+                        </>
+                    ) : (
+                        <button
+                            onClick={handleAddToCart}
+                            disabled={maxQty === 0}
+                            className="bg-cyan-400 text-black px-8 py-3 rounded-xl hover:scale-105 transition font-semibold"
+                        >
+                            Add to Cart
+                        </button>
                     )}
                 </div>
+
+                {/* VIEW CART BUTTON */}
+                {inCart && (
+                    <div className="flex gap-4 mt-6">
+                        <button onClick={() => router.push("/cart")}
+                            className="bg-white/10 px-6 py-3 rounded-xl hover:bg-white/20 transition"
+                        >
+                            View Cart
+                        </button>
+                    </div>
+                )}
 
                 {/* TRUST BADGES */}
                 <div className="flex gap-4 mt-6 text-sm text-slate-400">
