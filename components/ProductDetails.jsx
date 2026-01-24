@@ -21,7 +21,8 @@ const ProductDetails = ({ product }) => {
     const [quantity, setQuantity] = useState(1)
     const [inCart, setInCart] = useState(false)
     const [showQuantity, setShowQuantity] = useState(false) // Hide quantity initially
-    const [animateButton, setAnimateButton] = useState(false) // Trigger + button float
+    const [animatePlus, setAnimatePlus] = useState(false) // Trigger + animation
+    const [animateMinus, setAnimateMinus] = useState(false) // Trigger − animation
 
     // Initialize quantity based on cart
     useEffect(() => {
@@ -37,13 +38,17 @@ const ProductDetails = ({ product }) => {
         dispatch(setCartItemQuantity({ productId, quantity: 1, maxQuantity: maxQty }))
         setInCart(true)
         setShowQuantity(true)
-        setAnimateButton(true)
-        setTimeout(() => setAnimateButton(false), 300)
+        setAnimatePlus(true)
+        setTimeout(() => setAnimatePlus(false), 300)
     }
 
     // Update quantity in cart
-    const handleQuantityChange = (newQty, isIncrement = false) => {
+    const handleQuantityChange = (newQty, type) => {
         if (newQty < 1) {
+            // Animate minus button for final remove
+            setAnimateMinus(true)
+            setTimeout(() => setAnimateMinus(false), 300)
+
             dispatch(setCartItemQuantity({ productId, quantity: 0, maxQuantity: maxQty }))
             setInCart(false)
             setShowQuantity(false)
@@ -52,9 +57,15 @@ const ProductDetails = ({ product }) => {
             setQuantity(newQty)
             dispatch(setCartItemQuantity({ productId, quantity: newQty, maxQuantity: maxQty }))
             setShowQuantity(true)
-            if (isIncrement) {
-                setAnimateButton(true)
-                setTimeout(() => setAnimateButton(false), 300)
+
+            if (type === "plus") {
+                setAnimatePlus(true)
+                setTimeout(() => setAnimatePlus(false), 300)
+            }
+
+            if (type === "minus") {
+                setAnimateMinus(true)
+                setTimeout(() => setAnimateMinus(false), 300)
             }
         }
     }
@@ -111,16 +122,17 @@ const ProductDetails = ({ product }) => {
                         <>
                             <p className="font-semibold mb-2">Quantity</p>
                             <div className="flex items-center gap-3">
-                                {/* Decrement Button */}
+                                {/* Decrement Button with backward shrink/fly */}
                                 <motion.button
-                                    whileTap={{ scale: 1.3 }}
-                                    onClick={() => handleQuantityChange(quantity - 1)}
+                                    animate={animateMinus ? { x: -10, scale: 0.8, opacity: 0.7 } : { x: 0, scale: 1, opacity: 1 }}
+                                    transition={{ type: "spring", stiffness: 500, damping: 20 }}
+                                    onClick={() => handleQuantityChange(quantity - 1, "minus")}
                                     className="border px-3 py-1 rounded hover:bg-white/10 transition"
                                 >−</motion.button>
 
                                 {/* Quantity Number with AnimatePresence */}
                                 <AnimatePresence>
-                                    {showQuantity && (
+                                    {showQuantity && quantity > 0 && (
                                         <motion.span
                                             key={quantity}
                                             initial={{ opacity: 0, scale: 0.5 }}
@@ -134,11 +146,11 @@ const ProductDetails = ({ product }) => {
                                     )}
                                 </AnimatePresence>
 
-                                {/* Increment Button with floating effect */}
+                                {/* Increment Button with existing float */}
                                 <motion.button
-                                    animate={animateButton ? { x: 10, scale: 1.4 } : { x: 0, scale: 1 }}
+                                    animate={animatePlus ? { x: 10, scale: 1.4 } : { x: 0, scale: 1 }}
                                     transition={{ type: "spring", stiffness: 500, damping: 15 }}
-                                    onClick={() => handleQuantityChange(quantity + 1, true)}
+                                    onClick={() => handleQuantityChange(quantity + 1, "plus")}
                                     disabled={quantity >= maxQty}
                                     className="border px-3 py-1 rounded hover:bg-white/10 transition disabled:opacity-40"
                                 >+</motion.button>
