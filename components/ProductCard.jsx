@@ -6,7 +6,7 @@ import Link from 'next/link'
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useDispatch } from 'react-redux'
-import { incrementItem } from '@/redux/cartSlice' // ✅ adjust path if needed
+import { addToCart } from '../redux/cartSlice' // ✅ RELATIVE PATH (IMPORTANT)
 
 /* ---------------- TOAST ---------------- */
 const Toast = ({ message }) => (
@@ -27,7 +27,7 @@ const ProductCard = ({ product }) => {
   const [showToast, setShowToast] = useState(false)
 
   const rating =
-    product.rating.length > 0
+    product.rating?.length > 0
       ? Math.round(
           product.rating.reduce((acc, curr) => acc + curr.rating, 0) /
             product.rating.length
@@ -40,9 +40,9 @@ const ProductCard = ({ product }) => {
     e.stopPropagation()
 
     dispatch(
-      incrementItem({
-        productId: product.id,          // ✅ matches slice
-        maxQuantity: product.stock || 10 // ✅ prevent over-add
+      addToCart({
+        productId: product.id,
+        maxQuantity: product.stock ?? 10
       })
     )
 
@@ -62,7 +62,7 @@ const ProductCard = ({ product }) => {
         <div className="relative h-44 flex items-center justify-center
           bg-gradient-to-br from-white/10 to-white/5">
           <Image
-            src={product.images[0]}
+            src={product.images?.[0]}
             alt={product.name}
             width={400}
             height={400}
@@ -121,7 +121,7 @@ const ProductCard = ({ product }) => {
             </p>
 
             <span className="text-xs text-white/50">
-              {product.rating.length} reviews
+              {product.rating?.length || 0} reviews
             </span>
           </div>
         </div>
