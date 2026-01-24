@@ -1,9 +1,12 @@
 'use client'
+
 import { StarIcon, ShoppingCart, Eye } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useDispatch } from 'react-redux'
+import { incrementItem } from '@/redux/cartSlice' // ✅ adjust path if needed
 
 /* ---------------- TOAST ---------------- */
 const Toast = ({ message }) => (
@@ -19,6 +22,7 @@ const Toast = ({ message }) => (
 )
 
 const ProductCard = ({ product }) => {
+  const dispatch = useDispatch()
   const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '₹'
   const [showToast, setShowToast] = useState(false)
 
@@ -35,7 +39,12 @@ const ProductCard = ({ product }) => {
     e.preventDefault()
     e.stopPropagation()
 
-    // 👉 add your redux addToCart(product) here
+    dispatch(
+      incrementItem({
+        productId: product.id,          // ✅ matches slice
+        maxQuantity: product.stock || 10 // ✅ prevent over-add
+      })
+    )
 
     setShowToast(true)
     setTimeout(() => setShowToast(false), 2000)
@@ -108,8 +117,7 @@ const ProductCard = ({ product }) => {
           <div className="flex flex-col sm:flex-row sm:items-center
             sm:justify-between mt-3 gap-1">
             <p className="text-lg font-semibold text-cyan-400">
-              {currency}
-              {product.price}
+              {currency}{product.price}
             </p>
 
             <span className="text-xs text-white/50">
