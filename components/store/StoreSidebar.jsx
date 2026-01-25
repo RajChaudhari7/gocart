@@ -1,69 +1,133 @@
 'use client'
+
 import { usePathname } from "next/navigation"
-import { HomeIcon, LayoutListIcon, SquarePenIcon, SquarePlusIcon } from "lucide-react"
+import {
+  HomeIcon,
+  LayoutListIcon,
+  SquarePenIcon,
+  SquarePlusIcon
+} from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 
-const StoreSidebar = ({ storeInfo }) => {
-    const pathname = usePathname()
+const StoreSidebar = ({ storeInfo, pendingOrdersCount = 0 }) => {
+  const pathname = usePathname()
 
-    const sidebarLinks = [
-        { name: 'Dashboard', href: '/store', icon: HomeIcon },
-        { name: 'Add Product', href: '/store/add-product', icon: SquarePlusIcon },
-        { name: 'Manage Product', href: '/store/manage-product', icon: SquarePenIcon },
-        { name: 'Orders', href: '/store/orders', icon: LayoutListIcon },
-    ]
+  const sidebarLinks = [
+    { name: 'Dashboard', href: '/store', icon: HomeIcon },
+    { name: 'Add Product', href: '/store/add-product', icon: SquarePlusIcon },
+    { name: 'Manage Products', href: '/store/manage-product', icon: SquarePenIcon },
+    {
+      name: 'Orders',
+      href: '/store/orders',
+      icon: LayoutListIcon,
+      badge: pendingOrdersCount
+    },
+  ]
 
-    return (
-        <>
-            {/* DESKTOP SIDEBAR */}
-            <div className="hidden sm:inline-flex h-full flex-col gap-5 border-r border-slate-200 min-w-60 p-3">
-                <div className="flex flex-col gap-3 justify-center items-center pt-8">
-                    <Image
-                        src={storeInfo?.logo}
-                        alt=""
-                        width={80}
-                        height={80}
-                        className="w-14 h-14 rounded-full shadow-md"
-                    />
-                    <p className="text-slate-700">{storeInfo?.name}</p>
-                </div>
+  return (
+    <>
+      {/* ================= DESKTOP SIDEBAR ================= */}
+      <aside className="hidden sm:flex h-full w-64 flex-col bg-black border-r border-white/10">
 
-                <div className="mt-6 flex flex-col gap-1">
-                    {sidebarLinks.map((link, index) => (
-                        <Link
-                            key={index}
-                            href={link.href}
-                            className={`relative flex items-center gap-3 text-slate-500 hover:bg-slate-50 p-2.5 transition
-                                ${pathname === link.href ? 'bg-slate-100 text-slate-600' : ''}`}
-                        >
-                            <link.icon size={18} />
-                            <p>{link.name}</p>
-                            {pathname === link.href && (
-                                <span className="absolute bg-green-500 right-0 top-1.5 bottom-1.5 w-1 rounded-l"></span>
-                            )}
-                        </Link>
-                    ))}
-                </div>
-            </div>
+        {/* Store Info */}
+        <div className="flex flex-col items-center gap-3 py-8 border-b border-white/10">
+          <Image
+            src={storeInfo?.logo || "/placeholder.png"}
+            alt="Store logo"
+            width={64}
+            height={64}
+            className="rounded-full border border-white/20"
+          />
+          <p className="text-sm font-medium text-white">
+            {storeInfo?.name}
+          </p>
+          <span className="text-xs text-white/50">
+            Seller Panel
+          </span>
+        </div>
 
-            {/* MOBILE BOTTOM SIDEBAR */}
-            <div className="sm:hidden fixed bottom-0 inset-x-0 z-50 bg-black/70 backdrop-blur-xl border-t border-white/10">
-                <div className="flex justify-around py-2 text-xs">
-                    {sidebarLinks.map((link) => (
-                        <Link
-                            key={link.href}
-                            href={link.href}
-                            className={`flex flex-col items-center gap-1 text-white/70 ${pathname === link.href ? 'text-cyan-400' : ''}`}
-                        >
-                            <link.icon size={18} />
-                            <span>{link.name}</span>
-                        </Link>
-                    ))}
-                </div>
-            </div>
-        </>
-    )
+        {/* Navigation */}
+        <nav className="flex-1 px-3 py-4 space-y-1">
+          {sidebarLinks.map((link) => {
+            const active = pathname === link.href
+            const Icon = link.icon
+
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`
+                  group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm
+                  transition-all duration-200
+                  ${active
+                    ? 'bg-white/10 text-white'
+                    : 'text-white/60 hover:bg-white/5 hover:text-white'}
+                `}
+              >
+                <Icon size={18} />
+
+                <span className="flex-1">
+                  {link.name}
+                </span>
+
+                {/* BADGE */}
+                {link.badge > 0 && (
+                  <span className="
+                    min-w-[20px] px-1.5 py-0.5 text-xs font-medium
+                    rounded-full bg-emerald-500 text-black text-center
+                  ">
+                    {link.badge}
+                  </span>
+                )}
+
+                {/* Active Indicator */}
+                {active && (
+                  <span className="w-1.5 h-6 bg-emerald-400 rounded-full ml-2" />
+                )}
+              </Link>
+            )
+          })}
+        </nav>
+      </aside>
+
+      {/* ================= MOBILE BOTTOM NAV ================= */}
+      <div className="sm:hidden fixed bottom-0 inset-x-0 z-50 bg-black/90 backdrop-blur-xl border-t border-white/10">
+        <div className="flex justify-around py-2">
+          {sidebarLinks.map((link) => {
+            const active = pathname === link.href
+            const Icon = link.icon
+
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`
+                  relative flex flex-col items-center gap-1 text-xs transition
+                  ${active ? 'text-emerald-400' : 'text-white/60'}
+                `}
+              >
+                <Icon size={18} />
+
+                {/* Mobile Badge */}
+                {link.badge > 0 && (
+                  <span className="
+                    absolute -top-1 -right-3
+                    bg-emerald-500 text-black text-[10px]
+                    px-1.5 rounded-full
+                  ">
+                    {link.badge}
+                  </span>
+                )}
+
+                <span>{link.name}</span>
+              </Link>
+            )
+          })}
+        </div>
+      </div>
+    </>
+  )
 }
 
 export default StoreSidebar

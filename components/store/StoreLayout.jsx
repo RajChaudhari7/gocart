@@ -11,14 +11,15 @@ import SellerNavbar from "./StoreNavbar"
 import SellerSidebar from "./StoreSidebar"
 
 const StoreLayout = ({ children }) => {
-
   const { getToken } = useAuth()
 
   const [isSeller, setIsSeller] = useState(false)
   const [loading, setLoading] = useState(true)
   const [storeInfo, setStoreInfo] = useState(null)
+  const [pendingOrdersCount, setPendingOrdersCount] = useState(0)
 
-  const fetchIsSeller = async () => {
+  /* ---------------- FETCH SELLER INFO ---------------- */
+  const fetchSellerInfo = async () => {
     try {
       const token = await getToken()
 
@@ -31,17 +32,43 @@ const StoreLayout = ({ children }) => {
 
     } catch (error) {
       console.error(error)
-    } finally {
-      setLoading(false)
     }
   }
 
+  /* ---------------- FETCH ORDERS (BADGE) ---------------- */
+  const fetchOrdersCount = async () => {
+    try {
+      const token = await getToken()
+
+      const { data } = await axios.get('/api/store/orders', {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+
+      const pending = data.orders.filter(
+        order => order.status === "PENDING"
+      ).length
+
+      setPendingOrdersCount(pending)
+
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  /* ---------------- INIT ---------------- */
   useEffect(() => {
-    fetchIsSeller()
+    const init = async () => {
+      await Promise.all([
+        fetchSellerInfo(),
+        fetchOrdersCount()
+      ])
+      setLoading(false)
+    }
+
+    init()
   }, [])
 
-  /* ---------------------- STATES ---------------------- */
-
+  /* ---------------- LOADING ---------------- */
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -50,6 +77,7 @@ const StoreLayout = ({ children }) => {
     )
   }
 
+  /* ---------------- NOT SELLER ---------------- */
   if (!isSeller) {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center text-center px-6">
@@ -67,27 +95,28 @@ const StoreLayout = ({ children }) => {
     )
   }
 
-  /* ---------------------- LAYOUT ---------------------- */
-
+  /* ---------------- LAYOUT ---------------- */
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
+    <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900">
 
       {/* Top Navbar */}
       <SellerNavbar />
 
-      {/* Content Wrapper */}
+      {/* Body */}
       <div className="flex flex-1 overflow-hidden">
 
         {/* Sidebar */}
-        <aside className="hidden lg:block w-64 bg-black text-white">
-          <SellerSidebar storeInfo={storeInfo} />
+        <aside className="hidden lg:block w-64 bg-black">
+          <SellerSidebar
+            storeInfo={storeInfo}
+            pendingOrdersCount={pendingOrdersCount}
+          />
         </aside>
 
         {/* Main Content */}
         <main className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-10 py-6">
           {children}
         </main>
-
       </div>
     </div>
   )
