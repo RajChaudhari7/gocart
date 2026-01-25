@@ -144,6 +144,11 @@ const OrderItem = ({ order }) => {
                     {currency}{item.price} × {item.quantity}
                   </p>
 
+                  {/* Order Date */}
+                  <p className="text-xs text-white/50">
+                    {new Date(order.createdAt).toDateString()}
+                  </p>
+
                   {existingRating ? (
                     <Rating value={existingRating.rating} />
                   ) : (
@@ -162,6 +167,7 @@ const OrderItem = ({ order }) => {
                     )
                   )}
                 </div>
+
               );
             })}
 
