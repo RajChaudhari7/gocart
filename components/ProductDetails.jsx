@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation"
 import { setCartItemQuantity } from "@/lib/features/cart/cartSlice"
 import { motion, AnimatePresence } from "framer-motion"
 
-/* -------------------- SHIMMER PLACEHOLDER -------------------- */
+/* ---------------- SHIMMER ---------------- */
 const shimmer = (w, h) => `
 <svg width="${w}" height="${h}" xmlns="http://www.w3.org/2000/svg">
   <defs>
@@ -19,8 +19,7 @@ const shimmer = (w, h) => `
     </linearGradient>
   </defs>
   <rect width="${w}" height="${h}" fill="#1e293b" />
-  <rect id="r" width="${w}" height="${h}" fill="url(#g)" />
-  <animate xlink:href="#r" attributeName="x" from="-${w}" to="${w}" dur="1.2s" repeatCount="indefinite" />
+  <rect width="${w}" height="${h}" fill="url(#g)" />
 </svg>
 `
 
@@ -29,7 +28,7 @@ const toBase64 = (str) =>
     ? Buffer.from(str).toString("base64")
     : window.btoa(str)
 
-/* -------------------- COMPONENT -------------------- */
+/* ---------------- COMPONENT ---------------- */
 const ProductDetails = ({ product }) => {
   const dispatch = useDispatch()
   const router = useRouter()
@@ -43,10 +42,7 @@ const ProductDetails = ({ product }) => {
   const [quantity, setQuantity] = useState(1)
   const [inCart, setInCart] = useState(false)
   const [showQuantity, setShowQuantity] = useState(false)
-  const [animatePlus, setAnimatePlus] = useState(false)
-  const [animateMinus, setAnimateMinus] = useState(false)
 
-  /* -------------------- CART INIT -------------------- */
   useEffect(() => {
     if (cart[productId]) {
       setQuantity(cart[productId])
@@ -55,64 +51,36 @@ const ProductDetails = ({ product }) => {
     }
   }, [cart, productId])
 
-  /* -------------------- CART HANDLERS -------------------- */
   const handleAddToCart = () => {
     dispatch(setCartItemQuantity({ productId, quantity: 1, maxQuantity: maxQty }))
     setInCart(true)
     setShowQuantity(true)
-    setAnimatePlus(true)
-    setTimeout(() => setAnimatePlus(false), 300)
   }
 
-  const handleQuantityChange = (newQty, type) => {
-    if (newQty < 1) {
-      setAnimateMinus(true)
-      setTimeout(() => setAnimateMinus(false), 300)
-      dispatch(setCartItemQuantity({ productId, quantity: 0, maxQuantity: maxQty }))
-      setInCart(false)
-      setShowQuantity(false)
-      setQuantity(1)
-    } else {
-      setQuantity(newQty)
-      dispatch(setCartItemQuantity({ productId, quantity: newQty, maxQuantity: maxQty }))
-      setShowQuantity(true)
-      if (type === "plus") setAnimatePlus(true)
-      if (type === "minus") setAnimateMinus(true)
-      setTimeout(() => {
-        setAnimatePlus(false)
-        setAnimateMinus(false)
-      }, 300)
-    }
+  const handleSwipe = (_, info) => {
+    if (info.offset.x < -80 && activeIndex < product.images.length - 1)
+      setActiveIndex(i => i + 1)
+    if (info.offset.x > 80 && activeIndex > 0)
+      setActiveIndex(i => i - 1)
   }
 
-  /* -------------------- RATING -------------------- */
   const averageRating = product.rating.length
     ? product.rating.reduce((a, b) => a + b.rating, 0) / product.rating.length
     : 0
 
-  /* -------------------- SWIPE HANDLER -------------------- */
-  const handleSwipe = (_, info) => {
-    if (info.offset.x < -80 && activeIndex < product.images.length - 1) {
-      setActiveIndex(i => i + 1)
-    }
-    if (info.offset.x > 80 && activeIndex > 0) {
-      setActiveIndex(i => i - 1)
-    }
-  }
-
   return (
-    <div className="flex flex-col lg:flex-row gap-12 px-6 py-10 bg-gradient-to-b from-[#0f172a] to-[#020617] text-white rounded-3xl shadow-xl">
+    <div className="flex flex-col lg:flex-row gap-10 px-4 sm:px-6 py-10 bg-gradient-to-b from-[#0f172a] to-[#020617] text-white rounded-3xl shadow-xl">
 
-      {/* ---------------- IMAGE GALLERY ---------------- */}
-      <div className="flex flex-col lg:flex-row gap-4 w-full">
+      {/* ---------- GALLERY ---------- */}
+      <div className="flex flex-col lg:flex-row gap-6 w-full lg:w-[55%]">
 
-        {/* MAIN IMAGE / CAROUSEL */}
-        <div className="order-1 lg:order-2 flex justify-center items-center bg-white/5 p-4 sm:p-6 rounded-2xl w-full overflow-hidden">
+        {/* MAIN IMAGE */}
+        <div className="order-1 lg:order-2 flex justify-center items-center bg-white/5 p-4 sm:p-6 lg:p-8 rounded-2xl w-full overflow-hidden">
           <motion.div
-            className="w-full flex justify-center"
             drag="x"
             dragConstraints={{ left: 0, right: 0 }}
             onDragEnd={handleSwipe}
+            className="w-full flex justify-center"
           >
             <AnimatePresence mode="wait">
               <motion.div
@@ -125,14 +93,23 @@ const ProductDetails = ({ product }) => {
                 <Image
                   src={product.images[activeIndex]}
                   alt={product.name}
-                  width={400}
-                  height={400}
+                  width={520}
+                  height={520}
                   priority
                   placeholder="blur"
                   blurDataURL={`data:image/svg+xml;base64,${toBase64(
-                    shimmer(400, 400)
+                    shimmer(520, 520)
                   )}`}
-                  className="w-full max-w-[280px] sm:max-w-[340px] lg:max-w-[400px] h-auto object-contain drop-shadow-2xl"
+                  className="
+                    w-full
+                    max-w-[280px]
+                    sm:max-w-[340px]
+                    lg:max-w-[480px]
+                    xl:max-w-[520px]
+                    h-auto
+                    object-contain
+                    drop-shadow-2xl
+                  "
                 />
               </motion.div>
             </AnimatePresence>
@@ -167,11 +144,10 @@ const ProductDetails = ({ product }) => {
         </div>
       </div>
 
-      {/* ---------------- DETAILS ---------------- */}
-      <div className="flex-1">
+      {/* ---------- DETAILS ---------- */}
+      <div className="flex-1 lg:pl-6">
         <h1 className="text-3xl md:text-5xl font-bold">{product.name}</h1>
 
-        {/* RATING */}
         <div className="flex items-center gap-2 mt-3">
           {Array(5).fill("").map((_, i) => (
             <StarIcon
@@ -185,7 +161,6 @@ const ProductDetails = ({ product }) => {
           </span>
         </div>
 
-        {/* PRICE */}
         <div className="flex gap-3 items-center mt-5">
           <span className="text-3xl font-bold">{currency}{product.price}</span>
           <span className="line-through text-slate-400">{currency}{product.mrp}</span>
@@ -194,39 +169,19 @@ const ProductDetails = ({ product }) => {
           </span>
         </div>
 
-        {/* CART */}
         <div className="mt-6">
-          {inCart ? (
-            <>
-              <p className="font-semibold mb-2">Quantity</p>
-              <div className="flex items-center gap-3">
-                <motion.button
-                  animate={animateMinus ? { scale: 0.8 } : { scale: 1 }}
-                  onClick={() => handleQuantityChange(quantity - 1, "minus")}
-                  className="border px-3 py-1 rounded"
-                >−</motion.button>
-
-                <span className="min-w-[20px] text-center">{quantity}</span>
-
-                <motion.button
-                  animate={animatePlus ? { scale: 1.3 } : { scale: 1 }}
-                  onClick={() => handleQuantityChange(quantity + 1, "plus")}
-                  disabled={quantity >= maxQty}
-                  className="border px-3 py-1 rounded disabled:opacity-40"
-                >+</motion.button>
-              </div>
-            </>
-          ) : (
+          {!inCart ? (
             <button
               onClick={handleAddToCart}
               className="bg-cyan-400 text-black px-8 py-3 rounded-xl font-semibold hover:scale-105 transition"
             >
               Add to Cart
             </button>
+          ) : (
+            <p className="text-slate-400">Added to cart</p>
           )}
         </div>
 
-        {/* INFO */}
         <div className="flex flex-col gap-3 mt-6 text-slate-400">
           <p className="flex items-center gap-2"><EarthIcon /> Free shipping worldwide</p>
           <p className="flex items-center gap-2"><CreditCardIcon /> Secure payments</p>
