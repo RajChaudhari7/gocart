@@ -1,68 +1,96 @@
 'use client'
+
 import { useEffect, useState } from "react"
-import Loading from "../Loading"
 import Link from "next/link"
+import axios from "axios"
 import { ArrowRightIcon } from "lucide-react"
+import { useAuth } from "@clerk/nextjs"
+
+import Loading from "../Loading"
 import SellerNavbar from "./StoreNavbar"
 import SellerSidebar from "./StoreSidebar"
-import { dummyStoreData } from "@/assets/assets"
-import { useAuth } from "@clerk/nextjs"
-import axios from "axios"
 
 const StoreLayout = ({ children }) => {
 
-    const { getToken } = useAuth()
+  const { getToken } = useAuth()
 
+  const [isSeller, setIsSeller] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [storeInfo, setStoreInfo] = useState(null)
 
-    const [isSeller, setIsSeller] = useState(false)
-    const [loading, setLoading] = useState(true)
-    const [storeInfo, setStoreInfo] = useState(null)
+  const fetchIsSeller = async () => {
+    try {
+      const token = await getToken()
 
-    const fetchIsSeller = async () => {
-        try {
+      const { data } = await axios.get('/api/store/is-seller', {
+        headers: { Authorization: `Bearer ${token}` }
+      })
 
-            const token = await getToken()
+      setIsSeller(data.isSeller)
+      setStoreInfo(data.storeInfo)
 
-            const { data } = await axios.get('/api/store/is-seller', {
-                headers: { Authorization: `Bearer ${token}` }
-            })
-
-            setIsSeller(data.isSeller)
-            setStoreInfo(data.storeInfo)
-
-        } catch (error) {
-            console.log(error);
-            
-        }
-        finally{
-            setLoading(false)
-        }
+    } catch (error) {
+      console.error(error)
+    } finally {
+      setLoading(false)
     }
+  }
 
-    useEffect(() => {
-        fetchIsSeller()
-    }, [])
+  useEffect(() => {
+    fetchIsSeller()
+  }, [])
 
-    return loading ? (
+  /* ---------------------- STATES ---------------------- */
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <Loading />
-    ) : isSeller ? (
-        <div className="flex flex-col h-screen">
-            <SellerNavbar />
-            <div className="flex flex-1 items-start h-full overflow-y-scroll no-scrollbar">
-                <SellerSidebar storeInfo={storeInfo} />
-                <div className="flex-1 h-full p-5 lg:pl-12 lg:pt-12 overflow-y-scroll">
-                    {children}
-                </div>
-            </div>
-        </div>
-    ) : (
-        <div className="min-h-screen flex flex-col items-center justify-center text-center px-6">
-            <h1 className="text-2xl sm:text-4xl font-semibold text-slate-400">You are not authorized to access this page</h1>
-            <Link href="/" className="bg-slate-700 text-white flex items-center gap-2 mt-8 p-2 px-6 max-sm:text-sm rounded-full">
-                Go to home <ArrowRightIcon size={18} />
-            </Link>
-        </div>
+      </div>
     )
+  }
+
+  if (!isSeller) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center text-center px-6">
+        <h1 className="text-2xl sm:text-4xl font-semibold text-slate-700">
+          You are not authorized to access this page
+        </h1>
+
+        <Link
+          href="/"
+          className="mt-8 inline-flex items-center gap-2 rounded-full bg-slate-900 text-white px-6 py-2 text-sm hover:bg-slate-800 transition"
+        >
+          Go to home <ArrowRightIcon size={16} />
+        </Link>
+      </div>
+    )
+  }
+
+  /* ---------------------- LAYOUT ---------------------- */
+
+  return (
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
+
+      {/* Top Navbar */}
+      <SellerNavbar />
+
+      {/* Content Wrapper */}
+      <div className="flex flex-1 overflow-hidden">
+
+        {/* Sidebar */}
+        <aside className="hidden lg:block w-64 bg-black text-white">
+          <SellerSidebar storeInfo={storeInfo} />
+        </aside>
+
+        {/* Main Content */}
+        <main className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-10 py-6">
+          {children}
+        </main>
+
+      </div>
+    </div>
+  )
 }
 
 export default StoreLayout
