@@ -6,11 +6,11 @@ import PageTitle from "@/components/PageTitle";
 import { deleteItemFromCart } from "@/lib/features/cart/cartSlice";
 import { Trash2Icon } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 export default function Cart() {
-
   const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '₹';
 
   const { cartItems } = useSelector(state => state.cart);
@@ -21,6 +21,7 @@ export default function Cart() {
   const [cartArray, setCartArray] = useState([]);
   const [totalPrice, setTotalPrice] = useState(0);
 
+  // Build cart array and calculate total
   useEffect(() => {
     let total = 0;
     const arr = [];
@@ -41,17 +42,22 @@ export default function Cart() {
     dispatch(deleteItemFromCart({ productId }));
   };
 
+  // If cart is empty
   if (!cartArray.length) {
     return (
-      <div className="min-h-[80vh] flex items-center justify-center text-center bg-[#0f172a]">
-        <div>
-          <h1 className="text-3xl font-semibold text-white">
-            Your cart is empty 🛒
-          </h1>
-          <p className="text-slate-400 mt-2">
-            Looks like you haven’t added anything yet
-          </p>
-        </div>
+      <div className="min-h-[80vh] flex flex-col items-center justify-center text-center bg-[#0f172a] gap-4">
+        <h1 className="text-3xl font-semibold text-white">
+          Your cart is empty 🛒
+        </h1>
+        <p className="text-slate-400">
+          Looks like you haven’t added anything yet.
+        </p>
+        <Link
+          href="/shop"  // Change to your shop page route
+          className="mt-3 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition"
+        >
+          Shop More
+        </Link>
       </div>
     );
   }
@@ -65,6 +71,7 @@ export default function Cart() {
           heading="Shopping Cart"
           text={`${cartArray.length} items in your cart`}
           linkText="Continue shopping"
+          linkHref="/shop"
           textColor="text-slate-300"
         />
 

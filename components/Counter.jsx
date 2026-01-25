@@ -5,6 +5,7 @@ import { useDispatch, useSelector } from "react-redux"
 import {
   incrementItem,
   decrementItem,
+  deleteItemFromCart,
 } from "@/lib/features/cart/cartSlice"
 
 const Counter = ({ productId }) => {
@@ -22,14 +23,20 @@ const Counter = ({ productId }) => {
 
   const maxQuantity = product.quantity
 
+  const handleDecrement = () => {
+    if (quantity <= 1) {
+      // Remove item from cart if quantity <= 1
+      dispatch(deleteItemFromCart({ productId }))
+    } else {
+      dispatch(decrementItem({ productId }))
+    }
+  }
+
   return (
     <div className="inline-flex items-center gap-2 px-3 py-1 rounded border border-slate-200 text-slate-600">
       <button
-        onClick={() =>
-          dispatch(decrementItem({ productId }))
-        }
-        disabled={quantity <= 1}
-        className="p-1 select-none disabled:opacity-40 active:scale-95"
+        onClick={handleDecrement}
+        className="p-1 select-none active:scale-95"
       >
         <Minus size={14} />
       </button>

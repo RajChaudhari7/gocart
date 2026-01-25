@@ -1,10 +1,12 @@
 'use client'
+
 import Image from "next/image"
 import { DotIcon, CreditCard } from "lucide-react"
 import { useSelector } from "react-redux"
 import Rating from "./Rating"
 import { useState } from "react"
 import RatingModal from "./RatingModal"
+import Link from "next/link"
 
 const OrderItem = ({ order }) => {
   const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '₹'
@@ -25,6 +27,8 @@ const OrderItem = ({ order }) => {
     CANCELLED: 'text-red-400 bg-red-400/10',
   }[order.status] || 'text-white/60 bg-white/10'
 
+  const isDelivered = order.status === 'DELIVERED'
+
   return (
     <>
       {/* Desktop */}
@@ -32,63 +36,54 @@ const OrderItem = ({ order }) => {
         {/* PRODUCTS */}
         <td className="py-6 pl-6">
           <div className="flex flex-col gap-6">
-            {order.orderItems.map((item, index) => (
-              <div key={index} className="flex items-center gap-4">
-                <div className="w-20 aspect-square bg-white/10 rounded-xl flex items-center justify-center">
-                  <Image
-                    src={item.product.images[0]}
-                    alt="product"
-                    width={56}
-                    height={56}
-                    className="object-contain"
-                  />
-                </div>
+            {order.orderItems.map((item, index) => {
+              const existingRating = ratings.find(
+                r => r.orderId === order.id && r.productId === item.product.id
+              )
+              return (
+                <div key={index} className="flex items-center gap-4">
+                  <div className="w-20 aspect-square bg-white/10 rounded-xl flex items-center justify-center">
+                    <Image
+                      src={item.product.images[0]}
+                      alt={item.product.name}
+                      width={56}
+                      height={56}
+                      className="object-contain"
+                    />
+                  </div>
 
-                <div>
-                  <p className="font-medium text-white">
-                    {item.product.name}
-                  </p>
-                  <p className="text-sm text-white/60">
-                    {currency}{item.price} × {item.quantity}
-                  </p>
-                  <p className="text-xs text-white/50">
-                    {new Date(order.createdAt).toDateString()}
-                  </p>
+                  <div>
+                    <p className="font-medium text-white">{item.product.name}</p>
+                    <p className="text-sm text-white/60">
+                      {currency}{item.price} × {item.quantity}
+                    </p>
+                    <p className="text-xs text-white/50">
+                      {new Date(order.createdAt).toDateString()}
+                    </p>
 
-                  <div className="mt-1">
-                    {ratings.find(
-                      r =>
-                        r.orderId === order.id &&
-                        r.productId === item.product.id
-                    ) ? (
-                      <Rating
-                        value={
-                          ratings.find(
-                            r =>
-                              r.orderId === order.id &&
-                              r.productId === item.product.id
-                          ).rating
-                        }
-                      />
-                    ) : (
-                      <button
-                        onClick={() =>
-                          setRatingModal({
-                            orderId: order.id,
-                            productId: item.product.id,
-                          })
-                        }
-                        className={`text-emerald-400 text-sm hover:underline ${
-                          order.status !== 'DELIVERED' && 'hidden'
-                        }`}
-                      >
-                        Rate Product
-                      </button>
-                    )}
+                    <div className="mt-1">
+                      {existingRating ? (
+                        <Rating value={existingRating.rating} />
+                      ) : (
+                        <button
+                          onClick={() =>
+                            setRatingModal({
+                              orderId: order.id,
+                              productId: item.product.id,
+                            })
+                          }
+                          className={`text-emerald-400 text-sm hover:underline ${
+                            !isDelivered && 'hidden'
+                          }`}
+                        >
+                          Rate Product
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </td>
 
@@ -128,21 +123,46 @@ const OrderItem = ({ order }) => {
       <tr className="md:hidden">
         <td colSpan={5} className="py-6">
           <div className="rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 p-6 space-y-3">
-            <p className="text-sm text-white/60">
-              {order.address.name}, {order.address.street}
-            </p>
-            <p className="text-sm text-white/50">
-              {order.address.city}, {order.address.state},{' '}
-              {order.address.zip}
-            </p>
-            <p className="text-sm text-white/50">
-              {order.address.phone}
-            </p>
+            {order.orderItems.map((item, idx) => {
+              const existingRating = ratings.find(
+                r => r.orderId === order.id && r.productId === item.product.id
+              )
+              return (
+                <div key={idx} className="border-b border-white/10 pb-3 mb-3 last:border-none last:pb-0 last:mb-0">
+                  <p className="text-sm text-white/60">{item.product.name}</p>
+                  <p className="text-xs text-white/50">
+                    {currency}{item.price} × {item.quantity}
+                  </p>
+
+                  {existingRating ? (
+                    <Rating value={existingRating.rating} />
+                  ) : (
+                    isDelivered && (
+                      <button
+                        onClick={() =>
+                          setRatingModal({
+                            orderId: order.id,
+                            productId: item.product.id,
+                          })
+                        }
+                        className="text-emerald-400 text-sm hover:underline mt-1"
+                      >
+                        Rate Product
+                      </button>
+                    )
+                  )}
+                </div>
+              )
+            })}
 
             <p className="text-sm">
-              <span className="text-white/50">Payment:</span>{' '}
-              {paymentLabel}
+              <span className="text-white/50">Payment:</span> {paymentLabel}
             </p>
+
+            <p className="text-sm text-white/60">
+              {order.address.name}, {order.address.street}, {order.address.city}, {order.address.state}, {order.address.zip}
+            </p>
+            <p className="text-sm text-white/50">{order.address.phone}</p>
 
             <div className="flex justify-center">
               <span
@@ -156,10 +176,7 @@ const OrderItem = ({ order }) => {
       </tr>
 
       {ratingModal && (
-        <RatingModal
-          ratingModal={ratingModal}
-          setRatingModal={setRatingModal}
-        />
+        <RatingModal ratingModal={ratingModal} setRatingModal={setRatingModal} />
       )}
     </>
   )
