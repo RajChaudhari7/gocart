@@ -29,30 +29,10 @@ export default function Dashboard() {
   })
 
   const stats = [
-    {
-      title: "Products",
-      value: dashboardData.totalProducts,
-      icon: ShoppingBasketIcon,
-      bg: "from-indigo-500 to-indigo-600"
-    },
-    {
-      title: "Earnings",
-      value: currency + dashboardData.totalEarnings,
-      icon: CircleDollarSignIcon,
-      bg: "from-emerald-500 to-emerald-600"
-    },
-    {
-      title: "Orders",
-      value: dashboardData.totalOrders,
-      icon: TagsIcon,
-      bg: "from-orange-500 to-orange-600"
-    },
-    {
-      title: "Ratings",
-      value: dashboardData.ratings.length,
-      icon: StarIcon,
-      bg: "from-pink-500 to-pink-600"
-    }
+    { title: "Products", value: dashboardData.totalProducts, icon: ShoppingBasketIcon },
+    { title: "Earnings", value: currency + dashboardData.totalEarnings, icon: CircleDollarSignIcon },
+    { title: "Orders", value: dashboardData.totalOrders, icon: TagsIcon },
+    { title: "Reviews", value: dashboardData.ratings.length, icon: StarIcon },
   ]
 
   const fetchDashboardData = async () => {
@@ -75,90 +55,85 @@ export default function Dashboard() {
   if (loading) return <Loading />
 
   return (
-    <div className="min-h-screen bg-slate-50 px-4 sm:px-6 lg:px-10 pb-24">
+    <div className="px-4 sm:px-6 lg:px-10 pb-28 max-w-7xl mx-auto">
 
       {/* Header */}
-      <div className="mb-10">
-        <h1 className="text-3xl font-semibold text-slate-800">
-          Seller Dashboard
+      <div className="mb-8">
+        <h1 className="text-2xl font-semibold text-slate-900">
+          Dashboard
         </h1>
-        <p className="text-slate-500 mt-1">
-          Track your store performance & customer feedback
+        <p className="text-sm text-slate-500 mt-1">
+          Overview of your store performance
         </p>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-14">
+      {/* Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
         {stats.map((item, i) => (
           <div
             key={i}
-            className="relative overflow-hidden rounded-2xl bg-white shadow-sm hover:shadow-md transition"
+            className="rounded-lg border border-slate-200 bg-white p-4 flex items-center justify-between"
           >
-            <div className="p-5 flex flex-col gap-4">
-              <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${item.bg} flex items-center justify-center`}>
-                <item.icon className="text-white" size={22} />
-              </div>
-
-              <div>
-                <p className="text-sm text-slate-500">{item.title}</p>
-                <h3 className="text-2xl font-semibold text-slate-800">
-                  {item.value}
-                </h3>
-              </div>
+            <div>
+              <p className="text-xs text-slate-500">{item.title}</p>
+              <p className="text-xl font-semibold text-slate-900 mt-1">
+                {item.value}
+              </p>
             </div>
+
+            <item.icon className="w-5 h-5 text-slate-400" />
           </div>
         ))}
       </div>
 
-      {/* Reviews Section */}
-      <div className="mb-6 flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-slate-800">
-          Customer Reviews
+      {/* Reviews Header */}
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-medium text-slate-900">
+          Recent Reviews
         </h2>
-        <span className="text-sm text-slate-500">
+        <span className="text-xs text-slate-500">
           {dashboardData.ratings.length} total
         </span>
       </div>
 
       {/* Reviews */}
-      <div className="space-y-6 max-w-5xl">
+      <div className="space-y-4 max-w-4xl">
         {dashboardData.ratings.map((review, index) => (
           <div
             key={index}
-            className="bg-white rounded-2xl p-5 sm:p-6 shadow-sm hover:shadow-md transition"
+            className="border border-slate-200 rounded-lg p-4 bg-white"
           >
-            <div className="flex flex-col sm:flex-row gap-6 justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
 
               {/* Left */}
-              <div className="flex gap-4">
+              <div className="flex gap-3">
                 <Image
                   src={review.user.image}
                   alt=""
-                  width={48}
-                  height={48}
-                  className="rounded-full object-cover"
+                  width={40}
+                  height={40}
+                  className="rounded-full"
                 />
                 <div>
-                  <p className="font-medium text-slate-800">
+                  <p className="text-sm font-medium text-slate-900">
                     {review.user.name}
                   </p>
                   <p className="text-xs text-slate-500">
                     {new Date(review.createdAt).toDateString()}
                   </p>
-
-                  <p className="mt-3 text-slate-600 text-sm leading-6 max-w-md">
+                  <p className="text-sm text-slate-600 mt-2 max-w-md leading-6">
                     {review.review}
                   </p>
                 </div>
               </div>
 
               {/* Right */}
-              <div className="flex sm:flex-col justify-between gap-4 sm:items-end">
-                <div className="text-sm text-right">
-                  <p className="text-slate-400">
+              <div className="flex sm:flex-col sm:items-end gap-3">
+                <div className="text-right">
+                  <p className="text-xs text-slate-500">
                     {review.product?.category}
                   </p>
-                  <p className="font-medium text-slate-700">
+                  <p className="text-sm font-medium text-slate-900">
                     {review.product?.name}
                   </p>
 
@@ -166,8 +141,8 @@ export default function Dashboard() {
                     {Array(5).fill("").map((_, i) => (
                       <StarIcon
                         key={i}
-                        size={16}
-                        fill={review.rating >= i + 1 ? "#00C950" : "#D1D5DB"}
+                        size={14}
+                        fill={review.rating >= i + 1 ? "#16A34A" : "#E5E7EB"}
                         className="text-transparent"
                       />
                     ))}
@@ -176,9 +151,9 @@ export default function Dashboard() {
 
                 <button
                   onClick={() => router.push(`/product/${review.product.id}`)}
-                  className="text-sm px-5 py-2 rounded-lg bg-slate-900 text-white hover:bg-slate-800 transition"
+                  className="text-xs px-4 py-2 border border-slate-300 rounded-md hover:bg-slate-100 transition"
                 >
-                  View Product
+                  View product
                 </button>
               </div>
 
