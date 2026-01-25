@@ -87,17 +87,17 @@ const Navbar = () => {
   return (
     <>
       {/* ================= MOBILE TOP NAV ================= */}
-      <nav className="sm:hidden sticky top-0 z-50
-        bg-black/70 backdrop-blur-xl border-b border-white/10">
+      <nav
+        className="sm:hidden fixed top-0 inset-x-0 z-50
+        bg-black/70 backdrop-blur-xl border-b border-white/10 m-0"
+      >
         <div className="flex items-center justify-between px-4 py-3">
 
-          {/* LOGO */}
           <Link href="/" className="text-lg font-semibold text-white">
             <span className="text-cyan-400">Global</span>Mart
             <span className="text-cyan-400">.</span>
           </Link>
 
-          {/* SEARCH */}
           <form
             onSubmit={handleSearch}
             className="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-full"
@@ -112,7 +112,6 @@ const Navbar = () => {
             />
           </form>
 
-          {/* AUTH */}
           {!user ? (
             <button
               onClick={openSignIn}
@@ -128,10 +127,12 @@ const Navbar = () => {
       </nav>
 
       {/* ================= DESKTOP NAV ================= */}
-      <nav className="hidden sm:block backdrop-blur-xl bg-black/60 border-b border-white/10">
+      <nav
+        className="hidden sm:block fixed top-0 inset-x-0 z-50
+        backdrop-blur-xl bg-black/60 border-b border-white/10 m-0"
+      >
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
 
-          {/* LOGO */}
           <Link href="/" className="relative text-2xl font-semibold text-white">
             <span className="text-cyan-400">Global</span>Mart
             <span className="text-cyan-400">.</span>
@@ -145,9 +146,7 @@ const Navbar = () => {
             </Protect>
           </Link>
 
-          {/* MENU */}
           <div className="flex items-center gap-6 text-white/70">
-
             {desktopLinks.map((link) => (
               <Link
                 key={link.href}
@@ -169,7 +168,6 @@ const Navbar = () => {
               </Link>
             ))}
 
-            {/* SEARCH */}
             <form
               onSubmit={handleSearch}
               className="hidden xl:flex items-center gap-2
@@ -185,7 +183,6 @@ const Navbar = () => {
               />
             </form>
 
-            {/* CART */}
             <Link href="/cart" className="relative">
               <motion.div
                 variants={cartPulse}
@@ -203,7 +200,6 @@ const Navbar = () => {
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     exit={{ scale: 0 }}
-                    transition={{ type: 'spring', stiffness: 400, damping: 18 }}
                     className="absolute -top-2 -right-3 text-xs px-1.5 rounded-full
                     bg-gradient-to-r from-cyan-400 to-emerald-400 text-black"
                   >
@@ -213,7 +209,6 @@ const Navbar = () => {
               </AnimatePresence>
             </Link>
 
-            {/* AUTH */}
             {!user ? (
               <button
                 onClick={openSignIn}
@@ -246,38 +241,8 @@ const Navbar = () => {
                   : 'text-white/70'
                 }`}
             >
-              {isActive(link.href) && (
-                <motion.span
-                  layoutId="mobile-active"
-                  className="absolute -top-1 w-8 h-1 rounded-full
-                  bg-gradient-to-r from-cyan-400 to-emerald-400"
-                />
-              )}
-
-              <motion.div
-                variants={cartPulse}
-                animate={link.id === 'cart' && pulse ? 'active' : 'idle'}
-              >
-                {link.icon}
-              </motion.div>
-
+              {link.icon}
               {link.label}
-
-              <AnimatePresence>
-                {link.id === 'cart' && cartCount > 0 && (
-                  <motion.span
-                    key={cartCount}
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    exit={{ scale: 0 }}
-                    className="absolute -top-1 right-2 text-[10px]
-                    px-1 rounded-full
-                    bg-gradient-to-r from-cyan-400 to-emerald-400 text-black"
-                  >
-                    {cartCount}
-                  </motion.span>
-                )}
-              </AnimatePresence>
             </Link>
           ))}
 
@@ -290,49 +255,6 @@ const Navbar = () => {
           </button>
         </div>
       </div>
-
-      {/* ================= MOBILE DRAWER ================= */}
-      <AnimatePresence>
-        {menuOpen && (
-          <>
-            <motion.div
-              className="fixed inset-0 bg-black/50 z-40"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setMenuOpen(false)}
-            />
-
-            <motion.div
-              className="fixed top-0 right-0 h-full w-72
-              bg-black/90 backdrop-blur-xl z-50 p-6"
-              variants={drawerVariants}
-              initial="hidden"
-              animate="visible"
-              exit="exit"
-            >
-              <div className="flex justify-between mb-6">
-                <h3 className="text-lg text-white font-semibold">Menu</h3>
-                <button onClick={() => setMenuOpen(false)}>
-                  <X size={22} className="text-white" />
-                </button>
-              </div>
-
-              <div className="flex flex-col gap-5 text-white/70">
-                {desktopLinks.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    {link.name}
-                  </Link>
-                ))}
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
     </>
   )
 }
