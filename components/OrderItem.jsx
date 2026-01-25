@@ -72,9 +72,8 @@ const OrderItem = ({ order }) => {
                               productId: item.product.id,
                             })
                           }
-                          className={`text-emerald-400 text-sm hover:underline ${
-                            !isDelivered && 'hidden'
-                          }`}
+                          className={`text-emerald-400 text-sm hover:underline ${!isDelivered && 'hidden'
+                            }`}
                         >
                           Rate Product
                         </button>
@@ -126,9 +125,20 @@ const OrderItem = ({ order }) => {
             {order.orderItems.map((item, idx) => {
               const existingRating = ratings.find(
                 r => r.orderId === order.id && r.productId === item.product.id
-              )
+              );
               return (
                 <div key={idx} className="border-b border-white/10 pb-3 mb-3 last:border-none last:pb-0 last:mb-0">
+                  {/* Product Image */}
+                  <div className="w-20 aspect-square bg-white/10 rounded-xl flex items-center justify-center mb-2">
+                    <Image
+                      src={item.product.images[0]}
+                      alt={item.product.name}
+                      width={56}
+                      height={56}
+                      className="object-contain"
+                    />
+                  </div>
+
                   <p className="text-sm text-white/60">{item.product.name}</p>
                   <p className="text-xs text-white/50">
                     {currency}{item.price} × {item.quantity}
@@ -152,7 +162,7 @@ const OrderItem = ({ order }) => {
                     )
                   )}
                 </div>
-              )
+              );
             })}
 
             <p className="text-sm">
@@ -165,15 +175,14 @@ const OrderItem = ({ order }) => {
             <p className="text-sm text-white/50">{order.address.phone}</p>
 
             <div className="flex justify-center">
-              <span
-                className={`px-6 py-1.5 rounded-full text-xs ${statusColor}`}
-              >
+              <span className={`px-6 py-1.5 rounded-full text-xs ${statusColor}`}>
                 {order.status.replace(/_/g, ' ').toLowerCase()}
               </span>
             </div>
           </div>
         </td>
       </tr>
+
 
       {ratingModal && (
         <RatingModal ratingModal={ratingModal} setRatingModal={setRatingModal} />
