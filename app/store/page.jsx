@@ -12,7 +12,7 @@ import {
 } from "lucide-react"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import toast from "react-hot-toast"
 
 export default function Dashboard() {
@@ -31,6 +31,7 @@ export default function Dashboard() {
     ordersChart: []
   })
 
+  /* -------------------- STATS -------------------- */
   const stats = [
     { title: "Products", value: dashboardData.totalProducts, icon: ShoppingBasketIcon },
     { title: "Earnings", value: currency + dashboardData.totalEarnings, icon: CircleDollarSignIcon },
@@ -38,6 +39,7 @@ export default function Dashboard() {
     { title: "Reviews", value: dashboardData.ratings.length, icon: StarIcon },
   ]
 
+  /* -------------------- FETCH -------------------- */
   const fetchDashboardData = async () => {
     try {
       const token = await getToken()
@@ -56,16 +58,48 @@ export default function Dashboard() {
     fetchDashboardData()
   }, [])
 
+  /* -------------------- CHART DATA (SAFE) -------------------- */
+  const earningsData = useMemo(() => {
+    if (dashboardData.earningsChart?.length) {
+      return dashboardData.earningsChart.map(item => ({
+        name: item.month || item.name || "—",
+        value: item.total || item.amount || item.value || 0
+      }))
+    }
+
+    // fallback demo data (UI never breaks)
+    return [
+      { name: "Jan", value: 1200 },
+      { name: "Feb", value: 2200 },
+      { name: "Mar", value: 1800 },
+      { name: "Apr", value: 3100 },
+    ]
+  }, [dashboardData.earningsChart])
+
+  const ordersData = useMemo(() => {
+    if (dashboardData.ordersChart?.length) {
+      return dashboardData.ordersChart.map(item => ({
+        name: item.month || item.name || "—",
+        value: item.count || item.total || item.value || 0
+      }))
+    }
+
+    return [
+      { name: "Jan", value: 2 },
+      { name: "Feb", value: 5 },
+      { name: "Mar", value: 3 },
+      { name: "Apr", value: 6 },
+    ]
+  }, [dashboardData.ordersChart])
+
   if (loading) return <Loading />
 
   return (
-    <div className="max-w-7xl mx-auto pb-28">
+    <div className="max-w-7xl mx-auto pb-28 px-4 lg:px-6">
 
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-semibold text-slate-900">
-          Dashboard
-        </h1>
+        <h1 className="text-2xl font-semibold text-slate-900">Dashboard</h1>
         <p className="text-sm text-slate-500 mt-1">
           Monitor your business performance
         </p>
@@ -76,7 +110,7 @@ export default function Dashboard() {
         {stats.map((item, i) => (
           <div
             key={i}
-            className="bg-white border border-slate-200 rounded-lg p-4"
+            className="bg-white border border-slate-200 rounded-xl p-4"
           >
             <p className="text-xs text-slate-500">{item.title}</p>
             <div className="flex items-center justify-between mt-2">
@@ -91,8 +125,8 @@ export default function Dashboard() {
 
       {/* Charts */}
       <DashboardCharts
-        earningsData={dashboardData.earningsChart}
-        ordersData={dashboardData.ordersChart}
+        earningsData={earningsData}
+        ordersData={ordersData}
       />
 
       {/* Reviews */}
@@ -109,7 +143,7 @@ export default function Dashboard() {
         {dashboardData.ratings.map((review, index) => (
           <div
             key={index}
-            className="bg-white border border-slate-200 rounded-lg p-4"
+            className="bg-white border border-slate-200 rounded-xl p-4"
           >
             <div className="flex flex-col sm:flex-row gap-4 justify-between">
 

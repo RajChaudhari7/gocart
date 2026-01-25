@@ -3,41 +3,95 @@ import { authSeller } from "@/middlewares/authSeller";
 import { getAuth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
-// dashboard data
+/* ------------------ HELPERS ------------------ */
+const getLast6Months = () => {
+  const months = [];
+  for (let i = 5; i >= 0; i--) {
+    const date = new Date();
+    date.setMonth(date.getMonth() - i);
+    months.push({
+      key: `${date.getFullYear()}-${date.getMonth()}`,
+      name: date.toLocaleString("default", { month: "short" }),
+      year: date.getFullYear(),
+      month: date.getMonth(),
+      earnings: 0,
+      orders: 0
+    });
+  }
+  return months;
+};
+
+/* ------------------ API ------------------ */
 export async function GET(request) {
+  try {
+    const { userId } = getAuth(request);
+    const storeId = await authSeller(userId);
 
-    try {
+    /* ---------- ORDERS ---------- */
+    const orders = await prisma.order.findMany({
+      where: { storeId },
+      select: {
+        total: true,
+        createdAt: true
+      }
+    });
 
-        const { userId } = getAuth(request)
-        const storeId = await authSeller(userId)
+    /* ---------- PRODUCTS ---------- */
+    const products = await prisma.product.findMany({
+      where: { storeId },
+      select: { id: true }
+    });
 
-        // get all orders for seller
-        const orders = await prisma.order.findMany({
-            where: { storeId }
-        })
+    /* ---------- RATINGS ---------- */
+    const ratings = await prisma.rating.findMany({
+      where: { productId: { in: products.map(p => p.id) } },
+      include: { user: true, product: true }
+    });
 
-        // get alll products with aratings for seller
-        const products = await prisma.product.findMany({
-            where: { storeId }
-        })
+    /* ---------- CHART DATA ---------- */
+    const months = getLast6Months();
 
-        const ratings = await prisma.rating.findMany({
-            where: { productId: { in: products.map(product => product.id) } },
-            include: { user: true, product: true }
-        })
+    orders.forEach(order => {
+      const date = new Date(order.createdAt);
+      const monthIndex = months.findIndex(
+        m => m.month === date.getMonth() && m.year === date.getFullYear()
+      );
 
-        const dashboardData = {
-            ratings,
-            totalOrders: orders.length,
-            totalEarnings: Math.round(orders.reduce((acc, order) => acc + order.total, 0)),
-            totalProducts: products.length
-        }
+      if (monthIndex !== -1) {
+        months[monthIndex].earnings += order.total;
+        months[monthIndex].orders += 1;
+      }
+    });
 
-        return NextResponse.json({ dashboardData })
+    const earningsChart = months.map(m => ({
+      name: m.name,
+      value: Math.round(m.earnings)
+    }));
 
-    } catch (error) {
-        console.error(error);
-        return NextResponse.json({ error: error.code || error.message }, { status: 400 })
-    }
+    const ordersChart = months.map(m => ({
+      name: m.name,
+      value: m.orders
+    }));
 
+    /* ---------- RESPONSE ---------- */
+    const dashboardData = {
+      ratings,
+      totalOrders: orders.length,
+      totalEarnings: Math.round(
+        orders.reduce((acc, order) => acc + order.total, 0)
+      ),
+      totalProducts: products.length,
+      earningsChart,
+      ordersChart
+    };
+
+    return NextResponse.json({ dashboardData });
+
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json(
+      { error: error.message || "Something went wrong" },
+      { status: 400 }
+    );
+  }
 }
