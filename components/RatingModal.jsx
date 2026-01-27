@@ -34,6 +34,7 @@ const RatingModal = ({ ratingModal, setRatingModal }) => {
     try {
       setSubmitting(true);
       const token = await getToken();
+
       const formData = new FormData();
       formData.append('productId', ratingModal.productId);
       formData.append('orderId', ratingModal.orderId);
@@ -44,8 +45,7 @@ const RatingModal = ({ ratingModal, setRatingModal }) => {
 
       const { data } = await axios.post('/api/rating', formData, {
         headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${token}`, // ✅ FIXED (no Content-Type)
         },
       });
 

@@ -4,97 +4,95 @@ import { NextResponse } from "next/server";
 import { imagekit } from "@/configs/imageKit";
 
 export async function POST(request) {
-  try {
-    const { userId } = getAuth(request);
-    if (!userId)
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    try {
+        const { userId } = getAuth(request);
+        if (!userId)
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const formData = await request.formData();
-    const orderId = formData.get("orderId");
-    const productId = formData.get("productId");
-    const rating = parseInt(formData.get("rating"));
-    const review = formData.get("review");
+        const formData = await request.formData();
 
-    if (!orderId || !productId || !rating || !review)
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      );
+        const orderId = formData.get("orderId");
+        const productId = formData.get("productId");
+        const rating = Number(formData.get("rating"));
+        const review = formData.get("review");
+        const photos = formData.getAll("photos"); // ✅ MULTIPLE FILES
 
-    const photos = formData.getAll("photos"); // can be empty
+        if (!orderId || !productId || !rating || !review)
+            return NextResponse.json(
+                { error: "Missing required fields" },
+                { status: 400 }
+            );
 
-    // Validate order
-    const order = await prisma.order.findUnique({ where: { id: orderId } });
-    if (!order || order.userId !== userId)
-      return NextResponse.json(
-        { error: "Order not found or unauthorized" },
-        { status: 404 }
-      );
+        const order = await prisma.order.findUnique({ where: { id: orderId } });
+        if (!order || order.userId !== userId)
+            return NextResponse.json(
+                { error: "Order not found or unauthorized" },
+                { status: 404 }
+            );
 
-    // Check if already rated
-    const alreadyRated = await prisma.rating.findFirst({
-      where: { productId, orderId },
-    });
-    if (alreadyRated)
-      return NextResponse.json({ error: "Already rated" }, { status: 400 });
-
-    // Upload photos to ImageKit
-    const uploadedUrls = [];
-    for (const file of photos) {
-      if (file && file.size > 0) {
-        const buffer = Buffer.from(await file.arrayBuffer());
-        const upload = await imagekit.upload({
-          file: buffer,
-          fileName: `review-${Date.now()}-${file.name}`,
-          folder: "/reviews",
+        const alreadyRated = await prisma.rating.findFirst({
+            where: { productId, orderId },
         });
-        uploadedUrls.push(upload.url);
-      }
+        if (alreadyRated)
+            return NextResponse.json({ error: "Already rated" }, { status: 400 });
+
+        const uploadedUrls = [];
+
+        for (const file of photos) {
+            if (file && file.size > 0) {
+                const buffer = Buffer.from(await file.arrayBuffer());
+                const upload = await imagekit.upload({
+                    file: buffer,
+                    fileName: `review-${Date.now()}-${file.name}`,
+                    folder: "/reviews",
+                });
+                uploadedUrls.push(upload.url);
+            }
+        }
+
+        const response = await prisma.rating.create({
+            data: {
+                userId,
+                productId,
+                orderId,
+                rating,
+                review,
+                photos: uploadedUrls,
+            },
+            include: { user: true },
+        });
+
+        return NextResponse.json({
+            message: "Rating added successfully",
+            rating: response,
+        });
+    } catch (error) {
+        console.error("POST /rating error:", error);
+        return NextResponse.json(
+            { error: error.message || "Something went wrong" },
+            { status: 500 }
+        );
     }
-
-    // Create rating in DB
-    const response = await prisma.rating.create({
-      data: {
-        userId,
-        productId,
-        orderId,
-        rating,
-        review,
-        photos: uploadedUrls, // optional
-      },
-      include: { user: true },
-    });
-
-    return NextResponse.json({
-      message: "Rating added successfully",
-      rating: response,
-    });
-  } catch (error) {
-    console.error("POST /rating error:", error);
-    return NextResponse.json(
-      { error: error.message || "Something went wrong" },
-      { status: 500 }
-    );
-  }
 }
 
+
 export async function GET(request) {
-  try {
-    const { userId } = getAuth(request);
-    if (!userId)
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    try {
+        const { userId } = getAuth(request);
+        if (!userId)
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const ratings = await prisma.rating.findMany({
-      where: { userId },
-      include: { user: true },
-    });
+        const ratings = await prisma.rating.findMany({
+            where: { userId },
+            include: { user: true },
+        });
 
-    return NextResponse.json({ ratings });
-  } catch (error) {
-    console.error("GET /rating error:", error);
-    return NextResponse.json(
-      { error: error.message || "Something went wrong" },
-      { status: 500 }
-    );
-  }
+        return NextResponse.json({ ratings });
+    } catch (error) {
+        console.error("GET /rating error:", error);
+        return NextResponse.json(
+            { error: error.message || "Something went wrong" },
+            { status: 500 }
+        );
+    }
 }

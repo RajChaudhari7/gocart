@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-    provider  = "postgresql"
-    url       = env("DATABASE_URL")
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
 }
 
 // Required for creating a User: id, name, email, image, cart (optional JSON string)
@@ -96,7 +96,7 @@ model Rating {
     id        String   @id @default(cuid())
     rating    Int
     review    String
-    photos     String[]
+    photos    String[]
     userId    String
     productId String
     orderId   String

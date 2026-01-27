@@ -112,18 +112,17 @@ const ProductDescription = ({ product }) => {
                     {item.review}
                   </p>
 
-                  {/* REVIEW IMAGES */}
+                  {/* ✅ REVIEW IMAGES (FIXED) */}
                   {item.photos?.length > 0 && (
                     <div className="mt-2 flex flex-wrap gap-2">
                       {item.photos.map((img, i) => (
-                        <div key={i} className="w-20 h-20 sm:w-24 sm:h-24 relative">
-                          <Image
-                            src={img}
-                            alt="review image"
-                            fill
-                            className="rounded-lg border border-gray-200 object-cover"
-                          />
-                        </div>
+                        <img
+                          key={i}
+                          src={img}
+                          alt="review image"
+                          className="w-20 h-20 sm:w-24 sm:h-24 rounded-lg border border-gray-200 object-cover"
+                          loading="lazy"
+                        />
                       ))}
                     </div>
                   )}
