@@ -1,15 +1,15 @@
 'use client'
 
-import { ArrowRight, StarIcon } from "lucide-react"
-import Image from "next/image"
-import Link from "next/link"
-import { useState } from "react"
-import { motion, AnimatePresence } from "framer-motion"
+import { ArrowRight, StarIcon } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
-const tabs = ['Description', 'Reviews']
+const tabs = ['Description', 'Reviews'];
 
 const ProductDescription = ({ product }) => {
-  const [selectedTab, setSelectedTab] = useState('Description')
+  const [selectedTab, setSelectedTab] = useState('Description');
 
   return (
     <div className="my-12 px-4 sm:px-6 max-w-7xl mx-auto text-gray-900">
@@ -113,7 +113,7 @@ const ProductDescription = ({ product }) => {
                   </p>
 
                   {/* REVIEW IMAGES */}
-                  {item.photos.length > 0 && (
+                  {item.photos?.length > 0 && (
                     <div className="mt-2 flex flex-wrap gap-2">
                       {item.photos.map((img, i) => (
                         <div key={i} className="w-20 h-20 sm:w-24 sm:h-24 relative">
@@ -165,4 +165,4 @@ const ProductDescription = ({ product }) => {
   )
 }
 
-export default ProductDescription
+export default ProductDescription;

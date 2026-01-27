@@ -14,7 +14,7 @@ const RatingModal = ({ ratingModal, setRatingModal }) => {
 
   const [rating, setRating] = useState(0);
   const [review, setReview] = useState('');
-  const [photos, setPhotos] = useState([]); // multiple photos
+  const [photos, setPhotos] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -24,7 +24,7 @@ const RatingModal = ({ ratingModal, setRatingModal }) => {
 
   const handlePhotoChange = (e) => {
     const files = Array.from(e.target.files);
-    setPhotos(files); // save multiple files
+    setPhotos(files);
   };
 
   const handleSubmit = async () => {
@@ -40,9 +40,7 @@ const RatingModal = ({ ratingModal, setRatingModal }) => {
       formData.append('rating', rating);
       formData.append('review', review);
 
-      photos.forEach((photo) => {
-        formData.append('photos', photo);
-      });
+      photos.forEach((photo) => formData.append('photos', photo));
 
       const { data } = await axios.post('/api/rating', formData, {
         headers: {
@@ -92,7 +90,6 @@ const RatingModal = ({ ratingModal, setRatingModal }) => {
               Rate Product
             </h2>
 
-            {/* Star Rating */}
             <div className="flex justify-center gap-2 mb-4">
               {Array.from({ length: 5 }, (_, i) => (
                 <motion.div
@@ -109,7 +106,6 @@ const RatingModal = ({ ratingModal, setRatingModal }) => {
               ))}
             </div>
 
-            {/* Review textarea */}
             <textarea
               className="w-full p-3 rounded-xl border border-white/20 bg-white/5 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-yellow-400 mb-4 transition"
               placeholder="Write your review..."
@@ -118,7 +114,6 @@ const RatingModal = ({ ratingModal, setRatingModal }) => {
               onChange={(e) => setReview(e.target.value)}
             />
 
-            {/* Photo Upload */}
             <label className="flex items-center gap-3 cursor-pointer mb-4">
               <Camera className="text-white/70" size={24} />
               <span className="text-white/70 text-sm">
@@ -134,7 +129,6 @@ const RatingModal = ({ ratingModal, setRatingModal }) => {
               />
             </label>
 
-            {/* Preview photos */}
             {photos.length > 0 && (
               <div className="flex flex-wrap gap-2 mb-4">
                 {photos.map((file, idx) => (
@@ -148,7 +142,6 @@ const RatingModal = ({ ratingModal, setRatingModal }) => {
               </div>
             )}
 
-            {/* Submit button */}
             <motion.button
               onClick={() => toast.promise(handleSubmit(), { loading: 'Submitting...' })}
               className="w-full bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-semibold py-2 rounded-2xl transition"
