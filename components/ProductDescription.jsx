@@ -78,14 +78,15 @@ const ProductDescription = ({ product }) => {
                 whileHover={{ scale: 1.01 }}
                 className="flex gap-3 sm:gap-4 rounded-2xl border border-gray-200 bg-white p-4 sm:p-6 shadow-sm hover:shadow-md transition"
               >
-                {/* USER AVATAR (SMALL & ROUND) */}
-                <Image
-                  src={item.user.image || '/default-avatar.png'} // fallback if no image
-                  alt={item.user.name}
-                  width={28}
-                  height={28}
-                  className="rounded-full object-cover border border-gray-200"
-                />
+                {/* USER AVATAR */}
+                <div className="w-12 h-12 relative flex-shrink-0">
+                  <Image
+                    src={item.user.image || '/default-avatar.png'}
+                    alt={item.user.name}
+                    fill
+                    className="rounded-full object-cover border border-gray-200"
+                  />
+                </div>
 
                 <div className="flex-1">
                   {/* STARS + DATE */}
@@ -93,7 +94,7 @@ const ProductDescription = ({ product }) => {
                     {Array.from({ length: 5 }).map((_, i) => (
                       <StarIcon
                         key={i}
-                        size={12} // smaller star
+                        size={14}
                         className={
                           item.rating >= i + 1
                             ? "text-yellow-400 fill-yellow-400"
@@ -111,18 +112,18 @@ const ProductDescription = ({ product }) => {
                     {item.review}
                   </p>
 
-                  {/* MULTIPLE REVIEW IMAGES (only if exist) */}
+                  {/* REVIEW IMAGES */}
                   {item.photos?.length > 0 && (
                     <div className="mt-2 flex flex-wrap gap-2">
                       {item.photos.map((img, i) => (
-                        <Image
-                          key={i}
-                          src={img}
-                          alt="review image"
-                          width={80}
-                          height={80}
-                          className="rounded-lg border border-gray-200 object-cover w-20 h-20 sm:w-24 sm:h-24"
-                        />
+                        <div key={i} className="w-20 h-20 sm:w-24 sm:h-24 relative">
+                          <Image
+                            src={img}
+                            alt="review image"
+                            fill
+                            className="rounded-lg border border-gray-200 object-cover"
+                          />
+                        </div>
                       ))}
                     </div>
                   )}
@@ -145,7 +146,7 @@ const ProductDescription = ({ product }) => {
           alt={product.store.name}
           width={56}
           height={56}
-          className="rounded-full bg-white p-1"
+          className="rounded-full bg-white p-1 object-cover"
         />
 
         <div>

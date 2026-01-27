@@ -6,9 +6,7 @@ import { imagekit } from "@/configs/imageKit";
 export async function POST(request) {
     try {
         const { userId } = getAuth(request);
-        if (!userId) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
+        if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
         const formData = await request.formData();
 
@@ -21,40 +19,29 @@ export async function POST(request) {
             return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
         }
 
-        // Get all uploaded photos
         const photos = formData.getAll("photos");
 
-        // Validate order
         const order = await prisma.order.findUnique({ where: { id: orderId } });
         if (!order || order.userId !== userId) {
             return NextResponse.json({ error: "Order not found or unauthorized" }, { status: 404 });
         }
 
-        // Check if already rated
         const alreadyRated = await prisma.rating.findFirst({ where: { productId, orderId } });
-        if (alreadyRated) {
-            return NextResponse.json({ error: "Already rated" }, { status: 400 });
-        }
+        if (alreadyRated) return NextResponse.json({ error: "Already rated" }, { status: 400 });
 
-        // Upload photos to ImageKit (skip empty files)
         const uploadedUrls = [];
         for (const file of photos) {
             if (file && file.size > 0) {
-                try {
-                    const buffer = Buffer.from(await file.arrayBuffer());
-                    const upload = await imagekit.upload({
-                        file: buffer,
-                        fileName: `review-${Date.now()}-${file.name}`,
-                        folder: "/reviews",
-                    });
-                    uploadedUrls.push(upload.url);
-                } catch (uploadError) {
-                    console.error("ImageKit upload failed:", uploadError);
-                }
+                const buffer = Buffer.from(await file.arrayBuffer());
+                const upload = await imagekit.upload({
+                    file: buffer,
+                    fileName: `review-${Date.now()}-${file.name}`,
+                    folder: "/reviews",
+                });
+                uploadedUrls.push(upload.url);
             }
         }
 
-        // Create rating
         const response = await prisma.rating.create({
             data: {
                 userId,
@@ -62,8 +49,9 @@ export async function POST(request) {
                 orderId,
                 rating,
                 review,
-                photos: uploadedUrls, // string[]
+                photos: uploadedUrls,
             },
+            include: { user: true },
         });
 
         return NextResponse.json({ message: "Rating added successfully", rating: response });
@@ -73,15 +61,16 @@ export async function POST(request) {
     }
 }
 
-// Get all ratings for a user
 export async function GET(request) {
     try {
         const { userId } = getAuth(request);
-        if (!userId) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
+        if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-        const ratings = await prisma.rating.findMany({ where: { userId } });
+        const ratings = await prisma.rating.findMany({
+            where: { userId },
+            include: { user: true },
+        });
+
         return NextResponse.json({ ratings });
     } catch (error) {
         console.error("GET /rating error:", error);
