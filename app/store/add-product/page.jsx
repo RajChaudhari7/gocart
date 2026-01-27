@@ -4,7 +4,7 @@ import { assets } from "@/assets/assets"
 import { useAuth } from "@clerk/nextjs"
 import axios from "axios"
 import Image from "next/image"
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { toast } from "react-hot-toast"
 
 export default function StoreAddProduct() {
@@ -26,29 +26,31 @@ export default function StoreAddProduct() {
         quantity: 0,
         category: "",
     })
+
     const [customCategory, setCustomCategory] = useState("")
     const [loading, setLoading] = useState(false)
     const [aiUsed, setAiUsed] = useState(false)
 
-    /* 🔹 NEW */
+    /* 🔹 NEW: discount slider state */
     const [discount, setDiscount] = useState(0)
 
-    /* 🔒 UPDATED: Price validation */
+    /* 🔒 UPDATED: price validation + sync */
     const onChangeHandler = (e) => {
         const { name, value } = e.target
+        const numValue = Number(value)
 
-        if (name === "price" && Number(value) > productInfo.mrp) {
+        if (name === "price" && numValue > productInfo.mrp) {
             toast.error("Offer price can’t exceed MRP")
             return
         }
 
-        setProductInfo({
-            ...productInfo,
-            [name]: Number(value) || value
-        })
+        setProductInfo(prev => ({
+            ...prev,
+            [name]: numValue || value
+        }))
     }
 
-    /* 🔥 Auto Discount Calculation (existing) */
+    /* 🔥 Auto discount % (existing logic kept) */
     const discountPercent = useMemo(() => {
         const { mrp, price } = productInfo
         if (mrp > 0 && price > 0 && price < mrp) {
@@ -57,17 +59,26 @@ export default function StoreAddProduct() {
         return 0
     }, [productInfo.mrp, productInfo.price])
 
-    /* 🎚️ NEW: Discount slider logic */
+    /* 🔁 Sync slider when price is typed */
+    useEffect(() => {
+        if (productInfo.mrp > 0 && productInfo.price > 0) {
+            const calcDiscount =
+                Math.round(((productInfo.mrp - productInfo.price) / productInfo.mrp) * 100)
+            setDiscount(calcDiscount > 0 ? calcDiscount : 0)
+        }
+    }, [productInfo.price, productInfo.mrp])
+
+    /* 🎚️ Slider handler */
     const handleDiscountChange = (value) => {
         setDiscount(value)
 
         if (productInfo.mrp > 0) {
-            const discountedPrice =
+            const newPrice =
                 productInfo.mrp - (productInfo.mrp * value) / 100
 
             setProductInfo(prev => ({
                 ...prev,
-                price: Math.round(discountedPrice)
+                price: Math.round(newPrice)
             }))
         }
     }
@@ -159,8 +170,8 @@ export default function StoreAddProduct() {
                 quantity: 0,
                 category: "",
             })
-            setCustomCategory("")
             setImages({ 1: null, 2: null, 3: null, 4: null })
+            setCustomCategory("")
             setDiscount(0)
 
         } catch (error) {
@@ -179,21 +190,49 @@ export default function StoreAddProduct() {
                 Add New Product
             </h1>
 
-            {/* Pricing */}
+            {/* Pricing (labels FIXED & always visible) */}
             <div className="grid grid-cols-3 gap-5 mb-4">
-                <label className="flex flex-col gap-2">
-                    <span className="text-sm font-medium">Actual Price (₹)</span>
-                    <input type="number" name="mrp" value={productInfo.mrp} onChange={onChangeHandler} className="p-3 border rounded-lg" required />
+                <label className="flex flex-col gap-1">
+                    <span className="text-sm font-semibold text-slate-700">
+                        Actual Price (₹)
+                    </span>
+                    <input
+                        type="number"
+                        name="mrp"
+                        value={productInfo.mrp}
+                        onChange={onChangeHandler}
+                        className="p-3 border rounded-lg"
+                        required
+                    />
                 </label>
 
-                <label className="flex flex-col gap-2">
-                    <span className="text-sm font-medium">Offer Price (₹)</span>
-                    <input type="number" name="price" value={productInfo.price} onChange={onChangeHandler} className="p-3 border rounded-lg" required />
+                <label className="flex flex-col gap-1">
+                    <span className="text-sm font-semibold text-slate-700">
+                        Offer Price (₹)
+                    </span>
+                    <input
+                        type="number"
+                        name="price"
+                        value={productInfo.price}
+                        onChange={onChangeHandler}
+                        className="p-3 border rounded-lg"
+                        required
+                    />
                 </label>
 
-                <label className="flex flex-col gap-2">
-                    <span className="text-sm font-medium">Quantity</span>
-                    <input type="number" name="quantity" min={0} value={productInfo.quantity} onChange={onChangeHandler} className="p-3 border rounded-lg" required />
+                <label className="flex flex-col gap-1">
+                    <span className="text-sm font-semibold text-slate-700">
+                        Quantity
+                    </span>
+                    <input
+                        type="number"
+                        name="quantity"
+                        min={0}
+                        value={productInfo.quantity}
+                        onChange={onChangeHandler}
+                        className="p-3 border rounded-lg"
+                        required
+                    />
                 </label>
             </div>
 
@@ -201,7 +240,9 @@ export default function StoreAddProduct() {
             {productInfo.mrp > 0 && (
                 <div className="mb-6">
                     <div className="flex justify-between text-sm mb-2">
-                        <span className="font-medium">Discount: {discount}%</span>
+                        <span className="font-medium">
+                            Discount: {discount}%
+                        </span>
                         <span className="text-green-600 font-medium">
                             You save ₹{productInfo.mrp - productInfo.price}
                         </span>
@@ -218,7 +259,7 @@ export default function StoreAddProduct() {
                 </div>
             )}
 
-            {/* Discount badge (existing) */}
+            {/* Discount Badge */}
             {discountPercent > 0 && (
                 <div className="mb-6">
                     <span className="inline-block px-4 py-1 text-sm font-medium rounded-full bg-green-100 text-green-700 animate-slideFade">
