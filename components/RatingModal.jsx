@@ -14,14 +14,18 @@ const RatingModal = ({ ratingModal, setRatingModal }) => {
 
   const [rating, setRating] = useState(0);
   const [review, setReview] = useState('');
-  const [photo, setPhoto] = useState(null);
+  const [photos, setPhotos] = useState([]); // multiple photos
   const [submitting, setSubmitting] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    // Detect mobile
     setIsMobile(/Mobi|Android/i.test(navigator.userAgent));
   }, []);
+
+  const handlePhotoChange = (e) => {
+    const files = Array.from(e.target.files);
+    setPhotos(files); // save multiple files
+  };
 
   const handleSubmit = async () => {
     if (rating < 1 || rating > 5) return toast('Please select a rating');
@@ -35,10 +39,16 @@ const RatingModal = ({ ratingModal, setRatingModal }) => {
       formData.append('orderId', ratingModal.orderId);
       formData.append('rating', rating);
       formData.append('review', review);
-      if (photo) formData.append('photo', photo);
+
+      photos.forEach((photo) => {
+        formData.append('photos', photo);
+      });
 
       const { data } = await axios.post('/api/rating', formData, {
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
+        },
       });
 
       dispatch(addRating(data.rating));
@@ -46,7 +56,7 @@ const RatingModal = ({ ratingModal, setRatingModal }) => {
 
       setRating(0);
       setReview('');
-      setPhoto(null);
+      setPhotos([]);
       setRatingModal(null);
     } catch (error) {
       toast.error(error?.response?.data?.error || error.message);
@@ -112,25 +122,30 @@ const RatingModal = ({ ratingModal, setRatingModal }) => {
             <label className="flex items-center gap-3 cursor-pointer mb-4">
               <Camera className="text-white/70" size={24} />
               <span className="text-white/70 text-sm">
-                {isMobile
-                  ? "Take a photo or upload from gallery"
-                  : "Upload a photo"}
+                {isMobile ? "Take a photo or upload from gallery" : "Upload photos"}
               </span>
               <input
                 type="file"
                 accept="image/*"
-                onChange={(e) => setPhoto(e.target.files[0])}
+                multiple
+                onChange={handlePhotoChange}
                 hidden
-                // Mobile: camera capture enabled
                 {...(isMobile ? { capture: "environment" } : {})}
               />
             </label>
-            {photo && (
-              <img
-                src={URL.createObjectURL(photo)}
-                alt="review-photo"
-                className="w-24 h-24 sm:w-32 sm:h-32 object-cover rounded-lg mb-4"
-              />
+
+            {/* Preview photos */}
+            {photos.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-4">
+                {photos.map((file, idx) => (
+                  <img
+                    key={idx}
+                    src={URL.createObjectURL(file)}
+                    alt={`review-photo-${idx}`}
+                    className="w-24 h-24 sm:w-32 sm:h-32 object-cover rounded-lg"
+                  />
+                ))}
+              </div>
             )}
 
             {/* Submit button */}

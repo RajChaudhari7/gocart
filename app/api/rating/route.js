@@ -17,41 +17,44 @@ export async function POST(request) {
         const rating = parseInt(formData.get("rating"));
         const review = formData.get("review");
 
-        const photos = formData.getAll("photos"); // ✅ multiple files
-
-        const order = await prisma.order.findUnique({
-            where: { id: orderId, userId },
-        });
-
-        if (!order) {
-            return NextResponse.json({ error: "Order not found" }, { status: 404 });
+        if (!orderId || !productId || !rating || !review) {
+            return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
         }
 
-        const alreadyRated = await prisma.rating.findFirst({
-            where: { productId, orderId },
-        });
+        // Get all uploaded photos
+        const photos = formData.getAll("photos");
 
+        // Validate order
+        const order = await prisma.order.findUnique({ where: { id: orderId } });
+        if (!order || order.userId !== userId) {
+            return NextResponse.json({ error: "Order not found or unauthorized" }, { status: 404 });
+        }
+
+        // Check if already rated
+        const alreadyRated = await prisma.rating.findFirst({ where: { productId, orderId } });
         if (alreadyRated) {
             return NextResponse.json({ error: "Already rated" }, { status: 400 });
         }
 
-        // ✅ Upload all images to ImageKit
+        // Upload photos to ImageKit (skip empty files)
         const uploadedUrls = [];
-
         for (const file of photos) {
             if (file && file.size > 0) {
-                const buffer = Buffer.from(await file.arrayBuffer());
-
-                const upload = await imagekit.upload({
-                    file: buffer,
-                    fileName: `review-${Date.now()}-${file.name}`,
-                    folder: "/reviews",
-                });
-
-                uploadedUrls.push(upload.url);
+                try {
+                    const buffer = Buffer.from(await file.arrayBuffer());
+                    const upload = await imagekit.upload({
+                        file: buffer,
+                        fileName: `review-${Date.now()}-${file.name}`,
+                        folder: "/reviews",
+                    });
+                    uploadedUrls.push(upload.url);
+                } catch (uploadError) {
+                    console.error("ImageKit upload failed:", uploadError);
+                }
             }
         }
 
+        // Create rating
         const response = await prisma.rating.create({
             data: {
                 userId,
@@ -59,45 +62,29 @@ export async function POST(request) {
                 orderId,
                 rating,
                 review,
-                photos: uploadedUrls, // ✅ array
+                photos: uploadedUrls, // string[]
             },
         });
 
-        return NextResponse.json({
-            message: "Rating added successfully",
-            rating: response,
-        });
+        return NextResponse.json({ message: "Rating added successfully", rating: response });
     } catch (error) {
-        console.error(error);
-        return NextResponse.json(
-            { error: error.message },
-            { status: 400 }
-        );
+        console.error("POST /rating error:", error);
+        return NextResponse.json({ error: error.message || "Something went wrong" }, { status: 500 });
     }
 }
 
-
-// get all ratings for a user
+// Get all ratings for a user
 export async function GET(request) {
-
     try {
-
-        const { userId } = getAuth(request)
-
+        const { userId } = getAuth(request);
         if (!userId) {
-            return NextResponse.json({ error: "UnAuthorized" }, { status: 401 })
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const ratings = await prisma.rating.findMany({
-            where: { userId }
-        })
-
-        return NextResponse.json({ ratings })
-
-
+        const ratings = await prisma.rating.findMany({ where: { userId } });
+        return NextResponse.json({ ratings });
     } catch (error) {
-        console.error(error);
-        return NextResponse.json({ error: error.code || error.message }, { status: 400 })
+        console.error("GET /rating error:", error);
+        return NextResponse.json({ error: error.message || "Something went wrong" }, { status: 500 });
     }
-
 }

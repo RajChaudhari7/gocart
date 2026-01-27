@@ -78,13 +78,13 @@ const ProductDescription = ({ product }) => {
                 whileHover={{ scale: 1.01 }}
                 className="flex gap-3 sm:gap-4 rounded-2xl border border-gray-200 bg-white p-4 sm:p-6 shadow-sm hover:shadow-md transition"
               >
-                {/* USER AVATAR (SMALL) */}
+                {/* USER AVATAR (SMALL & ROUND) */}
                 <Image
-                  src={item.user.image}
+                  src={item.user.image || '/default-avatar.png'} // fallback if no image
                   alt={item.user.name}
-                  width={32}
-                  height={32}
-                  className="rounded-full border border-gray-200 object-cover"
+                  width={28}
+                  height={28}
+                  className="rounded-full object-cover border border-gray-200"
                 />
 
                 <div className="flex-1">
@@ -93,7 +93,7 @@ const ProductDescription = ({ product }) => {
                     {Array.from({ length: 5 }).map((_, i) => (
                       <StarIcon
                         key={i}
-                        size={14}
+                        size={12} // smaller star
                         className={
                           item.rating >= i + 1
                             ? "text-yellow-400 fill-yellow-400"
@@ -111,7 +111,7 @@ const ProductDescription = ({ product }) => {
                     {item.review}
                   </p>
 
-                  {/* MULTIPLE REVIEW IMAGES */}
+                  {/* MULTIPLE REVIEW IMAGES (only if exist) */}
                   {item.photos?.length > 0 && (
                     <div className="mt-2 flex flex-wrap gap-2">
                       {item.photos.map((img, i) => (
@@ -119,8 +119,8 @@ const ProductDescription = ({ product }) => {
                           key={i}
                           src={img}
                           alt="review image"
-                          width={96}
-                          height={96}
+                          width={80}
+                          height={80}
                           className="rounded-lg border border-gray-200 object-cover w-20 h-20 sm:w-24 sm:h-24"
                         />
                       ))}
