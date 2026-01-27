@@ -32,7 +32,8 @@ export async function GET(request) {
       where: { storeId },
       select: {
         total: true,
-        createdAt: true
+        createdAt: true,
+        status: true
       }
     });
 
@@ -58,7 +59,8 @@ export async function GET(request) {
       );
 
       if (monthIndex !== -1) {
-        months[monthIndex].earnings += order.total;
+        // Subtract total if cancelled
+        months[monthIndex].earnings += order.status === 'CANCELLED' ? -order.total : order.total;
         months[monthIndex].orders += 1;
       }
     });
@@ -78,11 +80,12 @@ export async function GET(request) {
       ratings,
       totalOrders: orders.length,
       totalEarnings: Math.round(
-        orders.reduce((acc, order) => acc + order.total, 0)
+        orders.reduce((acc, order) => acc + (order.status === 'CANCELLED' ? -order.total : order.total), 0)
       ),
       totalProducts: products.length,
       earningsChart,
-      ordersChart
+      ordersChart,
+      orders // include orders so frontend can show recent orders and negative totals
     };
 
     return NextResponse.json({ dashboardData });

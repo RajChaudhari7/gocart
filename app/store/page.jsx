@@ -28,18 +28,11 @@ export default function Dashboard() {
     totalOrders: 0,
     ratings: [],
     earningsChart: [],
-    ordersChart: []
+    ordersChart: [],
+    orders: []
   })
 
-  /* -------------------- STATS -------------------- */
-  const stats = [
-    { title: "Products", value: dashboardData.totalProducts, icon: ShoppingBasketIcon },
-    { title: "Earnings", value: currency + dashboardData.totalEarnings, icon: CircleDollarSignIcon },
-    { title: "Orders", value: dashboardData.totalOrders, icon: TagsIcon },
-    { title: "Reviews", value: dashboardData.ratings.length, icon: StarIcon },
-  ]
-
-  /* -------------------- FETCH -------------------- */
+  /* -------------------- FETCH DASHBOARD -------------------- */
   const fetchDashboardData = async () => {
     try {
       const token = await getToken()
@@ -58,39 +51,47 @@ export default function Dashboard() {
     fetchDashboardData()
   }, [])
 
-  /* -------------------- CHART DATA (SAFE) -------------------- */
-  const earningsData = useMemo(() => {
-    if (dashboardData.earningsChart?.length) {
-      return dashboardData.earningsChart.map(item => ({
-        name: item.month || item.name || "—",
-        value: item.total || item.amount || item.value || 0
-      }))
-    }
+  /* -------------------- STATS -------------------- */
+  const stats = [
+    { title: "Products", value: dashboardData.totalProducts, icon: ShoppingBasketIcon },
+    { 
+      title: "Earnings", 
+      value: `${currency}${dashboardData.orders.reduce((acc, order) => {
+        return acc + (order.status === 'CANCELLED' ? -order.total : order.total)
+      }, 0)}`, 
+      icon: CircleDollarSignIcon 
+    },
+    { title: "Orders", value: dashboardData.totalOrders, icon: TagsIcon },
+    { title: "Reviews", value: dashboardData.ratings.length, icon: StarIcon },
+  ]
 
-    // fallback demo data (UI never breaks)
-    return [
-      { name: "Jan", value: 1200 },
-      { name: "Feb", value: 2200 },
-      { name: "Mar", value: 1800 },
-      { name: "Apr", value: 3100 },
-    ]
-  }, [dashboardData.earningsChart])
+  /* -------------------- CHART DATA -------------------- */
+  const earningsData = useMemo(() => {
+    if (!dashboardData.orders?.length) return []
+
+    // Group earnings by month
+    const monthsMap = {}
+    dashboardData.orders.forEach(order => {
+      const month = new Date(order.createdAt).toLocaleString('default', { month: 'short', year: 'numeric' })
+      const amount = order.status === 'CANCELLED' ? -order.total : order.total
+      monthsMap[month] = (monthsMap[month] || 0) + amount
+    })
+
+    return Object.entries(monthsMap).map(([name, value]) => ({ name, value }))
+  }, [dashboardData.orders])
 
   const ordersData = useMemo(() => {
-    if (dashboardData.ordersChart?.length) {
-      return dashboardData.ordersChart.map(item => ({
-        name: item.month || item.name || "—",
-        value: item.count || item.total || item.value || 0
-      }))
-    }
+    if (!dashboardData.orders?.length) return []
 
-    return [
-      { name: "Jan", value: 2 },
-      { name: "Feb", value: 5 },
-      { name: "Mar", value: 3 },
-      { name: "Apr", value: 6 },
-    ]
-  }, [dashboardData.ordersChart])
+    // Count orders by month
+    const monthsMap = {}
+    dashboardData.orders.forEach(order => {
+      const month = new Date(order.createdAt).toLocaleString('default', { month: 'short', year: 'numeric' })
+      monthsMap[month] = (monthsMap[month] || 0) + 1
+    })
+
+    return Object.entries(monthsMap).map(([name, value]) => ({ name, value }))
+  }, [dashboardData.orders])
 
   if (loading) return <Loading />
 
@@ -108,15 +109,10 @@ export default function Dashboard() {
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
         {stats.map((item, i) => (
-          <div
-            key={i}
-            className="bg-white border border-slate-200 rounded-xl p-4"
-          >
+          <div key={i} className="bg-white border border-slate-200 rounded-xl p-4">
             <p className="text-xs text-slate-500">{item.title}</p>
             <div className="flex items-center justify-between mt-2">
-              <p className="text-xl font-semibold text-slate-900">
-                {item.value}
-              </p>
+              <p className="text-xl font-semibold text-slate-900">{item.value}</p>
               <item.icon className="w-5 h-5 text-slate-400" />
             </div>
           </div>
@@ -129,75 +125,25 @@ export default function Dashboard() {
         ordersData={ordersData}
       />
 
-      {/* Reviews */}
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-medium text-slate-900">
-          Recent Reviews
-        </h2>
-        <span className="text-xs text-slate-500">
-          {dashboardData.ratings.length} total
-        </span>
-      </div>
-
-      <div className="space-y-4 max-w-4xl">
-        {dashboardData.ratings.map((review, index) => (
-          <div
-            key={index}
-            className="bg-white border border-slate-200 rounded-xl p-4"
-          >
-            <div className="flex flex-col sm:flex-row gap-4 justify-between">
-
-              <div className="flex gap-3">
-                <Image
-                  src={review.user.image}
-                  alt=""
-                  width={20}
-                  height={20}
-                  className="rounded-full"
-                />
-                <div>
-                  <p className="text-sm font-medium text-slate-900">
-                    {review.user.name}
-                  </p>
-                  <p className="text-xs text-slate-500">
-                    {new Date(review.createdAt).toDateString()}
-                  </p>
-                  <p className="text-sm text-slate-600 mt-2 max-w-md">
-                    {review.review}
-                  </p>
-                </div>
-              </div>
-
-              <div className="sm:text-right">
-                <p className="text-xs text-slate-500">
-                  {review.product?.category}
+      {/* Recent Orders */}
+      <div className="mt-10">
+        <h2 className="text-lg font-medium text-slate-900 mb-4">Recent Orders</h2>
+        <div className="space-y-4 max-w-4xl">
+          {dashboardData.orders.slice(0, 5).map((order, index) => (
+            <div key={order.id} className={`bg-white border rounded-xl p-4 flex justify-between items-center ${order.status === 'CANCELLED' ? 'border-red-400 bg-red-50' : 'border-gray-200'}`}>
+              <div>
+                <p className="text-sm font-medium text-slate-900">{order.user?.name}</p>
+                <p className="text-xs text-gray-500">{new Date(order.createdAt).toLocaleString()}</p>
+                <p className={`mt-1 font-semibold ${order.status === 'CANCELLED' ? 'text-red-600' : 'text-slate-900'}`}>
+                  {order.status === 'CANCELLED' ? `-₹${order.total}` : `₹${order.total}`}
                 </p>
-                <p className="text-sm font-medium text-slate-900">
-                  {review.product?.name}
-                </p>
-
-                <div className="flex sm:justify-end mt-1">
-                  {Array(5).fill("").map((_, i) => (
-                    <StarIcon
-                      key={i}
-                      size={14}
-                      fill={review.rating >= i + 1 ? "#16A34A" : "#E5E7EB"}
-                      className="text-transparent"
-                    />
-                  ))}
-                </div>
-
-                <button
-                  onClick={() => router.push(`/product/${review.product.id}`)}
-                  className="mt-3 text-xs px-4 py-2 border border-slate-300 rounded-md hover:bg-slate-100"
-                >
-                  View product
-                </button>
               </div>
-
+              <span className={`px-3 py-1 rounded-full text-xs font-medium ${order.status === 'CANCELLED' ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-700'}`}>
+                {order.status}
+              </span>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
 
     </div>
