@@ -96,7 +96,7 @@ model Rating {
     id        String   @id @default(cuid())
     rating    Int
     review    String
-    photo     String[]
+    photos     String[]
     userId    String
     productId String
     orderId   String
