@@ -113,7 +113,7 @@ const ProductDescription = ({ product }) => {
                   </p>
 
                   {/* REVIEW IMAGES */}
-                  {item.photos?.length > 0 && (
+                  {item.photos.length > 0 && (
                     <div className="mt-2 flex flex-wrap gap-2">
                       {item.photos.map((img, i) => (
                         <div key={i} className="w-20 h-20 sm:w-24 sm:h-24 relative">
