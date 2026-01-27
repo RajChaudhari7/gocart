@@ -17,31 +17,44 @@ export default function Orders() {
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        const token = await getToken()
-        const { data } = await axios.get('/api/orders', {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-        setOrders(data.orders)
-        setLoading(false)
-      } catch (error) {
-        toast.error(error?.response?.data?.error || error.message)
-      }
+  const fetchOrders = async () => {
+    try {
+      const token = await getToken()
+      const { data } = await axios.get('/api/orders', {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      setOrders(data.orders)
+      setLoading(false)
+    } catch (error) {
+      toast.error(error?.response?.data?.error || error.message)
     }
+  }
 
+  useEffect(() => {
     if (isLoaded) {
       user ? fetchOrders() : router.push('/')
     }
-  }, [isLoaded, user, getToken, router])
+  }, [isLoaded, user])
+
+  const cancelOrder = async (orderId) => {
+    if (!confirm("Are you sure you want to cancel this order?")) return
+    try {
+      const token = await getToken()
+      await axios.post(`/api/orders/cancel`, { orderId }, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      toast.success("Order canceled successfully")
+      fetchOrders() // refresh list
+    } catch (error) {
+      toast.error(error?.response?.data?.error || error.message)
+    }
+  }
 
   if (!isLoaded || loading) return <Loading />
 
   return (
     <section className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#020617] to-black text-white px-6">
       <div className="max-w-7xl mx-auto py-24">
-
         <PageTitle
           heading="My Orders"
           text={`You have placed ${orders.length} orders`}
@@ -58,11 +71,16 @@ export default function Orders() {
                   <th className="text-left">Payment</th>
                   <th className="text-left">Address</th>
                   <th className="text-left">Status</th>
+                  <th className="text-center">Action</th>
                 </tr>
               </thead>
               <tbody>
                 {orders.map(order => (
-                  <OrderItem key={order.id} order={order} />
+                  <OrderItem
+                    key={order.id}
+                    order={order}
+                    onCancel={() => cancelOrder(order.id)}
+                  />
                 ))}
               </tbody>
             </table>
@@ -70,7 +88,12 @@ export default function Orders() {
             {/* Mobile cards */}
             <div className="space-y-6 md:hidden">
               {orders.map(order => (
-                <OrderItem key={order.id} order={order} mobile />
+                <OrderItem
+                  key={order.id}
+                  order={order}
+                  mobile
+                  onCancel={() => cancelOrder(order.id)}
+                />
               ))}
             </div>
           </div>
