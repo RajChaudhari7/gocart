@@ -2,6 +2,7 @@
 
 import { Minus, Plus } from "lucide-react"
 import { useDispatch, useSelector } from "react-redux"
+import { toast } from "react-hot-toast"
 import {
   incrementItem,
   decrementItem,
@@ -25,35 +26,30 @@ const Counter = ({ productId }) => {
 
   const handleDecrement = () => {
     if (quantity <= 1) {
-      // Remove item from cart if quantity <= 1
       dispatch(deleteItemFromCart({ productId }))
     } else {
       dispatch(decrementItem({ productId }))
     }
   }
 
+  const handleIncrement = () => {
+    if (quantity >= maxQuantity) {
+      toast.error(`Only ${maxQuantity} items available in stock!`)
+      return
+    }
+    dispatch(incrementItem({ productId, maxQuantity }))
+  }
+
   return (
     <div className="inline-flex items-center gap-2 px-3 py-1 rounded border border-slate-200 text-slate-600">
-      <button
-        onClick={handleDecrement}
-        className="p-1 select-none active:scale-95"
-      >
+      <button onClick={handleDecrement} className="p-1 select-none active:scale-95">
         <Minus size={14} />
       </button>
 
-      <span className="px-2 min-w-[20px] text-center">
-        {quantity}
-      </span>
+      <span className="px-2 min-w-[20px] text-center">{quantity}</span>
 
       <button
-        onClick={() =>
-          dispatch(
-            incrementItem({
-              productId,
-              maxQuantity,
-            })
-          )
-        }
+        onClick={handleIncrement}
         disabled={quantity >= maxQuantity}
         className="p-1 select-none disabled:opacity-40 active:scale-95"
       >

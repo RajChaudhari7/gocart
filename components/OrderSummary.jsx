@@ -1,7 +1,7 @@
 'use client'
 
 import { PlusIcon, SquarePenIcon, XIcon } from 'lucide-react'
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import AddressModal from './AddressModal'
 import { useDispatch, useSelector } from 'react-redux'
 import toast from 'react-hot-toast'
@@ -18,16 +18,31 @@ const OrderSummary = ({ totalPrice, items }) => {
 
   const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '₹'
   const addressList = useSelector(state => state.address.list)
+  const productList = useSelector(state => state.product.list)
 
   const [paymentMethod, setPaymentMethod] = useState('COD')
   const [selectedAddress, setSelectedAddress] = useState(null)
   const [showAddressModal, setShowAddressModal] = useState(false)
   const [couponCodeInput, setCouponCodeInput] = useState('')
   const [coupon, setCoupon] = useState(null)
+  const [hasStockIssues, setHasStockIssues] = useState(false)
 
   const shippingCost = 50
   const discount = coupon ? (coupon.discount / 100) * totalPrice : 0
   const finalTotal = totalPrice + shippingCost - discount
+
+  // Check stock for items in summary
+  useEffect(() => {
+    let stockIssue = false
+    for (const item of items) {
+      const product = productList.find(p => p.id === item.id)
+      if (product && item.quantity > product.quantity) {
+        stockIssue = true
+        break
+      }
+    }
+    setHasStockIssues(stockIssue)
+  }, [items, productList])
 
   /* ---------------- COUPON ---------------- */
   const handleCouponCode = async (e) => {
@@ -54,12 +69,15 @@ const OrderSummary = ({ totalPrice, items }) => {
   const handlePlaceOrder = async (e) => {
     e.preventDefault()
 
+    if (hasStockIssues) {
+      return toast.error('Some items exceed available stock. Adjust quantities before placing order.')
+    }
+
     try {
       if (!user) return toast.error('Please login to place order')
       if (!selectedAddress) return toast.error('Please select delivery address')
 
       const token = await getToken()
-
       const orderData = {
         addressId: selectedAddress.id,
         items,
@@ -84,26 +102,14 @@ const OrderSummary = ({ totalPrice, items }) => {
   }
 
   return (
-    <div
-      className="
-        w-full max-w-lg lg:max-w-[360px]
-        bg-white dark:bg-slate-900
-        border border-slate-200 dark:border-slate-700
-        rounded-2xl p-6
-        shadow-lg
-        text-slate-800 dark:text-slate-200
-      "
-    >
+    <div className="w-full max-w-lg lg:max-w-[360px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-lg text-slate-800 dark:text-slate-200">
+      
       {/* TITLE */}
-      <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
-        Payment Summary
-      </h2>
+      <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Payment Summary</h2>
 
       {/* PAYMENT METHOD */}
       <div className="mt-5 space-y-2">
-        <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
-          Payment Method
-        </p>
+        <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Payment Method</p>
 
         <label className="flex items-center gap-2 cursor-pointer">
           <input
@@ -133,8 +139,7 @@ const OrderSummary = ({ totalPrice, items }) => {
         {selectedAddress ? (
           <div className="flex items-start justify-between gap-2">
             <p className="text-sm text-slate-700 dark:text-slate-300">
-              {selectedAddress.name}, {selectedAddress.city},{' '}
-              {selectedAddress.state} - {selectedAddress.zip}
+              {selectedAddress.name}, {selectedAddress.city}, {selectedAddress.state} - {selectedAddress.zip}
             </p>
             <SquarePenIcon
               size={18}
@@ -146,23 +151,15 @@ const OrderSummary = ({ totalPrice, items }) => {
           <>
             {addressList.length > 0 && (
               <select
-                className="
-                  w-full mt-2 p-2 rounded
-                  bg-white dark:bg-slate-800
-                  border border-slate-300 dark:border-slate-600
-                  text-slate-800 dark:text-slate-200
-                "
+                className="w-full mt-2 p-2 rounded bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-800 dark:text-slate-200"
                 onChange={e => setSelectedAddress(addressList[e.target.value])}
               >
                 <option value="">Select Address</option>
                 {addressList.map((addr, i) => (
-                  <option key={i} value={i}>
-                    {addr.name}, {addr.city}
-                  </option>
+                  <option key={i} value={i}>{addr.name}, {addr.city}</option>
                 ))}
               </select>
             )}
-
             <button
               onClick={() => setShowAddressModal(true)}
               className="flex items-center gap-1 text-sm text-slate-700 dark:text-slate-300 mt-2"
@@ -182,9 +179,7 @@ const OrderSummary = ({ totalPrice, items }) => {
 
         <div className="flex justify-between">
           <span>Shipping</span>
-          <Protect plan="prime" fallback={`${currency}${shippingCost}`}>
-            Free
-          </Protect>
+          <Protect plan="prime" fallback={`${currency}${shippingCost}`}>Free</Protect>
         </div>
 
         {coupon && (
@@ -201,26 +196,22 @@ const OrderSummary = ({ totalPrice, items }) => {
               value={couponCodeInput}
               onChange={e => setCouponCodeInput(e.target.value)}
               placeholder="Coupon Code"
-              className="
-                flex-1 p-2 rounded
-                bg-white dark:bg-slate-800
-                border border-slate-300 dark:border-slate-600
-                text-slate-800 dark:text-slate-200
-              "
+              className="flex-1 p-2 rounded bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-800 dark:text-slate-200"
             />
-            <button className="bg-slate-800 text-white px-4 rounded">
-              Apply
-            </button>
+            <button className="bg-slate-800 text-white px-4 rounded">Apply</button>
           </form>
         ) : (
           <div className="flex items-center justify-between mt-2 text-xs">
             <span className="font-medium">{coupon.code.toUpperCase()}</span>
-            <XIcon
-              size={16}
-              className="cursor-pointer hover:text-red-500"
-              onClick={() => setCoupon(null)}
-            />
+            <XIcon size={16} className="cursor-pointer hover:text-red-500" onClick={() => setCoupon(null)} />
           </div>
+        )}
+
+        {/* STOCK WARNINGS */}
+        {hasStockIssues && (
+          <p className="text-red-500 text-sm mt-2">
+            Some items exceed available stock. Adjust quantities in cart.
+          </p>
         )}
       </div>
 
@@ -233,20 +224,14 @@ const OrderSummary = ({ totalPrice, items }) => {
       {/* PLACE ORDER */}
       <button
         onClick={handlePlaceOrder}
-        className="
-          w-full mt-6 py-3 rounded-xl
-          bg-slate-900 dark:bg-white
-          text-white dark:text-slate-900
-          hover:opacity-90
-          transition
-        "
+        disabled={hasStockIssues}
+        className={`w-full mt-6 py-3 rounded-xl font-semibold transition
+          ${hasStockIssues ? "bg-gray-500 cursor-not-allowed" : "bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:opacity-90"}`}
       >
-        Place Order
+        {hasStockIssues ? "Resolve Stock Issues" : "Place Order"}
       </button>
 
-      {showAddressModal && (
-        <AddressModal setShowAddressModal={setShowAddressModal} />
-      )}
+      {showAddressModal && <AddressModal setShowAddressModal={setShowAddressModal} />}
     </div>
   )
 }
