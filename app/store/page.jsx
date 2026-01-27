@@ -8,7 +8,8 @@ import {
   CircleDollarSignIcon,
   ShoppingBasketIcon,
   StarIcon,
-  TagsIcon
+  TagsIcon,
+  XCircleIcon
 } from "lucide-react"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
@@ -29,15 +30,18 @@ export default function Dashboard() {
     ratings: [],
     earningsChart: [],
     ordersChart: [],
-    orders: [] // make sure API returns orders array
+    orders: [] // include orders
   })
 
   /* -------------------- STATS -------------------- */
+  const totalCanceledOrders = dashboardData.orders.filter(order => order.status === "CANCELLED").length
+
   const stats = [
     { title: "Products", value: dashboardData.totalProducts, icon: ShoppingBasketIcon },
     { title: "Earnings", value: currency + dashboardData.totalEarnings, icon: CircleDollarSignIcon },
     { title: "Orders", value: dashboardData.totalOrders, icon: TagsIcon },
     { title: "Reviews", value: dashboardData.ratings.length, icon: StarIcon },
+    { title: "Canceled Orders", value: totalCanceledOrders, icon: XCircleIcon },
   ]
 
   /* -------------------- FETCH -------------------- */
@@ -61,39 +65,34 @@ export default function Dashboard() {
 
   /* -------------------- CHART DATA -------------------- */
   const earningsData = useMemo(() => {
-    if (dashboardData.earningsChart?.length) {
-      return dashboardData.earningsChart.map(item => ({
-        name: item.month || item.name || "—",
-        value: item.total || item.amount || item.value || 0
-      }))
-    }
-    return [
-      { name: "Jan", value: 1200 },
-      { name: "Feb", value: 2200 },
-      { name: "Mar", value: 1800 },
-      { name: "Apr", value: 3100 },
-    ]
+    return dashboardData.earningsChart.map(item => ({
+      name: item.name,
+      value: item.value || 0
+    }))
   }, [dashboardData.earningsChart])
 
   const ordersData = useMemo(() => {
-    if (dashboardData.ordersChart?.length) {
-      return dashboardData.ordersChart.map(item => ({
-        name: item.month || item.name || "—",
-        value: item.count || item.total || item.value || 0
-      }))
-    }
-    return [
-      { name: "Jan", value: 2 },
-      { name: "Feb", value: 5 },
-      { name: "Mar", value: 3 },
-      { name: "Apr", value: 6 },
-    ]
+    return dashboardData.ordersChart.map(item => ({
+      name: item.name,
+      value: item.value || 0
+    }))
   }, [dashboardData.ordersChart])
 
-  if (loading) return <Loading />
+  const canceledOrdersData = useMemo(() => {
+    const monthsMap = {}
+    dashboardData.orders.forEach(order => {
+      if (order.status === 'CANCELLED') {
+        const monthName = new Date(order.createdAt).toLocaleString('default', { month: 'short' })
+        monthsMap[monthName] = (monthsMap[monthName] || 0) + 1
+      }
+    })
+    return ordersData.map(orderMonth => ({
+      name: orderMonth.name,
+      value: monthsMap[orderMonth.name] || 0
+    }))
+  }, [dashboardData.orders, ordersData])
 
-  /* -------------------- CANCELED ORDERS -------------------- */
-  const canceledOrders = dashboardData.orders.filter(order => order.status === "CANCELLED")
+  if (loading) return <Loading />
 
   return (
     <div className="max-w-7xl mx-auto pb-28 px-4 lg:px-6">
@@ -107,7 +106,7 @@ export default function Dashboard() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-10">
         {stats.map((item, i) => (
           <div
             key={i}
@@ -128,33 +127,8 @@ export default function Dashboard() {
       <DashboardCharts
         earningsData={earningsData}
         ordersData={ordersData}
+        canceledOrdersData={canceledOrdersData}
       />
-
-      {/* Canceled Orders Section */}
-      {canceledOrders.length > 0 && (
-        <div className="mt-10">
-          <h2 className="text-lg font-medium text-slate-900 mb-4">Canceled Orders</h2>
-          <div className="space-y-4 max-w-4xl">
-            {canceledOrders.map(order => (
-              <div key={order.id} className="bg-red-50 border border-red-300 rounded-xl p-4 flex justify-between items-center">
-                <div>
-                  <p className="text-sm text-red-700 font-medium">Order ID: {order.id}</p>
-                  <p className="text-xs text-red-600">Date: {new Date(order.createdAt).toLocaleString()}</p>
-                  <p className="text-sm text-red-800">
-                    Total: <span className="font-semibold">-{currency}{order.total}</span>
-                  </p>
-                </div>
-                <button
-                  onClick={() => router.push(`/orders/${order.id}`)}
-                  className="text-xs px-3 py-1 border border-red-300 rounded-md text-red-700 hover:bg-red-100"
-                >
-                  View Details
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Reviews */}
       <div className="flex items-center justify-between mb-4 mt-10">

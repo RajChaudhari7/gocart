@@ -31,6 +31,7 @@ export async function GET(request) {
     const orders = await prisma.order.findMany({
       where: { storeId },
       select: {
+        id: true,
         total: true,
         createdAt: true,
         status: true
@@ -59,8 +60,10 @@ export async function GET(request) {
       );
 
       if (monthIndex !== -1) {
-        // Subtract total if cancelled
-        months[monthIndex].earnings += order.status === 'CANCELLED' ? -order.total : order.total;
+        // Only add earnings for non-canceled orders
+        if (order.status !== "CANCELLED") {
+          months[monthIndex].earnings += order.total;
+        }
         months[monthIndex].orders += 1;
       }
     });
@@ -80,12 +83,14 @@ export async function GET(request) {
       ratings,
       totalOrders: orders.length,
       totalEarnings: Math.round(
-        orders.reduce((acc, order) => acc + (order.status === 'CANCELLED' ? -order.total : order.total), 0)
+        orders
+          .filter(order => order.status !== "CANCELLED")
+          .reduce((acc, order) => acc + order.total, 0)
       ),
       totalProducts: products.length,
       earningsChart,
       ordersChart,
-      orders // include orders so frontend can show recent orders and negative totals
+      orders // include all orders so frontend can display canceled ones separately
     };
 
     return NextResponse.json({ dashboardData });
