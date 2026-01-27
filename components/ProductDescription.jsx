@@ -14,7 +14,7 @@ const ProductDescription = ({ product }) => {
   return (
     <div className="my-12 px-4 sm:px-6 max-w-7xl mx-auto text-gray-900">
 
-      {/* PREMIUM TABS */}
+      {/* TABS */}
       <div className="flex gap-6 border-b border-gray-200 mb-10 overflow-x-auto">
         {tabs.map((tab) => (
           <button
@@ -82,8 +82,8 @@ const ProductDescription = ({ product }) => {
                 <Image
                   src={item.user.image}
                   alt={item.user.name}
-                  width={36}
-                  height={36}
+                  width={32}
+                  height={32}
                   className="rounded-full border border-gray-200 object-cover"
                 />
 
@@ -111,16 +111,19 @@ const ProductDescription = ({ product }) => {
                     {item.review}
                   </p>
 
-                  {/* REVIEW IMAGE (OPTIONAL) */}
-                  {item.image && (
-                    <div className="mt-2">
-                      <Image
-                        src={item.image}
-                        alt="review image"
-                        width={160}
-                        height={160}
-                        className="rounded-xl border border-gray-200 object-cover max-w-[140px] sm:max-w-[180px]"
-                      />
+                  {/* MULTIPLE REVIEW IMAGES */}
+                  {item.photos?.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {item.photos.map((img, i) => (
+                        <Image
+                          key={i}
+                          src={img}
+                          alt="review image"
+                          width={96}
+                          height={96}
+                          className="rounded-lg border border-gray-200 object-cover w-20 h-20 sm:w-24 sm:h-24"
+                        />
+                      ))}
                     </div>
                   )}
 
@@ -140,8 +143,8 @@ const ProductDescription = ({ product }) => {
         <Image
           src={product.store.logo}
           alt={product.store.name}
-          width={64}
-          height={64}
+          width={56}
+          height={56}
           className="rounded-full bg-white p-1"
         />
 
