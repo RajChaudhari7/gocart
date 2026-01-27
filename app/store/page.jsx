@@ -151,7 +151,7 @@ export default function Dashboard() {
                 <Image
                   src={review.user.image}
                   alt=""
-                  width={40}
+                  width={20}
                   height={20}
                   className="rounded-full"
                 />

@@ -26,6 +26,7 @@ export default function StoreAddProduct() {
         quantity: 0,
         category: "",
     })
+    const [customCategory, setCustomCategory] = useState("")
     const [loading, setLoading] = useState(false)
     const [aiUsed, setAiUsed] = useState(false)
 
@@ -80,6 +81,15 @@ export default function StoreAddProduct() {
     const onSubmitHandler = async (e) => {
         e.preventDefault()
 
+        const finalCategory =
+            productInfo.category === "Others"
+                ? customCategory.trim()
+                : productInfo.category
+
+        if (!finalCategory) {
+            return toast.error("Please enter category")
+        }
+
         if (productInfo.quantity === 0) {
             return toast.error("Product is out of stock")
         }
@@ -97,7 +107,7 @@ export default function StoreAddProduct() {
             formData.append('mrp', productInfo.mrp)
             formData.append('price', productInfo.price)
             formData.append('quantity', productInfo.quantity)
-            formData.append('category', productInfo.category)
+            formData.append('category', finalCategory)
 
             Object.keys(images).forEach(key => {
                 images[key] && formData.append('images', images[key])
@@ -119,7 +129,7 @@ export default function StoreAddProduct() {
                 quantity: 0,
                 category: "",
             })
-
+            setCustomCategory("")
             setImages({ 1: null, 2: null, 3: null, 4: null })
 
         } catch (error) {
@@ -132,21 +142,24 @@ export default function StoreAddProduct() {
     return (
         <form
             onSubmit={e => toast.promise(onSubmitHandler(e), { loading: "Adding Product..." })}
-            className="text-slate-500 mb-28"
+            className="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-sm text-slate-600 mb-28"
         >
-            <h1 className="text-2xl">
-                Add New <span className="text-slate-800 font-medium">Products</span>
+            <h1 className="text-3xl font-semibold text-slate-800 mb-6">
+                Add New Product
             </h1>
 
-            <p className="mt-7">Product Images</p>
-
-            <div className="flex gap-3 mt-4">
+            {/* Product Images */}
+            <p className="font-medium mb-3">Product Images</p>
+            <div className="grid grid-cols-4 gap-4 mb-8">
                 {Object.keys(images).map(key => (
-                    <label key={key}>
+                    <label
+                        key={key}
+                        className="border rounded-lg p-3 cursor-pointer hover:border-slate-500 transition"
+                    >
                         <Image
                             width={300}
                             height={300}
-                            className="h-15 w-auto border rounded cursor-pointer"
+                            className="h-24 w-full object-contain"
                             src={images[key] ? URL.createObjectURL(images[key]) : assets.upload_area}
                             alt=""
                         />
@@ -160,49 +173,42 @@ export default function StoreAddProduct() {
                 ))}
             </div>
 
-            <label className="flex flex-col gap-2 my-6">
-                Name
+            {/* Name */}
+            <label className="block mb-5">
+                <span className="font-medium">Name</span>
                 <input
                     type="text"
                     name="name"
                     value={productInfo.name}
                     onChange={onChangeHandler}
-                    className="max-w-sm p-2 px-4 border rounded"
+                    className="w-full mt-2 p-3 border rounded-lg focus:ring-2 focus:ring-slate-400"
                     required
                 />
             </label>
 
-            <label className="flex flex-col gap-2 my-6">
-                Description
+            {/* Description */}
+            <label className="block mb-6">
+                <span className="font-medium">Description</span>
                 <textarea
                     name="description"
                     rows={5}
                     value={productInfo.description}
                     onChange={onChangeHandler}
-                    className="max-w-sm p-2 px-4 border rounded resize-none"
+                    className="w-full mt-2 p-3 border rounded-lg resize-none focus:ring-2 focus:ring-slate-400"
                     required
                 />
             </label>
 
-            <div className="flex gap-5">
-                <label className="flex flex-col gap-2">
-                    Actual Price (₹)
-                    <input type="number" name="mrp" value={productInfo.mrp} onChange={onChangeHandler} required />
-                </label>
-
-                <label className="flex flex-col gap-2">
-                    Offer Price (₹)
-                    <input type="number" name="price" value={productInfo.price} onChange={onChangeHandler} required />
-                </label>
-
-                <label className="flex flex-col gap-2">
-                    Quantity
-                    <input type="number" name="quantity" min={0} value={productInfo.quantity} onChange={onChangeHandler} required />
-                </label>
+            {/* Pricing */}
+            <div className="grid grid-cols-3 gap-5 mb-6">
+                <input type="number" name="mrp" placeholder="Actual Price (₹)" value={productInfo.mrp} onChange={onChangeHandler} className="p-3 border rounded-lg" />
+                <input type="number" name="price" placeholder="Offer Price (₹)" value={productInfo.price} onChange={onChangeHandler} className="p-3 border rounded-lg" />
+                <input type="number" name="quantity" placeholder="Quantity" value={productInfo.quantity} onChange={onChangeHandler} className="p-3 border rounded-lg" />
             </div>
 
+            {/* Category */}
             <select
-                className="max-w-sm p-2 px-4 my-6 border rounded"
+                className="w-full p-3 border rounded-lg mb-4 transition focus:ring-2 focus:ring-slate-400"
                 value={productInfo.category}
                 onChange={e => setProductInfo({ ...productInfo, category: e.target.value })}
                 required
@@ -213,8 +219,47 @@ export default function StoreAddProduct() {
                 ))}
             </select>
 
-            <button disabled={loading} className="bg-slate-800 text-white px-6 py-2 rounded">
-                Add Product
+            {/* Custom Category + Suggestions */}
+            {productInfo.category === "Others" && (
+                <div className="animate-slideFade mb-6">
+                    <input
+                        type="text"
+                        placeholder="Enter custom category"
+                        value={customCategory}
+                        onChange={e => setCustomCategory(e.target.value)}
+                        className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-slate-400"
+                        required
+                    />
+
+                    {customCategory && (
+                        <div className="mt-3 flex flex-wrap gap-2">
+                            {categories
+                                .filter(
+                                    cat =>
+                                        cat.toLowerCase().includes(customCategory.toLowerCase()) &&
+                                        cat !== "Others"
+                                )
+                                .map(cat => (
+                                    <button
+                                        key={cat}
+                                        type="button"
+                                        onClick={() => setCustomCategory(cat)}
+                                        className="px-3 py-1 text-sm rounded-full bg-slate-100 hover:bg-slate-800 hover:text-white transition"
+                                    >
+                                        {cat}
+                                    </button>
+                                ))}
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* Submit Button */}
+            <button
+                disabled={loading}
+                className="w-full py-3 rounded-lg font-medium text-white bg-slate-900 hover:bg-slate-700 active:scale-[0.98] transition disabled:opacity-60"
+            >
+                {loading ? "Adding Product..." : "Add Product"}
             </button>
         </form>
     )
