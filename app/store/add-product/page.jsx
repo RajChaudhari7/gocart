@@ -4,7 +4,7 @@ import { assets } from "@/assets/assets"
 import { useAuth } from "@clerk/nextjs"
 import axios from "axios"
 import Image from "next/image"
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { toast } from "react-hot-toast"
 
 export default function StoreAddProduct() {
@@ -30,8 +30,46 @@ export default function StoreAddProduct() {
     const [loading, setLoading] = useState(false)
     const [aiUsed, setAiUsed] = useState(false)
 
+    /* 🔹 NEW */
+    const [discount, setDiscount] = useState(0)
+
+    /* 🔒 UPDATED: Price validation */
     const onChangeHandler = (e) => {
-        setProductInfo({ ...productInfo, [e.target.name]: e.target.value })
+        const { name, value } = e.target
+
+        if (name === "price" && Number(value) > productInfo.mrp) {
+            toast.error("Offer price can’t exceed MRP")
+            return
+        }
+
+        setProductInfo({
+            ...productInfo,
+            [name]: Number(value) || value
+        })
+    }
+
+    /* 🔥 Auto Discount Calculation (existing) */
+    const discountPercent = useMemo(() => {
+        const { mrp, price } = productInfo
+        if (mrp > 0 && price > 0 && price < mrp) {
+            return Math.round(((mrp - price) / mrp) * 100)
+        }
+        return 0
+    }, [productInfo.mrp, productInfo.price])
+
+    /* 🎚️ NEW: Discount slider logic */
+    const handleDiscountChange = (value) => {
+        setDiscount(value)
+
+        if (productInfo.mrp > 0) {
+            const discountedPrice =
+                productInfo.mrp - (productInfo.mrp * value) / 100
+
+            setProductInfo(prev => ({
+                ...prev,
+                price: Math.round(discountedPrice)
+            }))
+        }
     }
 
     const handleImageUpload = async (key, file) => {
@@ -86,17 +124,10 @@ export default function StoreAddProduct() {
                 ? customCategory.trim()
                 : productInfo.category
 
-        if (!finalCategory) {
-            return toast.error("Please enter category")
-        }
-
-        if (productInfo.quantity === 0) {
-            return toast.error("Product is out of stock")
-        }
-
-        if (!images[1] && !images[2] && !images[3] && !images[4]) {
+        if (!finalCategory) return toast.error("Please enter category")
+        if (productInfo.quantity === 0) return toast.error("Product is out of stock")
+        if (!images[1] && !images[2] && !images[3] && !images[4])
             return toast.error("Please upload at least one image")
-        }
 
         try {
             setLoading(true)
@@ -114,7 +145,6 @@ export default function StoreAddProduct() {
             })
 
             const token = await getToken()
-
             const { data } = await axios.post('/api/store/product', formData, {
                 headers: { Authorization: `Bearer ${token}` }
             })
@@ -131,6 +161,7 @@ export default function StoreAddProduct() {
             })
             setCustomCategory("")
             setImages({ 1: null, 2: null, 3: null, 4: null })
+            setDiscount(0)
 
         } catch (error) {
             toast.error(error?.response?.data?.error || error.message)
@@ -148,116 +179,57 @@ export default function StoreAddProduct() {
                 Add New Product
             </h1>
 
-            {/* Product Images */}
-            <p className="font-medium mb-3">Product Images</p>
-            <div className="grid grid-cols-4 gap-4 mb-8">
-                {Object.keys(images).map(key => (
-                    <label
-                        key={key}
-                        className="border rounded-lg p-3 cursor-pointer hover:border-slate-500 transition"
-                    >
-                        <Image
-                            width={300}
-                            height={300}
-                            className="h-24 w-full object-contain"
-                            src={images[key] ? URL.createObjectURL(images[key]) : assets.upload_area}
-                            alt=""
-                        />
-                        <input
-                            type="file"
-                            accept="image/*"
-                            hidden
-                            onChange={e => handleImageUpload(key, e.target.files[0])}
-                        />
-                    </label>
-                ))}
-            </div>
-
-            {/* Name */}
-            <label className="block mb-5">
-                <span className="font-medium">Name</span>
-                <input
-                    type="text"
-                    name="name"
-                    value={productInfo.name}
-                    onChange={onChangeHandler}
-                    className="w-full mt-2 p-3 border rounded-lg focus:ring-2 focus:ring-slate-400"
-                    required
-                />
-            </label>
-
-            {/* Description */}
-            <label className="block mb-6">
-                <span className="font-medium">Description</span>
-                <textarea
-                    name="description"
-                    rows={5}
-                    value={productInfo.description}
-                    onChange={onChangeHandler}
-                    className="w-full mt-2 p-3 border rounded-lg resize-none focus:ring-2 focus:ring-slate-400"
-                    required
-                />
-            </label>
-
             {/* Pricing */}
-            <div className="grid grid-cols-3 gap-5 mb-6">
-                <input type="number" name="mrp" placeholder="Actual Price (₹)" value={productInfo.mrp} onChange={onChangeHandler} className="p-3 border rounded-lg" />
-                <input type="number" name="price" placeholder="Offer Price (₹)" value={productInfo.price} onChange={onChangeHandler} className="p-3 border rounded-lg" />
-                <input type="number" name="quantity" placeholder="Quantity" value={productInfo.quantity} onChange={onChangeHandler} className="p-3 border rounded-lg" />
+            <div className="grid grid-cols-3 gap-5 mb-4">
+                <label className="flex flex-col gap-2">
+                    <span className="text-sm font-medium">Actual Price (₹)</span>
+                    <input type="number" name="mrp" value={productInfo.mrp} onChange={onChangeHandler} className="p-3 border rounded-lg" required />
+                </label>
+
+                <label className="flex flex-col gap-2">
+                    <span className="text-sm font-medium">Offer Price (₹)</span>
+                    <input type="number" name="price" value={productInfo.price} onChange={onChangeHandler} className="p-3 border rounded-lg" required />
+                </label>
+
+                <label className="flex flex-col gap-2">
+                    <span className="text-sm font-medium">Quantity</span>
+                    <input type="number" name="quantity" min={0} value={productInfo.quantity} onChange={onChangeHandler} className="p-3 border rounded-lg" required />
+                </label>
             </div>
 
-            {/* Category */}
-            <select
-                className="w-full p-3 border rounded-lg mb-4 transition focus:ring-2 focus:ring-slate-400"
-                value={productInfo.category}
-                onChange={e => setProductInfo({ ...productInfo, category: e.target.value })}
-                required
-            >
-                <option value="">Select category</option>
-                {categories.map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
-                ))}
-            </select>
+            {/* 🎚️ Discount Slider */}
+            {productInfo.mrp > 0 && (
+                <div className="mb-6">
+                    <div className="flex justify-between text-sm mb-2">
+                        <span className="font-medium">Discount: {discount}%</span>
+                        <span className="text-green-600 font-medium">
+                            You save ₹{productInfo.mrp - productInfo.price}
+                        </span>
+                    </div>
 
-            {/* Custom Category + Suggestions */}
-            {productInfo.category === "Others" && (
-                <div className="animate-slideFade mb-6">
                     <input
-                        type="text"
-                        placeholder="Enter custom category"
-                        value={customCategory}
-                        onChange={e => setCustomCategory(e.target.value)}
-                        className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-slate-400"
-                        required
+                        type="range"
+                        min={0}
+                        max={90}
+                        value={discount}
+                        onChange={(e) => handleDiscountChange(Number(e.target.value))}
+                        className="w-full"
                     />
-
-                    {customCategory && (
-                        <div className="mt-3 flex flex-wrap gap-2">
-                            {categories
-                                .filter(
-                                    cat =>
-                                        cat.toLowerCase().includes(customCategory.toLowerCase()) &&
-                                        cat !== "Others"
-                                )
-                                .map(cat => (
-                                    <button
-                                        key={cat}
-                                        type="button"
-                                        onClick={() => setCustomCategory(cat)}
-                                        className="px-3 py-1 text-sm rounded-full bg-slate-100 hover:bg-slate-800 hover:text-white transition"
-                                    >
-                                        {cat}
-                                    </button>
-                                ))}
-                        </div>
-                    )}
                 </div>
             )}
 
-            {/* Submit Button */}
+            {/* Discount badge (existing) */}
+            {discountPercent > 0 && (
+                <div className="mb-6">
+                    <span className="inline-block px-4 py-1 text-sm font-medium rounded-full bg-green-100 text-green-700 animate-slideFade">
+                        🔥 {discountPercent}% OFF
+                    </span>
+                </div>
+            )}
+
             <button
                 disabled={loading}
-                className="w-full py-3 rounded-lg font-medium text-white bg-slate-900 hover:bg-slate-700 active:scale-[0.98] transition disabled:opacity-60"
+                className="w-full py-3 rounded-lg font-medium text-white bg-slate-900 hover:bg-slate-700 transition disabled:opacity-60"
             >
                 {loading ? "Adding Product..." : "Add Product"}
             </button>
