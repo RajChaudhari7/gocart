@@ -1,12 +1,13 @@
 'use client'
 
-import { Suspense, useState } from 'react'
+import { Suspense, useState, useRef, useEffect } from 'react'
 import ProductCard from '@/components/ProductCard'
 import { MoveLeftIcon, SlidersHorizontal, X } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useSelector } from 'react-redux'
+import { motion, AnimatePresence } from 'framer-motion'
 
-const CATEGORIES = [
+const DEFAULT_CATEGORIES = [
   'Electronics',
   'Clothing',
   'Home & Kitchen',
@@ -25,23 +26,48 @@ function ShopContent() {
 
   const products = useSelector((state) => state.product.list)
 
+  const allCategories = Array.from(
+    new Set([...DEFAULT_CATEGORIES, ...products.map(p => p.category)])
+  )
+
   // FILTER STATES
   const [category, setCategory] = useState('all')
   const [sort, setSort] = useState('')
   const [maxPrice, setMaxPrice] = useState('')
   const [showMobileFilter, setShowMobileFilter] = useState(false)
 
+  // TEMP STATES for mobile drawer
+  const [tempCategory, setTempCategory] = useState(category)
+  const [tempSort, setTempSort] = useState(sort)
+  const [tempMaxPrice, setTempMaxPrice] = useState(maxPrice)
+
+  const drawerRef = useRef(null)
+
+  // Click outside to close
+  useEffect(() => {
+    if (!showMobileFilter) return
+
+    const handleClickOutside = (event) => {
+      if (drawerRef.current && !drawerRef.current.contains(event.target)) {
+        setShowMobileFilter(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showMobileFilter])
+
   // FILTER LOGIC
   const filteredProducts = products
-    .filter((product) =>
+    .filter(product =>
       search
         ? product.name.toLowerCase().includes(search.toLowerCase())
         : true
     )
-    .filter((product) =>
+    .filter(product =>
       category === 'all' ? true : product.category === category
     )
-    .filter((product) =>
+    .filter(product =>
       maxPrice ? product.price <= Number(maxPrice) : true
     )
     .sort((a, b) => {
@@ -49,6 +75,13 @@ function ShopContent() {
       if (sort === 'high-low') return b.price - a.price
       return 0
     })
+
+  const applyMobileFilters = () => {
+    setCategory(tempCategory)
+    setSort(tempSort)
+    setMaxPrice(tempMaxPrice)
+    setShowMobileFilter(false)
+  }
 
   return (
     <section className="min-h-screen bg-gradient-to-b from-[#020617] to-black text-white px-4 sm:px-6">
@@ -91,10 +124,8 @@ function ShopContent() {
                 onChange={(e) => setCategory(e.target.value)}
               >
                 <option value="all">All categories</option>
-                {CATEGORIES.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
+                {allCategories.map(cat => (
+                  <option key={cat} value={cat}>{cat}</option>
                 ))}
               </select>
             </div>
@@ -139,61 +170,79 @@ function ShopContent() {
         </div>
       </div>
 
-      {/* MOBILE FILTER DRAWER */}
-      {showMobileFilter && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur">
-          <div
-            className="absolute bottom-0 left-0 right-0 rounded-t-2xl
-            bg-[#020617] border-t border-white/10 p-6"
+      {/* MOBILE FILTER DRAWER WITH SWIPE */}
+      <AnimatePresence>
+        {showMobileFilter && (
+          <motion.div
+            className="fixed inset-0 z-50 bg-black/60 backdrop-blur flex justify-end"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
           >
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold">Filters</h2>
-              <button onClick={() => setShowMobileFilter(false)}>
-                <X />
+            <motion.div
+              ref={drawerRef}
+              className="w-full max-w-xs h-full bg-[#020617] border-l border-white/10 p-6 overflow-y-auto"
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'tween', duration: 0.3 }}
+              drag="y" // <-- enable vertical drag
+              dragConstraints={{ top: 0, bottom: 300 }} // max drag down
+              dragElastic={0.2}
+              onDragEnd={(event, info) => {
+                if (info.point.y > 150) setShowMobileFilter(false) // close if swiped down enough
+              }}
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-lg font-semibold">Filters</h2>
+                <button onClick={() => setShowMobileFilter(false)}>
+                  <X />
+                </button>
+              </div>
+
+              {/* CATEGORY */}
+              <select
+                className="w-full bg-black/40 border border-white/10 rounded-lg p-2 mb-4"
+                value={tempCategory}
+                onChange={(e) => setTempCategory(e.target.value)}
+              >
+                <option value="all">All categories</option>
+                {allCategories.map(cat => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+
+              {/* MAX PRICE */}
+              <input
+                type="number"
+                placeholder="Max price"
+                value={tempMaxPrice}
+                onChange={(e) => setTempMaxPrice(e.target.value)}
+                className="w-full bg-black/40 border border-white/10 rounded-lg p-2 mb-4"
+              />
+
+              {/* SORT */}
+              <select
+                className="w-full bg-black/40 border border-white/10 rounded-lg p-2 mb-6"
+                value={tempSort}
+                onChange={(e) => setTempSort(e.target.value)}
+              >
+                <option value="">Default</option>
+                <option value="low-high">Low → High</option>
+                <option value="high-low">High → Low</option>
+              </select>
+
+              <button
+                onClick={applyMobileFilters}
+                className="w-full py-3 rounded-lg bg-gradient-to-r
+                from-cyan-400 to-emerald-400 text-black font-semibold"
+              >
+                Apply Filters
               </button>
-            </div>
-
-            <select
-              className="w-full bg-black/40 border border-white/10 rounded-lg p-2 mb-4"
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-            >
-              <option value="all">All categories</option>
-              {CATEGORIES.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-            </select>
-
-            <input
-              type="number"
-              placeholder="Max price"
-              value={maxPrice}
-              onChange={(e) => setMaxPrice(e.target.value)}
-              className="w-full bg-black/40 border border-white/10 rounded-lg p-2 mb-4"
-            />
-
-            <select
-              className="w-full bg-black/40 border border-white/10 rounded-lg p-2 mb-6"
-              value={sort}
-              onChange={(e) => setSort(e.target.value)}
-            >
-              <option value="">Default</option>
-              <option value="low-high">Low → High</option>
-              <option value="high-low">High → Low</option>
-            </select>
-
-            <button
-              onClick={() => setShowMobileFilter(false)}
-              className="w-full py-3 rounded-lg bg-gradient-to-r
-              from-cyan-400 to-emerald-400 text-black font-semibold"
-            >
-              Apply Filters
-            </button>
-          </div>
-        </div>
-      )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </section>
   )
 }
