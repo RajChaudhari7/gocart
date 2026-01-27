@@ -29,11 +29,7 @@ export default function StoreAddProduct() {
 
     const [loading, setLoading] = useState(false)
     const [aiUsed, setAiUsed] = useState(false)
-
-    // 🔹 NEW: custom category
     const [customCategory, setCustomCategory] = useState("")
-
-    // 🔹 Discount state
     const [discount, setDiscount] = useState(0)
 
     const onChangeHandler = (e) => {
@@ -48,7 +44,6 @@ export default function StoreAddProduct() {
         setProductInfo({ ...productInfo, [name]: value })
     }
 
-    // 🔹 Auto discount calculation
     useEffect(() => {
         if (productInfo.mrp > 0 && productInfo.price > 0) {
             const percent = Math.round(
@@ -60,7 +55,6 @@ export default function StoreAddProduct() {
         }
     }, [productInfo.mrp, productInfo.price])
 
-    // 🔹 Slider handler
     const handleDiscountChange = (value) => {
         setDiscount(value)
 
@@ -123,23 +117,15 @@ export default function StoreAddProduct() {
     const onSubmitHandler = async (e) => {
         e.preventDefault()
 
-        // 🔹 NEW: resolve final category
         const finalCategory =
             productInfo.category === "Others"
                 ? customCategory.trim()
                 : productInfo.category
 
-        if (!finalCategory) {
-            return toast.error("Please enter a category")
-        }
-
-        if (productInfo.quantity === 0) {
-            return toast.error("Product is out of stock")
-        }
-
-        if (!images[1] && !images[2] && !images[3] && !images[4]) {
+        if (!finalCategory) return toast.error("Please enter a category")
+        if (productInfo.quantity === 0) return toast.error("Product is out of stock")
+        if (!images[1] && !images[2] && !images[3] && !images[4])
             return toast.error("Please upload at least one image")
-        }
 
         try {
             setLoading(true)
@@ -150,14 +136,13 @@ export default function StoreAddProduct() {
             formData.append('mrp', productInfo.mrp)
             formData.append('price', productInfo.price)
             formData.append('quantity', productInfo.quantity)
-            formData.append('category', finalCategory) // 🔹 USE FINAL CATEGORY
+            formData.append('category', finalCategory)
 
             Object.keys(images).forEach(key => {
                 images[key] && formData.append('images', images[key])
             })
 
             const token = await getToken()
-
             const { data } = await axios.post('/api/store/product', formData, {
                 headers: { Authorization: `Bearer ${token}` }
             })
@@ -187,123 +172,138 @@ export default function StoreAddProduct() {
     return (
         <form
             onSubmit={e => toast.promise(onSubmitHandler(e), { loading: "Adding Product..." })}
-            className="text-slate-500 mb-28"
+            className="mb-28"
         >
-            <h1 className="text-2xl">
-                Add New <span className="text-slate-800 font-medium">Products</span>
-            </h1>
+            <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow-lg p-4 sm:p-6 md:p-10 space-y-8">
 
-            <p className="mt-7">Product Images</p>
+                <h1 className="text-xl sm:text-2xl font-semibold text-slate-800">
+                    Add New Product
+                </h1>
 
-            <div className="flex gap-3 mt-4">
-                {Object.keys(images).map(key => (
-                    <label key={key}>
-                        <Image
-                            width={300}
-                            height={300}
-                            className="h-15 w-auto border rounded cursor-pointer"
-                            src={images[key] ? URL.createObjectURL(images[key]) : assets.upload_area}
-                            alt=""
-                        />
-                        <input
-                            type="file"
-                            accept="image/*"
-                            hidden
-                            onChange={e => handleImageUpload(key, e.target.files[0])}
-                        />
-                    </label>
-                ))}
-            </div>
-
-            <label className="flex flex-col gap-2 my-6">
-                Name
-                <input
-                    type="text"
-                    name="name"
-                    value={productInfo.name}
-                    onChange={onChangeHandler}
-                    className="max-w-sm p-2 px-4 border rounded"
-                    required
-                />
-            </label>
-
-            <label className="flex flex-col gap-2 my-6">
-                Description
-                <textarea
-                    name="description"
-                    rows={5}
-                    value={productInfo.description}
-                    onChange={onChangeHandler}
-                    className="max-w-sm p-2 px-4 border rounded resize-none"
-                    required
-                />
-            </label>
-
-            <div className="flex gap-5">
-                <label className="flex flex-col gap-2">
-                    Actual Price (₹)
-                    <input type="number" name="mrp" value={productInfo.mrp} onChange={onChangeHandler} required />
-                </label>
-
-                <label className="flex flex-col gap-2">
-                    Offer Price (₹)
-                    <input type="number" name="price" value={productInfo.price} onChange={onChangeHandler} required />
-                </label>
-
-                <label className="flex flex-col gap-2">
-                    Quantity
-                    <input type="number" name="quantity" min={0} value={productInfo.quantity} onChange={onChangeHandler} required />
-                </label>
-            </div>
-
-            {/* Discount */}
-            {productInfo.mrp > 0 && (
-                <div className="max-w-sm my-6">
-                    <div className="flex justify-between text-sm mb-2">
-                        <span>Discount: {discount}%</span>
-                        <span className="text-green-600">
-                            You save ₹{productInfo.mrp - productInfo.price}
-                        </span>
+                {/* Images */}
+                <div>
+                    <p className="mb-3 text-sm text-slate-600">Product Images</p>
+                    <div className="grid grid-cols-4 gap-3 sm:gap-4">
+                        {Object.keys(images).map(key => (
+                            <label key={key} className="border rounded-xl p-2 cursor-pointer hover:shadow transition">
+                                <Image
+                                    width={300}
+                                    height={300}
+                                    className="w-full h-20 sm:h-24 object-contain"
+                                    src={images[key] ? URL.createObjectURL(images[key]) : assets.upload_area}
+                                    alt=""
+                                />
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    hidden
+                                    onChange={e => handleImageUpload(key, e.target.files[0])}
+                                />
+                            </label>
+                        ))}
                     </div>
+                </div>
 
+                {/* Name */}
+                <div>
+                    <label className="text-sm">Name</label>
                     <input
-                        type="range"
-                        min={0}
-                        max={90}
-                        value={discount}
-                        onChange={(e) => handleDiscountChange(Number(e.target.value))}
-                        className="w-full"
+                        type="text"
+                        name="name"
+                        value={productInfo.name}
+                        onChange={onChangeHandler}
+                        className="w-full mt-1 p-3 border rounded-lg"
+                        required
                     />
                 </div>
-            )}
 
-            <select
-                className="max-w-sm p-2 px-4 my-6 border rounded"
-                value={productInfo.category}
-                onChange={e => setProductInfo({ ...productInfo, category: e.target.value })}
-                required
-            >
-                <option value="">Select category</option>
-                {categories.map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
-                ))}
-            </select>
+                {/* Description */}
+                <div>
+                    <label className="text-sm">Description</label>
+                    <textarea
+                        name="description"
+                        rows={4}
+                        value={productInfo.description}
+                        onChange={onChangeHandler}
+                        className="w-full mt-1 p-3 border rounded-lg resize-none"
+                        required
+                    />
+                </div>
 
-            {/* 🔹 NEW: custom category input */}
-            {productInfo.category === "Others" && (
-                <input
-                    type="text"
-                    placeholder="Enter custom category"
-                    value={customCategory}
-                    onChange={(e) => setCustomCategory(e.target.value)}
-                    className="max-w-sm p-2 px-4 mb-6 border rounded"
-                    required
-                />
-            )}
+                {/* Prices */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                        <label className="text-sm">Actual Price (₹)</label>
+                        <input type="number" name="mrp" value={productInfo.mrp} onChange={onChangeHandler} className="w-full mt-1 p-3 border rounded-lg" required />
+                    </div>
 
-            <button disabled={loading} className="bg-slate-800 text-white px-6 py-2 rounded">
-                Add Product
-            </button>
+                    <div>
+                        <label className="text-sm">Offer Price (₹)</label>
+                        <input type="number" name="price" value={productInfo.price} onChange={onChangeHandler} className="w-full mt-1 p-3 border rounded-lg" required />
+                    </div>
+
+                    <div>
+                        <label className="text-sm">Quantity</label>
+                        <input type="number" name="quantity" min={0} value={productInfo.quantity} onChange={onChangeHandler} className="w-full mt-1 p-3 border rounded-lg" required />
+                    </div>
+                </div>
+
+                {/* Discount */}
+                {productInfo.mrp > 0 && (
+                    <div>
+                        <div className="flex justify-between text-sm mb-2">
+                            <span>Discount: {discount}%</span>
+                            <span className="text-green-600">
+                                You save ₹{productInfo.mrp - productInfo.price}
+                            </span>
+                        </div>
+
+                        <input
+                            type="range"
+                            min={0}
+                            max={90}
+                            value={discount}
+                            onChange={(e) => handleDiscountChange(Number(e.target.value))}
+                            className="w-full"
+                        />
+                    </div>
+                )}
+
+                {/* Category */}
+                <div>
+                    <select
+                        className="w-full p-3 border rounded-lg"
+                        value={productInfo.category}
+                        onChange={e => setProductInfo({ ...productInfo, category: e.target.value })}
+                        required
+                    >
+                        <option value="">Select category</option>
+                        {categories.map(cat => (
+                            <option key={cat} value={cat}>{cat}</option>
+                        ))}
+                    </select>
+
+                    {productInfo.category === "Others" && (
+                        <input
+                            type="text"
+                            placeholder="Enter custom category"
+                            value={customCategory}
+                            onChange={(e) => setCustomCategory(e.target.value)}
+                            className="w-full mt-3 p-3 border rounded-lg"
+                            required
+                        />
+                    )}
+                </div>
+
+                {/* Button */}
+                <button
+                    disabled={loading}
+                    className="w-full bg-slate-900 text-white py-3 rounded-xl text-sm font-medium hover:bg-slate-800 transition"
+                >
+                    Add Product
+                </button>
+
+            </div>
         </form>
     )
 }
