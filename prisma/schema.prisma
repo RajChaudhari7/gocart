@@ -5,7 +5,6 @@ generator client {
 datasource db {
     provider  = "postgresql"
     url       = env("DATABASE_URL")
-    directUrl = env("DIRECT_URL")
 }
 
 // Required for creating a User: id, name, email, image, cart (optional JSON string)
@@ -54,7 +53,7 @@ enum OrderStatus {
 enum PaymentMethod {
     COD
     STRIPE
-    RAZORPAY   // Added Razorpay as a payment option
+    RAZORPAY // Added Razorpay as a payment option
 }
 
 model Order {
@@ -97,6 +96,7 @@ model Rating {
     id        String   @id @default(cuid())
     rating    Int
     review    String
+    photo     String?
     userId    String
     productId String
     orderId   String

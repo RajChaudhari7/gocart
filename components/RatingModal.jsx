@@ -1,7 +1,6 @@
 'use client'
-
-import { Star, X } from 'lucide-react';
-import { useState } from 'react';
+import { Star, X, Camera } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { useAuth } from '@clerk/nextjs';
 import { useDispatch } from 'react-redux';
@@ -15,7 +14,14 @@ const RatingModal = ({ ratingModal, setRatingModal }) => {
 
   const [rating, setRating] = useState(0);
   const [review, setReview] = useState('');
+  const [photo, setPhoto] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    // Detect mobile
+    setIsMobile(/Mobi|Android/i.test(navigator.userAgent));
+  }, []);
 
   const handleSubmit = async () => {
     if (rating < 1 || rating > 5) return toast('Please select a rating');
@@ -24,22 +30,23 @@ const RatingModal = ({ ratingModal, setRatingModal }) => {
     try {
       setSubmitting(true);
       const token = await getToken();
-      const { data } = await axios.post(
-        '/api/rating',
-        {
-          productId: ratingModal.productId,
-          orderId: ratingModal.orderId,
-          rating,
-          review,
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const formData = new FormData();
+      formData.append('productId', ratingModal.productId);
+      formData.append('orderId', ratingModal.orderId);
+      formData.append('rating', rating);
+      formData.append('review', review);
+      if (photo) formData.append('photo', photo);
+
+      const { data } = await axios.post('/api/rating', formData, {
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
+      });
 
       dispatch(addRating(data.rating));
       toast.success(data.message);
 
       setRating(0);
       setReview('');
+      setPhoto(null);
       setRatingModal(null);
     } catch (error) {
       toast.error(error?.response?.data?.error || error.message);
@@ -52,13 +59,13 @@ const RatingModal = ({ ratingModal, setRatingModal }) => {
     <AnimatePresence>
       {ratingModal && (
         <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
         >
           <motion.div
-            className="relative bg-gradient-to-br from-gray-800 to-gray-900 p-8 rounded-3xl shadow-2xl w-full max-w-md border border-white/10"
+            className="relative bg-gradient-to-br from-gray-800 to-gray-900 p-6 sm:p-8 rounded-3xl shadow-2xl w-full max-w-md border border-white/10"
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.8, opacity: 0 }}
@@ -75,6 +82,7 @@ const RatingModal = ({ ratingModal, setRatingModal }) => {
               Rate Product
             </h2>
 
+            {/* Star Rating */}
             <div className="flex justify-center gap-2 mb-4">
               {Array.from({ length: 5 }, (_, i) => (
                 <motion.div
@@ -84,15 +92,14 @@ const RatingModal = ({ ratingModal, setRatingModal }) => {
                 >
                   <Star
                     className={`cursor-pointer transition-transform duration-150 ${
-                      rating > i
-                        ? 'text-yellow-400 fill-current scale-110'
-                        : 'text-gray-600'
+                      rating > i ? 'text-yellow-400 fill-current scale-110' : 'text-gray-600'
                     }`}
                   />
                 </motion.div>
               ))}
             </div>
 
+            {/* Review textarea */}
             <textarea
               className="w-full p-3 rounded-xl border border-white/20 bg-white/5 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-yellow-400 mb-4 transition"
               placeholder="Write your review..."
@@ -101,6 +108,32 @@ const RatingModal = ({ ratingModal, setRatingModal }) => {
               onChange={(e) => setReview(e.target.value)}
             />
 
+            {/* Photo Upload */}
+            <label className="flex items-center gap-3 cursor-pointer mb-4">
+              <Camera className="text-white/70" size={24} />
+              <span className="text-white/70 text-sm">
+                {isMobile
+                  ? "Take a photo or upload from gallery"
+                  : "Upload a photo"}
+              </span>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setPhoto(e.target.files[0])}
+                hidden
+                // Mobile: camera capture enabled
+                {...(isMobile ? { capture: "environment" } : {})}
+              />
+            </label>
+            {photo && (
+              <img
+                src={URL.createObjectURL(photo)}
+                alt="review-photo"
+                className="w-24 h-24 sm:w-32 sm:h-32 object-cover rounded-lg mb-4"
+              />
+            )}
+
+            {/* Submit button */}
             <motion.button
               onClick={() => toast.promise(handleSubmit(), { loading: 'Submitting...' })}
               className="w-full bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-semibold py-2 rounded-2xl transition"
