@@ -3,6 +3,8 @@ import { authSeller } from "@/middlewares/authSeller"
 import { getAuth } from "@clerk/nextjs/server"
 import { NextResponse } from "next/server"
 
+const STATUS_FLOW = ["ORDER_PLACED", "PROCESSING", "SHIPPED", "DELIVERED"]
+
 // ================= UPDATE SELLER ORDER STATUS =================
 export async function POST(request) {
     try {
@@ -28,17 +30,27 @@ export async function POST(request) {
             return NextResponse.json({ error: "Order not found" }, { status: 404 })
         }
 
-        // ❌ Lock final states
-        if (["CANCELLED", "RETURNED"].includes(order.status)) {
+        // ❌ FINAL STATES LOCK
+        if (["CANCELLED", "RETURNED", "DELIVERED"].includes(order.status)) {
             return NextResponse.json(
                 { error: "Order status cannot be changed" },
                 { status: 400 }
             )
         }
 
-        await prisma.$transaction(async (tx) => {
+        // ❌ NO BACKWARD STATUS
+        const currentIndex = STATUS_FLOW.indexOf(order.status)
+        const newIndex = STATUS_FLOW.indexOf(status)
 
-            // 🔄 RESTOCK ON CANCEL / RETURN
+        if (newIndex <= currentIndex) {
+            return NextResponse.json(
+                { error: "Order status cannot go backward" },
+                { status: 400 }
+            )
+        }
+
+        await prisma.$transaction(async (tx) => {
+            // RESTOCK ON CANCEL / RETURN
             if (status === "CANCELLED" || status === "RETURNED") {
                 for (const item of order.orderItems) {
                     await tx.product.update({
@@ -80,6 +92,7 @@ export async function GET(request) {
             include: {
                 user: true,
                 address: true,
+                store: true,
                 orderItems: {
                     include: { product: true }
                 }
