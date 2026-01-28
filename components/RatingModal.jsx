@@ -8,6 +8,9 @@ import axios from 'axios';
 import { addRating } from '@/lib/features/rating/ratingSlice';
 import { motion, AnimatePresence } from 'framer-motion';
 
+const ratingLabels = ['Poor', 'Fair', 'Good', 'Very Good', 'Excellent'];
+const MAX_PHOTOS = 5;
+
 const RatingModal = ({ ratingModal, setRatingModal }) => {
   const { getToken } = useAuth();
   const dispatch = useDispatch();
@@ -24,7 +27,17 @@ const RatingModal = ({ ratingModal, setRatingModal }) => {
 
   const handlePhotoChange = (e) => {
     const files = Array.from(e.target.files);
-    setPhotos(files);
+
+    if (photos.length + files.length > MAX_PHOTOS) {
+      toast(`You can upload up to ${MAX_PHOTOS} photos`);
+      return;
+    }
+
+    setPhotos(prev => [...prev, ...files]);
+  };
+
+  const removePhoto = (index) => {
+    setPhotos(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async () => {
@@ -41,12 +54,10 @@ const RatingModal = ({ ratingModal, setRatingModal }) => {
       formData.append('rating', rating);
       formData.append('review', review);
 
-      photos.forEach((photo) => formData.append('photos', photo));
+      photos.forEach(photo => formData.append('photos', photo));
 
       const { data } = await axios.post('/api/rating', formData, {
-        headers: {
-          Authorization: `Bearer ${token}`, // ✅ FIXED (no Content-Type)
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       dispatch(addRating(data.rating));
@@ -90,7 +101,8 @@ const RatingModal = ({ ratingModal, setRatingModal }) => {
               Rate Product
             </h2>
 
-            <div className="flex justify-center gap-2 mb-4">
+            {/* ⭐ Stars */}
+            <div className="flex justify-center gap-2 mb-1">
               {Array.from({ length: 5 }, (_, i) => (
                 <motion.div
                   key={i}
@@ -98,13 +110,22 @@ const RatingModal = ({ ratingModal, setRatingModal }) => {
                   onClick={() => setRating(i + 1)}
                 >
                   <Star
-                    className={`cursor-pointer transition-transform duration-150 ${
-                      rating > i ? 'text-yellow-400 fill-current scale-110' : 'text-gray-600'
+                    className={`cursor-pointer transition ${
+                      rating > i
+                        ? 'text-yellow-400 fill-current scale-110'
+                        : 'text-gray-600'
                     }`}
                   />
                 </motion.div>
               ))}
             </div>
+
+            {/* ⭐ Label */}
+            {rating > 0 && (
+              <p className="text-center text-yellow-400 text-sm mb-3">
+                {ratingLabels[rating - 1]}
+              </p>
+            )}
 
             <textarea
               className="w-full p-3 rounded-xl border border-white/20 bg-white/5 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-yellow-400 mb-4 transition"
@@ -114,10 +135,11 @@ const RatingModal = ({ ratingModal, setRatingModal }) => {
               onChange={(e) => setReview(e.target.value)}
             />
 
+            {/* 📷 Upload */}
             <label className="flex items-center gap-3 cursor-pointer mb-4">
               <Camera className="text-white/70" size={24} />
               <span className="text-white/70 text-sm">
-                {isMobile ? "Take a photo or upload from gallery" : "Upload photos"}
+                {isMobile ? "Take or upload photos" : "Upload photos"} ({photos.length}/{MAX_PHOTOS})
               </span>
               <input
                 type="file"
@@ -129,25 +151,37 @@ const RatingModal = ({ ratingModal, setRatingModal }) => {
               />
             </label>
 
+            {/* 🖼 Preview + Remove */}
             {photos.length > 0 && (
               <div className="flex flex-wrap gap-2 mb-4">
-                {photos.map((file, idx) => (
-                  <img
-                    key={idx}
-                    src={URL.createObjectURL(file)}
-                    alt={`review-photo-${idx}`}
-                    className="w-24 h-24 sm:w-32 sm:h-32 object-cover rounded-lg"
-                  />
-                ))}
+                {photos.map((file, idx) => {
+                  const preview = URL.createObjectURL(file);
+                  return (
+                    <div key={idx} className="relative">
+                      <img
+                        src={preview}
+                        alt="preview"
+                        className="w-24 h-24 sm:w-28 sm:h-28 object-cover rounded-lg"
+                        onLoad={() => URL.revokeObjectURL(preview)}
+                      />
+                      <button
+                        onClick={() => removePhoto(idx)}
+                        className="absolute -top-2 -right-2 bg-black/70 rounded-full p-1"
+                      >
+                        <X size={14} className="text-white" />
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
             )}
 
+            {/* 🚀 Submit */}
             <motion.button
+              disabled={submitting}
               onClick={() => toast.promise(handleSubmit(), { loading: 'Submitting...' })}
-              className="w-full bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-semibold py-2 rounded-2xl transition"
+              className="w-full bg-yellow-400 hover:bg-yellow-500 disabled:opacity-50 text-gray-900 font-semibold py-2 rounded-2xl transition"
               whileTap={{ scale: 0.95 }}
-              animate={submitting ? { scale: [1, 1.1, 1] } : { scale: 1 }}
-              transition={{ type: 'spring', stiffness: 400, damping: 10 }}
             >
               Submit Rating
             </motion.button>
