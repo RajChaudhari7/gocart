@@ -82,27 +82,28 @@ export default function StoreOrders() {
 
     /* ================= PDF INVOICE ================= */
     const downloadInvoicePDF = async (order) => {
-        const invoiceDiv = document.createElement("div")
-        invoiceDiv.style.width = "800px"
-        invoiceDiv.style.padding = "40px"
-        invoiceDiv.style.background = "#fff"
-        invoiceDiv.style.fontFamily = "'Helvetica Neue', Helvetica, Arial, sans-serif"
-        invoiceDiv.style.color = "#333"
+    const invoiceDiv = document.createElement("div")
+    invoiceDiv.style.width = "800px"
+    invoiceDiv.style.padding = "40px"
+    invoiceDiv.style.background = "#fff"
+    invoiceDiv.style.fontFamily = "'Helvetica Neue', Helvetica, Arial, sans-serif"
+    invoiceDiv.style.color = "#333"
+    invoiceDiv.style.lineHeight = "1.6" // Better spacing
 
-        invoiceDiv.innerHTML = `
-        <div style="text-align: center; margin-bottom: 30px;">
-            <img src="${order.store?.logo || ''}" alt="Shop Logo" style="max-height:60px; display:block; margin: 0 auto;" />
-            <h1 style="margin-top:10px; color:#1e293b;">${order.store?.name || "My Shop"}</h1>
-            <p style="margin:5px 0;">${order.store?.address || ""}</p>
-            <p style="margin:5px 0;">Phone: ${order.store?.contact || "N/A"}</p>
+    invoiceDiv.innerHTML = `
+        <div style="text-align: center; margin-bottom: 40px;">
+            <img src="${order.store?.logo || ''}" alt="Shop Logo" style="max-height:80px; display:block; margin: 0 auto 10px auto;" />
+            <h1 style="margin:10px 0 5px 0; color:#1e293b;">${order.store?.name || "My Shop"}</h1>
+            <p style="margin:2px 0;">${order.store?.address || ""}</p>
+            <p style="margin:2px 0;">Phone: ${order.store?.contact || "N/A"}</p>
         </div>
 
-        <div style="display:flex; justify-content:space-between; margin-bottom:30px;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:30px; gap:40px;">
             <div>
                 <p><b>Invoice ID:</b> ${order.id}</p>
                 <p><b>Date:</b> ${new Date(order.createdAt).toLocaleString()}</p>
             </div>
-            <div>
+            <div style="text-align:right;">
                 <p><b>Customer:</b> ${order.user?.name}</p>
                 <p><b>Email:</b> ${order.user?.email}</p>
                 <p><b>Shipping Address:</b> ${order.address?.street}, ${order.address?.city}, ${order.address?.state}, ${order.address?.zip}, ${order.address?.country}</p>
@@ -113,19 +114,19 @@ export default function StoreOrders() {
         <table style="width:100%; border-collapse: collapse; margin-bottom:20px;">
             <thead>
                 <tr style="background:#f1f5f9;">
-                    <th style="padding:10px; border:1px solid #ddd; text-align:left;">Product</th>
-                    <th style="padding:10px; border:1px solid #ddd; text-align:right;">Qty</th>
-                    <th style="padding:10px; border:1px solid #ddd; text-align:right;">Price</th>
-                    <th style="padding:10px; border:1px solid #ddd; text-align:right;">Total</th>
+                    <th style="padding:12px; border:1px solid #ddd; text-align:left;">Product</th>
+                    <th style="padding:12px; border:1px solid #ddd; text-align:right;">Qty</th>
+                    <th style="padding:12px; border:1px solid #ddd; text-align:right;">Price</th>
+                    <th style="padding:12px; border:1px solid #ddd; text-align:right;">Total</th>
                 </tr>
             </thead>
             <tbody>
                 ${order.orderItems.map(item => `
                     <tr>
-                        <td style="padding:10px; border:1px solid #ddd;">${item.product?.name}</td>
-                        <td style="padding:10px; border:1px solid #ddd; text-align:right;">${item.quantity}</td>
-                        <td style="padding:10px; border:1px solid #ddd; text-align:right;">₹${item.price}</td>
-                        <td style="padding:10px; border:1px solid #ddd; text-align:right;">₹${item.price * item.quantity}</td>
+                        <td style="padding:12px; border:1px solid #ddd;">${item.product?.name}</td>
+                        <td style="padding:12px; border:1px solid #ddd; text-align:right;">${item.quantity}</td>
+                        <td style="padding:12px; border:1px solid #ddd; text-align:right;">₹${item.price}</td>
+                        <td style="padding:12px; border:1px solid #ddd; text-align:right;">₹${item.price * item.quantity}</td>
                     </tr>
                 `).join("")}
             </tbody>
@@ -146,18 +147,25 @@ export default function StoreOrders() {
         </div>
     `
 
-        document.body.appendChild(invoiceDiv)
+    document.body.appendChild(invoiceDiv)
 
-        const canvas = await html2canvas(invoiceDiv, { scale: 2 })
-        const imgData = canvas.toDataURL("image/png")
-        const pdf = new jsPDF("p", "pt", "a4")
-        const pdfWidth = pdf.internal.pageSize.getWidth()
-        const pdfHeight = (canvas.height * pdfWidth) / canvas.width
+    // Wait for images to load
+    const images = invoiceDiv.querySelectorAll("img")
+    await Promise.all([...images].map(img => {
+        if (img.complete) return Promise.resolve()
+        return new Promise(res => img.onload = img.onerror = res)
+    }))
 
-        pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight)
-        pdf.save(`Invoice-${order.id}.pdf`)
-        document.body.removeChild(invoiceDiv)
-    }
+    const canvas = await html2canvas(invoiceDiv, { scale: 2 })
+    const imgData = canvas.toDataURL("image/png")
+    const pdf = new jsPDF("p", "pt", "a4")
+    const pdfWidth = pdf.internal.pageSize.getWidth()
+    const pdfHeight = (canvas.height * pdfWidth) / canvas.width
+
+    pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight)
+    pdf.save(`Invoice-${order.id}.pdf`)
+    document.body.removeChild(invoiceDiv)
+}
 
 
     const openModal = (order) => {
