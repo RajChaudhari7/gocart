@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Loading from "@/components/Loading"
-import { useAuth } from "@clerk/nextjs"
+import { useAuth, useUser } from "@clerk/nextjs"
 import axios from "axios"
 import toast from "react-hot-toast"
 import jsPDF from "jspdf"
@@ -12,11 +12,14 @@ const STATUS_FLOW = ["ORDER_PLACED", "PROCESSING", "SHIPPED", "DELIVERED"]
 
 export default function StoreOrders() {
     const { getToken } = useAuth()
+    const { user } = useUser()
 
     const [orders, setOrders] = useState([])
     const [loading, setLoading] = useState(true)
     const [selectedOrder, setSelectedOrder] = useState(null)
     const [isModalOpen, setIsModalOpen] = useState(false)
+    const [invoicePreviewHTML, setInvoicePreviewHTML] = useState(null)
+    const [isPreviewOpen, setIsPreviewOpen] = useState(false)
 
     /* ================= FETCH ================= */
     const fetchOrders = async () => {
@@ -80,69 +83,82 @@ export default function StoreOrders() {
         }
     }
 
-    /* ================= PDF INVOICE ================= */
-    const downloadInvoicePDF = async (order) => {
-        const invoiceDiv = document.createElement("div")
-        invoiceDiv.style.width = "800px"
-        invoiceDiv.style.padding = "40px"
-        invoiceDiv.style.background = "#fff"
-        invoiceDiv.style.fontFamily = "'Helvetica Neue', Helvetica, Arial, sans-serif"
-        invoiceDiv.style.color = "#333"
-        invoiceDiv.innerHTML = `
-            <div style="text-align: center; margin-bottom: 30px;">
-                <img src="${order.shopLogo || ''}" alt="Shop Logo" style="max-height:60px; display:block; margin: 0 auto;" />
-                <h1 style="margin-top:10px; color:#1e293b;">${order.shopName || "My Shop"}</h1>
-            </div>
+    /* ================= GENERATE INVOICE HTML ================= */
+    const generateInvoiceHTML = (order) => {
+        // Use shop logo from order or fallback
+        const shopLogo = order.shopLogo || "/assets/upload_area.png" // fallback image
+        const shopName = order.shopName || "My Shop"
 
-            <div style="display:flex; justify-content:space-between; margin-bottom:30px;">
-                <div>
-                    <p><b>Invoice ID:</b> ${order.id}</p>
-                    <p><b>Date:</b> ${new Date(order.createdAt).toLocaleString()}</p>
-                    <p><b>Mobile:</b> ${order.shopMobile || "N/A"}</p>
+        return `
+            <div style="width:800px; padding:40px; background:#fff; font-family:'Helvetica Neue', Helvetica, Arial, sans-serif; color:#333">
+                <div style="text-align: center; margin-bottom: 30px;">
+                    <img src="${shopLogo}" alt="Shop Logo" style="max-height:60px; display:block; margin: 0 auto;" />
+                    <h1 style="margin-top:10px; color:#1e293b;">${shopName}</h1>
                 </div>
-                <div>
-                    <p><b>Customer:</b> ${order.user?.name}</p>
-                    <p><b>Email:</b> ${order.user?.email}</p>
-                    <p><b>Shipping:</b> ${order.shippingAddress || "N/A"}</p>
-                    <p><b>Payment:</b> ${order.paymentMethod}</p>
-                </div>
-            </div>
 
-            <table style="width:100%; border-collapse: collapse; margin-bottom:20px;">
-                <thead>
-                    <tr style="background:#f1f5f9;">
-                        <th style="padding:10px; border:1px solid #ddd; text-align:left;">Product</th>
-                        <th style="padding:10px; border:1px solid #ddd; text-align:right;">Qty</th>
-                        <th style="padding:10px; border:1px solid #ddd; text-align:right;">Price</th>
-                        <th style="padding:10px; border:1px solid #ddd; text-align:right;">Total</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${order.orderItems.map(item => `
-                        <tr>
-                            <td style="padding:10px; border:1px solid #ddd;">${item.product?.name}</td>
-                            <td style="padding:10px; border:1px solid #ddd; text-align:right;">${item.quantity}</td>
-                            <td style="padding:10px; border:1px solid #ddd; text-align:right;">₹${item.price}</td>
-                            <td style="padding:10px; border:1px solid #ddd; text-align:right;">₹${item.price * item.quantity}</td>
+                <div style="display:flex; justify-content:space-between; margin-bottom:30px;">
+                    <div>
+                        <p><b>Invoice ID:</b> ${order.id}</p>
+                        <p><b>Date:</b> ${new Date(order.createdAt).toLocaleString()}</p>
+                        <p><b>Mobile:</b> ${order.shopMobile || "N/A"}</p>
+                    </div>
+                    <div>
+                        <p><b>Customer:</b> ${order.user?.name}</p>
+                        <p><b>Email:</b> ${order.user?.email}</p>
+                        <p><b>Shipping:</b> ${order.shippingAddress || "N/A"}</p>
+                        <p><b>Payment:</b> ${order.paymentMethod}</p>
+                    </div>
+                </div>
+
+                <table style="width:100%; border-collapse: collapse; margin-bottom:20px;">
+                    <thead>
+                        <tr style="background:#f1f5f9;">
+                            <th style="padding:10px; border:1px solid #ddd; text-align:left;">Product</th>
+                            <th style="padding:10px; border:1px solid #ddd; text-align:right;">Qty</th>
+                            <th style="padding:10px; border:1px solid #ddd; text-align:right;">Price</th>
+                            <th style="padding:10px; border:1px solid #ddd; text-align:right;">Total</th>
                         </tr>
-                    `).join("")}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        ${order.orderItems.map(item => `
+                            <tr>
+                                <td style="padding:10px; border:1px solid #ddd;">${item.product?.name}</td>
+                                <td style="padding:10px; border:1px solid #ddd; text-align:right;">${item.quantity}</td>
+                                <td style="padding:10px; border:1px solid #ddd; text-align:right;">₹${item.price}</td>
+                                <td style="padding:10px; border:1px solid #ddd; text-align:right;">₹${item.price * item.quantity}</td>
+                            </tr>
+                        `).join("")}
+                    </tbody>
+                </table>
 
-            <div style="text-align:right; font-weight:bold; font-size:16px; margin-top:10px;">
-                Subtotal: ₹${order.total - (order.shippingFee || 0)}
-            </div>
-            <div style="text-align:right; font-weight:bold; font-size:16px; margin-top:5px;">
-                Shipping Fee: ₹${order.shippingFee || 0}
-            </div>
-            <div style="text-align:right; font-weight:bold; font-size:18px; margin-top:10px;">
-                Grand Total: ₹${order.total}
-            </div>
+                <div style="text-align:right; font-weight:bold; font-size:16px; margin-top:10px;">
+                    Subtotal: ₹${order.total - (order.shippingFee || 0)}
+                </div>
+                <div style="text-align:right; font-weight:bold; font-size:16px; margin-top:5px;">
+                    Shipping Fee: ₹${order.shippingFee || 0}
+                </div>
+                <div style="text-align:right; font-weight:bold; font-size:18px; margin-top:10px;">
+                    Grand Total: ₹${order.total}
+                </div>
 
-            <div style="text-align:center; margin-top:40px; font-size:14px; color:#64748b;">
-                Thank you for shopping with ${order.shopName || "My Shop"}!
+                <div style="text-align:center; margin-top:40px; font-size:14px; color:#64748b;">
+                    Thank you for shopping with ${shopName}!
+                </div>
             </div>
         `
+    }
+
+    /* ================= OPEN PREVIEW ================= */
+    const openInvoicePreview = (order) => {
+        setInvoicePreviewHTML(generateInvoiceHTML(order))
+        setIsPreviewOpen(true)
+    }
+
+    /* ================= PRINT/GENERATE PDF ================= */
+    const printInvoice = async () => {
+        if (!invoicePreviewHTML) return
+        const invoiceDiv = document.createElement("div")
+        invoiceDiv.innerHTML = invoicePreviewHTML
         document.body.appendChild(invoiceDiv)
 
         const canvas = await html2canvas(invoiceDiv, { scale: 2 })
@@ -164,8 +180,9 @@ export default function StoreOrders() {
             heightLeft -= pdf.internal.pageSize.getHeight()
         }
 
-        pdf.save(`Invoice-${order.id}.pdf`)
+        pdf.save(`Invoice.pdf`)
         document.body.removeChild(invoiceDiv)
+        setIsPreviewOpen(false)
     }
 
     const openModal = (order) => {
@@ -195,7 +212,6 @@ export default function StoreOrders() {
                     {orders.map((order) => (
                         <div
                             key={order.id}
-                            onClick={() => openModal(order)}
                             className="bg-white rounded-xl shadow-md p-5 hover:shadow-xl transition cursor-pointer border-l-4 border-blue-500"
                         >
                             <div className="flex justify-between items-center mb-3">
@@ -216,11 +232,12 @@ export default function StoreOrders() {
                             </div>
 
                             <div className="flex gap-2 mt-4 items-center">
+                                {/* Stop modal opening when dropdown clicked */}
                                 {order.status !== "CANCELLED" && (
                                     <select
                                         value={order.status}
                                         disabled={order.status === "DELIVERED"}
-                                        onChange={e => updateOrderStatus(order, e.target.value)}
+                                        onChange={e => { e.stopPropagation(); updateOrderStatus(order, e.target.value) }}
                                         className="border rounded px-3 py-1 text-sm"
                                     >
                                         {STATUS_FLOW.map(s => (
@@ -238,9 +255,8 @@ export default function StoreOrders() {
                                     </button>
                                 )}
 
-                                {/* Download PDF outside modal */}
                                 <button
-                                    onClick={(e) => { e.stopPropagation(); downloadInvoicePDF(order) }}
+                                    onClick={(e) => { e.stopPropagation(); openInvoicePreview(order) }}
                                     className="px-3 py-1 bg-blue-600 text-white rounded text-sm"
                                 >
                                     Download Invoice
@@ -286,7 +302,7 @@ export default function StoreOrders() {
 
                         <div className="flex justify-between mt-6">
                             <button
-                                onClick={() => downloadInvoicePDF(selectedOrder)}
+                                onClick={() => openInvoicePreview(selectedOrder)}
                                 className="px-4 py-2 bg-blue-600 text-white rounded"
                             >
                                 Download Invoice
@@ -295,6 +311,35 @@ export default function StoreOrders() {
                             <button
                                 onClick={closeModal}
                                 className="px-4 py-2 bg-slate-200 rounded"
+                            >
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ================= INVOICE PREVIEW MODAL ================= */}
+            {isPreviewOpen && (
+                <div
+                    className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 overflow-auto"
+                    onClick={() => setIsPreviewOpen(false)}
+                >
+                    <div
+                        onClick={e => e.stopPropagation()}
+                        className="bg-white p-6 rounded-xl max-w-4xl w-full shadow-lg overflow-auto"
+                    >
+                        <div dangerouslySetInnerHTML={{ __html: invoicePreviewHTML }} />
+                        <div className="flex justify-end mt-4 gap-4">
+                            <button
+                                onClick={printInvoice}
+                                className="px-4 py-2 bg-blue-600 text-white rounded"
+                            >
+                                Print / Save PDF
+                            </button>
+                            <button
+                                onClick={() => setIsPreviewOpen(false)}
+                                className="px-4 py-2 bg-gray-200 rounded"
                             >
                                 Close
                             </button>
