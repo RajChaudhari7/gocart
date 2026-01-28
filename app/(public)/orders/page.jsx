@@ -24,9 +24,10 @@ export default function Orders() {
         headers: { Authorization: `Bearer ${token}` },
       })
       setOrders(data.orders)
-      setLoading(false)
     } catch (error) {
       toast.error(error?.response?.data?.error || error.message)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -36,15 +37,17 @@ export default function Orders() {
     }
   }, [isLoaded, user])
 
-  const cancelOrder = async (orderId) => {
+  const cancelOrder = async (order) => {
+    if (order.status === 'DELIVERED') return
+
     if (!confirm("Are you sure you want to cancel this order?")) return
     try {
       const token = await getToken()
-      await axios.post(`/api/orders/cancel`, { orderId }, {
+      await axios.post(`/api/orders/cancel`, { orderId: order.id }, {
         headers: { Authorization: `Bearer ${token}` },
       })
       toast.success("Order canceled successfully")
-      fetchOrders() // refresh list
+      fetchOrders()
     } catch (error) {
       toast.error(error?.response?.data?.error || error.message)
     }
@@ -79,31 +82,37 @@ export default function Orders() {
                   <OrderItem
                     key={order.id}
                     order={order}
-                    onCancel={() => cancelOrder(order.id)}
+                    onCancel={() => cancelOrder(order)}
                   />
                 ))}
               </tbody>
             </table>
 
-            {/* Mobile cards */}
+            {/* Mobile */}
             <div className="space-y-6 md:hidden">
               {orders.map(order => (
                 <OrderItem
                   key={order.id}
                   order={order}
                   mobile
-                  onCancel={() => cancelOrder(order.id)}
+                  onCancel={() => cancelOrder(order)}
                 />
               ))}
             </div>
           </div>
         ) : (
-          <div className="flex items-center justify-center min-h-[60vh]">
-            <div className="text-center">
+          <div className="flex items-center justify-center min-h-[60vh] text-center">
+            <div>
               <h1 className="text-3xl font-semibold mb-2">No Orders Yet</h1>
-              <p className="text-white/60">
+              <p className="text-white/60 mb-6">
                 Looks like you haven’t placed any orders.
               </p>
+              <button
+                onClick={() => router.push('/')}
+                className="px-6 py-3 bg-indigo-600 rounded-lg hover:bg-indigo-500 transition"
+              >
+                Shop Now
+              </button>
             </div>
           </div>
         )}
