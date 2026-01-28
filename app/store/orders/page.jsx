@@ -86,14 +86,14 @@ export default function StoreOrders() {
         const store = order.store
 
         const invoiceDiv = document.createElement("div")
-        invoiceDiv.style.width = "800px"
+        invoiceDiv.style.width = "794px"
         invoiceDiv.style.padding = "40px"
         invoiceDiv.style.background = "#fff"
         invoiceDiv.style.fontFamily = "Arial"
         invoiceDiv.innerHTML = `
             <div style="text-align:center;margin-bottom:30px;">
-                <img src="${store?.logo}" style="max-height:60px;" />
-                <h1>${store?.name}</h1>
+                <img src="${store?.logo}" style="max-height:60px;margin-bottom:10px" />
+                <h2>${store?.name}</h2>
                 <p>Mobile: ${store?.contact}</p>
             </div>
 
@@ -117,19 +117,19 @@ export default function StoreOrders() {
             <table style="width:100%;border-collapse:collapse;margin-top:20px;">
                 <thead>
                     <tr style="background:#f1f5f9;">
-                        <th style="border:1px solid #ddd;padding:8px;">Product</th>
-                        <th style="border:1px solid #ddd;padding:8px;">Qty</th>
-                        <th style="border:1px solid #ddd;padding:8px;">Price</th>
-                        <th style="border:1px solid #ddd;padding:8px;">Total</th>
+                        <th style="border:1px solid #ddd;padding:10px;">Product</th>
+                        <th style="border:1px solid #ddd;padding:10px;">Qty</th>
+                        <th style="border:1px solid #ddd;padding:10px;">Price</th>
+                        <th style="border:1px solid #ddd;padding:10px;">Total</th>
                     </tr>
                 </thead>
                 <tbody>
-                    ${order.orderItems.map(i => `
+                    ${order.orderItems.map(item => `
                         <tr>
-                            <td style="border:1px solid #ddd;padding:8px;">${i.product?.name}</td>
-                            <td style="border:1px solid #ddd;padding:8px;">${i.quantity}</td>
-                            <td style="border:1px solid #ddd;padding:8px;">₹${i.price}</td>
-                            <td style="border:1px solid #ddd;padding:8px;">₹${i.price * i.quantity}</td>
+                            <td style="border:1px solid #ddd;padding:10px;">${item.product?.name}</td>
+                            <td style="border:1px solid #ddd;padding:10px;">${item.quantity}</td>
+                            <td style="border:1px solid #ddd;padding:10px;">₹${item.price}</td>
+                            <td style="border:1px solid #ddd;padding:10px;">₹${item.price * item.quantity}</td>
                         </tr>
                     `).join("")}
                 </tbody>
@@ -140,15 +140,17 @@ export default function StoreOrders() {
                 <p style="font-size:18px;"><b>Grand Total:</b> ₹${order.total}</p>
             </div>
         `
+
         document.body.appendChild(invoiceDiv)
 
         const canvas = await html2canvas(invoiceDiv, { scale: 2 })
         const pdf = new jsPDF("p", "pt", "a4")
-        const pdfWidth = pdf.internal.pageSize.getWidth()
-        const pdfHeight = (canvas.height * pdfWidth) / canvas.width
+        const width = pdf.internal.pageSize.getWidth()
+        const height = (canvas.height * width) / canvas.width
 
-        pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, 0, pdfWidth, pdfHeight)
+        pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, 0, width, height)
         pdf.save(`Invoice-${order.id}.pdf`)
+
         document.body.removeChild(invoiceDiv)
     }
 
@@ -170,50 +172,101 @@ export default function StoreOrders() {
 
     return (
         <>
-            <h1 className="text-3xl mb-6 font-semibold">Store Orders</h1>
+            <h1 className="text-3xl text-slate-700 mb-6 font-semibold">Store Orders</h1>
 
             <div className="grid gap-5 max-w-5xl">
                 {orders.map(order => (
                     <div
                         key={order.id}
                         onClick={() => openModal(order)}
-                        className="bg-white p-5 rounded-xl shadow cursor-pointer"
+                        className="bg-white rounded-xl shadow-md p-5 hover:shadow-xl transition cursor-pointer border-l-4 border-blue-500"
                     >
-                        <div className="flex justify-between mb-3">
-                            <h2>{order.user?.name}</h2>
+                        <div className="flex justify-between items-center mb-3">
+                            <h2 className="text-lg font-medium">{order.user?.name}</h2>
                             <span>{order.status}</span>
                         </div>
 
-                        <select
-                            value={order.status}
-                            disabled={order.status === "DELIVERED"}
-                            onClick={e => e.stopPropagation()}
-                            onChange={e => updateOrderStatus(order, e.target.value)}
-                        >
-                            {STATUS_FLOW.map(s => (
-                                <option key={s} value={s}>{s}</option>
-                            ))}
-                        </select>
+                        <div className="flex gap-2 mt-4 items-center">
+                            {order.status !== "CANCELLED" && (
+                                <select
+                                    value={order.status}
+                                    disabled={order.status === "DELIVERED"}
+                                    onClick={e => e.stopPropagation()}
+                                    onChange={e => {
+                                        e.stopPropagation()
+                                        updateOrderStatus(order, e.target.value)
+                                    }}
+                                    className="border rounded px-3 py-1 text-sm"
+                                >
+                                    {STATUS_FLOW.map(s => (
+                                        <option key={s} value={s}>{s}</option>
+                                    ))}
+                                </select>
+                            )}
 
-                        <button
-                            onClick={e => { e.stopPropagation(); downloadInvoicePDF(order) }}
-                            className="ml-2"
-                        >
-                            Download Invoice
-                        </button>
+                            {order.status !== "DELIVERED" && order.status !== "CANCELLED" && (
+                                <button
+                                    onClick={e => {
+                                        e.stopPropagation()
+                                        cancelOrder(order)
+                                    }}
+                                    className="px-3 py-1 bg-red-600 text-white rounded text-sm"
+                                >
+                                    Cancel
+                                </button>
+                            )}
+
+                            <button
+                                onClick={e => {
+                                    e.stopPropagation()
+                                    downloadInvoicePDF(order)
+                                }}
+                                className="px-3 py-1 bg-blue-600 text-white rounded text-sm"
+                            >
+                                Download Invoice
+                            </button>
+                        </div>
                     </div>
                 ))}
             </div>
 
             {isModalOpen && selectedOrder && (
-                <div onClick={closeModal} className="fixed inset-0 bg-black/50 flex items-center justify-center">
-                    <div onClick={e => e.stopPropagation()} className="bg-white p-6 rounded-xl">
+                <div
+                    onClick={closeModal}
+                    className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+                >
+                    <div
+                        onClick={e => e.stopPropagation()}
+                        className="bg-white rounded-xl p-6 max-w-2xl w-full shadow-lg"
+                    >
+                        <h2 className="text-xl font-semibold mb-4 text-center">Order Details</h2>
+
                         <p><b>Customer:</b> {selectedOrder.user?.name}</p>
                         <p><b>Mobile:</b> {selectedOrder.address?.phone}</p>
-                        <p><b>Shipping Address:</b> {selectedOrder.address?.street}, {selectedOrder.address?.city}</p>
+                        <p>
+                            <b>Shipping Address:</b>{" "}
+                            {selectedOrder.address?.street},
+                            {selectedOrder.address?.city},
+                            {selectedOrder.address?.state},
+                            {selectedOrder.address?.zip},
+                            {selectedOrder.address?.country}
+                        </p>
 
-                        <button onClick={() => downloadInvoicePDF(selectedOrder)}>Download Invoice</button>
-                        <button onClick={closeModal}>Close</button>
+                        <div className="flex justify-between mt-6">
+                            <button
+                                onClick={() => downloadInvoicePDF(selectedOrder)}
+                                className="px-4 py-2 bg-blue-600 text-white rounded"
+                            >
+                                Download Invoice
+                            </button>
+
+                            <button
+                                onClick={closeModal}
+                                className="px-4 py-2 bg-slate-200 rounded"
+                            >
+                                Close
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
