@@ -84,9 +84,19 @@ export default function StoreOrders() {
     }
 
     /* ================= GENERATE INVOICE HTML ================= */
-    const generateInvoiceHTML = (order) => {
-        // Use shop logo from order or fallback
-        const shopLogo = order.shopLogo || "/assets/upload_area.png" // fallback image
+    const generateInvoiceHTML = async (order) => {
+        // If store logo is a File object, convert to base64
+        let shopLogo = order.shopLogo
+        if (shopLogo instanceof File) {
+            shopLogo = await new Promise(resolve => {
+                const reader = new FileReader()
+                reader.onload = e => resolve(e.target.result)
+                reader.readAsDataURL(shopLogo)
+            })
+        } else if (!shopLogo) {
+            shopLogo = "/assets/upload_area.png" // fallback
+        }
+
         const shopName = order.shopName || "My Shop"
 
         return `
@@ -149,8 +159,9 @@ export default function StoreOrders() {
     }
 
     /* ================= OPEN PREVIEW ================= */
-    const openInvoicePreview = (order) => {
-        setInvoicePreviewHTML(generateInvoiceHTML(order))
+    const openInvoicePreview = async (order) => {
+        const html = await generateInvoiceHTML(order)
+        setInvoicePreviewHTML(html)
         setIsPreviewOpen(true)
     }
 
@@ -212,6 +223,7 @@ export default function StoreOrders() {
                     {orders.map((order) => (
                         <div
                             key={order.id}
+                            onClick={() => openModal(order)}
                             className="bg-white rounded-xl shadow-md p-5 hover:shadow-xl transition cursor-pointer border-l-4 border-blue-500"
                         >
                             <div className="flex justify-between items-center mb-3">
@@ -237,7 +249,8 @@ export default function StoreOrders() {
                                     <select
                                         value={order.status}
                                         disabled={order.status === "DELIVERED"}
-                                        onChange={e => { e.stopPropagation(); updateOrderStatus(order, e.target.value) }}
+                                        onClick={e => e.stopPropagation()}
+                                        onChange={e => updateOrderStatus(order, e.target.value)}
                                         className="border rounded px-3 py-1 text-sm"
                                     >
                                         {STATUS_FLOW.map(s => (
@@ -256,7 +269,7 @@ export default function StoreOrders() {
                                 )}
 
                                 <button
-                                    onClick={(e) => { e.stopPropagation(); openInvoicePreview(order) }}
+                                    onClick={async (e) => { e.stopPropagation(); await openInvoicePreview(order) }}
                                     className="px-3 py-1 bg-blue-600 text-white rounded text-sm"
                                 >
                                     Download Invoice
@@ -267,7 +280,7 @@ export default function StoreOrders() {
                 </div>
             )}
 
-            {/* ================= MODAL ================= */}
+            {/* ================= ORDER DETAILS MODAL ================= */}
             {isModalOpen && selectedOrder && (
                 <div
                     onClick={closeModal}
@@ -302,7 +315,7 @@ export default function StoreOrders() {
 
                         <div className="flex justify-between mt-6">
                             <button
-                                onClick={() => openInvoicePreview(selectedOrder)}
+                                onClick={async () => await openInvoicePreview(selectedOrder)}
                                 className="px-4 py-2 bg-blue-600 text-white rounded"
                             >
                                 Download Invoice
