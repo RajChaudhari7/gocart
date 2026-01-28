@@ -88,61 +88,64 @@ export default function StoreOrders() {
         invoiceDiv.style.background = "#fff"
         invoiceDiv.style.fontFamily = "'Helvetica Neue', Helvetica, Arial, sans-serif"
         invoiceDiv.style.color = "#333"
+
         invoiceDiv.innerHTML = `
-            <div style="text-align: center; margin-bottom: 30px;">
-                <img src="${order.shopLogo || ''}" alt="Shop Logo" style="max-height:60px; display:block; margin: 0 auto;" />
-                <h1 style="margin-top:10px; color:#1e293b;">${order.shopName || "My Shop"}</h1>
-            </div>
+        <div style="text-align: center; margin-bottom: 30px;">
+            <img src="${order.store?.logo || ''}" alt="Shop Logo" style="max-height:60px; display:block; margin: 0 auto;" />
+            <h1 style="margin-top:10px; color:#1e293b;">${order.store?.name || "My Shop"}</h1>
+            <p style="margin:5px 0;">${order.store?.address || ""}</p>
+            <p style="margin:5px 0;">Phone: ${order.store?.contact || "N/A"}</p>
+        </div>
 
-            <div style="display:flex; justify-content:space-between; margin-bottom:30px;">
-                <div>
-                    <p><b>Invoice ID:</b> ${order.id}</p>
-                    <p><b>Date:</b> ${new Date(order.createdAt).toLocaleString()}</p>
-                    <p><b>Mobile:</b> ${order.shopMobile || "N/A"}</p>
-                </div>
-                <div>
-                    <p><b>Customer:</b> ${order.user?.name}</p>
-                    <p><b>Email:</b> ${order.user?.email}</p>
-                    <p><b>Shipping:</b> ${order.shippingAddress || "N/A"}</p>
-                    <p><b>Payment:</b> ${order.paymentMethod}</p>
-                </div>
+        <div style="display:flex; justify-content:space-between; margin-bottom:30px;">
+            <div>
+                <p><b>Invoice ID:</b> ${order.id}</p>
+                <p><b>Date:</b> ${new Date(order.createdAt).toLocaleString()}</p>
             </div>
+            <div>
+                <p><b>Customer:</b> ${order.user?.name}</p>
+                <p><b>Email:</b> ${order.user?.email}</p>
+                <p><b>Shipping Address:</b> ${order.address?.street}, ${order.address?.city}, ${order.address?.state}, ${order.address?.zip}, ${order.address?.country}</p>
+                <p><b>Customer Phone:</b> ${order.address?.phone}</p>
+            </div>
+        </div>
 
-            <table style="width:100%; border-collapse: collapse; margin-bottom:20px;">
-                <thead>
-                    <tr style="background:#f1f5f9;">
-                        <th style="padding:10px; border:1px solid #ddd; text-align:left;">Product</th>
-                        <th style="padding:10px; border:1px solid #ddd; text-align:right;">Qty</th>
-                        <th style="padding:10px; border:1px solid #ddd; text-align:right;">Price</th>
-                        <th style="padding:10px; border:1px solid #ddd; text-align:right;">Total</th>
+        <table style="width:100%; border-collapse: collapse; margin-bottom:20px;">
+            <thead>
+                <tr style="background:#f1f5f9;">
+                    <th style="padding:10px; border:1px solid #ddd; text-align:left;">Product</th>
+                    <th style="padding:10px; border:1px solid #ddd; text-align:right;">Qty</th>
+                    <th style="padding:10px; border:1px solid #ddd; text-align:right;">Price</th>
+                    <th style="padding:10px; border:1px solid #ddd; text-align:right;">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${order.orderItems.map(item => `
+                    <tr>
+                        <td style="padding:10px; border:1px solid #ddd;">${item.product?.name}</td>
+                        <td style="padding:10px; border:1px solid #ddd; text-align:right;">${item.quantity}</td>
+                        <td style="padding:10px; border:1px solid #ddd; text-align:right;">₹${item.price}</td>
+                        <td style="padding:10px; border:1px solid #ddd; text-align:right;">₹${item.price * item.quantity}</td>
                     </tr>
-                </thead>
-                <tbody>
-                    ${order.orderItems.map(item => `
-                        <tr>
-                            <td style="padding:10px; border:1px solid #ddd;">${item.product?.name}</td>
-                            <td style="padding:10px; border:1px solid #ddd; text-align:right;">${item.quantity}</td>
-                            <td style="padding:10px; border:1px solid #ddd; text-align:right;">₹${item.price}</td>
-                            <td style="padding:10px; border:1px solid #ddd; text-align:right;">₹${item.price * item.quantity}</td>
-                        </tr>
-                    `).join("")}
-                </tbody>
-            </table>
+                `).join("")}
+            </tbody>
+        </table>
 
-            <div style="text-align:right; font-weight:bold; font-size:16px; margin-top:10px;">
-                Subtotal: ₹${order.total - (order.shippingFee || 0)}
-            </div>
-            <div style="text-align:right; font-weight:bold; font-size:16px; margin-top:5px;">
-                Shipping Fee: ₹${order.shippingFee || 0}
-            </div>
-            <div style="text-align:right; font-weight:bold; font-size:18px; margin-top:10px;">
-                Grand Total: ₹${order.total}
-            </div>
+        <div style="text-align:right; font-weight:bold; font-size:16px; margin-top:10px;">
+            Subtotal: ₹${order.total - 50}
+        </div>
+        <div style="text-align:right; font-weight:bold; font-size:16px; margin-top:5px;">
+            Shipping Fee: ₹50
+        </div>
+        <div style="text-align:right; font-weight:bold; font-size:18px; margin-top:10px;">
+            Grand Total: ₹${order.total}
+        </div>
 
-            <div style="text-align:center; margin-top:40px; font-size:14px; color:#64748b;">
-                Thank you for shopping with ${order.shopName || "My Shop"}!
-            </div>
-        `
+        <div style="text-align:center; margin-top:40px; font-size:14px; color:#64748b;">
+            Thank you for shopping with ${order.store?.name || "My Shop"}!
+        </div>
+    `
+
         document.body.appendChild(invoiceDiv)
 
         const canvas = await html2canvas(invoiceDiv, { scale: 2 })
@@ -151,22 +154,11 @@ export default function StoreOrders() {
         const pdfWidth = pdf.internal.pageSize.getWidth()
         const pdfHeight = (canvas.height * pdfWidth) / canvas.width
 
-        let heightLeft = pdfHeight
-        let position = 0
-
-        pdf.addImage(imgData, "PNG", 0, position, pdfWidth, pdfHeight)
-        heightLeft -= pdf.internal.pageSize.getHeight()
-
-        while (heightLeft > 0) {
-            position = heightLeft - pdfHeight
-            pdf.addPage()
-            pdf.addImage(imgData, "PNG", 0, position, pdfWidth, pdfHeight)
-            heightLeft -= pdf.internal.pageSize.getHeight()
-        }
-
+        pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight)
         pdf.save(`Invoice-${order.id}.pdf`)
         document.body.removeChild(invoiceDiv)
     }
+
 
     const openModal = (order) => {
         setSelectedOrder(order)
@@ -202,8 +194,8 @@ export default function StoreOrders() {
                                 <h2 className="text-lg font-medium">{order.user?.name}</h2>
                                 <span className={`px-3 py-1 rounded-full text-sm font-semibold
                                     ${order.status === "DELIVERED" ? "bg-green-100 text-green-800" :
-                                    order.status === "CANCELLED" ? "bg-red-100 text-red-800" :
-                                    "bg-yellow-100 text-yellow-800"}`}>
+                                        order.status === "CANCELLED" ? "bg-red-100 text-red-800" :
+                                            "bg-yellow-100 text-yellow-800"}`}>
                                     {order.status}
                                 </span>
                             </div>
