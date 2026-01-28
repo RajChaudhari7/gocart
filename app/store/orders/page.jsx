@@ -1,4 +1,5 @@
 'use client'
+
 import { useEffect, useState } from "react"
 import Loading from "@/components/Loading"
 import { useAuth } from "@clerk/nextjs"
@@ -9,11 +10,13 @@ const STATUS_FLOW = ["ORDER_PLACED", "PROCESSING", "SHIPPED", "DELIVERED"]
 
 export default function StoreOrders() {
     const { getToken } = useAuth()
+
     const [orders, setOrders] = useState([])
     const [loading, setLoading] = useState(true)
     const [selectedOrder, setSelectedOrder] = useState(null)
     const [isModalOpen, setIsModalOpen] = useState(false)
 
+    /* ================= FETCH ================= */
     const fetchOrders = async () => {
         try {
             const token = await getToken()
@@ -28,6 +31,7 @@ export default function StoreOrders() {
         }
     }
 
+    /* ================= UPDATE STATUS ================= */
     const updateOrderStatus = async (order, newStatus) => {
         const currentIndex = STATUS_FLOW.indexOf(order.status)
         const newIndex = STATUS_FLOW.indexOf(newStatus)
@@ -39,36 +43,100 @@ export default function StoreOrders() {
 
         try {
             const token = await getToken()
-            await axios.post('/api/store/orders', {
-                orderId: order.id,
-                status: newStatus
-            }, {
-                headers: { Authorization: `Bearer ${token}` }
-            })
+            await axios.post(
+                '/api/store/orders',
+                { orderId: order.id, status: newStatus },
+                { headers: { Authorization: `Bearer ${token}` } }
+            )
 
             setOrders(prev =>
                 prev.map(o => o.id === order.id ? { ...o, status: newStatus } : o)
             )
+
             toast.success("Order status updated")
         } catch (error) {
             toast.error(error?.response?.data?.error || error.message)
         }
     }
 
+    /* ================= CANCEL ================= */
     const cancelOrder = async (order) => {
-        if (order.status === 'DELIVERED') return
+        if (order.status === "DELIVERED" || order.status === "CANCELLED") return
 
         if (!confirm("Are you sure you want to cancel this order?")) return
+
         try {
             const token = await getToken()
-            await axios.post('/api/orders/cancel', { orderId: order.id }, {
-                headers: { Authorization: `Bearer ${token}` }
-            })
+            await axios.post(
+                '/api/orders/cancel',
+                { orderId: order.id },
+                { headers: { Authorization: `Bearer ${token}` } }
+            )
             toast.success("Order canceled successfully")
             fetchOrders()
         } catch (error) {
             toast.error(error?.response?.data?.error || error.message)
         }
+    }
+
+    /* ================= INVOICE ================= */
+    const downloadInvoice = (order) => {
+        const win = window.open("", "_blank")
+
+        win.document.write(`
+            <html>
+            <head>
+                <title>Invoice - ${order.id}</title>
+                <style>
+                    body { font-family: Arial; padding: 30px; }
+                    h1 { text-align: center; }
+                    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                    th, td { border: 1px solid #ddd; padding: 8px; }
+                    th { background: #f4f4f4; }
+                    .right { text-align: right; }
+                </style>
+            </head>
+            <body>
+                <h1>Order Invoice</h1>
+                <p><b>Order ID:</b> ${order.id}</p>
+                <p><b>Customer:</b> ${order.user?.name}</p>
+                <p><b>Email:</b> ${order.user?.email}</p>
+                <p><b>Payment Method:</b> ${order.paymentMethod}</p>
+                <p><b>Status:</b> ${order.status}</p>
+                <p><b>Date:</b> ${new Date(order.createdAt).toLocaleString()}</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Qty</th>
+                            <th>Price</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${order.orderItems.map(item => `
+                            <tr>
+                                <td>${item.product?.name}</td>
+                                <td class="right">${item.quantity}</td>
+                                <td class="right">₹${item.price}</td>
+                                <td class="right">₹${item.quantity * item.price}</td>
+                            </tr>
+                        `).join("")}
+                    </tbody>
+                </table>
+
+                <h3 class="right">Grand Total: ₹${order.total}</h3>
+
+                <script>
+                    window.print();
+                    window.onafterprint = () => window.close();
+                </script>
+            </body>
+            </html>
+        `)
+
+        win.document.close()
     }
 
     const openModal = (order) => {
@@ -96,8 +164,8 @@ export default function StoreOrders() {
             {orders.length === 0 ? (
                 <p>No orders found</p>
             ) : (
-                <div className="overflow-x-auto max-w-4xl rounded-md shadow border border-gray-200">
-                    <table className="w-full text-sm text-left text-gray-600">
+                <div className="overflow-x-auto max-w-4xl rounded-md shadow border">
+                    <table className="w-full text-sm">
                         <thead className="bg-gray-50 text-xs uppercase">
                             <tr>
                                 {["#", "Customer", "Total", "Payment", "Coupon", "Status", "Actions", "Date"].map(h => (
@@ -105,6 +173,7 @@ export default function StoreOrders() {
                                 ))}
                             </tr>
                         </thead>
+
                         <tbody>
                             {orders.map((order, index) => (
                                 <tr
@@ -119,24 +188,29 @@ export default function StoreOrders() {
                                     <td className="px-4">
                                         {order.isCouponUsed ? order.coupon?.code : "—"}
                                     </td>
-                                    <td className="px-4">{order.status}</td>
+
+                                    <td className="px-4 font-medium">
+                                        {order.status}
+                                    </td>
 
                                     <td
                                         className="px-4 flex gap-2"
                                         onClick={e => e.stopPropagation()}
                                     >
-                                        <select
-                                            value={order.status}
-                                            disabled={order.status === "DELIVERED"}
-                                            onChange={e => updateOrderStatus(order, e.target.value)}
-                                            className="border rounded text-sm"
-                                        >
-                                            {STATUS_FLOW.map(s => (
-                                                <option key={s} value={s}>{s}</option>
-                                            ))}
-                                        </select>
+                                        {order.status !== "CANCELLED" && (
+                                            <select
+                                                value={order.status}
+                                                disabled={order.status === "DELIVERED"}
+                                                onChange={e => updateOrderStatus(order, e.target.value)}
+                                                className="border rounded text-sm"
+                                            >
+                                                {STATUS_FLOW.map(s => (
+                                                    <option key={s} value={s}>{s}</option>
+                                                ))}
+                                            </select>
+                                        )}
 
-                                        {order.status !== "DELIVERED" && (
+                                        {order.status !== "DELIVERED" && order.status !== "CANCELLED" && (
                                             <button
                                                 onClick={() => cancelOrder(order)}
                                                 className="px-3 py-1 bg-red-600 text-white rounded text-sm"
@@ -156,7 +230,7 @@ export default function StoreOrders() {
                 </div>
             )}
 
-            {/* MODAL */}
+            {/* ================= MODAL ================= */}
             {isModalOpen && selectedOrder && (
                 <div
                     onClick={closeModal}
@@ -172,6 +246,7 @@ export default function StoreOrders() {
 
                         <p><b>Customer:</b> {selectedOrder.user?.name}</p>
                         <p><b>Email:</b> {selectedOrder.user?.email}</p>
+                        <p><b>Payment Method:</b> {selectedOrder.paymentMethod}</p>
                         <p><b>Status:</b> {selectedOrder.status}</p>
 
                         <div className="mt-4 space-y-2">
@@ -182,7 +257,7 @@ export default function StoreOrders() {
                                         className="w-16 h-16 object-cover rounded"
                                     />
                                     <div>
-                                        <p>{item.product?.name}</p>
+                                        <p className="font-medium">{item.product?.name}</p>
                                         <p>Qty: {item.quantity}</p>
                                         <p>₹{item.price}</p>
                                     </div>
@@ -190,7 +265,14 @@ export default function StoreOrders() {
                             ))}
                         </div>
 
-                        <div className="text-right mt-4">
+                        <div className="flex justify-between mt-6">
+                            <button
+                                onClick={() => downloadInvoice(selectedOrder)}
+                                className="px-4 py-2 bg-blue-600 text-white rounded"
+                            >
+                                Download Invoice
+                            </button>
+
                             <button
                                 onClick={closeModal}
                                 className="px-4 py-2 bg-slate-200 rounded"
