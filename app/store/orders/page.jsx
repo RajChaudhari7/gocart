@@ -297,40 +297,48 @@ export default function StoreOrders() {
                     >
                         <h2 className="text-xl font-semibold mb-4 text-center">Order Details</h2>
 
-                        <p><b>Customer:</b> {selectedOrder.user?.name}</p>
-                        <p><b>Email:</b> {selectedOrder.user?.email}</p>
-                        <p><b>Phone:</b> {selectedOrder.address?.phone || "N/A"}</p>
-                        <p>
-                            <b>Address:</b>{" "}
-                            {selectedOrder.address
-                                ? `${selectedOrder.address.street}, ${selectedOrder.address.city}, ${selectedOrder.address.state}, ${selectedOrder.address.zip}, ${selectedOrder.address.country}`
-                                : "N/A"}
-                        </p>
+                        {/* CUSTOMER INFO */}
+                        <div className="text-sm space-y-1 mb-4">
+                            <p><b>Name:</b> {selectedOrder.user?.name}</p>
+                            <p><b>Email:</b> {selectedOrder.user?.email}</p>
+                            <p><b>Phone:</b> {selectedOrder.address?.phone || "N/A"}</p>
+                            <p>
+                                <b>Address:</b>{" "}
+                                {selectedOrder.address
+                                    ? `${selectedOrder.address.street}, ${selectedOrder.address.city}, ${selectedOrder.address.state}, ${selectedOrder.address.zip}, ${selectedOrder.address.country}`
+                                    : "N/A"}
+                            </p>
+                        </div>
 
-                        <div className="mt-4 space-y-3">
+                        {/* PRODUCTS – FULLY RESTORED */}
+                        <div className="space-y-3">
                             {selectedOrder.orderItems.map((item, i) => (
-                                <div className="mt-6 border-t pt-4 space-y-1 text-sm text-slate-700">
-                                    <p className="text-green-600 font-medium">
-                                        Payment Method: {selectedOrder.paymentMethod}
-                                    </p>
-
-                                    <p className="text-green-600 font-medium">
-                                        Paid: {selectedOrder.isPaid ? "Yes" : "No"}
-                                    </p>
-
-                                    <p className="text-green-600 font-medium">
-                                        Coupon: {selectedOrder.isCouponUsed ? `${selectedOrder.coupon?.code} (${selectedOrder.coupon?.discount}% OFF)` : "—"}
-                                    </p>
-
-                                    <p className="text-green-600 font-medium">
-                                        Status: {selectedOrder.status}
-                                    </p>
-
-                                    <p className="text-green-600 font-medium">
-                                        Order Date: {new Date(selectedOrder.createdAt).toLocaleString()}
-                                    </p>
+                                <div key={i} className="flex gap-4 border p-3 rounded-lg">
+                                    <img
+                                        src={item.product?.images?.[0]?.src || item.product?.images?.[0]}
+                                        className="w-16 h-16 object-cover rounded"
+                                    />
+                                    <div className="flex-1">
+                                        <p className="font-medium">{item.product?.name}</p>
+                                        <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
+                                        <p className="text-sm font-semibold">₹{item.price}</p>
+                                    </div>
                                 </div>
                             ))}
+                        </div>
+
+                        {/* SUMMARY (LIKE YOUR IMAGE) */}
+                        <div className="mt-6 border-t pt-4 space-y-1 text-sm text-green-700">
+                            <p><b>Payment Method:</b> {selectedOrder.paymentMethod}</p>
+                            <p><b>Paid:</b> {selectedOrder.isPaid ? "Yes" : "No"}</p>
+                            <p>
+                                <b>Coupon:</b>{" "}
+                                {selectedOrder.isCouponUsed
+                                    ? `${selectedOrder.coupon?.code} (${selectedOrder.coupon?.discount}% OFF)`
+                                    : "—"}
+                            </p>
+                            <p><b>Status:</b> {selectedOrder.status}</p>
+                            <p><b>Order Date:</b> {new Date(selectedOrder.createdAt).toLocaleString()}</p>
                         </div>
 
                         <div className="flex justify-between mt-6">
