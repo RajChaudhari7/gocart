@@ -81,7 +81,7 @@ export default function StoreOrders() {
         }
     }
 
-    /* ================= PDF INVOICE ================= */
+    /* ================= REDESIGNED PDF INVOICE ================= */
     const downloadInvoicePDF = async (order) => {
         // Helper to convert logo to Base64
         const getBase64Image = (url) => {
@@ -98,94 +98,107 @@ export default function StoreOrders() {
                     ctx.drawImage(img, 0, 0);
                     resolve(canvas.toDataURL('image/png'));
                 };
-                img.onerror = () => resolve(''); // fallback if image fails
+                img.onerror = () => resolve('');
             });
         };
 
         const logoBase64 = await getBase64Image(order.store?.logo);
 
-        // Create invoice container
         const invoiceDiv = document.createElement('div');
         invoiceDiv.style.width = '800px';
-        invoiceDiv.style.padding = '40px';
+        invoiceDiv.style.padding = '50px';
         invoiceDiv.style.background = '#fff';
-        invoiceDiv.style.fontFamily = "'Helvetica Neue', Helvetica, Arial, sans-serif";
-        invoiceDiv.style.color = '#333';
-        invoiceDiv.style.lineHeight = '1.6';
+        invoiceDiv.style.fontFamily = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
+        invoiceDiv.style.color = '#0f172a';
 
         invoiceDiv.innerHTML = `
-    <div style="text-align: center; margin-bottom: 40px;">
-        ${logoBase64 ? `<img src="${logoBase64}" alt="Shop Logo" style="max-height:80px; display:block; margin:0 auto 10px auto;" />` : ''}
-        <h1 style="margin:10px 0 5px 0; color:#1e293b;">${order.store?.name || "My Shop"}</h1>
-        <p style="margin:2px 0;">${order.store?.address || ""}</p>
-        <p style="margin:2px 0;">Phone: ${order.store?.contact || "N/A"}</p>
-    </div>
-
-    <div style="display:flex; justify-content:space-between; margin-bottom:30px; gap:40px;">
-       <div>
-            <p><b>Invoice ID:</b> ${order.id}</p>
-            <p><b>Date:</b> ${new Date(order.createdAt).toLocaleString()}</p>
-            <p><b>Payment Mode:</b> ${order.paymentMethod || "N/A"}</p>
+    <div style="display:flex; justify-content:space-between; align-items: flex-start; margin-bottom: 50px;">
+        <div>
+            ${logoBase64 ? `<img src="${logoBase64}" alt="Logo" style="max-height:60px; margin-bottom:15px; display:block;" />` : ''}
+            <h1 style="font-size: 28px; font-weight: 800; margin: 0; color: #10b981;">INVOICE</h1>
+            <p style="font-size: 14px; color: #64748b; margin: 5px 0 0 0;"># ${order.id}</p>
         </div>
-        <div style="text-align:right;">
-            <p><b>Customer:</b> ${order.user?.name}</p>
-            <p><b>Email:</b> ${order.user?.email}</p>
-            <p><b>Shipping Address:</b> ${order.address?.street}, ${order.address?.city}, ${order.address?.state}, ${order.address?.zip}, ${order.address?.country}</p>
-            <p><b>Customer Phone:</b> ${order.address?.phone}</p>
+        <div style="text-align: right;">
+            <h2 style="font-size: 18px; margin: 0; color: #1e293b;">${order.store?.name || "Official Store"}</h2>
+            <p style="font-size: 13px; color: #64748b; margin: 4px 0;">${order.store?.address || ""}</p>
+            <p style="font-size: 13px; color: #64748b; margin: 0;">Phone: ${order.store?.contact || "N/A"}</p>
         </div>
     </div>
 
-    <table style="width:100%; border-collapse: collapse; margin-bottom:20px;">
+    <div style="height: 2px; background: #f1f5f9; margin-bottom: 40px;"></div>
+
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 50px; font-size: 14px;">
+        <div>
+            <h3 style="font-size: 12px; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.05em; margin-bottom: 12px;">Billed To</h3>
+            <p style="font-weight: 700; margin: 0; font-size: 16px;">${order.user?.name}</p>
+            <p style="margin: 4px 0; color: #475569;">${order.user?.email}</p>
+            <p style="margin: 4px 0; color: #475569; line-height: 1.4;">
+                ${order.address?.street}, ${order.address?.city}<br>
+                ${order.address?.state}, ${order.address?.zip}<br>
+                ${order.address?.country}
+            </p>
+            <p style="margin: 4px 0; color: #475569;">Ph: ${order.address?.phone}</p>
+        </div>
+        <div style="text-align: right;">
+            <h3 style="font-size: 12px; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.05em; margin-bottom: 12px;">Payment Details</h3>
+            <p style="margin: 4px 0;"><b>Date:</b> ${new Date(order.createdAt).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+            <p style="margin: 4px 0;"><b>Method:</b> ${order.paymentMethod || "N/A"}</p>
+            <p style="margin: 4px 0;"><b>Status:</b> <span style="color: #10b981; font-weight: 600;">Paid</span></p>
+        </div>
+    </div>
+
+    <table style="width:100%; border-collapse: collapse; margin-bottom: 30px;">
         <thead>
-            <tr style="background:#f1f5f9;">
-                <th style="padding:12px; border:1px solid #ddd; text-align:left;">Product</th>
-                <th style="padding:12px; border:1px solid #ddd; text-align:right;">Qty</th>
-                <th style="padding:12px; border:1px solid #ddd; text-align:right;">Price</th>
-                <th style="padding:12px; border:1px solid #ddd; text-align:right;">Total</th>
+            <tr style="text-align: left; border-bottom: 2px solid #0f172a;">
+                <th style="padding: 12px 0; font-size: 13px; color: #64748b; text-transform: uppercase;">Description</th>
+                <th style="padding: 12px 0; font-size: 13px; color: #64748b; text-transform: uppercase; text-align: center;">Qty</th>
+                <th style="padding: 12px 0; font-size: 13px; color: #64748b; text-transform: uppercase; text-align: right;">Price</th>
+                <th style="padding: 12px 0; font-size: 13px; color: #64748b; text-transform: uppercase; text-align: right;">Amount</th>
             </tr>
         </thead>
         <tbody>
             ${order.orderItems.map(item => `
-                <tr>
-                    <td style="padding:12px; border:1px solid #ddd;">${item.product?.name}</td>
-                    <td style="padding:12px; border:1px solid #ddd; text-align:right;">${item.quantity}</td>
-                    <td style="padding:12px; border:1px solid #ddd; text-align:right;">₹${item.price}</td>
-                    <td style="padding:12px; border:1px solid #ddd; text-align:right;">₹${item.price * item.quantity}</td>
+                <tr style="border-bottom: 1px solid #f1f5f9;">
+                    <td style="padding: 16px 0; font-weight: 500;">${item.product?.name}</td>
+                    <td style="padding: 16px 0; text-align: center;">${item.quantity}</td>
+                    <td style="padding: 16px 0; text-align: right;">₹${item.price.toLocaleString()}</td>
+                    <td style="padding: 16px 0; text-align: right; font-weight: 600;">₹${(item.price * item.quantity).toLocaleString()}</td>
                 </tr>
             `).join('')}
         </tbody>
     </table>
 
-    <div style="max-width:300px; margin-left:auto; padding:15px; background:#f1f5f9; border-radius:8px; font-weight:bold; font-size:16px;">
-        <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-            <span>Subtotal:</span>
-            <span>₹${order.total - 50}</span>
-        </div>
-        <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-            <span>Shipping Fee:</span>
-            <span>₹50</span>
-        </div>
-        <div style="display:flex; justify-content:space-between; margin-top:10px; font-size:18px;">
-            <span>Grand Total:</span>
-            <span>₹${order.total}</span>
+    <div style="display: flex; justify-content: flex-end;">
+        <div style="width: 250px;">
+            <div style="display: flex; justify-content: space-between; padding: 8px 0; font-size: 14px; color: #64748b;">
+                <span>Subtotal</span>
+                <span>₹${(order.total - 50).toLocaleString()}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 8px 0; font-size: 14px; color: #64748b;">
+                <span>Shipping</span>
+                <span>₹50.00</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 12px 0; margin-top: 10px; border-top: 2px solid #f1f5f9; font-size: 18px; font-weight: 800; color: #0f172a;">
+                <span>Grand Total</span>
+                <span>₹${order.total.toLocaleString()}</span>
+            </div>
         </div>
     </div>
 
-    <div style="text-align:center; margin-top:40px; font-size:14px; color:#64748b;">
-        Thank you for shopping with ${order.store?.name || "My Shop"}!
+    <div style="margin-top: 80px; text-align: center; border-top: 1px solid #f1f5f9; padding-top: 20px;">
+        <p style="font-size: 14px; font-weight: 600; color: #1e293b; margin: 0;">Thank you for your business!</p>
+        <p style="font-size: 12px; color: #94a3b8; margin: 4px 0;">If you have any questions about this invoice, please contact ${order.store?.contact || "support"}</p>
     </div>
-  `;
+    `;
 
         document.body.appendChild(invoiceDiv);
 
-        // Wait for images to load
         const images = invoiceDiv.querySelectorAll("img");
         await Promise.all([...images].map(img => {
             if (img.complete) return Promise.resolve();
             return new Promise(res => img.onload = img.onerror = res);
         }));
 
-        // Render PDF
         const canvas = await html2canvas(invoiceDiv, { scale: 2 });
         const imgData = canvas.toDataURL("image/png");
         const pdf = new jsPDF("p", "pt", "a4");
@@ -196,7 +209,6 @@ export default function StoreOrders() {
 
         document.body.removeChild(invoiceDiv);
     };
-
 
     const openModal = (order) => {
         setSelectedOrder(order)
