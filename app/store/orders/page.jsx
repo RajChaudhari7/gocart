@@ -7,11 +7,13 @@ import axios from "axios"
 import toast from "react-hot-toast"
 import jsPDF from "jspdf"
 import html2canvas from "html2canvas"
+import { useOrderStore } from "@/hooks/use-order-store" // Added import
 
 const STATUS_FLOW = ["ORDER_PLACED", "PROCESSING", "SHIPPED", "DELIVERED"]
 
 export default function StoreOrders() {
     const { getToken } = useAuth()
+    const { setOrderCount } = useOrderStore() // Added state setter
 
     const [orders, setOrders] = useState([])
     const [loading, setLoading] = useState(true)
@@ -26,6 +28,12 @@ export default function StoreOrders() {
                 headers: { Authorization: `Bearer ${token}` }
             })
             setOrders(data.orders)
+            
+            // Added logic to update global badge count
+            // Filters out cancelled orders so the badge shows active tasks
+            const activeOrders = data.orders.filter(o => o.status !== "CANCELLED").length
+            setOrderCount(activeOrders)
+            
         } catch (error) {
             toast.error(error?.response?.data?.error || error.message)
         } finally {
@@ -74,7 +82,7 @@ export default function StoreOrders() {
                 { headers: { Authorization: `Bearer ${token}` } }
             )
             toast.success("Order canceled successfully")
-            fetchOrders()
+            fetchOrders() // Re-fetches and updates badge count
         } catch (error) {
             toast.error(error?.response?.data?.error || error.message)
         }
@@ -113,7 +121,6 @@ export default function StoreOrders() {
         invoiceDiv.style.lineHeight = '1.6';
 
         invoiceDiv.innerHTML = `
-    <!-- Header -->
     <div style="text-align: center; margin-bottom: 40px;">
         ${logoBase64 ? `<img src="${logoBase64}" alt="Shop Logo" style="max-height:80px; display:block; margin:0 auto 10px auto;" />` : ''}
         <h1 style="margin:10px 0 5px 0; color:#1e293b;">${order.store?.name || "My Shop"}</h1>
@@ -121,7 +128,6 @@ export default function StoreOrders() {
         <p style="margin:2px 0;">Phone: ${order.store?.contact || "N/A"}</p>
     </div>
 
-    <!-- Info Section -->
     <div style="display:flex; justify-content:space-between; margin-bottom:30px; gap:40px;">
        <div>
             <p><b>Invoice ID:</b> ${order.id}</p>
@@ -136,7 +142,6 @@ export default function StoreOrders() {
         </div>
     </div>
 
-    <!-- Order Items Table -->
     <table style="width:100%; border-collapse: collapse; margin-bottom:20px;">
         <thead>
             <tr style="background:#f1f5f9;">
@@ -158,7 +163,6 @@ export default function StoreOrders() {
         </tbody>
     </table>
 
-    <!-- Totals Section (Shaded Card) -->
     <div style="max-width:300px; margin-left:auto; padding:15px; background:#f1f5f9; border-radius:8px; font-weight:bold; font-size:16px;">
         <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
             <span>Subtotal:</span>
@@ -174,7 +178,6 @@ export default function StoreOrders() {
         </div>
     </div>
 
-    <!-- Footer -->
     <div style="text-align:center; margin-top:40px; font-size:14px; color:#64748b;">
         Thank you for shopping with ${order.store?.name || "My Shop"}!
     </div>

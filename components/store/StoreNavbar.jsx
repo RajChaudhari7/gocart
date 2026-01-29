@@ -1,10 +1,13 @@
 'use client'
 import { UserButton, useUser } from "@clerk/nextjs"
 import Link from "next/link"
-import { ShoppingBag, Search } from "lucide-react" // Optional icons for that premium feel
+import { ShoppingBag, Search } from "lucide-react"
+import { useOrderStore } from "@/hooks/use-order-store"
 
 const StoreNavbar = () => {
     const { user } = useUser()
+    // Listen to the global order count
+    const { orderCount } = useOrderStore()
 
     return (
         <nav className="sticky top-0 z-50 w-full bg-[#0a0a0a]/80 backdrop-blur-xl border-b border-white/5">
@@ -25,15 +28,25 @@ const StoreNavbar = () => {
                 {/* Right Section: Navigation & Profile */}
                 <div className="flex items-center gap-4 sm:gap-8">
                     
-                    {/* Search & Cart Icons (Premium standard) */}
                     <div className="hidden md:flex items-center gap-6 text-white/60">
-                        <button className="hover:text-cyan-400 transition-colors"><Search size={20} /></button>
-                        <button className="hover:text-cyan-400 transition-colors relative">
-                            <ShoppingBag size={20} />
-                            <span className="absolute -top-1 -right-2 bg-cyan-500 text-[10px] text-black font-bold h-4 w-4 rounded-full flex items-center justify-center">
-                                0
-                            </span>
+                        <button className="hover:text-cyan-400 transition-colors">
+                            <Search size={20} />
                         </button>
+
+                        {/* Order/Cart Link with Dynamic Badge */}
+                        <Link 
+                            href="/orders" 
+                            className="group relative flex items-center hover:text-cyan-400 transition-colors"
+                        >
+                            <ShoppingBag size={22} />
+                            
+                            {/* Badge: Only shows if count > 0 */}
+                            {orderCount > 0 && (
+                                <span className="absolute -top-2 -right-2 bg-cyan-500 text-[10px] text-black font-black h-5 w-5 rounded-full flex items-center justify-center ring-2 ring-[#0a0a0a] animate-in zoom-in duration-300">
+                                    {orderCount > 9 ? '9+' : orderCount}
+                                </span>
+                            )}
+                        </Link>
                     </div>
 
                     {/* User Profile Area */}
@@ -53,7 +66,7 @@ const StoreNavbar = () => {
                                 <UserButton 
                                     appearance={{
                                         elements: {
-                                            avatarBox: "h-9 w-9 border border-white/20"
+                                            avatarBox: "h-9 w-9 border border-white/20 hover:border-cyan-500 transition-colors"
                                         }
                                     }}
                                 />
