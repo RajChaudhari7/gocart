@@ -15,7 +15,7 @@ const heroSlides = [
     title: 'Precision.',
     subtitle: 'Gadgets built for the next generation.',
     price: 699,
-    image: assets.hero_model_img,
+    image: assets.product_img14,
     accent: '#10b981', // Emerald
     bgGradient: 'from-emerald-500/10 via-transparent to-transparent'
   },
