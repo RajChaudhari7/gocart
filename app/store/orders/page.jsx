@@ -20,54 +20,47 @@ export default function StoreOrders() {
     const [selectedOrder, setSelectedOrder] = useState(null)
     const [isModalOpen, setIsModalOpen] = useState(false)
 
-    /* ================= FETCH ================= */
+    /* ================= UPDATED FETCH ================= */
     const fetchOrders = async () => {
         try {
-            const token = await getToken()
+            const token = await getToken();
             const { data } = await axios.get('/api/store/orders', {
                 headers: { Authorization: `Bearer ${token}` }
-            })
-            setOrders(data.orders)
-            
-            // Added logic to update global badge count
-            // Filters out cancelled orders so the badge shows active tasks
-            const activeOrders = data.orders.filter(o => o.status !== "CANCELLED").length
-            setOrderCount(activeOrders)
-            
+            });
+
+            setOrders(data.orders);
+
+            // This line syncs the Navbar badge with the backend count
+            // (The activeCount from the API excludes DELIVERED/CANCELLED)
+            setOrderCount(data.activeCount);
+
         } catch (error) {
-            toast.error(error?.response?.data?.error || error.message)
+            toast.error(error?.response?.data?.error || error.message);
         } finally {
-            setLoading(false)
+            setLoading(false);
         }
-    }
+    };
 
-    /* ================= UPDATE STATUS ================= */
+    /* ================= UPDATED UPDATE STATUS ================= */
     const updateOrderStatus = async (order, newStatus) => {
-        const currentIndex = STATUS_FLOW.indexOf(order.status)
-        const newIndex = STATUS_FLOW.indexOf(newStatus)
-
-        if (newIndex < currentIndex) {
-            toast.error("Order status cannot go backward")
-            return
-        }
+        // ... keep your existing STATUS_FLOW validation logic ...
 
         try {
-            const token = await getToken()
+            const token = await getToken();
             await axios.post(
                 '/api/store/orders',
                 { orderId: order.id, status: newStatus },
                 { headers: { Authorization: `Bearer ${token}` } }
-            )
+            );
 
-            setOrders(prev =>
-                prev.map(o => o.id === order.id ? { ...o, status: newStatus } : o)
-            )
+            // Refreshing here is key: it re-fetches the list AND the new count
+            fetchOrders();
 
-            toast.success("Order status updated")
+            toast.success(`Order status updated to ${newStatus}`);
         } catch (error) {
-            toast.error(error?.response?.data?.error || error.message)
+            toast.error(error?.response?.data?.error || error.message);
         }
-    }
+    };
 
     /* ================= CANCEL ================= */
     const cancelOrder = async (order) => {

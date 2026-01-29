@@ -100,7 +100,21 @@ export async function GET(request) {
             orderBy: { createdAt: "desc" }
         })
 
-        return NextResponse.json({ orders })
+        // --- NEW LOGIC: Calculate only orders needing attention ---
+        // Excludes DELIVERED, CANCELLED, and RETURNED
+        const activeOrdersCount = await prisma.order.count({
+            where: {
+                storeId,
+                NOT: {
+                    status: { in: ["DELIVERED", "CANCELLED", "RETURNED"] }
+                }
+            }
+        })
+
+        return NextResponse.json({ 
+            orders, 
+            activeCount: activeOrdersCount // Send this to the frontend store
+        })
 
     } catch (error) {
         console.error(error)

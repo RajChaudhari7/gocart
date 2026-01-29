@@ -1,12 +1,11 @@
 'use client'
 import { UserButton, useUser } from "@clerk/nextjs"
 import Link from "next/link"
-import { ShoppingBag, Search } from "lucide-react"
+import { ShoppingBag } from "lucide-react"
 import { useOrderStore } from "@/hooks/use-order-store"
 
 const StoreNavbar = () => {
     const { user } = useUser()
-    // Listen to the global order count
     const { orderCount } = useOrderStore()
 
     return (
@@ -25,22 +24,17 @@ const StoreNavbar = () => {
                     </span>
                 </Link>
 
-                {/* Right Section: Navigation & Profile */}
+                {/* Right Section */}
                 <div className="flex items-center gap-4 sm:gap-8">
                     
-                    <div className="hidden md:flex items-center gap-6 text-white/60">
-                        <button className="hover:text-cyan-400 transition-colors">
-                            <Search size={20} />
-                        </button>
-
-                        {/* Order/Cart Link with Dynamic Badge */}
+                    <div className="flex items-center gap-6 text-white/60">
+                        {/* Order Link with Dynamic Badge */}
                         <Link 
                             href="/store/orders" 
                             className="group relative flex items-center hover:text-cyan-400 transition-colors"
                         >
                             <ShoppingBag size={22} />
                             
-                            {/* Badge: Only shows if count > 0 */}
                             {orderCount > 0 && (
                                 <span className="absolute -top-2 -right-2 bg-cyan-500 text-[10px] text-black font-black h-5 w-5 rounded-full flex items-center justify-center ring-2 ring-[#0a0a0a] animate-in zoom-in duration-300">
                                     {orderCount > 9 ? '9+' : orderCount}
