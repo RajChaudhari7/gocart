@@ -1,7 +1,7 @@
 'use client'
 
 import { assets } from '@/assets/assets'
-import { ArrowRightIcon, ShoppingBag } from 'lucide-react'
+import { ArrowRight, Cpu, Zap, ShieldCheck } from 'lucide-react'
 import Image from 'next/image'
 import React, { useEffect, useState, useCallback } from 'react'
 import CategoriesMarquee from './CategoriesMarquee'
@@ -11,33 +11,33 @@ import { motion, AnimatePresence } from 'framer-motion'
 const heroSlides = [
   {
     id: 1,
-    tag: 'NEW ARRIVAL',
-    title: 'Precision.',
-    subtitle: 'Gadgets built for the next generation.',
-    price: 699,
+    tag: 'Next-Gen Audio',
+    title: 'SONIC',
+    suffix: 'X1',
+    subtitle: 'The first headset designed with neural-link processing for zero latency.',
+    specs: { processor: 'H2 Chip', battery: '48h', latency: '0.1ms' },
     image: assets.product_img4,
-    accent: '#10b981', // Emerald
-    bgGradient: 'from-emerald-500/10 via-transparent to-transparent'
+    accent: '#22d3ee', // Cyan
   },
   {
     id: 2,
-    tag: 'LIMITED EDITION',
-    title: 'Evolution.',
-    subtitle: 'Smart tech that thinks ahead of you.',
-    price: 999,
+    tag: 'Optics Reimagined',
+    title: 'VISION',
+    suffix: 'PRO',
+    subtitle: 'Ultra-lightweight smart eyewear with integrated AR navigation.',
+    specs: { processor: 'M1 Lite', battery: '12h', latency: '0.5ms' },
     image: assets.hero_product_img1,
-    accent: '#8b5cf6', // Violet
-    bgGradient: 'from-violet-500/10 via-transparent to-transparent'
+    accent: '#a78bfa', // Violet
   },
   {
     id: 3,
-    tag: 'PREMIUM TECH',
-    title: 'Innovation.',
-    subtitle: 'Upgrade your daily digital experience.',
-    price: 1299,
+    tag: 'Daily Essential',
+    title: 'CORE',
+    suffix: 'ONE',
+    subtitle: 'A smartphone that adapts to your environment automatically.',
+    specs: { processor: 'Snapdragon 8+', battery: '24h', latency: 'N/A' },
     image: assets.hero_product_img2,
-    accent: '#f97316', // Orange
-    bgGradient: 'from-orange-500/10 via-transparent to-transparent'
+    accent: '#fb923c', // Orange
   },
 ]
 
@@ -51,137 +51,136 @@ const Hero = () => {
   }, [])
 
   useEffect(() => {
-    const timer = setInterval(nextSlide, 6000)
+    const timer = setInterval(nextSlide, 7000)
     return () => clearInterval(timer)
   }, [nextSlide])
 
   const slide = heroSlides[index]
 
   return (
-    <section className="relative min-h-screen w-full overflow-hidden bg-[#020617] text-white flex flex-col justify-between">
+    <section className="relative min-h-[100svh] w-full overflow-hidden bg-[#020617] text-white flex flex-col">
       
-      {/* Dynamic Ambient Background */}
+      {/* BACKGROUND ELEMENTS */}
       <div className="absolute inset-0 z-0">
-        <div className={`absolute inset-0 bg-gradient-to-br ${slide.bgGradient} transition-colors duration-1000`} />
-        <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-blue-500/10 blur-[120px] rounded-full" />
-        <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-purple-500/10 blur-[120px] rounded-full" />
+        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-50 mix-blend-overlay" />
+        <motion.div 
+           key={index}
+           initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] blur-[160px] rounded-full"
+           style={{ background: `${slide.accent}15` }}
+        />
       </div>
 
-      <div className="relative z-10 flex-1 flex items-center max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-12 pt-20">
+      <div className="relative z-10 flex-1 flex flex-col lg:flex-row items-center max-w-[1800px] mx-auto w-full px-8 gap-12 lg:pt-0 pt-24">
         
-        {/* Left Content */}
-        <div className="flex flex-col justify-center">
+        {/* LEFT NAV DOCK (Desktop) */}
+        <div className="hidden lg:flex flex-col gap-6 mr-12">
+          {heroSlides.map((_, i) => (
+            <button key={i} onClick={() => setIndex(i)} className="group relative flex items-center">
+              <div className={`h-12 w-1 rounded-full transition-all duration-500 ${i === index ? 'bg-white scale-y-100' : 'bg-white/10 scale-y-50 group-hover:bg-white/30'}`} />
+              <span className={`absolute left-4 text-[10px] font-black tracking-widest transition-opacity duration-300 ${i === index ? 'opacity-100' : 'opacity-0'}`}>0{i + 1}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* CONTENT BOX */}
+        <div className="flex-1 space-y-8">
           <AnimatePresence mode="wait">
             <motion.div
               key={slide.id}
-              initial={{ opacity: 0, x: -30 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
-              transition={{ duration: 0.5, ease: "easeOut" }}
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -30 }}
+              transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
             >
-              <div className="flex items-center gap-2 mb-6">
-                <span className="h-[1px] w-8 bg-gray-500" />
-                <span style={{ color: slide.accent }} className="text-sm font-bold tracking-[0.2em] uppercase">
+              <div className="inline-block px-4 py-1.5 rounded-full border border-white/10 bg-white/5 backdrop-blur-md mb-8">
+                <span className="text-[10px] font-bold tracking-[0.3em] uppercase text-white/60">
                   {slide.tag}
                 </span>
               </div>
 
-              <h1 className="text-6xl md:text-8xl font-black tracking-tighter leading-[0.9] mb-6">
+              <h1 className="text-7xl md:text-[10rem] font-black tracking-[calc(-0.05em)] leading-none flex items-baseline gap-4">
                 {slide.title}
+                <span className="text-2xl md:text-4xl font-light font-mono opacity-30">{slide.suffix}</span>
               </h1>
               
-              <p className="text-lg md:text-xl text-gray-400 max-w-md leading-relaxed mb-8">
+              <p className="text-base md:text-lg text-white/40 max-w-sm mt-8 leading-relaxed">
                 {slide.subtitle}
               </p>
 
-              <div className="flex items-center gap-8 mb-10">
-                <div>
-                  <p className="text-xs uppercase tracking-widest text-gray-500 mb-1">Starting at</p>
-                  <p className="text-3xl font-light italic">{currency}{slide.price}</p>
-                </div>
-                
+              <div className="flex items-center gap-6 mt-12">
                 <button
                   onClick={() => router.push('/shop')}
-                  className="group relative flex items-center gap-3 bg-white text-black px-8 py-4 rounded-full font-bold overflow-hidden transition-all hover:pr-12"
+                  className="bg-white text-black h-16 px-10 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-cyan-400 transition-colors flex items-center gap-4 group"
                 >
-                  <span className="relative z-10">Explore Now</span>
-                  <ArrowRightIcon className="relative z-10 transition-transform group-hover:translate-x-2" size={20} />
-                  <div className="absolute inset-0 bg-gray-200 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+                  Acquire Now
+                  <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
                 </button>
+                <div className="h-16 w-[1px] bg-white/10" />
+                <div className="font-mono">
+                   <p className="text-[10px] uppercase text-white/30">MSRP</p>
+                   <p className="text-2xl font-light">{currency}{slide.price}</p>
+                </div>
               </div>
             </motion.div>
           </AnimatePresence>
-
-          {/* Custom Indicators (Progress Bar Style) */}
-          <div className="flex gap-4 items-center">
-            {heroSlides.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setIndex(i)}
-                className="group relative h-1 flex-1 max-w-[60px] bg-white/10 rounded-full overflow-hidden"
-              >
-                {i === index && (
-                  <motion.div 
-                    layoutId="progress"
-                    className="absolute inset-0 bg-white"
-                    initial={{ scaleX: 0 }}
-                    animate={{ scaleX: 1 }}
-                    transition={{ duration: 6, ease: "linear" }}
-                    style={{ originX: 0 }}
-                  />
-                )}
-              </button>
-            ))}
-          </div>
         </div>
 
-        {/* Right Content - Product Image */}
-        <div className="relative flex items-center justify-center">
+        {/* IMAGE SECTION */}
+        <div className="relative flex-1 flex justify-center items-center">
           <AnimatePresence mode="wait">
             <motion.div
               key={slide.id}
-              initial={{ opacity: 0, scale: 0.8, rotate: 5 }}
-              animate={{ opacity: 1, scale: 1, rotate: 0 }}
-              exit={{ opacity: 0, scale: 1.1, rotate: -5 }}
-              transition={{ duration: 0.7, type: 'spring', stiffness: 50 }}
-              className="relative z-10"
+              initial={{ opacity: 0, scale: 0.9, rotateY: 30 }}
+              animate={{ opacity: 1, scale: 1, rotateY: 0 }}
+              exit={{ opacity: 0, scale: 1.1, rotateY: -30 }}
+              transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+              className="relative perspective-1000"
             >
-              <div className="absolute inset-0 bg-white/5 blur-3xl rounded-full scale-75" />
               <Image
                 src={slide.image}
                 alt="Product"
                 priority
-                className="w-full h-auto max-w-[500px] object-contain drop-shadow-[0_35px_35px_rgba(0,0,0,0.5)]"
+                className="w-full h-auto max-w-[600px] object-contain filter drop-shadow-[0_0_80px_rgba(255,255,255,0.1)]"
               />
+
+              {/* DYNAMIC TECH SPECS */}
+              <motion.div 
+                initial={{ opacity: 0, x: 50 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="absolute -right-4 top-1/3 space-y-4 hidden xl:block"
+              >
+                 <SpecItem icon={<Cpu size={14}/>} label="CORE" val={slide.specs.processor} />
+                 <SpecItem icon={<Zap size={14}/>} label="POWER" val={slide.specs.battery} />
+                 <SpecItem icon={<ShieldCheck size={14}/>} label="LATENCY" val={slide.specs.latency} />
+              </motion.div>
             </motion.div>
           </AnimatePresence>
-          
-          {/* Floating Badge */}
-          <motion.div 
-            animate={{ y: [0, -20, 0] }}
-            transition={{ repeat: Infinity, duration: 4 }}
-            className="absolute top-1/4 right-0 hidden lg:block p-4 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10"
-          >
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-emerald-500/20 text-emerald-400">
-                <ShoppingBag size={20} />
-              </div>
-              <div className="text-xs">
-                <p className="font-bold">Fast Shipping</p>
-                <p className="opacity-60">Doorstep delivery</p>
-              </div>
-            </div>
-          </motion.div>
         </div>
       </div>
 
-      {/* Footer Marquee */}
-      <div className="relative z-10 pb-10">
-        <CategoriesMarquee />
+      {/* FOOTER AREA */}
+      <div className="relative z-10 w-full">
+        <div className="max-w-[1800px] mx-auto px-8 pb-8 flex justify-between items-end">
+           <div className="hidden md:block">
+              <p className="text-[10px] font-bold text-white/20 tracking-[0.5em] uppercase rotate-90 origin-left translate-y-[-50px]">Design_01</p>
+           </div>
+           <div className="flex-1 max-w-4xl border-t border-white/5 pt-8">
+              <CategoriesMarquee />
+           </div>
+        </div>
       </div>
 
     </section>
   )
 }
+
+const SpecItem = ({ icon, label, val }) => (
+  <div className="p-4 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 w-32">
+     <div className="text-cyan-400 mb-2">{icon}</div>
+     <p className="text-[8px] font-bold opacity-30 uppercase tracking-tighter">{label}</p>
+     <p className="text-xs font-mono">{val}</p>
+  </div>
+)
 
 export default Hero
