@@ -2,7 +2,6 @@
 
 import Loading from "@/components/Loading"
 import DashboardCharts from "@/components/store/DashboardCharts"
-import TopProductsChart from "@/components/store/TopProductsChart"
 import { useAuth } from "@clerk/nextjs"
 import axios from "axios"
 import {
@@ -148,22 +147,17 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {/* Charts */}
+      {/* Charts including Top Products */}
       <DashboardCharts
         earningsData={earningsData}
         ordersData={ordersData}
         canceledOrdersData={canceledOrdersData}
+        topProducts={dashboardData.topProducts}
         filterMonth={filterMonth}
         filterYear={filterYear}
         setFilterMonth={setFilterMonth}
         setFilterYear={setFilterYear}
       />
-
-      {/* Top Products */}
-      <div className="bg-white border rounded-xl p-5 mb-10">
-        <h3 className="text-sm font-semibold mb-3">Top Products</h3>
-        <TopProductsChart topProducts={dashboardData.topProducts} />
-      </div>
 
       {/* Insights */}
       <div className="bg-white border rounded-xl p-5 mb-10">
@@ -212,7 +206,6 @@ export default function Dashboard() {
                     {new Date(review.createdAt).toDateString()}
                   </p>
                   <p className="text-sm text-slate-600 mt-2">{review.review}</p>
-                  {/* Reply placeholder */}
                   {review.reply && <p className="text-xs text-green-600 mt-1">Reply: {review.reply}</p>}
                 </div>
               </div>
