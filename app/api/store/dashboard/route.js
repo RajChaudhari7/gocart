@@ -35,7 +35,13 @@ export async function GET(request) {
         total: true,
         createdAt: true,
         status: true,
-        productId: true
+        orderItems: {
+          select: {
+            productId: true,
+            quantity: true,
+            price: true
+          }
+        }
       }
     });
 
@@ -55,10 +61,14 @@ export async function GET(request) {
     const topProducts = products
       .map(p => ({
         ...p,
-        sold: orders.filter(o => o.productId === p.id && o.status !== "CANCELLED").length
+        sold: orders.reduce((acc, order) => {
+          const item = order.orderItems.find(oi => oi.productId === p.id && order.status !== "CANCELLED");
+          return acc + (item ? item.quantity : 0);
+        }, 0)
       }))
-      .sort((a,b) => b.sold - a.sold)
-      .slice(0,5)
+      .sort((a, b) => b.sold - a.sold)
+      .slice(0, 5);
+
 
     /* ---------- CHART DATA ---------- */
     const months = getLast6Months();
