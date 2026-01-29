@@ -254,9 +254,11 @@ export default function StoreOrders() {
                                     <select
                                         value={order.status}
                                         disabled={order.status === "DELIVERED"}
-                                        onChange={e => updateOrderStatus(order, e.target.value)}
+                                        onClick={(e) => e.stopPropagation()}
+                                        onChange={(e) => updateOrderStatus(order, e.target.value)}
                                         className="border rounded px-3 py-1 text-sm"
                                     >
+
                                         {STATUS_FLOW.map(s => (
                                             <option key={s} value={s}>{s}</option>
                                         ))}
