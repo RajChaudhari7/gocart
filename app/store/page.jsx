@@ -148,14 +148,21 @@ export default function Dashboard() {
           >
             <div className="flex flex-col sm:flex-row gap-4 justify-between">
 
-              <div className="flex gap-3">
-                <Image
-                  src={review.user.image}
-                  alt=""
-                  width={20}
-                  height={20}
-                  className="rounded-full"
-                />
+              {/* LEFT */}
+              <div className="flex gap-4 items-start">
+                {review.user?.image ? (
+                  <Image
+                    src={review.user.image}
+                    alt={review.user.name}
+                    width={40}
+                    height={40}
+                    className="rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-pink-600 text-white flex items-center justify-center font-semibold">
+                    {review.user?.name?.charAt(0)}
+                  </div>
+                )}
                 <div>
                   <p className="text-sm font-medium text-slate-900">
                     {review.user.name}
