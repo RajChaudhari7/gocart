@@ -3,6 +3,7 @@ import { authSeller } from "@/middlewares/authSeller"
 import { getAuth } from "@clerk/nextjs/server"
 import { NextResponse } from "next/server"
 
+// Status flow for valid, paid orders
 const STATUS_FLOW = ["ORDER_PLACED", "PROCESSING", "SHIPPED", "DELIVERED"]
 
 // ================= UPDATE SELLER ORDER STATUS =================
@@ -30,10 +31,18 @@ export async function POST(request) {
             return NextResponse.json({ error: "Order not found" }, { status: 404 })
         }
 
+        // ❌ SECURITY LOCK: Prevent modifying orders that haven't been paid for yet
+        if (order.status === "PENDING_PAYMENT") {
+            return NextResponse.json(
+                { error: "Payment not confirmed for this order yet." },
+                { status: 400 }
+            )
+        }
+
         // ❌ FINAL STATES LOCK
         if (["CANCELLED", "RETURNED", "DELIVERED"].includes(order.status)) {
             return NextResponse.json(
-                { error: "Order status cannot be changed" },
+                { error: "Order status cannot be changed once finalized" },
                 { status: 400 }
             )
         }
@@ -42,7 +51,8 @@ export async function POST(request) {
         const currentIndex = STATUS_FLOW.indexOf(order.status)
         const newIndex = STATUS_FLOW.indexOf(status)
 
-        if (newIndex <= currentIndex) {
+        // Allow cancellation/return at any point, but don't allow "Processing" -> "Placed"
+        if (status !== "CANCELLED" && status !== "RETURNED" && newIndex <= currentIndex) {
             return NextResponse.json(
                 { error: "Order status cannot go backward" },
                 { status: 400 }
@@ -88,7 +98,13 @@ export async function GET(request) {
         }
 
         const orders = await prisma.order.findMany({
-            where: { storeId },
+            where: { 
+                storeId,
+                // ✅ EXCLUDE GHOST ORDERS: Only show orders where payment succeeded
+                NOT: {
+                    status: "PENDING_PAYMENT"
+                }
+            },
             include: {
                 user: true,
                 address: true,
@@ -100,20 +116,19 @@ export async function GET(request) {
             orderBy: { createdAt: "desc" }
         })
 
-        // --- NEW LOGIC: Calculate only orders needing attention ---
-        // Excludes DELIVERED, CANCELLED, and RETURNED
+        // --- Calculate count for paid active orders only ---
         const activeOrdersCount = await prisma.order.count({
             where: {
                 storeId,
                 NOT: {
-                    status: { in: ["DELIVERED", "CANCELLED", "RETURNED"] }
+                    status: { in: ["DELIVERED", "CANCELLED", "RETURNED", "PENDING_PAYMENT"] }
                 }
             }
         })
 
         return NextResponse.json({ 
             orders, 
-            activeCount: activeOrdersCount // Send this to the frontend store
+            activeCount: activeOrdersCount 
         })
 
     } catch (error) {
