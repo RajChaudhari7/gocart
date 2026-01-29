@@ -123,9 +123,10 @@ export default function StoreOrders() {
 
     <!-- Info Section -->
     <div style="display:flex; justify-content:space-between; margin-bottom:30px; gap:40px;">
-        <div>
+       <div>
             <p><b>Invoice ID:</b> ${order.id}</p>
             <p><b>Date:</b> ${new Date(order.createdAt).toLocaleString()}</p>
+            <p><b>Payment Mode:</b> ${order.paymentMethod || "N/A"}</p>
         </div>
         <div style="text-align:right;">
             <p><b>Customer:</b> ${order.user?.name}</p>
