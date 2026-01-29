@@ -9,7 +9,8 @@ import {
   ShoppingBasketIcon,
   StarIcon,
   TagsIcon,
-  XCircleIcon
+  XCircleIcon,
+  TrendingUpIcon
 } from "lucide-react"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
@@ -17,7 +18,6 @@ import { useEffect, useState, useMemo } from "react"
 import toast from "react-hot-toast"
 
 export default function Dashboard() {
-
   const { getToken } = useAuth()
   const router = useRouter()
   const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '₹'
@@ -30,18 +30,27 @@ export default function Dashboard() {
     ratings: [],
     earningsChart: [],
     ordersChart: [],
-    orders: [] // include orders
+    orders: []
   })
 
   /* -------------------- STATS -------------------- */
-  const totalCanceledOrders = dashboardData.orders.filter(order => order.status === "CANCELLED").length
+  const totalCanceledOrders = dashboardData.orders.filter(
+    o => o.status === "CANCELLED"
+  ).length
+
+  const avgRating = dashboardData.ratings.length
+    ? (
+        dashboardData.ratings.reduce((a, b) => a + b.rating, 0) /
+        dashboardData.ratings.length
+      ).toFixed(1)
+    : 0
 
   const stats = [
     { title: "Products", value: dashboardData.totalProducts, icon: ShoppingBasketIcon },
     { title: "Earnings", value: currency + dashboardData.totalEarnings, icon: CircleDollarSignIcon },
     { title: "Orders", value: dashboardData.totalOrders, icon: TagsIcon },
-    { title: "Reviews", value: dashboardData.ratings.length, icon: StarIcon },
-    { title: "Canceled Orders", value: totalCanceledOrders, icon: XCircleIcon },
+    { title: "Avg Rating", value: avgRating + " ⭐", icon: StarIcon },
+    { title: "Canceled", value: totalCanceledOrders, icon: XCircleIcon },
   ]
 
   /* -------------------- FETCH -------------------- */
@@ -64,32 +73,25 @@ export default function Dashboard() {
   }, [])
 
   /* -------------------- CHART DATA -------------------- */
-  const earningsData = useMemo(() => {
-    return dashboardData.earningsChart.map(item => ({
-      name: item.name,
-      value: item.value || 0
-    }))
-  }, [dashboardData.earningsChart])
+  const earningsData = useMemo(
+    () => dashboardData.earningsChart.map(i => ({ name: i.name, value: i.value || 0 })),
+    [dashboardData.earningsChart]
+  )
 
-  const ordersData = useMemo(() => {
-    return dashboardData.ordersChart.map(item => ({
-      name: item.name,
-      value: item.value || 0
-    }))
-  }, [dashboardData.ordersChart])
+  const ordersData = useMemo(
+    () => dashboardData.ordersChart.map(i => ({ name: i.name, value: i.value || 0 })),
+    [dashboardData.ordersChart]
+  )
 
   const canceledOrdersData = useMemo(() => {
-    const monthsMap = {}
-    dashboardData.orders.forEach(order => {
-      if (order.status === 'CANCELLED') {
-        const monthName = new Date(order.createdAt).toLocaleString('default', { month: 'short' })
-        monthsMap[monthName] = (monthsMap[monthName] || 0) + 1
+    const map = {}
+    dashboardData.orders.forEach(o => {
+      if (o.status === 'CANCELLED') {
+        const m = new Date(o.createdAt).toLocaleString('default', { month: 'short' })
+        map[m] = (map[m] || 0) + 1
       }
     })
-    return ordersData.map(orderMonth => ({
-      name: orderMonth.name,
-      value: monthsMap[orderMonth.name] || 0
-    }))
+    return ordersData.map(m => ({ name: m.name, value: map[m.name] || 0 }))
   }, [dashboardData.orders, ordersData])
 
   if (loading) return <Loading />
@@ -108,15 +110,10 @@ export default function Dashboard() {
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-10">
         {stats.map((item, i) => (
-          <div
-            key={i}
-            className="bg-white border border-slate-200 rounded-xl p-4"
-          >
+          <div key={i} className="bg-white border rounded-xl p-4">
             <p className="text-xs text-slate-500">{item.title}</p>
-            <div className="flex items-center justify-between mt-2">
-              <p className="text-xl font-semibold text-slate-900">
-                {item.value}
-              </p>
+            <div className="flex justify-between mt-2">
+              <p className="text-xl font-semibold">{item.value}</p>
               <item.icon className="w-5 h-5 text-slate-400" />
             </div>
           </div>
@@ -130,11 +127,22 @@ export default function Dashboard() {
         canceledOrdersData={canceledOrdersData}
       />
 
+      {/* Insights */}
+      <div className="bg-white border rounded-xl p-5 mb-10">
+        <div className="flex items-center gap-2 mb-2">
+          <TrendingUpIcon className="w-4 h-4 text-green-600" />
+          <h3 className="text-sm font-semibold">Insights</h3>
+        </div>
+        <ul className="text-sm text-slate-600 space-y-1">
+          <li>📈 Total earnings reached {currency}{dashboardData.totalEarnings}</li>
+          <li>⭐ Average rating is {avgRating}</li>
+          <li>❌ {totalCanceledOrders} orders were canceled</li>
+        </ul>
+      </div>
+
       {/* Reviews */}
-      <div className="flex items-center justify-between mb-4 mt-10">
-        <h2 className="text-lg font-medium text-slate-900">
-          Recent Reviews
-        </h2>
+      <div className="flex justify-between mb-4">
+        <h2 className="text-lg font-medium">Recent Reviews</h2>
         <span className="text-xs text-slate-500">
           {dashboardData.ratings.length} total
         </span>
@@ -142,14 +150,11 @@ export default function Dashboard() {
 
       <div className="space-y-4 max-w-4xl">
         {dashboardData.ratings.map((review, index) => (
-          <div
-            key={index}
-            className="bg-white border border-slate-200 rounded-xl p-4"
-          >
-            <div className="flex flex-col sm:flex-row gap-4 justify-between">
+          <div key={index} className="bg-white border rounded-xl p-4">
+            <div className="flex justify-between gap-4">
 
               {/* LEFT */}
-              <div className="flex gap-4 items-start">
+              <div className="flex gap-4">
                 {review.user?.image ? (
                   <Image
                     src={review.user.image}
@@ -160,44 +165,35 @@ export default function Dashboard() {
                   />
                 ) : (
                   <div className="w-10 h-10 rounded-full bg-pink-600 text-white flex items-center justify-center font-semibold">
-                    {review.user?.name?.charAt(0)}
+                    {review.user?.name?.[0]}
                   </div>
                 )}
                 <div>
-                  <p className="text-sm font-medium text-slate-900">
-                    {review.user.name}
-                  </p>
+                  <p className="text-sm font-medium">{review.user.name}</p>
                   <p className="text-xs text-slate-500">
                     {new Date(review.createdAt).toDateString()}
                   </p>
-                  <p className="text-sm text-slate-600 mt-2 max-w-md">
-                    {review.review}
-                  </p>
+                  <p className="text-sm text-slate-600 mt-2">{review.review}</p>
                 </div>
               </div>
 
-              <div className="sm:text-right">
-                <p className="text-xs text-slate-500">
-                  {review.product?.category}
-                </p>
-                <p className="text-sm font-medium text-slate-900">
-                  {review.product?.name}
-                </p>
-
-                <div className="flex sm:justify-end mt-1">
-                  {Array(5).fill("").map((_, i) => (
+              {/* RIGHT */}
+              <div className="text-right">
+                <p className="text-xs text-slate-500">{review.product?.category}</p>
+                <p className="text-sm font-medium">{review.product?.name}</p>
+                <div className="flex justify-end mt-1">
+                  {[1,2,3,4,5].map(i => (
                     <StarIcon
                       key={i}
                       size={14}
-                      fill={review.rating >= i + 1 ? "#16A34A" : "#E5E7EB"}
+                      fill={review.rating >= i ? "#16A34A" : "#E5E7EB"}
                       className="text-transparent"
                     />
                   ))}
                 </div>
-
                 <button
                   onClick={() => router.push(`/product/${review.product.id}`)}
-                  className="mt-3 text-xs px-4 py-2 border border-slate-300 rounded-md hover:bg-slate-100"
+                  className="mt-3 text-xs px-4 py-2 border rounded-md hover:bg-slate-100"
                 >
                   View product
                 </button>
