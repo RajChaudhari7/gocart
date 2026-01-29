@@ -92,15 +92,6 @@ const StoreSidebar = ({ storeInfo, pendingOrdersCount = 0 }) => {
             )
           })}
         </nav>
-
-        {/* Desktop Footer */}
-        <div className="p-6">
-          <div className="rounded-2xl bg-gradient-to-b from-zinc-900 to-black p-4 border border-white/5">
-            <p className="text-[11px] text-zinc-500 text-center font-medium">
-              Logged in as Admin
-            </p>
-          </div>
-        </div>
       </aside>
 
       {/* ================= MOBILE FLOATING DOCK ================= */}
