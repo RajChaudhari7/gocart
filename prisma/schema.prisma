@@ -42,6 +42,7 @@ model Product {
 }
 
 enum OrderStatus {
+    PENDING_PAYMENT   // <--- Add this
     ORDER_PLACED
     PROCESSING
     SHIPPED
