@@ -1,9 +1,9 @@
 'use client'
 
 import { assets } from '@/assets/assets'
-import { ArrowRightIcon } from 'lucide-react'
+import { ArrowRightIcon, ShoppingBag } from 'lucide-react'
 import Image from 'next/image'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import CategoriesMarquee from './CategoriesMarquee'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -11,129 +11,175 @@ import { motion, AnimatePresence } from 'framer-motion'
 const heroSlides = [
   {
     id: 1,
-    tag: 'NEW DROP',
-    title: 'Gadgets you’ll love',
-    subtitle: 'Built for the future',
+    tag: 'NEW ARRIVAL',
+    title: 'Precision.',
+    subtitle: 'Gadgets built for the next generation.',
     price: 699,
     image: assets.hero_model_img,
-    accent: 'from-emerald-400 to-cyan-400',
+    accent: '#10b981', // Emerald
+    bgGradient: 'from-emerald-500/10 via-transparent to-transparent'
   },
   {
     id: 2,
-    tag: 'HOT DEAL',
-    title: 'Smart technology',
-    subtitle: 'Smarter prices',
+    tag: 'LIMITED EDITION',
+    title: 'Evolution.',
+    subtitle: 'Smart tech that thinks ahead of you.',
     price: 999,
     image: assets.hero_product_img1,
-    accent: 'from-blue-400 to-violet-400',
+    accent: '#8b5cf6', // Violet
+    bgGradient: 'from-violet-500/10 via-transparent to-transparent'
   },
   {
     id: 3,
-    tag: 'LIMITED',
-    title: 'Upgrade your lifestyle',
-    subtitle: 'Feel the innovation',
+    tag: 'PREMIUM TECH',
+    title: 'Innovation.',
+    subtitle: 'Upgrade your daily digital experience.',
     price: 1299,
     image: assets.hero_product_img2,
-    accent: 'from-orange-400 to-pink-400',
+    accent: '#f97316', // Orange
+    bgGradient: 'from-orange-500/10 via-transparent to-transparent'
   },
 ]
-
-const slideVariants = {
-  initial: { opacity: 0, y: 40 },
-  animate: { opacity: 1, y: 0 },
-  exit: { opacity: 0, y: -40 },
-}
 
 const Hero = () => {
   const router = useRouter()
   const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '₹'
   const [index, setIndex] = useState(0)
 
-  useEffect(() => {
-    const timer = setInterval(
-      () => setIndex((prev) => (prev + 1) % heroSlides.length),
-      4500
-    )
-    return () => clearInterval(timer)
+  const nextSlide = useCallback(() => {
+    setIndex((prev) => (prev + 1) % heroSlides.length)
   }, [])
+
+  useEffect(() => {
+    const timer = setInterval(nextSlide, 6000)
+    return () => clearInterval(timer)
+  }, [nextSlide])
 
   const slide = heroSlides[index]
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-[#0f172a] via-[#020617] to-black text-white">
-      <div className="max-w-7xl mx-auto px-6 py-20">
+    <section className="relative min-h-screen w-full overflow-hidden bg-[#020617] text-white flex flex-col justify-between">
+      
+      {/* Dynamic Ambient Background */}
+      <div className="absolute inset-0 z-0">
+        <div className={`absolute inset-0 bg-gradient-to-br ${slide.bgGradient} transition-colors duration-1000`} />
+        <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-blue-500/10 blur-[120px] rounded-full" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-purple-500/10 blur-[120px] rounded-full" />
+      </div>
 
-        {/* SLIDER ONLY */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={slide.id}
-            variants={slideVariants}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            transition={{ duration: 0.6 }}
-            className="relative rounded-3xl bg-white/5 backdrop-blur-xl border border-white/10 p-8 sm:p-16 min-h-[420px]"
-          >
-            {/* Tag */}
-            <span
-              className={`inline-block px-4 py-1 rounded-full text-xs font-semibold bg-gradient-to-r ${slide.accent} text-black`}
-            >
-              {slide.tag}
-            </span>
-
-            <h1 className="text-4xl sm:text-6xl font-semibold mt-6 leading-tight max-w-xl">
-              {slide.title}
-              <br />
-              <span className="text-white/60">{slide.subtitle}</span>
-            </h1>
-
-            <p className="mt-6 text-lg text-white/70">Starting from</p>
-            <p className="text-4xl font-bold">
-              {currency}{slide.price}
-            </p>
-
-            <button
-              onClick={() => router.push('/shop')}
-              className="mt-8 inline-flex items-center gap-3 px-8 py-4 rounded-xl 
-              bg-gradient-to-r from-cyan-400 to-emerald-400 text-black font-semibold
-              hover:scale-105 active:scale-95 transition"
-            >
-              Shop Now
-              <ArrowRightIcon size={20} />
-            </button>
-
-            {/* Product Image */}
+      <div className="relative z-10 flex-1 flex items-center max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-12 pt-20">
+        
+        {/* Left Content */}
+        <div className="flex flex-col justify-center">
+          <AnimatePresence mode="wait">
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.2 }}
-              className="mt-12 sm:absolute sm:right-10 sm:bottom-0"
+              key={slide.id}
+              initial={{ opacity: 0, x: -30 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
             >
+              <div className="flex items-center gap-2 mb-6">
+                <span className="h-[1px] w-8 bg-gray-500" />
+                <span style={{ color: slide.accent }} className="text-sm font-bold tracking-[0.2em] uppercase">
+                  {slide.tag}
+                </span>
+              </div>
+
+              <h1 className="text-6xl md:text-8xl font-black tracking-tighter leading-[0.9] mb-6">
+                {slide.title}
+              </h1>
+              
+              <p className="text-lg md:text-xl text-gray-400 max-w-md leading-relaxed mb-8">
+                {slide.subtitle}
+              </p>
+
+              <div className="flex items-center gap-8 mb-10">
+                <div>
+                  <p className="text-xs uppercase tracking-widest text-gray-500 mb-1">Starting at</p>
+                  <p className="text-3xl font-light italic">{currency}{slide.price}</p>
+                </div>
+                
+                <button
+                  onClick={() => router.push('/shop')}
+                  className="group relative flex items-center gap-3 bg-white text-black px-8 py-4 rounded-full font-bold overflow-hidden transition-all hover:pr-12"
+                >
+                  <span className="relative z-10">Explore Now</span>
+                  <ArrowRightIcon className="relative z-10 transition-transform group-hover:translate-x-2" size={20} />
+                  <div className="absolute inset-0 bg-gray-200 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+                </button>
+              </div>
+            </motion.div>
+          </AnimatePresence>
+
+          {/* Custom Indicators (Progress Bar Style) */}
+          <div className="flex gap-4 items-center">
+            {heroSlides.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setIndex(i)}
+                className="group relative h-1 flex-1 max-w-[60px] bg-white/10 rounded-full overflow-hidden"
+              >
+                {i === index && (
+                  <motion.div 
+                    layoutId="progress"
+                    className="absolute inset-0 bg-white"
+                    initial={{ scaleX: 0 }}
+                    animate={{ scaleX: 1 }}
+                    transition={{ duration: 6, ease: "linear" }}
+                    style={{ originX: 0 }}
+                  />
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Right Content - Product Image */}
+        <div className="relative flex items-center justify-center">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={slide.id}
+              initial={{ opacity: 0, scale: 0.8, rotate: 5 }}
+              animate={{ opacity: 1, scale: 1, rotate: 0 }}
+              exit={{ opacity: 0, scale: 1.1, rotate: -5 }}
+              transition={{ duration: 0.7, type: 'spring', stiffness: 50 }}
+              className="relative z-10"
+            >
+              <div className="absolute inset-0 bg-white/5 blur-3xl rounded-full scale-75" />
               <Image
                 src={slide.image}
                 alt="Product"
-                className="max-w-xs sm:max-w-sm drop-shadow-2xl"
+                priority
+                className="w-full h-auto max-w-[500px] object-contain drop-shadow-[0_35px_35px_rgba(0,0,0,0.5)]"
               />
             </motion.div>
+          </AnimatePresence>
+          
+          {/* Floating Badge */}
+          <motion.div 
+            animate={{ y: [0, -20, 0] }}
+            transition={{ repeat: Infinity, duration: 4 }}
+            className="absolute top-1/4 right-0 hidden lg:block p-4 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10"
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-emerald-500/20 text-emerald-400">
+                <ShoppingBag size={20} />
+              </div>
+              <div className="text-xs">
+                <p className="font-bold">Fast Shipping</p>
+                <p className="opacity-60">Doorstep delivery</p>
+              </div>
+            </div>
           </motion.div>
-        </AnimatePresence>
-
-        {/* Indicators */}
-        <div className="flex justify-center gap-2 mt-8">
-          {heroSlides.map((_, i) => (
-            <span
-              key={i}
-              onClick={() => setIndex(i)}
-              className={`h-2 w-10 rounded-full cursor-pointer transition ${
-                i === index ? 'bg-cyan-400' : 'bg-white/20'
-              }`}
-            />
-          ))}
         </div>
       </div>
 
-      {/* KEEP MARQUEE */}
-      <CategoriesMarquee />
+      {/* Footer Marquee */}
+      <div className="relative z-10 pb-10">
+        <CategoriesMarquee />
+      </div>
+
     </section>
   )
 }
