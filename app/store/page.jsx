@@ -2,6 +2,7 @@
 
 import Loading from "@/components/Loading"
 import DashboardCharts from "@/components/store/DashboardCharts"
+import TopProductsChart from "@/components/store/TopProductsChart"
 import { useAuth } from "@clerk/nextjs"
 import axios from "axios"
 import {
@@ -30,13 +31,40 @@ export default function Dashboard() {
     ratings: [],
     earningsChart: [],
     ordersChart: [],
-    orders: []
+    orders: [],
+    topProducts: []
   })
+
+  const [filterMonth, setFilterMonth] = useState(new Date().getMonth())
+  const [filterYear, setFilterYear] = useState(new Date().getFullYear())
 
   /* -------------------- STATS -------------------- */
   const totalCanceledOrders = dashboardData.orders.filter(
     o => o.status === "CANCELLED"
   ).length
+
+  const lastMonthOrders = dashboardData.orders.filter(o => {
+    const d = new Date(o.createdAt)
+    return d.getMonth() === filterMonth && d.getFullYear() === filterYear
+  })
+
+  const lastMonthEarnings = lastMonthOrders
+    .filter(o => o.status !== "CANCELLED")
+    .reduce((a,b) => a+b.total,0)
+
+  const lastMonthCanceled = lastMonthOrders.filter(o => o.status==="CANCELLED").length
+
+  const productsSoldPercent = dashboardData.totalOrders
+    ? ((lastMonthOrders.length / dashboardData.totalOrders) * 100).toFixed(1)
+    : 0
+
+  const earningsPercent = dashboardData.totalEarnings
+    ? ((lastMonthEarnings / dashboardData.totalEarnings) * 100).toFixed(1)
+    : 0
+
+  const canceledPercent = totalCanceledOrders
+    ? ((lastMonthCanceled / totalCanceledOrders) * 100).toFixed(1)
+    : 0
 
   const avgRating = dashboardData.ratings.length
     ? (
@@ -47,10 +75,10 @@ export default function Dashboard() {
 
   const stats = [
     { title: "Products", value: dashboardData.totalProducts, icon: ShoppingBasketIcon },
-    { title: "Earnings", value: currency + dashboardData.totalEarnings, icon: CircleDollarSignIcon },
-    { title: "Orders", value: dashboardData.totalOrders, icon: TagsIcon },
+    { title: "Earnings", value: currency + dashboardData.totalEarnings + ` (${earningsPercent}%)`, icon: CircleDollarSignIcon },
+    { title: "Orders", value: dashboardData.totalOrders + ` (${productsSoldPercent}%)`, icon: TagsIcon },
     { title: "Avg Rating", value: avgRating + " ⭐", icon: StarIcon },
-    { title: "Canceled", value: totalCanceledOrders, icon: XCircleIcon },
+    { title: "Canceled", value: totalCanceledOrders + ` (${canceledPercent}%)`, icon: XCircleIcon },
   ]
 
   /* -------------------- FETCH -------------------- */
@@ -125,7 +153,17 @@ export default function Dashboard() {
         earningsData={earningsData}
         ordersData={ordersData}
         canceledOrdersData={canceledOrdersData}
+        filterMonth={filterMonth}
+        filterYear={filterYear}
+        setFilterMonth={setFilterMonth}
+        setFilterYear={setFilterYear}
       />
+
+      {/* Top Products */}
+      <div className="bg-white border rounded-xl p-5 mb-10">
+        <h3 className="text-sm font-semibold mb-3">Top Products</h3>
+        <TopProductsChart topProducts={dashboardData.topProducts} />
+      </div>
 
       {/* Insights */}
       <div className="bg-white border rounded-xl p-5 mb-10">
@@ -174,6 +212,8 @@ export default function Dashboard() {
                     {new Date(review.createdAt).toDateString()}
                   </p>
                   <p className="text-sm text-slate-600 mt-2">{review.review}</p>
+                  {/* Reply placeholder */}
+                  {review.reply && <p className="text-xs text-green-600 mt-1">Reply: {review.reply}</p>}
                 </div>
               </div>
 

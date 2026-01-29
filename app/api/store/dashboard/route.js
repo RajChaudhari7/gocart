@@ -34,14 +34,15 @@ export async function GET(request) {
         id: true,
         total: true,
         createdAt: true,
-        status: true
+        status: true,
+        productId: true
       }
     });
 
     /* ---------- PRODUCTS ---------- */
     const products = await prisma.product.findMany({
       where: { storeId },
-      select: { id: true }
+      select: { id: true, name: true, category: true, image: true, totalSold: true }
     });
 
     /* ---------- RATINGS ---------- */
@@ -49,6 +50,15 @@ export async function GET(request) {
       where: { productId: { in: products.map(p => p.id) } },
       include: { user: true, product: true }
     });
+
+    /* ---------- TOP PRODUCTS ---------- */
+    const topProducts = products
+      .map(p => ({
+        ...p,
+        sold: orders.filter(o => o.productId === p.id && o.status !== "CANCELLED").length
+      }))
+      .sort((a,b) => b.sold - a.sold)
+      .slice(0,5)
 
     /* ---------- CHART DATA ---------- */
     const months = getLast6Months();
@@ -60,23 +70,13 @@ export async function GET(request) {
       );
 
       if (monthIndex !== -1) {
-        // Only add earnings for non-canceled orders
-        if (order.status !== "CANCELLED") {
-          months[monthIndex].earnings += order.total;
-        }
+        if (order.status !== "CANCELLED") months[monthIndex].earnings += order.total;
         months[monthIndex].orders += 1;
       }
     });
 
-    const earningsChart = months.map(m => ({
-      name: m.name,
-      value: Math.round(m.earnings)
-    }));
-
-    const ordersChart = months.map(m => ({
-      name: m.name,
-      value: m.orders
-    }));
+    const earningsChart = months.map(m => ({ name: m.name, value: Math.round(m.earnings) }));
+    const ordersChart = months.map(m => ({ name: m.name, value: m.orders }));
 
     /* ---------- RESPONSE ---------- */
     const dashboardData = {
@@ -90,7 +90,8 @@ export async function GET(request) {
       totalProducts: products.length,
       earningsChart,
       ordersChart,
-      orders // include all orders so frontend can display canceled ones separately
+      orders,
+      topProducts
     };
 
     return NextResponse.json({ dashboardData });
