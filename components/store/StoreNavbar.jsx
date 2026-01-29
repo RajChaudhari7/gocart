@@ -35,7 +35,7 @@ const StoreNavbar = () => {
 
                         {/* Order/Cart Link with Dynamic Badge */}
                         <Link 
-                            href="/orders" 
+                            href="/store/orders" 
                             className="group relative flex items-center hover:text-cyan-400 transition-colors"
                         >
                             <ShoppingBag size={22} />
