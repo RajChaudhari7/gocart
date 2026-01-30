@@ -18,7 +18,6 @@ const DEFAULT_CATEGORIES = [
   'Books & Media',
   'Food & Drink',
   'Hobbies & Crafts',
-  'Others'
 ]
 
 function ShopContent() {
