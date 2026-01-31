@@ -19,10 +19,12 @@ export default function DashboardCharts({
   topProducts
 }) {
 
-  const topProducts3D = topProducts.map(p => ({
-    name: p.name.length > 14 ? p.name.slice(0, 14) + "…" : p.name,
-    sold: p.totalSold
-  }))
+  const topProducts3D = Array.isArray(topProducts)
+    ? topProducts.map(p => ({
+      name: p.name.length > 14 ? p.name.slice(0, 14) + "…" : p.name,
+      sold: Number(p.totalSold) || 0
+    }))
+    : []
 
   return (
     <div className="space-y-8 mb-12">
@@ -43,7 +45,7 @@ export default function DashboardCharts({
               <XAxis dataKey="name" />
               <YAxis />
               <Tooltip />
-              <Bar dataKey="value" fill="#22c55e" radius={[8,8,0,0]} />
+              <Bar dataKey="value" fill="#22c55e" radius={[8, 8, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </motion.div>
@@ -62,7 +64,7 @@ export default function DashboardCharts({
               <XAxis dataKey="name" />
               <YAxis />
               <Tooltip />
-              <Bar dataKey="value" fill="#3b82f6" radius={[8,8,0,0]} />
+              <Bar dataKey="value" fill="#3b82f6" radius={[8, 8, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </motion.div>
@@ -81,7 +83,7 @@ export default function DashboardCharts({
               <XAxis dataKey="name" />
               <YAxis />
               <Tooltip />
-              <Bar dataKey="value" fill="#ef4444" radius={[8,8,0,0]} />
+              <Bar dataKey="value" fill="#ef4444" radius={[8, 8, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </motion.div>
