@@ -16,6 +16,7 @@ import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { useEffect, useState, useMemo } from "react"
 import toast from "react-hot-toast"
+import { motion } from "framer-motion"
 
 export default function Dashboard() {
   const { getToken } = useAuth()
@@ -124,30 +125,52 @@ export default function Dashboard() {
   if (loading) return <Loading />
 
   return (
-    <div className="max-w-7xl mx-auto pb-28 px-4 lg:px-6">
+    <div className="max-w-7xl mx-auto pb-28 px-4 lg:px-6 space-y-10">
 
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-semibold text-slate-900">Dashboard</h1>
+      <motion.div 
+        initial={{ opacity: 0, y: -20 }} 
+        animate={{ opacity: 1, y: 0 }} 
+        transition={{ duration: 0.5 }}
+      >
+        <h1 className="text-3xl font-bold text-slate-900">Dashboard</h1>
         <p className="text-sm text-slate-500 mt-1">
-          Monitor your business performance
+          Monitor your business performance with analytics and insights
         </p>
-      </div>
+      </motion.div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-10">
+      <motion.div 
+        className="grid grid-cols-2 lg:grid-cols-5 gap-6"
+        initial="hidden"
+        animate="visible"
+        variants={{
+          hidden: {},
+          visible: { transition: { staggerChildren: 0.1 } }
+        }}
+      >
         {stats.map((item, i) => (
-          <div key={i} className="bg-white border rounded-xl p-4">
-            <p className="text-xs text-slate-500">{item.title}</p>
-            <div className="flex justify-between mt-2">
-              <p className="text-xl font-semibold">{item.value}</p>
-              <item.icon className="w-5 h-5 text-slate-400" />
+          <motion.div 
+            key={i} 
+            className="bg-white border rounded-2xl p-5 shadow-md hover:shadow-xl transition-shadow cursor-pointer"
+            variants={{
+              hidden: { opacity: 0, y: 20 },
+              visible: { opacity: 1, y: 0 }
+            }}
+            whileHover={{ scale: 1.03 }}
+          >
+            <div className="flex justify-between items-center">
+              <div>
+                <p className="text-xs text-slate-500">{item.title}</p>
+                <p className="text-xl font-semibold mt-1">{item.value}</p>
+              </div>
+              <item.icon className="w-6 h-6 text-indigo-500" />
             </div>
-          </div>
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
 
-      {/* Charts including Top Products */}
+      {/* Charts */}
       <DashboardCharts
         earningsData={earningsData}
         ordersData={ordersData}
@@ -160,9 +183,14 @@ export default function Dashboard() {
       />
 
       {/* Insights */}
-      <div className="bg-white border rounded-xl p-5 mb-10">
+      <motion.div 
+        className="bg-white border rounded-2xl p-6 shadow-md hover:shadow-lg transition-shadow"
+        initial={{ opacity: 0, x: -30 }} 
+        animate={{ opacity: 1, x: 0 }} 
+        transition={{ duration: 0.5 }}
+      >
         <div className="flex items-center gap-2 mb-2">
-          <TrendingUpIcon className="w-4 h-4 text-green-600" />
+          <TrendingUpIcon className="w-5 h-5 text-green-600" />
           <h3 className="text-sm font-semibold">Insights</h3>
         </div>
         <ul className="text-sm text-slate-600 space-y-1">
@@ -170,20 +198,35 @@ export default function Dashboard() {
           <li>⭐ Average rating is {avgRating}</li>
           <li>❌ {totalCanceledOrders} orders were canceled</li>
         </ul>
-      </div>
+      </motion.div>
 
       {/* Reviews */}
-      <div className="flex justify-between mb-4">
-        <h2 className="text-lg font-medium">Recent Reviews</h2>
-        <span className="text-xs text-slate-500">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-semibold">Recent Reviews</h2>
+        <span className="text-sm text-slate-500">
           {dashboardData.ratings.length} total
         </span>
       </div>
 
-      <div className="space-y-4 max-w-4xl">
+      <motion.div 
+        className="space-y-5 max-w-4xl"
+        initial="hidden"
+        animate="visible"
+        variants={{
+          hidden: {},
+          visible: { transition: { staggerChildren: 0.1 } }
+        }}
+      >
         {dashboardData.ratings.map((review, index) => (
-          <div key={index} className="bg-white border rounded-xl p-4">
-            <div className="flex justify-between gap-4">
+          <motion.div
+            key={index}
+            className="bg-white border rounded-2xl p-5 shadow-md hover:shadow-lg transition-shadow"
+            variants={{
+              hidden: { opacity: 0, y: 20 },
+              visible: { opacity: 1, y: 0 }
+            }}
+          >
+            <div className="flex justify-between gap-6">
 
               {/* LEFT */}
               <div className="flex gap-4">
@@ -191,18 +234,18 @@ export default function Dashboard() {
                   <Image
                     src={review.user.image}
                     alt={review.user.name}
-                    width={40}
-                    height={40}
-                    className="rounded-full object-cover"
+                    width={50}
+                    height={50}
+                    className="rounded-full object-cover ring-2 ring-indigo-500"
                   />
                 ) : (
-                  <div className="w-10 h-10 rounded-full bg-pink-600 text-white flex items-center justify-center font-semibold">
+                  <div className="w-12 h-12 rounded-full bg-indigo-500 text-white flex items-center justify-center font-bold text-lg ring-2 ring-indigo-500">
                     {review.user?.name?.[0]}
                   </div>
                 )}
                 <div>
-                  <p className="text-sm font-medium">{review.user.name}</p>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-sm font-semibold">{review.user.name}</p>
+                  <p className="text-xs text-slate-400">
                     {new Date(review.createdAt).toDateString()}
                   </p>
                   <p className="text-sm text-slate-600 mt-2">{review.review}</p>
@@ -213,12 +256,12 @@ export default function Dashboard() {
               {/* RIGHT */}
               <div className="text-right">
                 <p className="text-xs text-slate-500">{review.product?.category}</p>
-                <p className="text-sm font-medium">{review.product?.name}</p>
-                <div className="flex justify-end mt-1">
+                <p className="text-sm font-semibold">{review.product?.name}</p>
+                <div className="flex justify-end mt-1 space-x-1">
                   {[1,2,3,4,5].map(i => (
                     <StarIcon
                       key={i}
-                      size={14}
+                      size={16}
                       fill={review.rating >= i ? "#16A34A" : "#E5E7EB"}
                       className="text-transparent"
                     />
@@ -226,16 +269,16 @@ export default function Dashboard() {
                 </div>
                 <button
                   onClick={() => router.push(`/product/${review.product.id}`)}
-                  className="mt-3 text-xs px-4 py-2 border rounded-md hover:bg-slate-100"
+                  className="mt-3 text-xs px-4 py-2 border rounded-md bg-indigo-50 hover:bg-indigo-100 text-indigo-600 font-medium transition"
                 >
                   View product
                 </button>
               </div>
 
             </div>
-          </div>
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
 
     </div>
   )
