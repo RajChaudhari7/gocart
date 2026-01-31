@@ -139,7 +139,6 @@ export default function AdminDashboard() {
                                 <th className="py-2 px-4 text-sm font-medium">Status</th>
                             </tr>
                         </thead>
-                        
                     </table>
                 </div>
             </motion.div>
