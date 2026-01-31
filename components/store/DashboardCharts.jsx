@@ -15,29 +15,33 @@ import { motion } from "framer-motion"
 import TopProducts3DChart from "@/components/charts/TopProducts3DChart"
 
 export default function DashboardCharts({
-  earningsData,
-  ordersData,
-  canceledOrdersData,
-  topProducts
+  earningsData = [],
+  ordersData = [],
+  canceledOrdersData = [],
+  topProducts = []
 }) {
 
-  /* ---------------- TOP PRODUCTS SAFE MAP ---------------- */
+  /* ---------------- TOP PRODUCTS (SAFE + FILTERED) ---------------- */
   const topProducts3D = Array.isArray(topProducts)
-    ? topProducts.map(p => ({
-        name:
-          p.name?.length > 14
-            ? p.name.slice(0, 14) + "…"
-            : p.name || "Unknown",
-        sold: Number(
-          p.totalSold ??
-          p.sold ??
-          p.quantitySold ??
-          p.totalOrders ??
-          p.count ??
-          p._count?.orders ??
-          0
-        )
-      }))
+    ? topProducts
+        .map(p => ({
+          name:
+            p.name?.length > 14
+              ? p.name.slice(0, 14) + "…"
+              : p.name || "Unknown",
+          sold: Number(
+            p.totalSold ??
+            p.sold ??
+            p.quantitySold ??
+            p.totalOrders ??
+            p.count ??
+            p._count?.orders ??
+            0
+          )
+        }))
+        .filter(p => p.sold > 0)        // 🔑 remove zero sales
+        .sort((a, b) => b.sold - a.sold)
+        .slice(0, 5)                    // 🔥 TOP 5 ONLY
     : []
 
   return (
@@ -56,28 +60,18 @@ export default function DashboardCharts({
             Monthly Earnings
           </h3>
 
-          {/* 🔑 FIXED HEIGHT WRAPPER */}
           <div className="h-[240px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={earningsData}>
-                <defs>
-                  <linearGradient id="earningsLine" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#22c55e" stopOpacity={0.8} />
-                    <stop offset="100%" stopColor="#22c55e" stopOpacity={0.05} />
-                  </linearGradient>
-                </defs>
-
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" />
                 <YAxis />
                 <Tooltip />
-
                 <Line
                   type="monotone"
                   dataKey="value"
                   stroke="#22c55e"
                   strokeWidth={3}
-                  fill="url(#earningsLine)"
                   dot={{ r: 4 }}
                 />
               </LineChart>
