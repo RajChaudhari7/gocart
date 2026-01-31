@@ -4,7 +4,7 @@ import { useState, useRef } from 'react'
 import emailjs from '@emailjs/browser'
 import { Mail, Phone, MapPin, Send, Heart, ShoppingBag, Sparkles } from 'lucide-react'
 import { motion } from 'framer-motion'
-import Tilt from 'react-parallax-tilt'
+import ParallaxTilt from 'react-parallax-tilt'
 
 const fadeUp = {
   initial: { opacity: 0, y: 30 },
@@ -137,15 +137,15 @@ export default function ContactPage() {
             transition={{ duration: 0.6 }}
             className="space-y-6"
           >
-            <Tilt tiltMaxAngleX={10} tiltMaxAngleY={10} glareEnable={true} glareMaxOpacity={0.1}>
+            <ParallaxTilt tiltMaxAngleX={10} tiltMaxAngleY={10} glareEnable={true} glareMaxOpacity={0.1}>
               <InfoCard icon={<Mail />} title="Email Support" text="support@shekart.com" />
-            </Tilt>
-            <Tilt tiltMaxAngleX={10} tiltMaxAngleY={10} glareEnable={true} glareMaxOpacity={0.1}>
+            </ParallaxTilt>
+            <ParallaxTilt tiltMaxAngleX={10} tiltMaxAngleY={10} glareEnable={true} glareMaxOpacity={0.1}>
               <InfoCard icon={<Phone />} title="Customer Care" text="+91 90000 00000" />
-            </Tilt>
-            <Tilt tiltMaxAngleX={10} tiltMaxAngleY={10} glareEnable={true} glareMaxOpacity={0.1}>
+            </ParallaxTilt>
+            <ParallaxTilt tiltMaxAngleX={10} tiltMaxAngleY={10} glareEnable={true} glareMaxOpacity={0.1}>
               <InfoCard icon={<MapPin />} title="Office Location" text="India" />
-            </Tilt>
+            </ParallaxTilt>
           </motion.div>
 
           {/* FORM */}
@@ -156,7 +156,7 @@ export default function ContactPage() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <Tilt tiltMaxAngleX={8} tiltMaxAngleY={8} glareEnable={true} glareMaxOpacity={0.05}>
+            <ParallaxTilt tiltMaxAngleX={8} tiltMaxAngleY={8} glareEnable={true} glareMaxOpacity={0.05}>
               <div className="rounded-3xl bg-white/5 backdrop-blur-xl border border-white/10 p-8 space-y-5">
                 <Input label="Full Name" name="name" value={form.name} onChange={handleChange} />
                 <Input label="Email Address" name="email" type="email" value={form.email} onChange={handleChange} />
@@ -192,7 +192,7 @@ export default function ContactPage() {
                   <Send size={18} />
                 </button>
               </div>
-            </Tilt>
+            </ParallaxTilt>
           </motion.form>
 
         </div>

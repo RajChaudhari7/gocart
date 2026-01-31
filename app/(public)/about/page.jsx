@@ -9,7 +9,7 @@ import {
   ShieldCheck,
   Store
 } from 'lucide-react'
-import { Tilt } from 'react-parallax-tilt'
+import ParallaxTilt from 'react-parallax-tilt'
 
 const fadeUp = {
   initial: { opacity: 0, y: 40 },
@@ -101,34 +101,34 @@ export default function AboutPage() {
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Tilt tiltMaxAngleX={10} tiltMaxAngleY={10} glareEnable={true} glareMaxOpacity={0.1}>
+            <ParallaxTilt tiltMaxAngleX={10} tiltMaxAngleY={10} glareEnable={true} glareMaxOpacity={0.1}>
               <ValueCard
                 icon={<ShieldCheck />}
                 title="Women First"
                 text="Designed with women’s comfort, safety, and confidence in mind."
               />
-            </Tilt>
-            <Tilt tiltMaxAngleX={10} tiltMaxAngleY={10} glareEnable={true} glareMaxOpacity={0.1}>
+            </ParallaxTilt>
+            <ParallaxTilt tiltMaxAngleX={10} tiltMaxAngleY={10} glareEnable={true} glareMaxOpacity={0.1}>
               <ValueCard
                 icon={<ShoppingBag />}
                 title="Trusted Sellers"
                 text="Supporting verified vendors and women entrepreneurs."
               />
-            </Tilt>
-            <Tilt tiltMaxAngleX={10} tiltMaxAngleY={10} glareEnable={true} glareMaxOpacity={0.1}>
+            </ParallaxTilt>
+            <ParallaxTilt tiltMaxAngleX={10} tiltMaxAngleY={10} glareEnable={true} glareMaxOpacity={0.1}>
               <ValueCard
                 icon={<Users />}
                 title="Community"
                 text="More than shopping — a growing women-first ecosystem."
               />
-            </Tilt>
-            <Tilt tiltMaxAngleX={10} tiltMaxAngleY={10} glareEnable={true} glareMaxOpacity={0.1}>
+            </ParallaxTilt>
+            <ParallaxTilt tiltMaxAngleX={10} tiltMaxAngleY={10} glareEnable={true} glareMaxOpacity={0.1}>
               <ValueCard
                 icon={<Sparkles />}
                 title="Quality & Style"
                 text="Curated products aligned with modern trends and quality standards."
               />
-            </Tilt>
+            </ParallaxTilt>
           </div>
         </motion.div>
 
