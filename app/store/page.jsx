@@ -47,9 +47,10 @@ export default function Dashboard() {
   const fetchDashboardData = async () => {
     try {
       const token = await getToken()
-      const { data } = await axios.get('/api/store/dashboard', {
-        headers: { Authorization: `Bearer ${token}` }
-      })
+      const { data } = await axios.get(
+        `/api/store/dashboard?year=${filterYear}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      )
       setDashboardData(data.dashboardData)
     } catch (error) {
       toast.error(error?.response?.data?.error || error.message)
@@ -58,16 +59,17 @@ export default function Dashboard() {
     }
   }
 
+
   useEffect(() => {
     fetchDashboardData()
-  }, [])
+  }, [filterYear])
 
   /* -------------------- FILTERED ORDERS (KPIs) -------------------- */
   const filteredOrders = useMemo(() => {
     return dashboardData.orders.filter(o => {
       const d = new Date(o.createdAt)
       return d.getFullYear() === filterYear &&
-             d.getMonth() === filterMonth
+        d.getMonth() === filterMonth
     })
   }, [dashboardData.orders, filterYear, filterMonth])
 
@@ -97,9 +99,9 @@ export default function Dashboard() {
 
   const avgRating = dashboardData.ratings.length
     ? (
-        dashboardData.ratings.reduce((a, b) => a + b.rating, 0) /
-        dashboardData.ratings.length
-      ).toFixed(1)
+      dashboardData.ratings.reduce((a, b) => a + b.rating, 0) /
+      dashboardData.ratings.length
+    ).toFixed(1)
     : 0
 
   const stats = [
@@ -263,7 +265,7 @@ export default function Dashboard() {
                 <p className="text-xs text-slate-500">{review.product?.category}</p>
                 <p className="text-sm font-semibold">{review.product?.name}</p>
                 <div className="flex justify-end mt-1 space-x-1">
-                  {[1,2,3,4,5].map(i => (
+                  {[1, 2, 3, 4, 5].map(i => (
                     <StarIcon
                       key={i}
                       size={16}
