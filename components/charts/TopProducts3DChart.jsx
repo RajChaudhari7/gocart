@@ -20,7 +20,6 @@ function PieSlice({
     startAngle,
     angle,
     value,
-    label,
     color,
     radius,
     thickness,
@@ -38,7 +37,7 @@ function PieSlice({
 
     const midAngle = startAngle + angle / 2
     const popOut = hovered ? 0.25 : 0
-    const fontSize = isMobile ? 0.22 : 0.28
+    const fontSize = isMobile ? 0.24 : 0.3
 
     return (
         <group
@@ -64,34 +63,16 @@ function PieSlice({
                 />
             </mesh>
 
-            {/* LABEL */}
-            <Billboard>
-                <Text
-                    position={[
-                        Math.cos(midAngle) * (radius + 0.7),
-                        Math.sin(midAngle) * (radius + 0.7),
-                        thickness + 0.1,
-                    ]}
-                    fontSize={fontSize}
-                    color="#e5e7eb"
-                    outlineWidth={0.04}
-                    outlineColor="#020617"
-                    depthTest={false}
-                >
-                    {label}
-                </Text>
-            </Billboard>
-
-            {/* VALUE ON HOVER */}
+            {/* VALUE ONLY (ON HOVER) */}
             {hovered && (
                 <Billboard>
                     <Text
                         position={[
-                            Math.cos(midAngle) * (radius - 0.2),
-                            Math.sin(midAngle) * (radius - 0.2),
+                            Math.cos(midAngle) * (radius - 0.4),
+                            Math.sin(midAngle) * (radius - 0.4),
                             thickness + 0.35,
                         ]}
-                        fontSize={fontSize + 0.06}
+                        fontSize={fontSize}
                         color="#ffffff"
                         outlineWidth={0.05}
                         outlineColor="#020617"
@@ -105,7 +86,7 @@ function PieSlice({
     )
 }
 
-/* -------------------- ROTATING PIE GROUP -------------------- */
+/* -------------------- ROTATING PIE -------------------- */
 function RotatingPie({ slices, isMobile }) {
     const pieRef = useRef()
     const [paused, setPaused] = useState(false)
@@ -144,30 +125,22 @@ export default function TopProducts3DPieChart({ data }) {
     const slices = useMemo(() => {
         if (!Array.isArray(data)) return []
 
-        // ✅ REMOVE ZERO-SOLD PRODUCTS
-        const validData = data.filter(
-            (item) => Number(item.sold) > 0
-        )
+        const valid = data.filter(d => Number(d.sold) > 0)
+        if (!valid.length) return []
 
-        if (validData.length === 0) return []
-
-        const total = validData.reduce(
-            (sum, item) => sum + Number(item.sold),
-            0
-        )
-
+        const total = valid.reduce((s, d) => s + Number(d.sold), 0)
         let angleAcc = 0
 
-        return validData.map((item, i) => {
+        return valid.map((item, i) => {
             const value = Number(item.sold)
             const angle = (value / total) * Math.PI * 2
 
             const slice = {
-                label: `${item.name} (${value})`,
                 value,
                 startAngle: angleAcc,
                 angle,
                 color: COLORS[i % COLORS.length],
+                name: item.name,
             }
 
             angleAcc += angle
@@ -184,34 +157,49 @@ export default function TopProducts3DPieChart({ data }) {
     }
 
     return (
-        <div className="w-full h-[360px] sm:h-[420px] rounded-xl overflow-hidden">
-            <Canvas
-                camera={{ position: [0, 0, 8], fov: 45 }}
-                shadows
-                onCreated={({ gl }) => {
-                    gl.setClearColor("#0f172a") // dark background
-                }}
-            >
-                {/* LIGHTS */}
-                <ambientLight intensity={0.6} />
-                <directionalLight position={[6, 8, 6]} intensity={1.3} />
+        <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] gap-4">
 
-                {/* PIE */}
-                <RotatingPie slices={slices} isMobile={isMobile} />
+            {/* -------- LEGEND -------- */}
+            <div className="flex flex-col justify-center space-y-3 px-4">
+                {slices.map((item, i) => (
+                    <div key={i} className="flex items-center gap-3">
+                        <span
+                            className="w-3 h-3 rounded-full"
+                            style={{ backgroundColor: item.color }}
+                        />
+                        <span className="text-sm text-slate-200 truncate">
+                            {item.name}
+                        </span>
+                    </div>
+                ))}
+            </div>
 
-                {/* FLOOR */}
-                <mesh
-                    rotation={[-Math.PI / 2, 0, 0]}
-                    position={[0, 0, -0.7]}
-                    receiveShadow
+            {/* -------- PIE -------- */}
+            <div className="w-full h-[360px] sm:h-[420px] rounded-xl overflow-hidden">
+                <Canvas
+                    camera={{ position: [0, 0, 8], fov: 45 }}
+                    shadows
+                    onCreated={({ gl }) => {
+                        gl.setClearColor("#0f172a")
+                    }}
                 >
-                    <planeGeometry args={[20, 20]} />
-                    <shadowMaterial opacity={0.3} />
-                </mesh>
+                    <ambientLight intensity={0.6} />
+                    <directionalLight position={[6, 8, 6]} intensity={1.3} />
 
-                {/* CONTROLS */}
-                <OrbitControls enableZoom={false} />
-            </Canvas>
+                    <RotatingPie slices={slices} isMobile={isMobile} />
+
+                    <mesh
+                        rotation={[-Math.PI / 2, 0, 0]}
+                        position={[0, 0, -0.7]}
+                        receiveShadow
+                    >
+                        <planeGeometry args={[20, 20]} />
+                        <shadowMaterial opacity={0.3} />
+                    </mesh>
+
+                    <OrbitControls enableZoom={false} />
+                </Canvas>
+            </div>
         </div>
     )
 }
