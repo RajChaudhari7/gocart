@@ -35,7 +35,6 @@ export default function AdminDashboard() {
         { title: 'Total Revenue', value: currency + dashboardData.revenue, icon: CircleDollarSignIcon, color: 'bg-green-100 text-green-600' },
         { title: 'Total Orders', value: dashboardData.orders, icon: TagsIcon, color: 'bg-indigo-100 text-indigo-600' },
         { title: 'Total Stores', value: dashboardData.stores, icon: StoreIcon, color: 'bg-orange-100 text-orange-600' },
-        { title: 'Canceled Orders', value: dashboardData.canceledOrders, icon: XCircleIcon, color: 'bg-red-100 text-red-600' },
     ]
 
     const fetchDashboardData = async () => {
@@ -121,27 +120,6 @@ export default function AdminDashboard() {
                 <OrdersAreaChart allOrders={dashboardData.allOrders} />
             </motion.div>
 
-            {/* Recent Orders Table */}
-            <motion.div
-                className="mt-10 bg-white p-6 rounded-xl shadow-2xl"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.2 }}
-            >
-                <h2 className="text-xl font-semibold mb-4">Recent Orders</h2>
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                        <thead>
-                            <tr className="bg-gray-100">
-                                <th className="py-2 px-4 text-sm font-medium">Order ID</th>
-                                <th className="py-2 px-4 text-sm font-medium">Customer</th>
-                                <th className="py-2 px-4 text-sm font-medium">Amount</th>
-                                <th className="py-2 px-4 text-sm font-medium">Status</th>
-                            </tr>
-                        </thead>
-                    </table>
-                </div>
-            </motion.div>
         </div>
     )
 }
