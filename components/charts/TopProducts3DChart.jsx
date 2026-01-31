@@ -73,9 +73,9 @@ function PieSlice({
                         thickness + 0.1,
                     ]}
                     fontSize={fontSize}
-                    color="#e5e7eb"          // light text
+                    color="#e5e7eb"
                     outlineWidth={0.04}
-                    outlineColor="#020617"  // dark outline
+                    outlineColor="#020617"
                     depthTest={false}
                 >
                     {label}
@@ -142,13 +142,24 @@ export default function TopProducts3DPieChart({ data }) {
         typeof window !== "undefined" && window.innerWidth < 640
 
     const slices = useMemo(() => {
-        if (!Array.isArray(data) || data.length === 0) return []
+        if (!Array.isArray(data)) return []
 
-        const total = data.reduce((s, d) => s + Number(d.sold || 0), 0)
+        // ✅ REMOVE ZERO-SOLD PRODUCTS
+        const validData = data.filter(
+            (item) => Number(item.sold) > 0
+        )
+
+        if (validData.length === 0) return []
+
+        const total = validData.reduce(
+            (sum, item) => sum + Number(item.sold),
+            0
+        )
+
         let angleAcc = 0
 
-        return data.map((item, i) => {
-            const value = Number(item.sold || 0)
+        return validData.map((item, i) => {
+            const value = Number(item.sold)
             const angle = (value / total) * Math.PI * 2
 
             const slice = {
@@ -167,7 +178,7 @@ export default function TopProducts3DPieChart({ data }) {
     if (!slices.length) {
         return (
             <div className="h-[320px] flex items-center justify-center text-slate-500">
-                No product data available
+                No product sales data available
             </div>
         )
     }
@@ -178,7 +189,7 @@ export default function TopProducts3DPieChart({ data }) {
                 camera={{ position: [0, 0, 8], fov: 45 }}
                 shadows
                 onCreated={({ gl }) => {
-                    gl.setClearColor("#0f172a") // slate-900 background
+                    gl.setClearColor("#0f172a") // dark background
                 }}
             >
                 {/* LIGHTS */}
