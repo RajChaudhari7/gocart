@@ -40,26 +40,77 @@ export default function DashboardCharts({
   return (
     <div className="space-y-8 mb-12">
 
-      {/* ---------------- 2D CHARTS ---------------- */}
+      {/* ---------------- 3D STYLE 2D CHARTS ---------------- */}
       <div className="grid lg:grid-cols-3 gap-6">
 
-        {/* ================= EARNINGS (LINE / 3D FEEL) ================= */}
+        {/* ================= EARNINGS (3D LINE) ================= */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white border rounded-xl p-4"
+          initial={{ opacity: 0, y: 40, scale: 0.96 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          className="bg-white border rounded-xl p-4 shadow-sm"
         >
           <h3 className="text-sm font-semibold mb-3">
             Monthly Earnings
           </h3>
 
+          <div className="relative">
+            <ResponsiveContainer width="100%" height={240}>
+              <LineChart data={earningsData}>
+                <defs>
+                  <linearGradient id="earningsGlow" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#22c55e" stopOpacity={0.6} />
+                    <stop offset="100%" stopColor="#22c55e" stopOpacity={0.05} />
+                  </linearGradient>
+                </defs>
+
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+
+                {/* Depth shadow line */}
+                <Line
+                  type="monotone"
+                  dataKey="value"
+                  stroke="#166534"
+                  strokeWidth={7}
+                  dot={false}
+                  opacity={0.15}
+                />
+
+                {/* Main line */}
+                <Line
+                  type="monotone"
+                  dataKey="value"
+                  stroke="#22c55e"
+                  strokeWidth={3}
+                  fill="url(#earningsGlow)"
+                  animationDuration={1400}
+                  dot={{ r: 4, fill: "#22c55e" }}
+                  activeDot={{ r: 7 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </motion.div>
+
+        {/* ================= ORDERS (3D BAR) ================= */}
+        <motion.div
+          initial={{ opacity: 0, y: 40, scale: 0.96 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ delay: 0.1 }}
+          className="bg-white border rounded-xl p-4 shadow-sm"
+        >
+          <h3 className="text-sm font-semibold mb-3">
+            Monthly Orders
+          </h3>
+
           <ResponsiveContainer width="100%" height={240}>
-            <LineChart data={earningsData}>
+            <BarChart data={ordersData}>
               <defs>
-                {/* Gradient for 3D depth */}
-                <linearGradient id="earningsLine" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#22c55e" stopOpacity={0.8} />
-                  <stop offset="100%" stopColor="#22c55e" stopOpacity={0.05} />
+                <linearGradient id="ordersGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#60a5fa" />
+                  <stop offset="100%" stopColor="#2563eb" />
                 </linearGradient>
               </defs>
 
@@ -68,75 +119,31 @@ export default function DashboardCharts({
               <YAxis />
               <Tooltip />
 
-              {/* Shadow line (depth illusion) */}
-              <Line
-                type="monotone"
-                dataKey="value"
-                stroke="#166534"
-                strokeWidth={6}
-                dot={false}
-                opacity={0.15}
-              />
-
-              {/* Main animated line */}
-              <Line
-                type="monotone"
-                dataKey="value"
-                stroke="#22c55e"
-                strokeWidth={3}
-                fill="url(#earningsLine)"
-                animationDuration={1400}
-                animationEasing="ease-out"
-                dot={{
-                  r: 4,
-                  fill: "#22c55e",
-                  strokeWidth: 2,
-                  stroke: "#ffffff"
-                }}
-                activeDot={{
-                  r: 7,
-                  fill: "#22c55e",
-                  stroke: "#ffffff",
-                  strokeWidth: 3
-                }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </motion.div>
-
-        {/* ================= ORDERS (BAR) ================= */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="bg-white border rounded-xl p-4"
-        >
-          <h3 className="text-sm font-semibold mb-3">
-            Monthly Orders
-          </h3>
-
-          <ResponsiveContainer width="100%" height={240}>
-            <BarChart data={ordersData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
+              {/* Back shadow bar */}
               <Bar
                 dataKey="value"
-                fill="#3b82f6"
-                radius={[8, 8, 0, 0]}
+                fill="#1e3a8a"
+                radius={[10, 10, 0, 0]}
+                opacity={0.18}
+              />
+
+              {/* Front bar */}
+              <Bar
+                dataKey="value"
+                fill="url(#ordersGrad)"
+                radius={[10, 10, 0, 0]}
                 animationDuration={1200}
               />
             </BarChart>
           </ResponsiveContainer>
         </motion.div>
 
-        {/* ================= CANCELED (BAR) ================= */}
+        {/* ================= CANCELED (3D BAR) ================= */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0, y: 40, scale: 0.96 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ delay: 0.2 }}
-          className="bg-white border rounded-xl p-4"
+          className="bg-white border rounded-xl p-4 shadow-sm"
         >
           <h3 className="text-sm font-semibold mb-3">
             Canceled Orders
@@ -144,14 +151,31 @@ export default function DashboardCharts({
 
           <ResponsiveContainer width="100%" height={240}>
             <BarChart data={canceledOrdersData}>
+              <defs>
+                <linearGradient id="cancelGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#f87171" />
+                  <stop offset="100%" stopColor="#b91c1c" />
+                </linearGradient>
+              </defs>
+
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="name" />
               <YAxis />
               <Tooltip />
+
+              {/* Depth bar */}
               <Bar
                 dataKey="value"
-                fill="#ef4444"
-                radius={[8, 8, 0, 0]}
+                fill="#7f1d1d"
+                radius={[10, 10, 0, 0]}
+                opacity={0.2}
+              />
+
+              {/* Main bar */}
+              <Bar
+                dataKey="value"
+                fill="url(#cancelGrad)"
+                radius={[10, 10, 0, 0]}
                 animationDuration={1200}
               />
             </BarChart>

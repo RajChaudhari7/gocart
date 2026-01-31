@@ -48,6 +48,7 @@ function PieSlice({
                 0,
             ]}
         >
+            {/* SLICE */}
             <mesh
                 castShadow
                 onPointerEnter={() => setHovered(true)}
@@ -72,14 +73,16 @@ function PieSlice({
                         thickness + 0.1,
                     ]}
                     fontSize={fontSize}
-                    outlineWidth={0.02}
-                    outlineColor="#fff"
+                    color="#e5e7eb"          // light text
+                    outlineWidth={0.04}
+                    outlineColor="#020617"  // dark outline
+                    depthTest={false}
                 >
                     {label}
                 </Text>
             </Billboard>
 
-            {/* VALUE */}
+            {/* VALUE ON HOVER */}
             {hovered && (
                 <Billboard>
                     <Text
@@ -88,9 +91,11 @@ function PieSlice({
                             Math.sin(midAngle) * (radius - 0.2),
                             thickness + 0.35,
                         ]}
-                        fontSize={fontSize + 0.05}
-                        outlineWidth={0.02}
-                        outlineColor="#fff"
+                        fontSize={fontSize + 0.06}
+                        color="#ffffff"
+                        outlineWidth={0.05}
+                        outlineColor="#020617"
+                        depthTest={false}
                     >
                         {value}
                     </Text>
@@ -168,22 +173,32 @@ export default function TopProducts3DPieChart({ data }) {
     }
 
     return (
-        <div className="w-full h-[360px] sm:h-[420px]">
-            <Canvas camera={{ position: [0, 0, 8], fov: 45 }} shadows>
-                <ambientLight intensity={0.7} />
-                <directionalLight position={[6, 8, 6]} intensity={1.2} />
+        <div className="w-full h-[360px] sm:h-[420px] rounded-xl overflow-hidden">
+            <Canvas
+                camera={{ position: [0, 0, 8], fov: 45 }}
+                shadows
+                onCreated={({ gl }) => {
+                    gl.setClearColor("#0f172a") // slate-900 background
+                }}
+            >
+                {/* LIGHTS */}
+                <ambientLight intensity={0.6} />
+                <directionalLight position={[6, 8, 6]} intensity={1.3} />
 
+                {/* PIE */}
                 <RotatingPie slices={slices} isMobile={isMobile} />
 
+                {/* FLOOR */}
                 <mesh
                     rotation={[-Math.PI / 2, 0, 0]}
                     position={[0, 0, -0.7]}
                     receiveShadow
                 >
                     <planeGeometry args={[20, 20]} />
-                    <shadowMaterial opacity={0.25} />
+                    <shadowMaterial opacity={0.3} />
                 </mesh>
 
+                {/* CONTROLS */}
                 <OrbitControls enableZoom={false} />
             </Canvas>
         </div>
