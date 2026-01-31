@@ -5,10 +5,10 @@ import { NextResponse } from "next/server";
 
 /* ------------------ HELPERS ------------------ */
 const getAll12Months = (year) => {
-  const months = []
+  const months = [];
 
   for (let i = 0; i < 12; i++) {
-    const date = new Date(Date.UTC(year, i, 1))
+    const date = new Date(year, i, 1);
     months.push({
       key: `${year}-${i}`,
       name: date.toLocaleString("default", { month: "short" }),
@@ -17,11 +17,11 @@ const getAll12Months = (year) => {
       earnings: 0,
       orders: 0,
       canceled: 0
-    })
+    });
   }
 
-  return months
-}
+  return months;
+};
 
 /* ------------------ API ------------------ */
 export async function GET(request) {
@@ -29,21 +29,12 @@ export async function GET(request) {
     const { userId } = getAuth(request);
     const storeId = await authSeller(userId);
 
-    const { searchParams } = new URL(request.url)
-    const year = Number(searchParams.get("year")) || new Date().getFullYear()
+    const { searchParams } = new URL(request.url);
+    const selectedYear = Number(searchParams.get("year")) || new Date().getFullYear();
 
-    const yearStart = new Date(Date.UTC(year, 0, 1))
-    const yearEnd = new Date(Date.UTC(year + 1, 0, 1))
-
-    /* ---------- ORDERS (YEAR FILTER) ---------- */
+    /* ---------- ORDERS ---------- */
     const orders = await prisma.order.findMany({
-      where: {
-        storeId,
-        createdAt: {
-          gte: yearStart,
-          lt: yearEnd
-        }
-      },
+      where: { storeId },
       select: {
         id: true,
         total: true,
@@ -59,16 +50,19 @@ export async function GET(request) {
       }
     });
 
+    /* ---------- PRODUCTS ---------- */
     const products = await prisma.product.findMany({
       where: { storeId },
       select: { id: true, name: true, category: true, images: true }
     });
 
+    /* ---------- RATINGS ---------- */
     const ratings = await prisma.rating.findMany({
       where: { productId: { in: products.map(p => p.id) } },
       include: { user: true, product: true }
     });
 
+    /* ---------- TOP PRODUCTS ---------- */
     const topProducts = products
       .map(p => ({
         ...p,
@@ -82,15 +76,23 @@ export async function GET(request) {
       .sort((a, b) => b.sold - a.sold)
       .slice(0, 5);
 
-    /* ---------- CHART DATA (TIMEZONE SAFE) ---------- */
-    const months = getAll12Months(year);
+    /* ---------- CHART DATA (12 MONTHS - IST SAFE) ---------- */
+    const months = getAll12Months(selectedYear);
 
     orders.forEach(order => {
-      // Convert to LOCAL time before month calc
-      const localDate = new Date(order.createdAt);
-      const month = localDate.getMonth(); // LOCAL month (fixes Feb bug)
+      // 🔥 FORCE IST TIMEZONE
+      const istDate = new Date(
+        new Date(order.createdAt).toLocaleString("en-US", {
+          timeZone: "Asia/Kolkata"
+        })
+      );
 
-      const monthIndex = months.findIndex(m => m.month === month);
+      const orderYear = istDate.getFullYear();
+      const orderMonth = istDate.getMonth();
+
+      const monthIndex = months.findIndex(
+        m => m.month === orderMonth && m.year === orderYear
+      );
 
       if (monthIndex !== -1) {
         if (order.status === "CANCELLED") {
@@ -102,22 +104,40 @@ export async function GET(request) {
       }
     });
 
-    return NextResponse.json({
-      dashboardData: {
-        ratings,
-        totalOrders: orders.length,
-        totalEarnings: Math.round(
-          orders.filter(o => o.status !== "CANCELLED")
-                .reduce((acc, o) => acc + o.total, 0)
-        ),
-        totalProducts: products.length,
-        earningsChart: months.map(m => ({ name: m.name, value: Math.round(m.earnings) })),
-        ordersChart: months.map(m => ({ name: m.name, value: m.orders })),
-        canceledChart: months.map(m => ({ name: m.name, value: m.canceled })),
-        orders,
-        topProducts
-      }
-    });
+    const earningsChart = months.map(m => ({
+      name: m.name,
+      value: Math.round(m.earnings)
+    }));
+
+    const ordersChart = months.map(m => ({
+      name: m.name,
+      value: m.orders
+    }));
+
+    const canceledChart = months.map(m => ({
+      name: m.name,
+      value: m.canceled
+    }));
+
+    /* ---------- TOTALS (IST SAFE) ---------- */
+    const totalEarnings = orders
+      .filter(order => order.status !== "CANCELLED")
+      .reduce((acc, order) => acc + order.total, 0);
+
+    /* ---------- RESPONSE ---------- */
+    const dashboardData = {
+      ratings,
+      totalOrders: orders.length,
+      totalEarnings: Math.round(totalEarnings),
+      totalProducts: products.length,
+      earningsChart,
+      ordersChart,
+      canceledChart,
+      orders,
+      topProducts
+    };
+
+    return NextResponse.json({ dashboardData });
 
   } catch (error) {
     console.error(error);
