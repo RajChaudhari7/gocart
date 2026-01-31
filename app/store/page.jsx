@@ -31,13 +31,17 @@ export default function Dashboard() {
     ratings: [],
     earningsChart: [],
     ordersChart: [],
+    canceledChart: [],
     orders: [],
     topProducts: []
   })
 
-  // 0 = Jan, 1 = Feb … matches JS Date.getMonth()
+  /* ---------------- YEAR + MONTH FILTER ---------------- */
+  const currentYear = new Date().getFullYear()
+  const yearOptions = [currentYear, currentYear - 1, currentYear - 2]
+
+  const [filterYear, setFilterYear] = useState(currentYear)
   const [filterMonth, setFilterMonth] = useState(new Date().getMonth())
-  const [filterYear, setFilterYear] = useState(new Date().getFullYear())
 
   /* -------------------- FETCH -------------------- */
   const fetchDashboardData = async () => {
@@ -58,41 +62,44 @@ export default function Dashboard() {
     fetchDashboardData()
   }, [])
 
-  /* -------------------- FILTERED DATA -------------------- */
-  const lastMonthOrders = useMemo(() => {
+  /* -------------------- FILTERED ORDERS (KPIs) -------------------- */
+  const filteredOrders = useMemo(() => {
     return dashboardData.orders.filter(o => {
       const d = new Date(o.createdAt)
-      // Ensure we use 0-based month index from JS Date
-      return d.getMonth() === filterMonth && d.getFullYear() === filterYear
+      return d.getFullYear() === filterYear &&
+             d.getMonth() === filterMonth
     })
-  }, [dashboardData.orders, filterMonth, filterYear])
+  }, [dashboardData.orders, filterYear, filterMonth])
 
-  const lastMonthEarnings = useMemo(() => {
-    return lastMonthOrders
+  const filteredEarnings = useMemo(() => {
+    return filteredOrders
       .filter(o => o.status !== "CANCELLED")
       .reduce((sum, o) => sum + o.total, 0)
-  }, [lastMonthOrders])
+  }, [filteredOrders])
 
-  const lastMonthCanceled = useMemo(() => {
-    return lastMonthOrders.filter(o => o.status === "CANCELLED").length
-  }, [lastMonthOrders])
+  const filteredCanceled = useMemo(() => {
+    return filteredOrders.filter(o => o.status === "CANCELLED").length
+  }, [filteredOrders])
 
   const totalCanceledOrders = dashboardData.orders.filter(o => o.status === "CANCELLED").length
 
   const productsSoldPercent = dashboardData.totalOrders
-    ? ((lastMonthOrders.length / dashboardData.totalOrders) * 100).toFixed(1)
+    ? ((filteredOrders.length / dashboardData.totalOrders) * 100).toFixed(1)
     : 0
 
   const earningsPercent = dashboardData.totalEarnings
-    ? ((lastMonthEarnings / dashboardData.totalEarnings) * 100).toFixed(1)
+    ? ((filteredEarnings / dashboardData.totalEarnings) * 100).toFixed(1)
     : 0
 
   const canceledPercent = totalCanceledOrders
-    ? ((lastMonthCanceled / totalCanceledOrders) * 100).toFixed(1)
+    ? ((filteredCanceled / totalCanceledOrders) * 100).toFixed(1)
     : 0
 
   const avgRating = dashboardData.ratings.length
-    ? (dashboardData.ratings.reduce((a, b) => a + b.rating, 0) / dashboardData.ratings.length).toFixed(1)
+    ? (
+        dashboardData.ratings.reduce((a, b) => a + b.rating, 0) /
+        dashboardData.ratings.length
+      ).toFixed(1)
     : 0
 
   const stats = [
@@ -114,29 +121,43 @@ export default function Dashboard() {
     [dashboardData.ordersChart]
   )
 
-  const canceledOrdersData = useMemo(() => {
-    const map = {}
-    dashboardData.orders.forEach(o => {
-      if (o.status === 'CANCELLED') {
-        const d = new Date(o.createdAt)
-        const m = d.toLocaleString('default', { month: 'short' })
-        map[m] = (map[m] || 0) + 1
-      }
-    })
-    return ordersData.map(m => ({ name: m.name, value: map[m.name] || 0 }))
-  }, [dashboardData.orders, ordersData])
+  const canceledOrdersData = useMemo(
+    () => dashboardData.canceledChart.map(i => ({ name: i.name, value: i.value || 0 })),
+    [dashboardData.canceledChart]
+  )
 
   if (loading) return <Loading />
 
   return (
     <div className="max-w-7xl mx-auto pb-28 px-4 lg:px-6 space-y-10">
-      {/* Header */}
-      <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-        <h1 className="text-3xl font-bold text-slate-900">Dashboard</h1>
-        <p className="text-sm text-slate-500 mt-1">
-          Monitor your business performance with analytics and insights
-        </p>
-      </motion.div>
+
+      {/* Header + Year Selector */}
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <h1 className="text-3xl font-bold text-slate-900">Dashboard</h1>
+          <p className="text-sm text-slate-500 mt-1">
+            Monitor your business performance with analytics and insights
+          </p>
+        </motion.div>
+
+        {/* Year Selector */}
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-slate-500">Year:</span>
+          <select
+            value={filterYear}
+            onChange={(e) => setFilterYear(Number(e.target.value))}
+            className="border rounded-lg px-3 py-2 text-sm bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          >
+            {yearOptions.map(y => (
+              <option key={y} value={y}>{y}</option>
+            ))}
+          </select>
+        </div>
+      </div>
 
       {/* Stats */}
       <motion.div
@@ -169,23 +190,23 @@ export default function Dashboard() {
         ordersData={ordersData}
         canceledOrdersData={canceledOrdersData}
         topProducts={dashboardData.topProducts}
-        filterMonth={filterMonth}
-        filterYear={filterYear}
-        setFilterMonth={setFilterMonth}
-        setFilterYear={setFilterYear}
       />
 
       {/* Insights */}
-      <motion.div className="bg-white border rounded-2xl p-6 shadow-md hover:shadow-lg transition-shadow"
-        initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}>
+      <motion.div
+        className="bg-white border rounded-2xl p-6 shadow-md hover:shadow-lg transition-shadow"
+        initial={{ opacity: 0, x: -30 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.5 }}
+      >
         <div className="flex items-center gap-2 mb-2">
           <TrendingUpIcon className="w-5 h-5 text-green-600" />
           <h3 className="text-sm font-semibold">Insights</h3>
         </div>
         <ul className="text-sm text-slate-600 space-y-1">
-          <li>📈 Total earnings reached {currency}{dashboardData.totalEarnings}</li>
-          <li>⭐ Average rating is {avgRating}</li>
-          <li>❌ {totalCanceledOrders} orders were canceled</li>
+          <li>📈 Earnings for {filterYear}: {currency}{dashboardData.totalEarnings}</li>
+          <li>⭐ Average rating: {avgRating}</li>
+          <li>❌ {totalCanceledOrders} total canceled orders</li>
         </ul>
       </motion.div>
 
@@ -195,11 +216,18 @@ export default function Dashboard() {
         <span className="text-sm text-slate-500">{dashboardData.ratings.length} total</span>
       </div>
 
-      <motion.div className="space-y-5 max-w-4xl" initial="hidden" animate="visible"
-        variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.1 } } }}>
+      <motion.div
+        className="space-y-5 max-w-4xl"
+        initial="hidden"
+        animate="visible"
+        variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.1 } } }}
+      >
         {dashboardData.ratings.map((review, index) => (
-          <motion.div key={index} className="bg-white border rounded-2xl p-5 shadow-md hover:shadow-lg transition-shadow"
-            variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}>
+          <motion.div
+            key={index}
+            className="bg-white border rounded-2xl p-5 shadow-md hover:shadow-lg transition-shadow"
+            variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
+          >
             <div className="flex justify-between gap-6">
               {/* LEFT */}
               <div className="flex gap-4">
@@ -218,9 +246,15 @@ export default function Dashboard() {
                 )}
                 <div>
                   <p className="text-sm font-semibold">{review.user.name}</p>
-                  <p className="text-xs text-slate-400">{new Date(review.createdAt).toDateString()}</p>
+                  <p className="text-xs text-slate-400">
+                    {new Date(review.createdAt).toDateString()}
+                  </p>
                   <p className="text-sm text-slate-600 mt-2">{review.review}</p>
-                  {review.reply && <p className="text-xs text-green-600 mt-1">Reply: {review.reply}</p>}
+                  {review.reply && (
+                    <p className="text-xs text-green-600 mt-1">
+                      Reply: {review.reply}
+                    </p>
+                  )}
                 </div>
               </div>
 

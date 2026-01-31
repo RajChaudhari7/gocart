@@ -4,22 +4,26 @@ import { getAuth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
 /* ------------------ HELPERS ------------------ */
-const getLast6Months = () => {
-  const months = [];
-  for (let i = 5; i >= 0; i--) {
-    const date = new Date();
-    date.setMonth(date.getMonth() - i);
+const getAll12Months = () => {
+  const months = []
+  const now = new Date()
+  const year = now.getFullYear()
+
+  for (let i = 0; i < 12; i++) {
+    const date = new Date(year, i, 1)
     months.push({
-      key: `${date.getFullYear()}-${date.getMonth()}`,
+      key: `${year}-${i}`,
       name: date.toLocaleString("default", { month: "short" }),
-      year: date.getFullYear(),
-      month: date.getMonth(),
+      year,
+      month: i,
       earnings: 0,
-      orders: 0
-    });
+      orders: 0,
+      canceled: 0
+    })
   }
-  return months;
-};
+
+  return months
+}
 
 /* ------------------ API ------------------ */
 export async function GET(request) {
@@ -62,16 +66,17 @@ export async function GET(request) {
       .map(p => ({
         ...p,
         sold: orders.reduce((acc, order) => {
-          const item = order.orderItems.find(oi => oi.productId === p.id && order.status !== "CANCELLED");
+          const item = order.orderItems.find(
+            oi => oi.productId === p.id && order.status !== "CANCELLED"
+          );
           return acc + (item ? item.quantity : 0);
         }, 0)
       }))
       .sort((a, b) => b.sold - a.sold)
       .slice(0, 5);
 
-
-    /* ---------- CHART DATA ---------- */
-    const months = getLast6Months();
+    /* ---------- CHART DATA (12 MONTHS) ---------- */
+    const months = getAll12Months();
 
     orders.forEach(order => {
       const date = new Date(order.createdAt);
@@ -80,13 +85,29 @@ export async function GET(request) {
       );
 
       if (monthIndex !== -1) {
-        if (order.status !== "CANCELLED") months[monthIndex].earnings += order.total;
-        months[monthIndex].orders += 1;
+        if (order.status === "CANCELLED") {
+          months[monthIndex].canceled += 1;
+        } else {
+          months[monthIndex].earnings += order.total;
+          months[monthIndex].orders += 1;
+        }
       }
     });
 
-    const earningsChart = months.map(m => ({ name: m.name, value: Math.round(m.earnings) }));
-    const ordersChart = months.map(m => ({ name: m.name, value: m.orders }));
+    const earningsChart = months.map(m => ({
+      name: m.name,
+      value: Math.round(m.earnings)
+    }));
+
+    const ordersChart = months.map(m => ({
+      name: m.name,
+      value: m.orders
+    }));
+
+    const canceledChart = months.map(m => ({
+      name: m.name,
+      value: m.canceled
+    }));
 
     /* ---------- RESPONSE ---------- */
     const dashboardData = {
@@ -100,6 +121,7 @@ export async function GET(request) {
       totalProducts: products.length,
       earningsChart,
       ordersChart,
+      canceledChart,   // ✅ now supported
       orders,
       topProducts
     };

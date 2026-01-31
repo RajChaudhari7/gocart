@@ -15,10 +15,10 @@ import { motion } from "framer-motion"
 import TopProducts3DChart from "@/components/charts/TopProducts3DChart"
 
 export default function DashboardCharts({
-  earningsData,
-  ordersData,
-  canceledOrdersData,
-  topProducts
+  earningsData = [],
+  ordersData = [],
+  canceledOrdersData = [],
+  topProducts = []
 }) {
 
   /* ---------------- TOP PRODUCTS SAFE MAP ---------------- */
@@ -37,18 +37,10 @@ export default function DashboardCharts({
       }))
     : []
 
-  /* ---------------- FULL MONTH ARRAY ---------------- */
-  const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
-
-  const fillMonths = (data) => {
-    const map = {}
-    data.forEach(i => map[i.name] = i.value || 0)
-    return monthNames.map(m => ({ name: m, value: map[m] || 0 }))
-  }
-
-  const earningsFull = fillMonths(earningsData)
-  const ordersFull = fillMonths(ordersData)
-  const canceledFull = fillMonths(canceledOrdersData)
+  /* ---------------- USE BACKEND MONTHS DIRECTLY ---------------- */
+  const earningsFull = earningsData
+  const ordersFull = ordersData
+  const canceledFull = canceledOrdersData
 
   return (
     <div className="space-y-8 mb-12">
@@ -66,45 +58,43 @@ export default function DashboardCharts({
             Monthly Earnings
           </h3>
 
-          <div className="relative">
-            <ResponsiveContainer width="100%" height={240}>
-              <LineChart data={earningsFull}>
-                <defs>
-                  <linearGradient id="earningsGlow" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#22c55e" stopOpacity={0.6} />
-                    <stop offset="100%" stopColor="#22c55e" stopOpacity={0.05} />
-                  </linearGradient>
-                </defs>
+          <ResponsiveContainer width="100%" height={240}>
+            <LineChart data={earningsFull}>
+              <defs>
+                <linearGradient id="earningsGlow" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#22c55e" stopOpacity={0.6} />
+                  <stop offset="100%" stopColor="#22c55e" stopOpacity={0.05} />
+                </linearGradient>
+              </defs>
 
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" interval={0} />
+              <YAxis />
+              <Tooltip />
 
-                {/* Depth shadow line */}
-                <Line
-                  type="monotone"
-                  dataKey="value"
-                  stroke="#166534"
-                  strokeWidth={7}
-                  dot={false}
-                  opacity={0.15}
-                />
+              {/* Depth shadow line */}
+              <Line
+                type="monotone"
+                dataKey="value"
+                stroke="#166534"
+                strokeWidth={7}
+                dot={false}
+                opacity={0.15}
+              />
 
-                {/* Main line */}
-                <Line
-                  type="monotone"
-                  dataKey="value"
-                  stroke="#22c55e"
-                  strokeWidth={3}
-                  fill="url(#earningsGlow)"
-                  animationDuration={1400}
-                  dot={{ r: 4, fill: "#22c55e" }}
-                  activeDot={{ r: 7 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
+              {/* Main line */}
+              <Line
+                type="monotone"
+                dataKey="value"
+                stroke="#22c55e"
+                strokeWidth={3}
+                fill="url(#earningsGlow)"
+                animationDuration={1400}
+                dot={{ r: 4, fill: "#22c55e" }}
+                activeDot={{ r: 7 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
         </motion.div>
 
         {/* ================= ORDERS (3D BAR) ================= */}
@@ -128,7 +118,7 @@ export default function DashboardCharts({
               </defs>
 
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
+              <XAxis dataKey="name" interval={0} />
               <YAxis />
               <Tooltip />
 
@@ -138,6 +128,7 @@ export default function DashboardCharts({
                 fill="#1e3a8a"
                 radius={[10, 10, 0, 0]}
                 opacity={0.18}
+                minPointSize={3}
               />
 
               {/* Front bar */}
@@ -146,6 +137,7 @@ export default function DashboardCharts({
                 fill="url(#ordersGrad)"
                 radius={[10, 10, 0, 0]}
                 animationDuration={1200}
+                minPointSize={3}
               />
             </BarChart>
           </ResponsiveContainer>
@@ -172,7 +164,7 @@ export default function DashboardCharts({
               </defs>
 
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
+              <XAxis dataKey="name" interval={0} />
               <YAxis />
               <Tooltip />
 
@@ -182,6 +174,7 @@ export default function DashboardCharts({
                 fill="#7f1d1d"
                 radius={[10, 10, 0, 0]}
                 opacity={0.2}
+                minPointSize={3}
               />
 
               {/* Main bar */}
@@ -190,6 +183,7 @@ export default function DashboardCharts({
                 fill="url(#cancelGrad)"
                 radius={[10, 10, 0, 0]}
                 animationDuration={1200}
+                minPointSize={3}
               />
             </BarChart>
           </ResponsiveContainer>
