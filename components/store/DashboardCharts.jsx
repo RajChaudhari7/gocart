@@ -21,10 +21,19 @@ export default function DashboardCharts({
 
   const topProducts3D = Array.isArray(topProducts)
     ? topProducts.map(p => ({
-      name: p.name.length > 14 ? p.name.slice(0, 14) + "…" : p.name,
-      sold: Number(p.totalSold) || 0
+      name: p.name?.length > 14 ? p.name.slice(0, 14) + "…" : p.name || "Unknown",
+      sold: Number(
+        p.totalSold ??
+        p.sold ??
+        p.quantitySold ??
+        p.totalOrders ??
+        p.count ??
+        p._count?.orders ??
+        0
+      )
     }))
     : []
+
 
   return (
     <div className="space-y-8 mb-12">
