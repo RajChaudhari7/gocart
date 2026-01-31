@@ -21,31 +21,37 @@ export async function GET(request) {
         // get total stores on app
         const stores = await prisma.store.count()
 
-        // get all orders include only createdAt and total & calculate total revenue
-        const allOrders = await prisma.order.findMany({
+        // get all orders include necessary info
+        const allOrdersRaw = await prisma.order.findMany({
+            orderBy: { createdAt: 'desc' },
+            take: 10, // show only recent 10 orders
             select: {
+                id: true,
                 createdAt: true,
                 total: true,
+                status: true,
+                customer: { select: { name: true } }
             }
         })
 
+        // calculate total revenue
         let totaRevenue = 0
-        allOrders.forEach(order => {
-            totaRevenue += order.total
-        })
-
+        allOrdersRaw.forEach(order => { totaRevenue += order.total })
         const revenue = totaRevenue.toFixed(2)
 
         // total products on app
         const products = await prisma.product.count()
 
-        const dashboardData = {
-            orders,
-            stores,
-            products,
-            revenue,
-            allOrders
-        }
+        // format orders for frontend
+        const allOrders = allOrdersRaw.map(order => ({
+            id: order.id,
+            createdAt: order.createdAt,
+            amount: order.total,
+            status: order.status,
+            customerName: order.customer?.name || 'Unknown'
+        }))
+
+        const dashboardData = { orders, stores, products, revenue, allOrders }
 
         return NextResponse.json({ dashboardData })
 
