@@ -8,7 +8,7 @@ const getAll12Months = (year) => {
   const months = []
 
   for (let i = 0; i < 12; i++) {
-    const date = new Date(year, i, 1)
+    const date = new Date(Date.UTC(year, i, 1))
     months.push({
       key: `${year}-${i}`,
       name: date.toLocaleString("default", { month: "short" }),
@@ -32,10 +32,10 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url)
     const year = Number(searchParams.get("year")) || new Date().getFullYear()
 
-    const yearStart = new Date(year, 0, 1)
-    const yearEnd = new Date(year + 1, 0, 1)
+    const yearStart = new Date(Date.UTC(year, 0, 1))
+    const yearEnd = new Date(Date.UTC(year + 1, 0, 1))
 
-    /* ---------- ORDERS (FILTERED BY YEAR) ---------- */
+    /* ---------- ORDERS (YEAR FILTER) ---------- */
     const orders = await prisma.order.findMany({
       where: {
         storeId,
@@ -59,19 +59,16 @@ export async function GET(request) {
       }
     });
 
-    /* ---------- PRODUCTS ---------- */
     const products = await prisma.product.findMany({
       where: { storeId },
       select: { id: true, name: true, category: true, images: true }
     });
 
-    /* ---------- RATINGS ---------- */
     const ratings = await prisma.rating.findMany({
       where: { productId: { in: products.map(p => p.id) } },
       include: { user: true, product: true }
     });
 
-    /* ---------- TOP PRODUCTS ---------- */
     const topProducts = products
       .map(p => ({
         ...p,
@@ -85,14 +82,15 @@ export async function GET(request) {
       .sort((a, b) => b.sold - a.sold)
       .slice(0, 5);
 
-    /* ---------- CHART DATA (12 MONTHS FOR SELECTED YEAR) ---------- */
+    /* ---------- CHART DATA (TIMEZONE SAFE) ---------- */
     const months = getAll12Months(year);
 
     orders.forEach(order => {
-      const date = new Date(order.createdAt);
-      const monthIndex = months.findIndex(
-        m => m.month === date.getMonth()
-      );
+      // Convert to LOCAL time before month calc
+      const localDate = new Date(order.createdAt);
+      const month = localDate.getMonth(); // LOCAL month (fixes Feb bug)
+
+      const monthIndex = months.findIndex(m => m.month === month);
 
       if (monthIndex !== -1) {
         if (order.status === "CANCELLED") {
@@ -104,10 +102,6 @@ export async function GET(request) {
       }
     });
 
-    const earningsChart = months.map(m => ({ name: m.name, value: Math.round(m.earnings) }));
-    const ordersChart = months.map(m => ({ name: m.name, value: m.orders }));
-    const canceledChart = months.map(m => ({ name: m.name, value: m.canceled }));
-
     return NextResponse.json({
       dashboardData: {
         ratings,
@@ -117,9 +111,9 @@ export async function GET(request) {
                 .reduce((acc, o) => acc + o.total, 0)
         ),
         totalProducts: products.length,
-        earningsChart,
-        ordersChart,
-        canceledChart,
+        earningsChart: months.map(m => ({ name: m.name, value: Math.round(m.earnings) })),
+        ordersChart: months.map(m => ({ name: m.name, value: m.orders })),
+        canceledChart: months.map(m => ({ name: m.name, value: m.canceled })),
         orders,
         topProducts
       }

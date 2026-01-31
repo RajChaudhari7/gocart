@@ -24,17 +24,17 @@ export default function DashboardCharts({
   /* ---------------- TOP PRODUCTS SAFE MAP ---------------- */
   const topProducts3D = Array.isArray(topProducts)
     ? topProducts.map(p => ({
-        name: p.name?.length > 14 ? p.name.slice(0, 14) + "…" : p.name || "Unknown",
-        sold: Number(
-          p.totalSold ??
-          p.sold ??
-          p.quantitySold ??
-          p.totalOrders ??
-          p.count ??
-          p._count?.orders ??
-          0
-        )
-      }))
+      name: p.name?.length > 14 ? p.name.slice(0, 14) + "…" : p.name || "Unknown",
+      sold: Number(
+        p.totalSold ??
+        p.sold ??
+        p.quantitySold ??
+        p.totalOrders ??
+        p.count ??
+        p._count?.orders ??
+        0
+      )
+    }))
     : []
 
   /* ---------------- USE BACKEND MONTHS DIRECTLY ---------------- */
@@ -68,7 +68,14 @@ export default function DashboardCharts({
               </defs>
 
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" interval={0} />
+              <XAxis
+                dataKey="name"
+                interval={0}
+                angle={-35}
+                textAnchor="end"
+                height={60}
+              />
+
               <YAxis />
               <Tooltip />
 
@@ -118,7 +125,14 @@ export default function DashboardCharts({
               </defs>
 
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" interval={0} />
+              <XAxis
+                dataKey="name"
+                interval={0}
+                angle={-35}
+                textAnchor="end"
+                height={60}
+              />
+
               <YAxis />
               <Tooltip />
 
@@ -164,7 +178,14 @@ export default function DashboardCharts({
               </defs>
 
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" interval={0} />
+              <XAxis
+                dataKey="name"
+                interval={0}
+                angle={-35}
+                textAnchor="end"
+                height={60}
+              />
+
               <YAxis />
               <Tooltip />
 
