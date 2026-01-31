@@ -1,114 +1,215 @@
 "use client"
 
-import { Canvas } from "@react-three/fiber"
+import { Canvas, useFrame } from "@react-three/fiber"
 import { OrbitControls, Text, Billboard } from "@react-three/drei"
-import { useMemo, useState } from "react"
+import { useMemo, useState, useRef } from "react"
+import * as THREE from "three"
 
+/* 🎨 PROFESSIONAL COLOR PALETTE */
 const COLORS = [
-  "#4f46e5",
-  "#16a34a",
-  "#0ea5e9",
-  "#f97316",
-  "#dc2626"
+    "#4f46e5",
+    "#16a34a",
+    "#0ea5e9",
+    "#f97316",
+    "#dc2626",
+    "#9333ea",
 ]
 
-const FONT_URL =
-  "https://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTcviYwY.woff"
+/* -------------------- PIE SLICE -------------------- */
+function PieSlice({
+    startAngle,
+    angle,
+    value,
+    label,
+    color,
+    radius,
+    thickness,
+    isMobile,
+}) {
+    const [hovered, setHovered] = useState(false)
 
-export default function TopProducts3DChart({ data = [] }) {
-  const isMobile =
-    typeof window !== "undefined" && window.innerWidth < 640
+    const shape = useMemo(() => {
+        const s = new THREE.Shape()
+        s.moveTo(0, 0)
+        s.absarc(0, 0, radius, startAngle, startAngle + angle, false)
+        s.lineTo(0, 0)
+        return s
+    }, [startAngle, angle, radius])
 
-  const products = useMemo(() => {
-    if (!data.length) return []
-    return data.map((p, i) => ({
-      ...p,
-      color: COLORS[i % COLORS.length],
-      height: Math.min(Math.max(p.sold * 0.6, 1.2), 6)
-    }))
-  }, [data])
+    const midAngle = startAngle + angle / 2
+    const popOut = hovered ? 0.25 : 0
 
-  if (!products.length) {
+    const labelRadius = radius + 0.7
+    const fontSize = isMobile ? 0.22 : 0.28
+
     return (
-      <div className="h-[340px] flex items-center justify-center text-sm text-slate-400">
-        No top-selling products yet
-      </div>
+        <group
+            position={[
+                Math.cos(midAngle) * popOut,
+                Math.sin(midAngle) * popOut,
+                0,
+            ]}
+        >
+            {/* SLICE */}
+            <mesh
+                castShadow
+                onPointerEnter={() => setHovered(true)}
+                onPointerLeave={() => setHovered(false)}
+            >
+                <extrudeGeometry
+                    args={[
+                        shape,
+                        {
+                            depth: thickness,
+                            bevelEnabled: false,
+                        },
+                    ]}
+                />
+                <meshStandardMaterial
+                    color={color}
+                    emissive={hovered ? color : "#000000"}
+                    emissiveIntensity={hovered ? 0.5 : 0}
+                />
+            </mesh>
+
+            {/* LABEL */}
+            <Billboard>
+                <Text
+                    position={[
+                        Math.cos(midAngle) * labelRadius,
+                        Math.sin(midAngle) * labelRadius,
+                        thickness + 0.1,
+                    ]}
+                    fontSize={fontSize}
+                    color="#111827"
+                    anchorX="center"
+                    anchorY="middle"
+                    outlineWidth={0.02}
+                    outlineColor="#ffffff"
+                    depthTest={false}
+                >
+                    {label}
+                </Text>
+            </Billboard>
+
+            {/* VALUE ON HOVER */}
+            {hovered && (
+                <Billboard>
+                    <Text
+                        position={[
+                            Math.cos(midAngle) * (radius - 0.2),
+                            Math.sin(midAngle) * (radius - 0.2),
+                            thickness + 0.35,
+                        ]}
+                        fontSize={fontSize + 0.05}
+                        color="#000000"
+                        outlineWidth={0.02}
+                        outlineColor="#ffffff"
+                        depthTest={false}
+                    >
+                        {value}
+                    </Text>
+                </Billboard>
+            )}
+        </group>
     )
-  }
-
-  return (
-    <div className="w-full h-[340px] sm:h-[420px]">
-      <Canvas camera={{ position: [0, 5, 9], fov: 45 }} shadows>
-        <ambientLight intensity={0.6} />
-        <directionalLight position={[6, 10, 6]} intensity={1.2} castShadow />
-
-        {products.map((item, i) => (
-          <Bar
-            key={i}
-            x={i - products.length / 2 + 0.5}
-            {...item}
-            isMobile={isMobile}
-          />
-        ))}
-
-        <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]}>
-          <planeGeometry args={[30, 30]} />
-          <shadowMaterial opacity={0.25} />
-        </mesh>
-
-        <OrbitControls enableZoom={false} maxPolarAngle={Math.PI / 2.1} />
-      </Canvas>
-    </div>
-  )
 }
 
-/* ---------------- BAR ---------------- */
-function Bar({ x, height, name, sold, color, isMobile }) {
-  const [hovered, setHovered] = useState(false)
+/* -------------------- MAIN PIE CHART -------------------- */
+export default function TopProducts3DPieChart({ data }) {
+    const isMobile =
+        typeof window !== "undefined" && window.innerWidth < 640
 
-  return (
-    <group position={[x, 0, 0]}>
-      <mesh
-        position={[0, height / 2, 0]}
-        castShadow
-        onPointerEnter={() => setHovered(true)}
-        onPointerLeave={() => setHovered(false)}
-      >
-        <boxGeometry args={[0.6, height, 0.6]} />
-        <meshStandardMaterial
-          color={hovered ? "#fff" : color}
-          emissive={hovered ? color : "#000"}
-          emissiveIntensity={hovered ? 0.55 : 0}
-        />
-      </mesh>
+    const pieRef = useRef()
+    const [isInteracting, setIsInteracting] = useState(false)
 
-      {hovered && (
-        <Billboard>
-          <Text
-            position={[0, height + 0.3, 0]}
-            font={FONT_URL}
-            fontSize={isMobile ? 0.16 : 0.2}
-            color="#111827"
-            outlineWidth={0.015}
-            outlineColor="#ffffff"
-          >
-            {sold} sold
-          </Text>
-        </Billboard>
-      )}
+    /* 🔄 AUTO ROTATION */
+    useFrame(() => {
+        if (!isInteracting && pieRef.current) {
+            pieRef.current.rotation.z += 0.003
+        }
+    })
 
-      <Billboard>
-        <Text
-          position={[0, -0.35, 0]}
-          font={FONT_URL}
-          fontSize={isMobile ? 0.14 : 0.17}
-          color={color}
-          maxWidth={1.2}
-          textAlign="center"
-        >
-          {name}
-        </Text>
-      </Billboard>
-    </group>
-  )
+    const processedData = useMemo(() => {
+        if (!Array.isArray(data) || data.length === 0) return []
+
+        const total = data.reduce(
+            (sum, d) => sum + Number(d.sold || 0),
+            0
+        )
+
+        let currentAngle = 0
+
+        return data.map((item, i) => {
+            const value = Number(item.sold) || 0
+            const angle = (value / total) * Math.PI * 2
+
+            const slice = {
+                label: `${item.name} (${value})`,
+                value,
+                startAngle: currentAngle,
+                angle,
+                color: COLORS[i % COLORS.length],
+            }
+
+            currentAngle += angle
+            return slice
+        })
+    }, [data])
+
+    if (processedData.length === 0) {
+        return (
+            <div className="h-[320px] flex items-center justify-center text-sm text-slate-500">
+                No product data available
+            </div>
+        )
+    }
+
+    return (
+        <div className="w-full h-[360px] sm:h-[420px]">
+            <Canvas shadows camera={{ position: [0, 0, 8], fov: 45 }}>
+                {/* LIGHTS */}
+                <ambientLight intensity={0.7} />
+                <directionalLight
+                    position={[6, 8, 6]}
+                    intensity={1.2}
+                    castShadow
+                />
+
+                {/* 🔄 ROTATING PIE */}
+                <group
+                    ref={pieRef}
+                    rotation={[-Math.PI / 2, 0, 0]}
+                    onPointerEnter={() => setIsInteracting(true)}
+                    onPointerLeave={() => setIsInteracting(false)}
+                >
+                    {processedData.map((slice, i) => (
+                        <PieSlice
+                            key={i}
+                            {...slice}
+                            radius={2.4}
+                            thickness={0.6}
+                            isMobile={isMobile}
+                        />
+                    ))}
+                </group>
+
+                {/* FLOOR */}
+                <mesh
+                    receiveShadow
+                    rotation={[-Math.PI / 2, 0, 0]}
+                    position={[0, 0, -0.7]}
+                >
+                    <planeGeometry args={[20, 20]} />
+                    <shadowMaterial opacity={0.25} />
+                </mesh>
+
+                {/* CONTROLS */}
+                <OrbitControls
+                    enableZoom={false}
+                    maxPolarAngle={Math.PI / 2}
+                />
+            </Canvas>
+        </div>
+    )
 }
