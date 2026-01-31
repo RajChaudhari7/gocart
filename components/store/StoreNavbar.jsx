@@ -16,7 +16,7 @@ const StoreNavbar = () => {
                 <Link href="/" className="group relative flex items-center gap-1">
                     <div className="absolute -inset-2 bg-cyan-500/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
                     <h1 className="text-2xl sm:text-3xl font-bold tracking-tighter text-white">
-                        Global<span className="text-cyan-400">Mart</span>
+                        She<span className="text-cyan-400">Kart</span>
                         <span className="text-cyan-400">.</span>
                     </h1>
                     <span className="ml-2 px-2 py-0.5 text-[10px] font-black uppercase tracking-tighter bg-cyan-500 text-black rounded-sm">
