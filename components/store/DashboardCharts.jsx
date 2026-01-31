@@ -37,6 +37,19 @@ export default function DashboardCharts({
       }))
     : []
 
+  /* ---------------- FULL MONTH ARRAY ---------------- */
+  const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
+
+  const fillMonths = (data) => {
+    const map = {}
+    data.forEach(i => map[i.name] = i.value || 0)
+    return monthNames.map(m => ({ name: m, value: map[m] || 0 }))
+  }
+
+  const earningsFull = fillMonths(earningsData)
+  const ordersFull = fillMonths(ordersData)
+  const canceledFull = fillMonths(canceledOrdersData)
+
   return (
     <div className="space-y-8 mb-12">
 
@@ -55,7 +68,7 @@ export default function DashboardCharts({
 
           <div className="relative">
             <ResponsiveContainer width="100%" height={240}>
-              <LineChart data={earningsData}>
+              <LineChart data={earningsFull}>
                 <defs>
                   <linearGradient id="earningsGlow" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#22c55e" stopOpacity={0.6} />
@@ -106,7 +119,7 @@ export default function DashboardCharts({
           </h3>
 
           <ResponsiveContainer width="100%" height={240}>
-            <BarChart data={ordersData}>
+            <BarChart data={ordersFull}>
               <defs>
                 <linearGradient id="ordersGrad" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#60a5fa" />
@@ -150,7 +163,7 @@ export default function DashboardCharts({
           </h3>
 
           <ResponsiveContainer width="100%" height={240}>
-            <BarChart data={canceledOrdersData}>
+            <BarChart data={canceledFull}>
               <defs>
                 <linearGradient id="cancelGrad" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#f87171" />
