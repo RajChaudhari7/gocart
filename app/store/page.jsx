@@ -35,51 +35,9 @@ export default function Dashboard() {
     topProducts: []
   })
 
+  // 0 = Jan, 1 = Feb … matches JS Date.getMonth()
   const [filterMonth, setFilterMonth] = useState(new Date().getMonth())
   const [filterYear, setFilterYear] = useState(new Date().getFullYear())
-
-  /* -------------------- STATS -------------------- */
-  const totalCanceledOrders = dashboardData.orders.filter(
-    o => o.status === "CANCELLED"
-  ).length
-
-  const lastMonthOrders = dashboardData.orders.filter(o => {
-    const d = new Date(o.createdAt)
-    return d.getMonth() === filterMonth && d.getFullYear() === filterYear
-  })
-
-  const lastMonthEarnings = lastMonthOrders
-    .filter(o => o.status !== "CANCELLED")
-    .reduce((a,b) => a+b.total,0)
-
-  const lastMonthCanceled = lastMonthOrders.filter(o => o.status==="CANCELLED").length
-
-  const productsSoldPercent = dashboardData.totalOrders
-    ? ((lastMonthOrders.length / dashboardData.totalOrders) * 100).toFixed(1)
-    : 0
-
-  const earningsPercent = dashboardData.totalEarnings
-    ? ((lastMonthEarnings / dashboardData.totalEarnings) * 100).toFixed(1)
-    : 0
-
-  const canceledPercent = totalCanceledOrders
-    ? ((lastMonthCanceled / totalCanceledOrders) * 100).toFixed(1)
-    : 0
-
-  const avgRating = dashboardData.ratings.length
-    ? (
-        dashboardData.ratings.reduce((a, b) => a + b.rating, 0) /
-        dashboardData.ratings.length
-      ).toFixed(1)
-    : 0
-
-  const stats = [
-    { title: "Products", value: dashboardData.totalProducts, icon: ShoppingBasketIcon },
-    { title: "Earnings", value: currency + dashboardData.totalEarnings + ` (${earningsPercent}%)`, icon: CircleDollarSignIcon },
-    { title: "Orders", value: dashboardData.totalOrders + ` (${productsSoldPercent}%)`, icon: TagsIcon },
-    { title: "Avg Rating", value: avgRating + " ⭐", icon: StarIcon },
-    { title: "Canceled", value: totalCanceledOrders + ` (${canceledPercent}%)`, icon: XCircleIcon },
-  ]
 
   /* -------------------- FETCH -------------------- */
   const fetchDashboardData = async () => {
@@ -100,6 +58,51 @@ export default function Dashboard() {
     fetchDashboardData()
   }, [])
 
+  /* -------------------- FILTERED DATA -------------------- */
+  const lastMonthOrders = useMemo(() => {
+    return dashboardData.orders.filter(o => {
+      const d = new Date(o.createdAt)
+      // Ensure we use 0-based month index from JS Date
+      return d.getMonth() === filterMonth && d.getFullYear() === filterYear
+    })
+  }, [dashboardData.orders, filterMonth, filterYear])
+
+  const lastMonthEarnings = useMemo(() => {
+    return lastMonthOrders
+      .filter(o => o.status !== "CANCELLED")
+      .reduce((sum, o) => sum + o.total, 0)
+  }, [lastMonthOrders])
+
+  const lastMonthCanceled = useMemo(() => {
+    return lastMonthOrders.filter(o => o.status === "CANCELLED").length
+  }, [lastMonthOrders])
+
+  const totalCanceledOrders = dashboardData.orders.filter(o => o.status === "CANCELLED").length
+
+  const productsSoldPercent = dashboardData.totalOrders
+    ? ((lastMonthOrders.length / dashboardData.totalOrders) * 100).toFixed(1)
+    : 0
+
+  const earningsPercent = dashboardData.totalEarnings
+    ? ((lastMonthEarnings / dashboardData.totalEarnings) * 100).toFixed(1)
+    : 0
+
+  const canceledPercent = totalCanceledOrders
+    ? ((lastMonthCanceled / totalCanceledOrders) * 100).toFixed(1)
+    : 0
+
+  const avgRating = dashboardData.ratings.length
+    ? (dashboardData.ratings.reduce((a, b) => a + b.rating, 0) / dashboardData.ratings.length).toFixed(1)
+    : 0
+
+  const stats = [
+    { title: "Products", value: dashboardData.totalProducts, icon: ShoppingBasketIcon },
+    { title: "Earnings", value: currency + dashboardData.totalEarnings + ` (${earningsPercent}%)`, icon: CircleDollarSignIcon },
+    { title: "Orders", value: dashboardData.totalOrders + ` (${productsSoldPercent}%)`, icon: TagsIcon },
+    { title: "Avg Rating", value: avgRating + " ⭐", icon: StarIcon },
+    { title: "Canceled", value: totalCanceledOrders + ` (${canceledPercent}%)`, icon: XCircleIcon },
+  ]
+
   /* -------------------- CHART DATA -------------------- */
   const earningsData = useMemo(
     () => dashboardData.earningsChart.map(i => ({ name: i.name, value: i.value || 0 })),
@@ -115,7 +118,8 @@ export default function Dashboard() {
     const map = {}
     dashboardData.orders.forEach(o => {
       if (o.status === 'CANCELLED') {
-        const m = new Date(o.createdAt).toLocaleString('default', { month: 'short' })
+        const d = new Date(o.createdAt)
+        const m = d.toLocaleString('default', { month: 'short' })
         map[m] = (map[m] || 0) + 1
       }
     })
@@ -126,13 +130,8 @@ export default function Dashboard() {
 
   return (
     <div className="max-w-7xl mx-auto pb-28 px-4 lg:px-6 space-y-10">
-
       {/* Header */}
-      <motion.div 
-        initial={{ opacity: 0, y: -20 }} 
-        animate={{ opacity: 1, y: 0 }} 
-        transition={{ duration: 0.5 }}
-      >
+      <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
         <h1 className="text-3xl font-bold text-slate-900">Dashboard</h1>
         <p className="text-sm text-slate-500 mt-1">
           Monitor your business performance with analytics and insights
@@ -140,23 +139,17 @@ export default function Dashboard() {
       </motion.div>
 
       {/* Stats */}
-      <motion.div 
+      <motion.div
         className="grid grid-cols-2 lg:grid-cols-5 gap-6"
         initial="hidden"
         animate="visible"
-        variants={{
-          hidden: {},
-          visible: { transition: { staggerChildren: 0.1 } }
-        }}
+        variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.1 } } }}
       >
         {stats.map((item, i) => (
-          <motion.div 
-            key={i} 
+          <motion.div
+            key={i}
             className="bg-white border rounded-2xl p-5 shadow-md hover:shadow-xl transition-shadow cursor-pointer"
-            variants={{
-              hidden: { opacity: 0, y: 20 },
-              visible: { opacity: 1, y: 0 }
-            }}
+            variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
             whileHover={{ scale: 1.03 }}
           >
             <div className="flex justify-between items-center">
@@ -183,12 +176,8 @@ export default function Dashboard() {
       />
 
       {/* Insights */}
-      <motion.div 
-        className="bg-white border rounded-2xl p-6 shadow-md hover:shadow-lg transition-shadow"
-        initial={{ opacity: 0, x: -30 }} 
-        animate={{ opacity: 1, x: 0 }} 
-        transition={{ duration: 0.5 }}
-      >
+      <motion.div className="bg-white border rounded-2xl p-6 shadow-md hover:shadow-lg transition-shadow"
+        initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}>
         <div className="flex items-center gap-2 mb-2">
           <TrendingUpIcon className="w-5 h-5 text-green-600" />
           <h3 className="text-sm font-semibold">Insights</h3>
@@ -203,31 +192,15 @@ export default function Dashboard() {
       {/* Reviews */}
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold">Recent Reviews</h2>
-        <span className="text-sm text-slate-500">
-          {dashboardData.ratings.length} total
-        </span>
+        <span className="text-sm text-slate-500">{dashboardData.ratings.length} total</span>
       </div>
 
-      <motion.div 
-        className="space-y-5 max-w-4xl"
-        initial="hidden"
-        animate="visible"
-        variants={{
-          hidden: {},
-          visible: { transition: { staggerChildren: 0.1 } }
-        }}
-      >
+      <motion.div className="space-y-5 max-w-4xl" initial="hidden" animate="visible"
+        variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.1 } } }}>
         {dashboardData.ratings.map((review, index) => (
-          <motion.div
-            key={index}
-            className="bg-white border rounded-2xl p-5 shadow-md hover:shadow-lg transition-shadow"
-            variants={{
-              hidden: { opacity: 0, y: 20 },
-              visible: { opacity: 1, y: 0 }
-            }}
-          >
+          <motion.div key={index} className="bg-white border rounded-2xl p-5 shadow-md hover:shadow-lg transition-shadow"
+            variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}>
             <div className="flex justify-between gap-6">
-
               {/* LEFT */}
               <div className="flex gap-4">
                 {review.user?.image ? (
@@ -245,9 +218,7 @@ export default function Dashboard() {
                 )}
                 <div>
                   <p className="text-sm font-semibold">{review.user.name}</p>
-                  <p className="text-xs text-slate-400">
-                    {new Date(review.createdAt).toDateString()}
-                  </p>
+                  <p className="text-xs text-slate-400">{new Date(review.createdAt).toDateString()}</p>
                   <p className="text-sm text-slate-600 mt-2">{review.review}</p>
                   {review.reply && <p className="text-xs text-green-600 mt-1">Reply: {review.reply}</p>}
                 </div>
@@ -274,7 +245,6 @@ export default function Dashboard() {
                   View product
                 </button>
               </div>
-
             </div>
           </motion.div>
         ))}
