@@ -48,7 +48,7 @@ const Footer = () => {
           {/* Brand */}
           <div className="lg:col-span-4 space-y-6">
             <Link href="/" className="text-3xl font-black tracking-tighter group">
-              GLOBAL<span className="text-cyan-400 group-hover:text-emerald-400 transition-colors">MART</span>
+              She<span className="text-cyan-400 group-hover:text-emerald-400 transition-colors">Kart</span>
               <span className="text-emerald-400">.</span>
             </Link>
 
@@ -111,7 +111,7 @@ const Footer = () => {
                   </div>
                   <div>
                     <p className="text-[10px] uppercase text-white/30 font-bold">Email Us</p>
-                    <p className="text-sm text-white/80">hello@globalmart.com</p>
+                    <p className="text-sm text-white/80">hello@shekart.com</p>
                   </div>
                 </div>
 
