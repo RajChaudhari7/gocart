@@ -143,7 +143,7 @@ const Footer = () => {
         {/* BOTTOM BAR */}
         <div className="mt-16 pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-xs text-white/30 font-mono">
-            &copy; {currentYear} GLOBAL MART CO. ALL RIGHTS RESERVED.
+            &copy; {currentYear}  SheKart CO. ALL RIGHTS RESERVED.
           </p>
 
           <div className="flex gap-6">

@@ -42,7 +42,10 @@ const Navbar = () => {
   const router = useRouter()
   const pathname = usePathname()
 
-  const cartCount = useSelector((state) => state.cart.total)
+  // 🔥 SAFER CART COUNT (FIX BADGE)
+  const cartCount = useSelector(
+    (state) => state.cart?.total || state.cart?.items?.length || 0
+  )
 
   const prevCartCount = useRef(cartCount)
   const [pulse, setPulse] = useState(false)
@@ -89,7 +92,8 @@ const Navbar = () => {
       {/* ================= MOBILE TOP NAV ================= */}
       <nav
         className="sm:hidden fixed top-0 inset-x-0 z-50
-        bg-black/70 backdrop-blur-xl border-b border-white/10 m-0"
+        bg-black/70 backdrop-blur-2xl border-b border-white/10
+        shadow-[0_8px_30px_rgba(0,255,255,0.2)]"
       >
         <div className="flex items-center justify-between px-4 py-3">
 
@@ -116,7 +120,8 @@ const Navbar = () => {
             <button
               onClick={openSignIn}
               className="text-sm px-3 py-1.5 rounded-full
-              bg-gradient-to-r from-cyan-400 to-emerald-400 text-black"
+              bg-gradient-to-r from-cyan-400 to-emerald-400 text-black
+              shadow-[0_0_15px_rgba(34,211,238,0.8)]"
             >
               Login
             </button>
@@ -129,17 +134,19 @@ const Navbar = () => {
       {/* ================= DESKTOP NAV ================= */}
       <nav
         className="hidden sm:block fixed top-0 inset-x-0 z-50
-        backdrop-blur-xl bg-black/60 border-b border-white/10 m-0"
+        backdrop-blur-2xl bg-black/60 border-b border-white/10
+        shadow-[0_10px_40px_rgba(0,255,255,0.15)]"
       >
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
 
           <Link href="/" className="relative text-2xl font-semibold text-white">
-            <span className="text-cyan-400">Global</span>Mart
+            <span className="text-cyan-400">She</span>Kart
             <span className="text-cyan-400">.</span>
             <Protect plan="prime">
               <span
                 className="absolute -top-2 -right-10 text-xs px-2 py-0.5
-                bg-gradient-to-r from-cyan-400 to-emerald-400 text-black rounded-full"
+                bg-gradient-to-r from-cyan-400 to-emerald-400 text-black rounded-full
+                shadow-[0_0_15px_rgba(34,211,238,0.9)]"
               >
                 prime
               </span>
@@ -152,17 +159,19 @@ const Navbar = () => {
                 key={link.href}
                 href={link.href}
                 className={`relative px-2 py-1 transition
+                hover:-translate-y-[1px]
+                hover:drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]
                 ${isActive(link.href)
-                    ? 'text-cyan-400'
-                    : 'hover:text-cyan-400'
-                  }`}
+                  ? 'text-cyan-400'
+                  : 'hover:text-cyan-400'
+                }`}
               >
                 {link.name}
                 {isActive(link.href) && (
                   <motion.span
                     layoutId="nav-underline"
                     className="absolute -bottom-1 left-0 w-full h-[2px]
-                    bg-cyan-400 rounded"
+                    bg-cyan-400 rounded shadow-[0_0_10px_rgba(34,211,238,1)]"
                   />
                 )}
               </Link>
@@ -171,7 +180,8 @@ const Navbar = () => {
             <form
               onSubmit={handleSearch}
               className="hidden xl:flex items-center gap-2
-              bg-white/10 px-4 py-2 rounded-full"
+              bg-white/10 px-4 py-2 rounded-full
+              shadow-[inset_0_0_10px_rgba(255,255,255,0.05)]"
             >
               <Search size={16} />
               <input
@@ -187,7 +197,8 @@ const Navbar = () => {
               <motion.div
                 variants={cartPulse}
                 animate={pulse ? 'active' : 'idle'}
-                className="flex items-center gap-1"
+                className="flex items-center gap-1
+                hover:drop-shadow-[0_0_12px_rgba(34,211,238,0.8)]"
               >
                 <ShoppingCart size={18} />
                 Cart
@@ -200,8 +211,9 @@ const Navbar = () => {
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     exit={{ scale: 0 }}
-                    className="absolute -top-2 -right-3 text-xs px-1.5 rounded-full
-                    bg-gradient-to-r from-cyan-400 to-emerald-400 text-black"
+                    className="absolute -top-3 -right-4 text-xs px-2 py-0.5 rounded-full
+                    bg-gradient-to-r from-cyan-400 to-emerald-400 text-black
+                    shadow-[0_0_15px_rgba(34,211,238,0.9)] font-bold"
                   >
                     {cartCount}
                   </motion.span>
@@ -214,7 +226,8 @@ const Navbar = () => {
                 onClick={openSignIn}
                 className="px-5 py-2 rounded-full
                 bg-gradient-to-r from-cyan-400 to-emerald-400
-                text-black font-medium"
+                text-black font-medium
+                shadow-[0_0_20px_rgba(34,211,238,0.9)]"
               >
                 Login
               </button>
@@ -228,7 +241,8 @@ const Navbar = () => {
       {/* ================= MOBILE BOTTOM NAV ================= */}
       <div
         className="sm:hidden fixed bottom-0 inset-x-0 z-50
-        bg-black/70 backdrop-blur-xl border-t border-white/10"
+        bg-black/70 backdrop-blur-2xl border-t border-white/10
+        shadow-[0_-8px_30px_rgba(0,255,255,0.2)]"
       >
         <div className="flex justify-around py-2 text-xs">
           {mobileLinks.map((link) => (
@@ -237,9 +251,9 @@ const Navbar = () => {
               href={link.href}
               className={`relative flex flex-col items-center gap-1
               ${isActive(link.href)
-                  ? 'text-cyan-400'
-                  : 'text-white/70'
-                }`}
+                ? 'text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,1)]'
+                : 'text-white/70'
+              }`}
             >
               {link.icon}
               {link.label}
@@ -248,13 +262,77 @@ const Navbar = () => {
 
           <button
             onClick={() => setMenuOpen(true)}
-            className="flex flex-col items-center gap-1 text-white/70"
+            className="flex flex-col items-center gap-1 text-white/70
+            hover:text-cyan-400"
           >
             <Menu size={18} />
             Menu
           </button>
         </div>
       </div>
+
+      {/* ================= MOBILE DRAWER MENU ================= */}
+      <AnimatePresence>
+        {menuOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setMenuOpen(false)}
+              className="fixed inset-0 bg-black/60 z-[60]"
+            />
+
+            {/* Drawer */}
+            <motion.div
+              variants={drawerVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              className="fixed top-0 right-0 h-full w-72
+              bg-black/90 backdrop-blur-2xl z-[70]
+              border-l border-white/10
+              shadow-[-10px_0_40px_rgba(0,255,255,0.2)]
+              p-6"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-lg font-semibold text-white">
+                  Menu
+                </h2>
+                <button onClick={() => setMenuOpen(false)}>
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="flex flex-col gap-4 text-white/80">
+                {desktopLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setMenuOpen(false)}
+                    className="py-2 px-3 rounded-lg
+                    hover:bg-white/10 hover:text-cyan-400
+                    hover:shadow-[0_0_15px_rgba(34,211,238,0.4)]
+                    transition"
+                  >
+                    {link.name}
+                  </Link>
+                ))}
+
+                <Link
+                  href="/cart"
+                  onClick={() => setMenuOpen(false)}
+                  className="py-2 px-3 rounded-lg
+                  hover:bg-white/10 hover:text-cyan-400 transition"
+                >
+                  Cart ({cartCount})
+                </Link>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </>
   )
 }

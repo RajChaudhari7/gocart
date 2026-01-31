@@ -10,8 +10,8 @@ const outfit = Outfit({
 })
 
 export const metadata = {
-  title: "GlobalMart. - Shop smarter",
-  description: "GlobalMart. - Shop smarter",
+  title: "SheKart. - Shop smarter",
+  description: "SheKart. - Shop smarter",
 }
 
 export default function RootLayout({ children }) {
