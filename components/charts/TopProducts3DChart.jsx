@@ -164,15 +164,16 @@ export default function TopProducts3DPieChart({ data }) {
                 {slices.map((item, i) => (
                     <div key={i} className="flex items-center gap-3">
                         <span
-                            className="w-3 h-3 rounded-full"
+                            className="w-3 h-3 rounded-full shrink-0"
                             style={{ backgroundColor: item.color }}
                         />
-                        <span className="text-sm text-slate-200 truncate">
+                        <span className="text-sm text-slate-700 truncate">
                             {item.name}
                         </span>
                     </div>
                 ))}
             </div>
+
 
             {/* -------- PIE -------- */}
             <div className="w-full h-[360px] sm:h-[420px] rounded-xl overflow-hidden">
