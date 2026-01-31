@@ -98,7 +98,7 @@ const Navbar = () => {
         <div className="flex items-center justify-between px-4 py-3">
 
           <Link href="/" className="text-lg font-semibold text-white">
-            <span className="text-cyan-400">Global</span>Mart
+            <span className="text-cyan-400">She</span>Kart
             <span className="text-cyan-400">.</span>
           </Link>
 

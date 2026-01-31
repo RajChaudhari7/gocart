@@ -7,7 +7,7 @@ import { useSearchParams } from 'next/navigation'
 import { useSelector } from 'react-redux'
 import { motion, AnimatePresence } from 'framer-motion'
 
-/* ✅ ALL DEFAULT CATEGORIES (FROM YOUR IMAGE) */
+/* ✅ ALL DEFAULT CATEGORIES */
 const DEFAULT_CATEGORIES = [
   'Electronics',
   'Clothing',
@@ -24,7 +24,6 @@ function ShopContent() {
   const searchParams = useSearchParams()
   const search = searchParams.get('search')
 
-  // Products from Redux
   const products = useSelector((state) => state.product.list || [])
 
   /* 🔥 Dynamic highest price */
@@ -39,7 +38,6 @@ function ShopContent() {
   const [maxPrice, setMaxPrice] = useState(0)
   const [showMobileFilter, setShowMobileFilter] = useState(false)
 
-  /* 🔥 Sync slider with real max price */
   useEffect(() => {
     setMaxPrice(highestPrice)
   }, [highestPrice])
@@ -65,7 +63,7 @@ function ShopContent() {
       })
   }, [products, search, category, maxPrice, sort])
 
-  /* ✅ BUILD CATEGORIES (DEFAULT + CUSTOM FROM DB) */
+  /* ✅ BUILD CATEGORIES */
   const allCategories = useMemo(() => {
     const productCategories = products
       .map(p => p.category)
@@ -82,29 +80,46 @@ function ShopContent() {
 
   return (
     <section className="min-h-screen bg-[#020617] text-white">
-      {/* Header */}
-      <div className="relative h-[25vh] flex items-center justify-center overflow-hidden border-b border-white/5">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-cyan-900/10 via-transparent to-transparent" />
+
+      {/* ================= HEADER ================= */}
+      <div className="relative h-[28vh] pt-24 flex items-center justify-center overflow-hidden border-b border-white/5">
+        
+        {/* Glow background */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-cyan-900/20 via-transparent to-transparent" />
+
         <div className="relative z-10 text-center">
           <motion.h1
-            initial={{ opacity: 0, y: 15 }}
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-4xl md:text-6xl font-black tracking-tighter mb-2"
+            transition={{ duration: 0.6 }}
+            className="text-4xl md:text-6xl font-black tracking-tighter mb-3
+            drop-shadow-[0_10px_40px_rgba(34,211,238,0.6)]"
           >
             THE{' '}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-emerald-400">
+            <span
+              className="text-transparent bg-clip-text bg-gradient-to-r
+              from-cyan-400 to-emerald-400
+              drop-shadow-[0_0_30px_rgba(34,211,238,1)]"
+            >
               COLLECTION
             </span>
           </motion.h1>
-          <p className="text-white/40 text-[10px] tracking-[0.4em] uppercase">
+
+          {/* Floating subtitle */}
+          <motion.p
+            animate={{ y: [0, -6, 0] }}
+            transition={{ repeat: Infinity, duration: 4, ease: 'easeInOut' }}
+            className="text-white/40 text-[10px] tracking-[0.4em] uppercase"
+          >
             Premium Marketplace
-          </p>
+          </motion.p>
         </div>
       </div>
 
-      <div className="max-w-[1600px] mx-auto px-6 py-12">
-        <div className="flex flex-col lg:flex-row gap-12">
-          {/* SIDEBAR */}
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-10">
+        <div className="flex flex-col lg:flex-row gap-10">
+
+          {/* ================= SIDEBAR ================= */}
           <aside className="hidden lg:block w-64 space-y-10 sticky top-32 h-fit">
             <div>
               <h3 className="text-[10px] font-bold tracking-widest text-white/30 uppercase mb-6">
@@ -149,9 +164,9 @@ function ShopContent() {
             </div>
           </aside>
 
-          {/* PRODUCT GRID */}
+          {/* ================= PRODUCT GRID ================= */}
           <div className="flex-1">
-            <div className="flex justify-between items-center mb-8 pb-4 border-b border-white/5">
+            <div className="flex justify-between items-center mb-6 pb-4 border-b border-white/5">
               <p className="text-xs text-white/40 uppercase tracking-widest">
                 {filteredProducts.length} Products Found
               </p>
@@ -180,10 +195,17 @@ function ShopContent() {
               </div>
             </div>
 
+            {/* 🔥 GRID: 2 on mobile, 3 on tablet, 4 on desktop */}
             <AnimatePresence mode="popLayout">
               <motion.div
                 layout
-                className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6"
+                className="
+                  grid
+                  grid-cols-2
+                  md:grid-cols-3
+                  xl:grid-cols-4
+                  gap-4 sm:gap-6
+                "
               >
                 {filteredProducts.map((product) => (
                   <ProductCard key={product.id} product={product} />
@@ -194,7 +216,7 @@ function ShopContent() {
         </div>
       </div>
 
-      {/* MOBILE FILTER DRAWER */}
+      {/* ================= MOBILE FILTER DRAWER ================= */}
       <AnimatePresence>
         {showMobileFilter && (
           <>
@@ -240,7 +262,6 @@ function ShopContent() {
                   </div>
                 </div>
 
-                {/* MOBILE PRICE */}
                 <div>
                   <h3 className="text-[10px] font-bold text-white/30 uppercase mb-4">
                     Max Price: ₹{maxPrice}
