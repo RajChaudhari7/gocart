@@ -139,18 +139,7 @@ export default function AdminDashboard() {
                                 <th className="py-2 px-4 text-sm font-medium">Status</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            {dashboardData.allOrders.map(order => (
-                                <tr key={order.id} className="border-b hover:bg-gray-50 transition-colors">
-                                    <td className="py-2 px-4">{order.id}</td>
-                                    <td className="py-2 px-4">{order.customerName}</td>
-                                    <td className="py-2 px-4">{currency}{order.amount}</td>
-                                    <td className={`py-2 px-4 font-semibold ${order.status === 'CANCELED' ? 'text-red-600' : 'text-green-600'}`}>
-                                        {order.status}
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
+                        
                     </table>
                 </div>
             </motion.div>
