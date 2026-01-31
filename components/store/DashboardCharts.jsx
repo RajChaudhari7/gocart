@@ -24,7 +24,10 @@ export default function DashboardCharts({
   /* ---------------- TOP PRODUCTS SAFE MAP ---------------- */
   const topProducts3D = Array.isArray(topProducts)
     ? topProducts.map(p => ({
-        name: p.name?.length > 14 ? p.name.slice(0, 14) + "…" : p.name || "Unknown",
+        name:
+          p.name?.length > 14
+            ? p.name.slice(0, 14) + "…"
+            : p.name || "Unknown",
         sold: Number(
           p.totalSold ??
           p.sold ??
@@ -43,7 +46,7 @@ export default function DashboardCharts({
       {/* ---------------- 2D CHARTS ---------------- */}
       <div className="grid lg:grid-cols-3 gap-6">
 
-        {/* ================= EARNINGS (LINE / 3D FEEL) ================= */}
+        {/* ================= EARNINGS ================= */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -53,58 +56,36 @@ export default function DashboardCharts({
             Monthly Earnings
           </h3>
 
-          <ResponsiveContainer width="100%" height={240}>
-            <LineChart data={earningsData}>
-              <defs>
-                {/* Gradient for 3D depth */}
-                <linearGradient id="earningsLine" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#22c55e" stopOpacity={0.8} />
-                  <stop offset="100%" stopColor="#22c55e" stopOpacity={0.05} />
-                </linearGradient>
-              </defs>
+          {/* 🔑 FIXED HEIGHT WRAPPER */}
+          <div className="h-[240px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={earningsData}>
+                <defs>
+                  <linearGradient id="earningsLine" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#22c55e" stopOpacity={0.8} />
+                    <stop offset="100%" stopColor="#22c55e" stopOpacity={0.05} />
+                  </linearGradient>
+                </defs>
 
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
 
-              {/* Shadow line (depth illusion) */}
-              <Line
-                type="monotone"
-                dataKey="value"
-                stroke="#166534"
-                strokeWidth={6}
-                dot={false}
-                opacity={0.15}
-              />
-
-              {/* Main animated line */}
-              <Line
-                type="monotone"
-                dataKey="value"
-                stroke="#22c55e"
-                strokeWidth={3}
-                fill="url(#earningsLine)"
-                animationDuration={1400}
-                animationEasing="ease-out"
-                dot={{
-                  r: 4,
-                  fill: "#22c55e",
-                  strokeWidth: 2,
-                  stroke: "#ffffff"
-                }}
-                activeDot={{
-                  r: 7,
-                  fill: "#22c55e",
-                  stroke: "#ffffff",
-                  strokeWidth: 3
-                }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
+                <Line
+                  type="monotone"
+                  dataKey="value"
+                  stroke="#22c55e"
+                  strokeWidth={3}
+                  fill="url(#earningsLine)"
+                  dot={{ r: 4 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         </motion.div>
 
-        {/* ================= ORDERS (BAR) ================= */}
+        {/* ================= ORDERS ================= */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -115,23 +96,24 @@ export default function DashboardCharts({
             Monthly Orders
           </h3>
 
-          <ResponsiveContainer width="100%" height={240}>
-            <BarChart data={ordersData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Bar
-                dataKey="value"
-                fill="#3b82f6"
-                radius={[8, 8, 0, 0]}
-                animationDuration={1200}
-              />
-            </BarChart>
-          </ResponsiveContainer>
+          <div className="h-[240px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={ordersData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Bar
+                  dataKey="value"
+                  fill="#3b82f6"
+                  radius={[8, 8, 0, 0]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </motion.div>
 
-        {/* ================= CANCELED (BAR) ================= */}
+        {/* ================= CANCELED ================= */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -142,25 +124,26 @@ export default function DashboardCharts({
             Canceled Orders
           </h3>
 
-          <ResponsiveContainer width="100%" height={240}>
-            <BarChart data={canceledOrdersData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Bar
-                dataKey="value"
-                fill="#ef4444"
-                radius={[8, 8, 0, 0]}
-                animationDuration={1200}
-              />
-            </BarChart>
-          </ResponsiveContainer>
+          <div className="h-[240px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={canceledOrdersData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Bar
+                  dataKey="value"
+                  fill="#ef4444"
+                  radius={[8, 8, 0, 0]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </motion.div>
 
       </div>
 
-      {/* ---------------- 3D TOP PRODUCTS (UNCHANGED) ---------------- */}
+      {/* ---------------- 3D TOP PRODUCTS ---------------- */}
       <motion.div
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
