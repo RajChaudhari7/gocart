@@ -5,7 +5,7 @@ import { OrbitControls, Text, Billboard } from "@react-three/drei"
 import { useMemo, useState, useRef } from "react"
 import * as THREE from "three"
 
-/* 🎨 PROFESSIONAL COLOR PALETTE */
+/* 🎨 COLORS */
 const COLORS = [
     "#4f46e5",
     "#16a34a",
@@ -31,15 +31,13 @@ function PieSlice({
     const shape = useMemo(() => {
         const s = new THREE.Shape()
         s.moveTo(0, 0)
-        s.absarc(0, 0, radius, startAngle, startAngle + angle, false)
+        s.absarc(0, 0, radius, startAngle, startAngle + angle)
         s.lineTo(0, 0)
         return s
     }, [startAngle, angle, radius])
 
     const midAngle = startAngle + angle / 2
     const popOut = hovered ? 0.25 : 0
-
-    const labelRadius = radius + 0.7
     const fontSize = isMobile ? 0.22 : 0.28
 
     return (
@@ -50,24 +48,17 @@ function PieSlice({
                 0,
             ]}
         >
-            {/* SLICE */}
             <mesh
                 castShadow
                 onPointerEnter={() => setHovered(true)}
                 onPointerLeave={() => setHovered(false)}
             >
                 <extrudeGeometry
-                    args={[
-                        shape,
-                        {
-                            depth: thickness,
-                            bevelEnabled: false,
-                        },
-                    ]}
+                    args={[shape, { depth: thickness, bevelEnabled: false }]}
                 />
                 <meshStandardMaterial
                     color={color}
-                    emissive={hovered ? color : "#000000"}
+                    emissive={hovered ? color : "#000"}
                     emissiveIntensity={hovered ? 0.5 : 0}
                 />
             </mesh>
@@ -76,23 +67,19 @@ function PieSlice({
             <Billboard>
                 <Text
                     position={[
-                        Math.cos(midAngle) * labelRadius,
-                        Math.sin(midAngle) * labelRadius,
+                        Math.cos(midAngle) * (radius + 0.7),
+                        Math.sin(midAngle) * (radius + 0.7),
                         thickness + 0.1,
                     ]}
                     fontSize={fontSize}
-                    color="#111827"
-                    anchorX="center"
-                    anchorY="middle"
                     outlineWidth={0.02}
-                    outlineColor="#ffffff"
-                    depthTest={false}
+                    outlineColor="#fff"
                 >
                     {label}
                 </Text>
             </Billboard>
 
-            {/* VALUE ON HOVER */}
+            {/* VALUE */}
             {hovered && (
                 <Billboard>
                     <Text
@@ -102,10 +89,8 @@ function PieSlice({
                             thickness + 0.35,
                         ]}
                         fontSize={fontSize + 0.05}
-                        color="#000000"
                         outlineWidth={0.02}
-                        outlineColor="#ffffff"
-                        depthTest={false}
+                        outlineColor="#fff"
                     >
                         {value}
                     </Text>
@@ -115,51 +100,68 @@ function PieSlice({
     )
 }
 
-/* -------------------- MAIN PIE CHART -------------------- */
-export default function TopProducts3DPieChart({ data }) {
-    const isMobile =
-        typeof window !== "undefined" && window.innerWidth < 640
-
+/* -------------------- ROTATING PIE GROUP -------------------- */
+function RotatingPie({ slices, isMobile }) {
     const pieRef = useRef()
-    const [isInteracting, setIsInteracting] = useState(false)
+    const [paused, setPaused] = useState(false)
 
-    /* 🔄 AUTO ROTATION */
     useFrame(() => {
-        if (!isInteracting && pieRef.current) {
+        if (!paused && pieRef.current) {
             pieRef.current.rotation.z += 0.003
         }
     })
 
-    const processedData = useMemo(() => {
+    return (
+        <group
+            ref={pieRef}
+            rotation={[-Math.PI / 2, 0, 0]}
+            onPointerEnter={() => setPaused(true)}
+            onPointerLeave={() => setPaused(false)}
+        >
+            {slices.map((slice, i) => (
+                <PieSlice
+                    key={i}
+                    {...slice}
+                    radius={2.4}
+                    thickness={0.6}
+                    isMobile={isMobile}
+                />
+            ))}
+        </group>
+    )
+}
+
+/* -------------------- MAIN COMPONENT -------------------- */
+export default function TopProducts3DPieChart({ data }) {
+    const isMobile =
+        typeof window !== "undefined" && window.innerWidth < 640
+
+    const slices = useMemo(() => {
         if (!Array.isArray(data) || data.length === 0) return []
 
-        const total = data.reduce(
-            (sum, d) => sum + Number(d.sold || 0),
-            0
-        )
-
-        let currentAngle = 0
+        const total = data.reduce((s, d) => s + Number(d.sold || 0), 0)
+        let angleAcc = 0
 
         return data.map((item, i) => {
-            const value = Number(item.sold) || 0
+            const value = Number(item.sold || 0)
             const angle = (value / total) * Math.PI * 2
 
             const slice = {
                 label: `${item.name} (${value})`,
                 value,
-                startAngle: currentAngle,
+                startAngle: angleAcc,
                 angle,
                 color: COLORS[i % COLORS.length],
             }
 
-            currentAngle += angle
+            angleAcc += angle
             return slice
         })
     }, [data])
 
-    if (processedData.length === 0) {
+    if (!slices.length) {
         return (
-            <div className="h-[320px] flex items-center justify-center text-sm text-slate-500">
+            <div className="h-[320px] flex items-center justify-center text-slate-500">
                 No product data available
             </div>
         )
@@ -167,48 +169,22 @@ export default function TopProducts3DPieChart({ data }) {
 
     return (
         <div className="w-full h-[360px] sm:h-[420px]">
-            <Canvas shadows camera={{ position: [0, 0, 8], fov: 45 }}>
-                {/* LIGHTS */}
+            <Canvas camera={{ position: [0, 0, 8], fov: 45 }} shadows>
                 <ambientLight intensity={0.7} />
-                <directionalLight
-                    position={[6, 8, 6]}
-                    intensity={1.2}
-                    castShadow
-                />
+                <directionalLight position={[6, 8, 6]} intensity={1.2} />
 
-                {/* 🔄 ROTATING PIE */}
-                <group
-                    ref={pieRef}
-                    rotation={[-Math.PI / 2, 0, 0]}
-                    onPointerEnter={() => setIsInteracting(true)}
-                    onPointerLeave={() => setIsInteracting(false)}
-                >
-                    {processedData.map((slice, i) => (
-                        <PieSlice
-                            key={i}
-                            {...slice}
-                            radius={2.4}
-                            thickness={0.6}
-                            isMobile={isMobile}
-                        />
-                    ))}
-                </group>
+                <RotatingPie slices={slices} isMobile={isMobile} />
 
-                {/* FLOOR */}
                 <mesh
-                    receiveShadow
                     rotation={[-Math.PI / 2, 0, 0]}
                     position={[0, 0, -0.7]}
+                    receiveShadow
                 >
                     <planeGeometry args={[20, 20]} />
                     <shadowMaterial opacity={0.25} />
                 </mesh>
 
-                {/* CONTROLS */}
-                <OrbitControls
-                    enableZoom={false}
-                    maxPolarAngle={Math.PI / 2}
-                />
+                <OrbitControls enableZoom={false} />
             </Canvas>
         </div>
     )
