@@ -26,13 +26,11 @@ export default function StoreManageProducts() {
                 headers: { Authorization: `Bearer ${token}` }
             })
 
-            const sorted = data.products.sort((a, b) => {
+            const sorted = [...data.products].sort((a, b) => {
                 if (a.quantity > 0 && b.quantity === 0) return -1
                 if (a.quantity === 0 && b.quantity > 0) return 1
-
                 if (a.quantity < LOW_STOCK_LIMIT && b.quantity >= LOW_STOCK_LIMIT) return -1
                 if (a.quantity >= LOW_STOCK_LIMIT && b.quantity < LOW_STOCK_LIMIT) return 1
-
                 return new Date(b.createdAt) - new Date(a.createdAt)
             })
 
@@ -74,11 +72,10 @@ export default function StoreManageProducts() {
                     p.id === product.id
                         ? {
                             ...p,
-                            price: product.editPrice,
-                            quantity: product.editQuantity,
-                            originalPrice: product.editPrice,
-                            originalQuantity: product.editQuantity,
-                            inStock: product.editQuantity > 0,
+                            price: Number(product.editPrice),
+                            quantity: Number(product.editQuantity),
+                            originalPrice: Number(product.editPrice),
+                            originalQuantity: Number(product.editQuantity),
                             isEditing: false
                         }
                         : p
@@ -116,12 +113,9 @@ export default function StoreManageProducts() {
     }
 
     const getStockBadge = (qty) => {
-        if (qty === 0) {
-            return <span className="text-red-600 font-semibold">Out of Stock</span>
-        }
-        if (qty < LOW_STOCK_LIMIT) {
+        if (qty === 0) return <span className="text-red-600 font-semibold">Out of Stock</span>
+        if (qty < LOW_STOCK_LIMIT)
             return <span className="text-yellow-600 font-semibold">Low Stock ({qty})</span>
-        }
         return <span className="text-green-600 font-semibold">In Stock</span>
     }
 
@@ -154,7 +148,9 @@ export default function StoreManageProducts() {
                         <tr
                             key={product.id}
                             className={`border-t ${
-                                product.quantity === 0 ? 'bg-red-50 opacity-80' : 'hover:bg-gray-50'
+                                product.quantity === 0
+                                    ? 'bg-red-50 opacity-90'
+                                    : 'hover:bg-gray-50'
                             }`}
                         >
                             <td className="px-4 py-3 flex gap-2 items-center">
@@ -175,8 +171,8 @@ export default function StoreManageProducts() {
                             <td className="px-4 py-3">
                                 <input
                                     type="number"
-                                    disabled={!product.isEditing}
                                     value={product.editPrice}
+                                    disabled={!product.isEditing}
                                     onChange={e =>
                                         setProducts(prev =>
                                             prev.map(p =>
@@ -193,8 +189,8 @@ export default function StoreManageProducts() {
                             <td className="px-4 py-3">
                                 <input
                                     type="number"
-                                    disabled={!product.isEditing}
                                     value={product.editQuantity}
+                                    disabled={!product.isEditing}
                                     onChange={e =>
                                         setProducts(prev =>
                                             prev.map(p =>
@@ -216,17 +212,16 @@ export default function StoreManageProducts() {
                                 {!product.isEditing ? (
                                     <>
                                         <button
-                                            disabled={product.quantity === 0}
-                                            onClick={() => setProducts(prev =>
-                                                prev.map(p =>
-                                                    p.id === product.id ? { ...p, isEditing: true } : p
+                                            onClick={() =>
+                                                setProducts(prev =>
+                                                    prev.map(p =>
+                                                        p.id === product.id
+                                                            ? { ...p, isEditing: true }
+                                                            : p
+                                                    )
                                                 )
-                                            )}
-                                            className={`px-4 py-2 rounded text-white ${
-                                                product.quantity === 0
-                                                    ? 'bg-gray-400 cursor-not-allowed'
-                                                    : 'bg-blue-600 hover:bg-blue-700'
-                                            }`}
+                                            }
+                                            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
                                         >
                                             Edit
                                         </button>
