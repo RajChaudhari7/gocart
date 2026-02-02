@@ -17,7 +17,6 @@ const LOW_STOCK_LIMIT = 10
 const ProductCard = ({ product }) => {
   const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '₹'
 
-  // ✅ Safe images
   const images = Array.isArray(product.images)
     ? product.images.filter(Boolean)
     : []
@@ -30,7 +29,6 @@ const ProductCard = ({ product }) => {
     setIndex(0)
   }, [product.id])
 
-  // ================= RATING =================
   const rating =
     product.rating?.length > 0
       ? Math.floor(
@@ -40,8 +38,6 @@ const ProductCard = ({ product }) => {
       : 0
 
   const hasMultiple = images.length > 1
-
-  // ================= STOCK =================
   const stockValue = Number(product.quantity || 0)
   const isOutOfStock = stockValue <= 0
   const isLowStock = stockValue > 0 && stockValue < LOW_STOCK_LIMIT
@@ -78,21 +74,26 @@ const ProductCard = ({ product }) => {
   const currentImage =
     images[index] || images[0] || '/placeholder.png'
 
-  // ================= 3D HOVER =================
+  // ================= 3D HOVER & FLOAT =================
   const handleMouseMove = (e) => {
     if (!cardRef.current || isOutOfStock) return
     const rect = cardRef.current.getBoundingClientRect()
     const x = e.clientX - rect.left
     const y = e.clientY - rect.top
 
-    const rotateY = ((x / rect.width) - 0.5) * 12
-    const rotateX = -((y / rect.height) - 0.5) * 12
+    const rotateY = ((x / rect.width) - 0.5) * 15
+    const rotateX = -((y / rect.height) - 0.5) * 15
 
     cardRef.current.style.transform = `
       perspective(1200px)
       rotateX(${rotateX}deg)
       rotateY(${rotateY}deg)
-      translateZ(8px)
+      translateZ(20px)
+      scale(1.08)
+    `
+    cardRef.current.style.boxShadow = `
+      0 ${-rotateX*1.5}px ${Math.abs(rotateX*6)+20}px rgba(34,211,238,0.25),
+      0 ${rotateY*1.5}px ${Math.abs(rotateY*6)+20}px rgba(0,0,0,0.25)
     `
   }
 
@@ -102,8 +103,10 @@ const ProductCard = ({ product }) => {
       perspective(1200px)
       rotateX(0deg)
       rotateY(0deg)
-      translateZ(0px)
+      translateZ(20px)
+      scale(1.05)
     `
+    cardRef.current.style.boxShadow = `0 20px 40px rgba(0,0,0,0.25)`
   }
 
   return (
@@ -114,16 +117,25 @@ const ProductCard = ({ product }) => {
       transition={{ duration: 0.6, ease: 'easeOut' }}
       className="group relative"
     >
-      <div
+      <motion.div
         ref={cardRef}
         onMouseMove={handleMouseMove}
         onMouseLeave={resetTilt}
+        animate={{
+          y: [0, -12, 0], // card floating
+        }}
+        transition={{
+          duration: 4,
+          repeat: Infinity,
+          repeatType: 'loop',
+          ease: 'easeInOut',
+        }}
         className={`relative flex flex-col h-full rounded-xl overflow-hidden border transition-all duration-300 will-change-transform
-        ${
-          isOutOfStock
-            ? 'bg-[#0a0a0a] border-red-500/30 opacity-70'
-            : 'bg-[#0a0a0a] border-white/5 hover:border-cyan-400/40 hover:shadow-[0_20px_60px_-20px_rgba(34,211,238,0.35)]'
-        }`}
+        bg-[#0a0a0a] border-white/5`}
+        style={{
+          boxShadow: '0 20px 40px rgba(0,0,0,0.25)',
+          transformStyle: 'preserve-3d'
+        }}
       >
         {/* ===== OUT OF STOCK ===== */}
         {isOutOfStock && (
@@ -145,12 +157,14 @@ const ProductCard = ({ product }) => {
             <motion.div
               key={`${product.id}-${index}`}
               initial={{ opacity: 0, x: 30 }}
-              animate={{ opacity: 1, x: 0 }}
+              animate={{
+                opacity: 1,
+                x: [0, 3, -3, 0],  // image floating independently
+                y: [0, -2, 2, 0],
+              }}
               exit={{ opacity: 0, x: -30 }}
-              transition={{ duration: 0.25 }}
-              className={`relative w-full h-full ${
-                isOutOfStock ? 'grayscale' : ''
-              }`}
+              transition={{ duration: 5, repeat: Infinity, repeatType: 'loop', ease: 'easeInOut' }}
+              className={`relative w-full h-full ${isOutOfStock ? 'grayscale' : ''}`}
             >
               <Image
                 src={currentImage}
@@ -203,13 +217,10 @@ const ProductCard = ({ product }) => {
 
             <div className="flex items-center gap-1">
               <StarIcon size={10} fill="#22d3ee" stroke="none" />
-              <span className="text-[10px] text-white/60">
-                {rating}.0
-              </span>
+              <span className="text-[10px] text-white/60">{rating}.0</span>
             </div>
           </div>
 
-          {/* TITLE */}
           {isOutOfStock ? (
             <h3 className="text-xs font-medium text-white/40 line-clamp-2 mb-1.5">
               {product.name}
@@ -222,7 +233,6 @@ const ProductCard = ({ product }) => {
             </Link>
           )}
 
-          {/* PRICE */}
           <div className="mt-auto flex items-center gap-2">
             <p className={`text-sm font-bold ${isOutOfStock ? 'text-white/40' : 'text-white'}`}>
               {currency}{product.price}
@@ -235,14 +245,13 @@ const ProductCard = ({ product }) => {
             )}
           </div>
 
-          {/* LOW STOCK */}
           {isLowStock && (
             <span className="mt-1 text-[10px] text-yellow-400 font-semibold">
               Only {stockValue} left
             </span>
           )}
         </div>
-      </div>
+      </motion.div>
     </motion.div>
   )
 }
