@@ -63,6 +63,7 @@ function ShopContent() {
       })
   }, [products, search, category, maxPrice, sort])
 
+
   /* ✅ BUILD CATEGORIES */
   const allCategories = useMemo(() => {
     const productCategories = products
@@ -83,7 +84,7 @@ function ShopContent() {
 
       {/* ================= HEADER ================= */}
       <div className="relative h-[28vh] pt-24 flex items-center justify-center overflow-hidden border-b border-white/5">
-        
+
         {/* Glow background */}
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-cyan-900/20 via-transparent to-transparent" />
 
@@ -130,11 +131,10 @@ function ShopContent() {
                   <button
                     key={cat}
                     onClick={() => setCategory(cat)}
-                    className={`text-left text-sm py-1 transition-all ${
-                      category === cat
+                    className={`text-left text-sm py-1 transition-all ${category === cat
                         ? 'text-cyan-400 font-bold translate-x-2'
                         : 'text-white/50 hover:text-white'
-                    }`}
+                      }`}
                   >
                     {cat}
                   </button>
@@ -250,11 +250,10 @@ function ShopContent() {
                       <button
                         key={cat}
                         onClick={() => setCategory(cat)}
-                        className={`px-4 py-2 rounded-full text-xs ${
-                          category === cat
+                        className={`px-4 py-2 rounded-full text-xs ${category === cat
                             ? 'bg-white text-black'
                             : 'bg-white/5 text-white'
-                        }`}
+                          }`}
                       >
                         {cat}
                       </button>

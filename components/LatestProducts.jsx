@@ -13,11 +13,10 @@ const LatestProducts = () => {
 
         <Title
           title="Latest Products"
-          description={`Showing ${
-            products.length < displayQuantity
+          description={`Showing ${products.length < displayQuantity
               ? products.length
               : displayQuantity
-          } of ${products.length} products`}
+            } of ${products.length} products`}
           href="/shop"
           theme="dark"
         />
@@ -27,9 +26,14 @@ const LatestProducts = () => {
             .slice()
             .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
             .slice(0, displayQuantity)
-            .map((product) => (
-              <ProductCard key={product.id} product={product} />
+            .map(product => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                showOutOfStock // 👈 optional prop
+              />
             ))}
+
         </div>
       </div>
     </section>

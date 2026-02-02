@@ -13,23 +13,24 @@ const BestSelling = () => {
 
         <Title
           title="Best Selling"
-          description={`Showing ${
-            products.length < displayQuantity
+          description={`Showing ${products.length < displayQuantity
               ? products.length
               : displayQuantity
-          } of ${products.length} products`}
+            } of ${products.length} products`}
           href="/shop"
           theme="dark"
         />
 
         <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-8">
           {products
+            .filter(p => p.quantity > 0) // 🔥 only here
             .slice()
             .sort((a, b) => b.rating?.length - a.rating?.length)
             .slice(0, displayQuantity)
-            .map((product) => (
+            .map(product => (
               <ProductCard key={product.id} product={product} />
             ))}
+
         </div>
       </div>
     </section>
