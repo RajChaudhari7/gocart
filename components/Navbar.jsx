@@ -162,9 +162,9 @@ const Navbar = () => {
                 hover:-translate-y-[1px]
                 hover:drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]
                 ${isActive(link.href)
-                  ? 'text-cyan-400'
-                  : 'hover:text-cyan-400'
-                }`}
+                    ? 'text-cyan-400'
+                    : 'hover:text-cyan-400'
+                  }`}
               >
                 {link.name}
                 {isActive(link.href) && (
@@ -239,37 +239,66 @@ const Navbar = () => {
       </nav>
 
       {/* ================= MOBILE BOTTOM NAV ================= */}
-      <div
-        className="sm:hidden fixed bottom-0 inset-x-0 z-50
-        bg-black/70 backdrop-blur-2xl border-t border-white/10
-        shadow-[0_-8px_30px_rgba(0,255,255,0.2)]"
-      >
+      <div className="sm:hidden fixed bottom-0 inset-x-0 z-50
+  bg-black/70 backdrop-blur-2xl border-t border-white/10
+  shadow-[0_-8px_30px_rgba(0,255,255,0.2)]">
         <div className="flex justify-around py-2 text-xs">
-          {mobileLinks.map((link) => (
-            <Link
-              key={link.id}
-              href={link.href}
-              className={`relative flex flex-col items-center gap-1
-              ${isActive(link.href)
-                ? 'text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,1)]'
-                : 'text-white/70'
-              }`}
-            >
-              {link.icon}
-              {link.label}
-            </Link>
-          ))}
+          {mobileLinks.map((link) => {
+            const isCart = link.id === 'cart';
+            return (
+              <Link
+                key={link.id}
+                href={link.href}
+                className={`relative flex flex-col items-center gap-1
+            ${isActive(link.href)
+                    ? 'text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,1)]'
+                    : 'text-white/70'
+                  }`}
+              >
+                {isCart ? (
+                  <motion.div
+                    variants={cartPulse}
+                    animate={pulse ? 'active' : 'idle'}
+                    className="flex flex-col items-center gap-1"
+                  >
+                    {link.icon}
+                    {link.label}
+                  </motion.div>
+                ) : (
+                  <>
+                    {link.icon}
+                    {link.label}
+                  </>
+                )}
+
+                {/* Cart badge */}
+                {isCart && cartCount > 0 && (
+                  <motion.span
+                    key={cartCount}
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    exit={{ scale: 0 }}
+                    className="absolute -top-1 -right-2 text-[10px] px-1 py-0.5 rounded-full
+                bg-gradient-to-r from-cyan-400 to-emerald-400 text-black font-bold"
+                  >
+                    {cartCount}
+                  </motion.span>
+                )}
+              </Link>
+            );
+          })}
 
           <button
             onClick={() => setMenuOpen(true)}
             className="flex flex-col items-center gap-1 text-white/70
-            hover:text-cyan-400"
+      hover:text-cyan-400"
           >
             <Menu size={18} />
             Menu
           </button>
         </div>
       </div>
+
 
       {/* ================= MOBILE DRAWER MENU ================= */}
       <AnimatePresence>
