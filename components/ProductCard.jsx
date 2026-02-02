@@ -17,6 +17,7 @@ const LOW_STOCK_LIMIT = 10
 const ProductCard = ({ product }) => {
   const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '₹'
 
+  // ✅ Safe images
   const images = Array.isArray(product.images)
     ? product.images.filter(Boolean)
     : []
@@ -29,7 +30,7 @@ const ProductCard = ({ product }) => {
     setIndex(0)
   }, [product.id])
 
-  // ===== RATING =====
+  // ================= RATING =================
   const rating =
     product.rating?.length > 0
       ? Math.floor(
@@ -40,23 +41,25 @@ const ProductCard = ({ product }) => {
 
   const hasMultiple = images.length > 1
 
-  // ===== STOCK =====
+  // ================= STOCK =================
   const stockValue = Number(product.quantity || 0)
   const isOutOfStock = stockValue <= 0
   const isLowStock = stockValue > 0 && stockValue < LOW_STOCK_LIMIT
 
-  // ===== SLIDER =====
+  // ================= SLIDER =================
   const nextImage = (e) => {
-    if (isOutOfStock || !hasMultiple) return
+    if (isOutOfStock) return
     e?.preventDefault()
     e?.stopPropagation()
+    if (!hasMultiple) return
     setIndex((prev) => (prev + 1) % images.length)
   }
 
   const prevImage = (e) => {
-    if (isOutOfStock || !hasMultiple) return
+    if (isOutOfStock) return
     e?.preventDefault()
     e?.stopPropagation()
+    if (!hasMultiple) return
     setIndex((prev) => (prev - 1 + images.length) % images.length)
   }
 
@@ -75,7 +78,7 @@ const ProductCard = ({ product }) => {
   const currentImage =
     images[index] || images[0] || '/placeholder.png'
 
-  // ===== 3D HOVER =====
+  // ================= 3D HOVER =================
   const handleMouseMove = (e) => {
     if (!cardRef.current || isOutOfStock) return
     const rect = cardRef.current.getBoundingClientRect()
@@ -107,34 +110,34 @@ const ProductCard = ({ product }) => {
     <motion.div
       initial={{ opacity: 0, y: 40, scale: 0.95 }}
       whileInView={{ opacity: 1, y: 0, scale: 1 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.5 }}
+      viewport={{ once: true, margin: '-80px' }}
+      transition={{ duration: 0.6, ease: 'easeOut' }}
       className="group relative"
     >
       <div
         ref={cardRef}
         onMouseMove={handleMouseMove}
         onMouseLeave={resetTilt}
-        className={`relative flex flex-col h-full rounded-xl overflow-hidden border transition-all
+        className={`relative flex flex-col h-full rounded-xl overflow-hidden border transition-all duration-300 will-change-transform
         ${
           isOutOfStock
             ? 'bg-[#0a0a0a] border-red-500/30 opacity-70'
-            : 'bg-[#0a0a0a] border-white/5 hover:border-cyan-400/40'
+            : 'bg-[#0a0a0a] border-white/5 hover:border-cyan-400/40 hover:shadow-[0_20px_60px_-20px_rgba(34,211,238,0.35)]'
         }`}
       >
-        {/* OUT OF STOCK */}
+        {/* ===== OUT OF STOCK ===== */}
         {isOutOfStock && (
           <div className="absolute inset-0 z-30 bg-black/60 flex flex-col items-center justify-center gap-2">
             <Ban size={28} className="text-red-400" />
-            <span className="text-sm font-semibold text-red-400">
+            <span className="text-sm font-semibold tracking-wide text-red-400">
               OUT OF STOCK
             </span>
           </div>
         )}
 
-        {/* IMAGE */}
+        {/* ===== IMAGE ===== */}
         <div
-          className="relative w-full h-[180px] bg-[#111] flex items-center justify-center p-3"
+          className="relative w-full h-[180px] bg-[#111] flex items-center justify-center p-3 select-none"
           onTouchStart={onTouchStart}
           onTouchEnd={onTouchEnd}
         >
@@ -151,29 +154,50 @@ const ProductCard = ({ product }) => {
             >
               <Image
                 src={currentImage}
-                alt={product.name}
+                alt={product.name || 'Product image'}
                 fill
                 className="object-contain"
+                draggable={false}
               />
             </motion.div>
           </AnimatePresence>
 
+          {/* ARROWS */}
           {hasMultiple && !isOutOfStock && (
             <>
-              <button onClick={prevImage} className="nav-btn left-2">
+              <button
+                onClick={prevImage}
+                className="hidden md:flex absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/70 text-white items-center justify-center opacity-0 group-hover:opacity-100 transition z-20"
+              >
                 <ChevronLeft size={16} />
               </button>
-              <button onClick={nextImage} className="nav-btn right-2">
+              <button
+                onClick={nextImage}
+                className="hidden md:flex absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/70 text-white items-center justify-center opacity-0 group-hover:opacity-100 transition z-20"
+              >
                 <ChevronRight size={16} />
               </button>
             </>
           )}
+
+          {/* VIEW ICON */}
+          {!isOutOfStock && (
+            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition z-10">
+              <Link
+                href={`/product/${product.id}`}
+                onClick={(e) => e.stopPropagation()}
+                className="p-2.5 bg-white text-black rounded-full hover:bg-cyan-400 transition"
+              >
+                <Eye size={18} />
+              </Link>
+            </div>
+          )}
         </div>
 
-        {/* CONTENT */}
+        {/* ===== CONTENT ===== */}
         <div className="p-3 flex flex-col flex-grow">
           <div className="flex justify-between items-center mb-1">
-            <span className="text-[9px] uppercase text-white/40">
+            <span className="text-[9px] uppercase tracking-widest text-white/40 font-bold">
               {product.category || 'Gear'}
             </span>
 
@@ -185,16 +209,33 @@ const ProductCard = ({ product }) => {
             </div>
           </div>
 
-          <h3 className="text-xs font-medium text-white/80 line-clamp-2 mb-1.5">
-            {product.name}
-          </h3>
+          {/* TITLE */}
+          {isOutOfStock ? (
+            <h3 className="text-xs font-medium text-white/40 line-clamp-2 mb-1.5">
+              {product.name}
+            </h3>
+          ) : (
+            <Link href={`/product/${product.id}`}>
+              <h3 className="text-xs font-medium text-white/80 group-hover:text-cyan-400 transition line-clamp-2 mb-1.5">
+                {product.name}
+              </h3>
+            </Link>
+          )}
 
+          {/* PRICE */}
           <div className="mt-auto flex items-center gap-2">
-            <p className="text-sm font-bold text-white">
+            <p className={`text-sm font-bold ${isOutOfStock ? 'text-white/40' : 'text-white'}`}>
               {currency}{product.price}
             </p>
+
+            {!isOutOfStock && (
+              <p className="text-[10px] text-white/30 line-through">
+                {currency}{Math.round(product.price * 1.2)}
+              </p>
+            )}
           </div>
 
+          {/* LOW STOCK */}
           {isLowStock && (
             <span className="mt-1 text-[10px] text-yellow-400 font-semibold">
               Only {stockValue} left
