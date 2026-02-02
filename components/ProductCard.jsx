@@ -1,10 +1,18 @@
 'use client'
 
-import { StarIcon, Eye, ChevronLeft, ChevronRight, Ban } from 'lucide-react'
+import {
+  StarIcon,
+  Eye,
+  ChevronLeft,
+  ChevronRight,
+  Ban
+} from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useState, useRef, useEffect } from 'react'
+
+const LOW_STOCK_LIMIT = 10
 
 const ProductCard = ({ product }) => {
   const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '₹'
@@ -30,11 +38,10 @@ const ProductCard = ({ product }) => {
 
   const hasMultiple = images.length > 1
 
-  const isOutOfStock =
-    product.stock === 0 ||
-    product.stock === null ||
-    product.stock === undefined ||
-    product.stock < 1
+  // ✅ CORRECT STOCK LOGIC (matches your backend)
+  const stockValue = Number(product.quantity || 0)
+  const isOutOfStock = stockValue <= 0
+  const isLowStock = stockValue > 0 && stockValue < LOW_STOCK_LIMIT
 
   const nextImage = (e) => {
     if (isOutOfStock) return
@@ -171,7 +178,7 @@ const ProductCard = ({ product }) => {
             </div>
           )}
 
-          {/* VIEW ICON (DISABLED IF OOS) */}
+          {/* VIEW ICON */}
           {!isOutOfStock && (
             <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition z-10">
               <Link
@@ -229,10 +236,10 @@ const ProductCard = ({ product }) => {
             )}
           </div>
 
-          {/* STOCK BADGE */}
-          {!isOutOfStock && product.stock <= 5 && product.stock > 0 && (
+          {/* STOCK BADGES */}
+          {isLowStock && (
             <span className="mt-1 text-[10px] text-yellow-400 font-semibold">
-              Only {product.stock} left
+              Only {stockValue} left
             </span>
           )}
         </div>
