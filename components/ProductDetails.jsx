@@ -3,12 +3,7 @@
 import { useState, useEffect } from "react"
 import { useDispatch, useSelector } from "react-redux"
 import Image from "next/image"
-import {
-  StarIcon,
-  TruckIcon,
-  CreditCardIcon,
-  UserIcon
-} from "lucide-react"
+import { StarIcon, EarthIcon, CreditCardIcon, UserIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { setCartItemQuantity } from "@/lib/features/cart/cartSlice"
 import { motion, AnimatePresence } from "framer-motion"
@@ -47,6 +42,7 @@ const ProductDetails = ({ product }) => {
   const [activeIndex, setActiveIndex] = useState(0)
   const [quantity, setQuantity] = useState(1)
   const [inCart, setInCart] = useState(false)
+  const [showQuantity, setShowQuantity] = useState(false)
   const [animatePlus, setAnimatePlus] = useState(false)
   const [animateMinus, setAnimateMinus] = useState(false)
 
@@ -54,24 +50,30 @@ const ProductDetails = ({ product }) => {
     if (cart[productId]) {
       setQuantity(cart[productId])
       setInCart(true)
+      setShowQuantity(true)
     }
   }, [cart, productId])
 
   const handleAddToCart = () => {
     dispatch(setCartItemQuantity({ productId, quantity: 1, maxQuantity: maxQty }))
     setInCart(true)
+    setShowQuantity(true)
     setAnimatePlus(true)
     setTimeout(() => setAnimatePlus(false), 300)
   }
 
   const handleQuantityChange = (newQty, type) => {
     if (newQty < 1) {
+      setAnimateMinus(true)
+      setTimeout(() => setAnimateMinus(false), 300)
       dispatch(setCartItemQuantity({ productId, quantity: 0, maxQuantity: maxQty }))
       setInCart(false)
+      setShowQuantity(false)
       setQuantity(1)
     } else {
       setQuantity(newQty)
       dispatch(setCartItemQuantity({ productId, quantity: newQty, maxQuantity: maxQty }))
+      setShowQuantity(true)
       if (type === "plus") setAnimatePlus(true)
       if (type === "minus") setAnimateMinus(true)
       setTimeout(() => {
@@ -97,11 +99,11 @@ const ProductDetails = ({ product }) => {
   return (
     <div className="flex flex-col lg:flex-row gap-12 px-6 py-10 bg-gradient-to-b from-[#0f172a] to-[#020617] text-white rounded-3xl shadow-xl">
 
-      {/* IMAGE GALLERY */}
+      {/* ---------------- IMAGE GALLERY ---------------- */}
       <div className="flex flex-col lg:flex-row gap-4 w-full lg:w-[58%]">
 
-        {/* MAIN IMAGE */}
-        <div className="order-1 lg:order-2 flex justify-center items-center bg-white/5 p-6 rounded-2xl w-full overflow-hidden">
+        {/* MAIN IMAGE / CAROUSEL */}
+        <div className="order-1 lg:order-2 flex justify-center items-center bg-white/5 p-4 sm:p-6 lg:p-6 rounded-2xl w-full overflow-hidden">
           <motion.div
             className="w-full flex justify-center"
             drag="x"
@@ -114,6 +116,7 @@ const ProductDetails = ({ product }) => {
                 initial={{ opacity: 0, x: 40 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -40 }}
+                transition={{ duration: 0.3 }}
               >
                 <Image
                   src={product.images[activeIndex]}
@@ -122,8 +125,19 @@ const ProductDetails = ({ product }) => {
                   height={400}
                   priority
                   placeholder="blur"
-                  blurDataURL={`data:image/svg+xml;base64,${toBase64(shimmer(400, 400))}`}
-                  className="max-w-[500px] w-full object-contain drop-shadow-2xl"
+                  blurDataURL={`data:image/svg+xml;base64,${toBase64(
+                    shimmer(400, 400)
+                  )}`}
+                  className="
+                    w-full
+                    max-w-[280px]
+                    sm:max-w-[340px]
+                    lg:max-w-[460px]
+                    xl:max-w-[500px]
+                    h-auto
+                    object-contain
+                    drop-shadow-2xl
+                  "
                 />
               </motion.div>
             </AnimatePresence>
@@ -131,7 +145,7 @@ const ProductDetails = ({ product }) => {
         </div>
 
         {/* THUMBNAILS */}
-        <div className="order-2 lg:order-1 flex lg:flex-col gap-3 justify-center">
+        <div className="order-2 lg:order-1 flex lg:flex-col gap-3 justify-center lg:justify-start">
           {product.images.map((img, i) => (
             <button
               key={i}
@@ -148,7 +162,9 @@ const ProductDetails = ({ product }) => {
                 width={56}
                 height={56}
                 placeholder="blur"
-                blurDataURL={`data:image/svg+xml;base64,${toBase64(shimmer(56, 56))}`}
+                blurDataURL={`data:image/svg+xml;base64,${toBase64(
+                  shimmer(56, 56)
+                )}`}
                 className="object-contain"
               />
             </button>
@@ -156,7 +172,7 @@ const ProductDetails = ({ product }) => {
         </div>
       </div>
 
-      {/* DETAILS */}
+      {/* ---------------- DETAILS ---------------- */}
       <div className="flex-1">
         <h1 className="text-3xl md:text-5xl font-bold">{product.name}</h1>
 
@@ -212,9 +228,8 @@ const ProductDetails = ({ product }) => {
           )}
         </div>
 
-        {/* BENEFITS */}
         <div className="flex flex-col gap-3 mt-6 text-slate-400">
-          <p className="flex items-center gap-2"><TruckIcon /> Fast shipping</p>
+          <p className="flex items-center gap-2"><EarthIcon /> Free shipping worldwide</p>
           <p className="flex items-center gap-2"><CreditCardIcon /> Secure payments</p>
           <p className="flex items-center gap-2"><UserIcon /> Trusted sellers</p>
         </div>
