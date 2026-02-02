@@ -5,7 +5,7 @@ import { useSelector } from 'react-redux'
 
 const BestSelling = () => {
   const displayQuantity = 8
-  const products = useSelector(state => state.product.list)
+  const products = useSelector(state => state.product.list || [])
 
   return (
     <section className="relative bg-gradient-to-b from-[#020617] to-black">
@@ -25,12 +25,12 @@ const BestSelling = () => {
         <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-8">
           {products
             .slice()
-            .sort((a, b) => b.rating.length - a.rating.length)
+            .sort((a, b) => (b.rating?.length || 0) - (a.rating?.length || 0))
             .slice(0, displayQuantity)
-            .map((product, index) => (
+            .map((product) => (
               <div
-                key={index}
-                className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-4 hover:scale-[1.03] transition"
+                key={product.id}
+                className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-4 transition transform hover:scale-[1.03] hover:shadow-2xl"
               >
                 <ProductCard product={product} />
               </div>
