@@ -1,6 +1,6 @@
 'use client'
 
-import { StarIcon, Eye, ChevronLeft, ChevronRight } from 'lucide-react'
+import { StarIcon, Eye, ChevronLeft, ChevronRight, Ban } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -9,7 +9,6 @@ import { useState, useRef, useEffect } from 'react'
 const ProductCard = ({ product }) => {
   const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '₹'
 
-  // 🔥 HARDENED images array
   const images = Array.isArray(product.images)
     ? product.images.filter(Boolean)
     : []
@@ -17,7 +16,6 @@ const ProductCard = ({ product }) => {
   const [index, setIndex] = useState(0)
   const touchStartX = useRef(0)
 
-  // 🔥 Reset slider when product changes
   useEffect(() => {
     setIndex(0)
   }, [product.id])
@@ -32,7 +30,14 @@ const ProductCard = ({ product }) => {
 
   const hasMultiple = images.length > 1
 
+  const isOutOfStock =
+    product.stock === 0 ||
+    product.stock === null ||
+    product.stock === undefined ||
+    product.stock < 1
+
   const nextImage = (e) => {
+    if (isOutOfStock) return
     if (e) {
       e.preventDefault()
       e.stopPropagation()
@@ -42,6 +47,7 @@ const ProductCard = ({ product }) => {
   }
 
   const prevImage = (e) => {
+    if (isOutOfStock) return
     if (e) {
       e.preventDefault()
       e.stopPropagation()
@@ -51,10 +57,12 @@ const ProductCard = ({ product }) => {
   }
 
   const onTouchStart = (e) => {
+    if (isOutOfStock) return
     touchStartX.current = e.touches[0].clientX
   }
 
   const onTouchEnd = (e) => {
+    if (isOutOfStock) return
     if (!hasMultiple) return
 
     const touchEndX = e.changedTouches[0].clientX
@@ -64,7 +72,6 @@ const ProductCard = ({ product }) => {
     if (diff < -50) prevImage()
   }
 
-  // 🔥 Fallback image if none
   const currentImage =
     images[index] || images[0] || '/placeholder.png'
 
@@ -75,7 +82,23 @@ const ProductCard = ({ product }) => {
       viewport={{ once: true }}
       className="group relative"
     >
-      <div className="relative flex flex-col h-full bg-[#0a0a0a] border border-white/5 rounded-xl overflow-hidden transition-all duration-300 hover:border-white/20">
+      <div
+        className={`relative flex flex-col h-full rounded-xl overflow-hidden border transition-all duration-300
+        ${
+          isOutOfStock
+            ? 'bg-[#0a0a0a] border-red-500/30 opacity-70'
+            : 'bg-[#0a0a0a] border-white/5 hover:border-white/20'
+        }`}
+      >
+        {/* OUT OF STOCK OVERLAY */}
+        {isOutOfStock && (
+          <div className="absolute inset-0 z-30 bg-black/60 flex flex-col items-center justify-center gap-2">
+            <Ban size={28} className="text-red-400" />
+            <span className="text-sm font-semibold tracking-wide text-red-400">
+              OUT OF STOCK
+            </span>
+          </div>
+        )}
 
         {/* IMAGE SLIDER */}
         <div
@@ -90,7 +113,9 @@ const ProductCard = ({ product }) => {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -30 }}
               transition={{ duration: 0.25 }}
-              className="relative w-full h-full pointer-events-none"
+              className={`relative w-full h-full ${
+                isOutOfStock ? 'grayscale' : ''
+              }`}
             >
               <Image
                 src={currentImage}
@@ -104,7 +129,7 @@ const ProductCard = ({ product }) => {
           </AnimatePresence>
 
           {/* DESKTOP ARROWS */}
-          {hasMultiple && (
+          {hasMultiple && !isOutOfStock && (
             <>
               <button
                 type="button"
@@ -125,7 +150,7 @@ const ProductCard = ({ product }) => {
           )}
 
           {/* DOTS */}
-          {hasMultiple && (
+          {hasMultiple && !isOutOfStock && (
             <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1 z-20">
               {images.map((_, i) => (
                 <button
@@ -137,23 +162,27 @@ const ProductCard = ({ product }) => {
                     setIndex(i)
                   }}
                   className={`h-1 rounded-full transition-all ${
-                    i === index ? 'w-4 bg-cyan-400' : 'w-1 bg-white/30'
+                    i === index
+                      ? 'w-4 bg-cyan-400'
+                      : 'w-1 bg-white/30'
                   }`}
                 />
               ))}
             </div>
           )}
 
-          {/* HOVER VIEW ICON */}
-          <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition z-10">
-            <Link
-              href={`/product/${product.id}`}
-              onClick={(e) => e.stopPropagation()}
-              className="p-2.5 bg-white text-black rounded-full hover:bg-cyan-400 transition"
-            >
-              <Eye size={18} />
-            </Link>
-          </div>
+          {/* VIEW ICON (DISABLED IF OOS) */}
+          {!isOutOfStock && (
+            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition z-10">
+              <Link
+                href={`/product/${product.id}`}
+                onClick={(e) => e.stopPropagation()}
+                className="p-2.5 bg-white text-black rounded-full hover:bg-cyan-400 transition"
+              >
+                <Eye size={18} />
+              </Link>
+            </div>
+          )}
         </div>
 
         {/* CONTENT */}
@@ -170,22 +199,42 @@ const ProductCard = ({ product }) => {
             </div>
           </div>
 
-          <Link href={`/product/${product.id}`}>
-            <h3 className="text-xs font-medium text-white/80 group-hover:text-cyan-400 transition line-clamp-2 mb-1.5">
+          {/* TITLE */}
+          {isOutOfStock ? (
+            <h3 className="text-xs font-medium text-white/40 line-clamp-2 mb-1.5 cursor-not-allowed">
               {product.name}
             </h3>
-          </Link>
+          ) : (
+            <Link href={`/product/${product.id}`}>
+              <h3 className="text-xs font-medium text-white/80 group-hover:text-cyan-400 transition line-clamp-2 mb-1.5">
+                {product.name}
+              </h3>
+            </Link>
+          )}
 
+          {/* PRICE */}
           <div className="mt-auto flex items-center gap-2">
-            <p className="text-sm font-bold text-white">
+            <p
+              className={`text-sm font-bold ${
+                isOutOfStock ? 'text-white/40' : 'text-white'
+              }`}
+            >
               {currency}{product.price}
             </p>
-            {product.price && (
+
+            {!isOutOfStock && product.price && (
               <p className="text-[10px] text-white/30 line-through">
                 {currency}{Math.round(product.price * 1.2)}
               </p>
             )}
           </div>
+
+          {/* STOCK BADGE */}
+          {!isOutOfStock && product.stock <= 5 && product.stock > 0 && (
+            <span className="mt-1 text-[10px] text-yellow-400 font-semibold">
+              Only {product.stock} left
+            </span>
+          )}
         </div>
       </div>
     </motion.div>
