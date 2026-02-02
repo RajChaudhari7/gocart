@@ -60,12 +60,19 @@ const Navbar = () => {
     }
   }, [cartCount])
 
-  const handleSearch = (e) => {
-    e.preventDefault()
-    if (!search.trim()) return
-    router.push(`/shop?search=${encodeURIComponent(search.trim())}`)
-    setMenuOpen(false)
+  /* ===== SEARCH HANDLERS ===== */
+  const handleSearchChange = (e) => {
+    const value = e.target.value
+    setSearch(value)
+
+    if (value.trim() === '') {
+      router.push('/shop') // show all products if empty
+    } else {
+      router.push(`/shop?search=${encodeURIComponent(value.trim())}`)
+    }
   }
+
+  const handleSearchSubmit = (e) => e.preventDefault() // prevent page reload
 
   const desktopLinks = [
     { name: 'Home', href: '/' },
@@ -93,7 +100,7 @@ const Navbar = () => {
 
           {/* MOBILE SEARCH */}
           <form
-            onSubmit={handleSearch}
+            onSubmit={handleSearchSubmit}
             className="flex items-center gap-2 bg-white/10 focus-within:bg-white/20 px-3 py-1.5 rounded-full transition-colors duration-300"
           >
             <Search size={14} className="text-white/70" />
@@ -101,7 +108,7 @@ const Navbar = () => {
               type="text"
               placeholder="Search products..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={handleSearchChange}
               className="bg-transparent outline-none text-sm w-24 text-white placeholder-white/50
                 focus:w-36 transition-all duration-300"
             />
@@ -153,7 +160,7 @@ const Navbar = () => {
 
             {/* DESKTOP SEARCH */}
             <form
-              onSubmit={handleSearch}
+              onSubmit={handleSearchSubmit}
               className="hidden xl:flex items-center gap-2 bg-white/10 focus-within:bg-white/20 px-4 py-2 rounded-full transition-colors duration-300 shadow-[inset_0_0_10px_rgba(255,255,255,0.05)]"
             >
               <Search size={16} className="text-white/70" />
@@ -161,7 +168,7 @@ const Navbar = () => {
                 type="text"
                 placeholder="Search products..."
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={handleSearchChange}
                 className="bg-transparent outline-none text-sm text-white placeholder-white/50 focus:w-64 w-40 transition-all duration-300"
               />
             </form>
