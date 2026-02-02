@@ -42,39 +42,33 @@ const ProductCard = ({ product }) => {
   const isOutOfStock = stockValue <= 0
   const isLowStock = stockValue > 0 && stockValue < LOW_STOCK_LIMIT
 
-  // ================= SLIDER =================
+  // ================= SLIDER FUNCTIONS =================
   const nextImage = (e) => {
-    if (isOutOfStock) return
-    e?.preventDefault()
     e?.stopPropagation()
     if (!hasMultiple) return
     setIndex((prev) => (prev + 1) % images.length)
   }
 
   const prevImage = (e) => {
-    if (isOutOfStock) return
-    e?.preventDefault()
     e?.stopPropagation()
     if (!hasMultiple) return
     setIndex((prev) => (prev - 1 + images.length) % images.length)
   }
 
   const onTouchStart = (e) => {
-    if (isOutOfStock) return
     touchStartX.current = e.touches[0].clientX
   }
 
   const onTouchEnd = (e) => {
-    if (isOutOfStock || !hasMultiple) return
     const diff = touchStartX.current - e.changedTouches[0].clientX
-    if (diff > 50) nextImage()
-    if (diff < -50) prevImage()
+    if (diff > 40) nextImage()
+    if (diff < -40) prevImage()
   }
 
   const currentImage =
     images[index] || images[0] || '/placeholder.png'
 
-  // ================= 3D HOVER & FLOAT =================
+  // ================= 3D TILT =================
   const handleMouseMove = (e) => {
     if (!cardRef.current || isOutOfStock) return
     const rect = cardRef.current.getBoundingClientRect()
@@ -121,23 +115,13 @@ const ProductCard = ({ product }) => {
         ref={cardRef}
         onMouseMove={handleMouseMove}
         onMouseLeave={resetTilt}
-        animate={{
-          y: [0, -12, 0], // card floating
-        }}
-        transition={{
-          duration: 4,
-          repeat: Infinity,
-          repeatType: 'loop',
-          ease: 'easeInOut',
-        }}
-        className={`relative flex flex-col h-full rounded-xl overflow-hidden border transition-all duration-300 will-change-transform
-        bg-[#0a0a0a] border-white/5`}
-        style={{
-          boxShadow: '0 20px 40px rgba(0,0,0,0.25)',
-          transformStyle: 'preserve-3d'
-        }}
+        animate={{ y: [0, -12, 0] }} // card floating
+        transition={{ duration: 4, repeat: Infinity, repeatType: 'loop', ease: 'easeInOut' }}
+        className="relative flex flex-col h-full rounded-xl overflow-hidden border transition-all duration-300 will-change-transform
+        bg-[#0a0a0a] border-white/5"
+        style={{ boxShadow: '0 20px 40px rgba(0,0,0,0.25)', transformStyle: 'preserve-3d' }}
       >
-        {/* ===== OUT OF STOCK ===== */}
+        {/* OUT OF STOCK */}
         {isOutOfStock && (
           <div className="absolute inset-0 z-30 bg-black/60 flex flex-col items-center justify-center gap-2">
             <Ban size={28} className="text-red-400" />
@@ -147,34 +131,37 @@ const ProductCard = ({ product }) => {
           </div>
         )}
 
-        {/* ===== IMAGE ===== */}
+        {/* IMAGE */}
         <div
-          className="relative w-full h-[180px] bg-[#111] flex items-center justify-center p-3 select-none"
+          className="relative w-full h-[180px] bg-[#111] flex items-center justify-center p-3 select-none overflow-hidden"
           onTouchStart={onTouchStart}
           onTouchEnd={onTouchEnd}
         >
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={`${product.id}-${index}`}
-              initial={{ opacity: 0, x: 30 }}
-              animate={{
-                opacity: 1,
-                x: [0, 3, -3, 0],  // image floating independently
-                y: [0, -2, 2, 0],
-              }}
-              exit={{ opacity: 0, x: -30 }}
-              transition={{ duration: 5, repeat: Infinity, repeatType: 'loop', ease: 'easeInOut' }}
-              className={`relative w-full h-full ${isOutOfStock ? 'grayscale' : ''}`}
-            >
-              <Image
-                src={currentImage}
-                alt={product.name || 'Product image'}
-                fill
-                className="object-contain"
-                draggable={false}
-              />
-            </motion.div>
-          </AnimatePresence>
+          {/* Floating parent div */}
+          <motion.div
+            animate={{ x: [0, 3, -3, 0], y: [0, -2, 2, 0] }}
+            transition={{ duration: 5, repeat: Infinity, repeatType: 'loop', ease: 'easeInOut' }}
+            className="relative w-full h-full"
+          >
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={index} // must update key for fade effect
+                initial={{ opacity: 0, x: 30 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -30 }}
+                transition={{ duration: 0.3 }}
+                className={`${isOutOfStock ? 'grayscale' : ''} w-full h-full relative`}
+              >
+                <Image
+                  src={currentImage}
+                  alt={product.name || 'Product image'}
+                  fill
+                  className="object-contain"
+                  draggable={false}
+                />
+              </motion.div>
+            </AnimatePresence>
+          </motion.div>
 
           {/* ARROWS */}
           {hasMultiple && !isOutOfStock && (
@@ -208,13 +195,12 @@ const ProductCard = ({ product }) => {
           )}
         </div>
 
-        {/* ===== CONTENT ===== */}
+        {/* CONTENT */}
         <div className="p-3 flex flex-col flex-grow">
           <div className="flex justify-between items-center mb-1">
             <span className="text-[9px] uppercase tracking-widest text-white/40 font-bold">
               {product.category || 'Gear'}
             </span>
-
             <div className="flex items-center gap-1">
               <StarIcon size={10} fill="#22d3ee" stroke="none" />
               <span className="text-[10px] text-white/60">{rating}.0</span>
@@ -237,7 +223,6 @@ const ProductCard = ({ product }) => {
             <p className={`text-sm font-bold ${isOutOfStock ? 'text-white/40' : 'text-white'}`}>
               {currency}{product.price}
             </p>
-
             {!isOutOfStock && (
               <p className="text-[10px] text-white/30 line-through">
                 {currency}{Math.round(product.price * 1.2)}
