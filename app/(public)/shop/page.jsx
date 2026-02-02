@@ -1,13 +1,13 @@
 'use client'
 
-import { Suspense, useState, useEffect, useMemo } from 'react'
+import { Suspense, useState, useMemo } from 'react'
 import ProductCard from '@/components/ProductCard'
 import { SlidersHorizontal, X } from 'lucide-react'
 import { useSearchParams } from 'next/navigation'
 import { useSelector } from 'react-redux'
 import { motion, AnimatePresence } from 'framer-motion'
 
-/* ✅ ALL DEFAULT CATEGORIES */
+/* ✅ DEFAULT CATEGORIES */
 const DEFAULT_CATEGORIES = [
   'Electronics',
   'Clothing',
@@ -20,62 +20,70 @@ const DEFAULT_CATEGORIES = [
   'Hobbies & Crafts',
 ]
 
+/* ✅ PRICE RANGES */
+const PRICE_RANGES = [
+  { label: 'All Prices', value: 'ALL' },
+  { label: 'Less than ₹500', value: 'UNDER_500' },
+  { label: '₹500 – ₹5,000', value: '500_5K' },
+  { label: '₹5,000 – ₹10,000', value: '5K_10K' },
+  { label: 'Above ₹10,000', value: 'ABOVE_10K' },
+]
+
 function ShopContent() {
   const searchParams = useSearchParams()
   const search = searchParams.get('search')
 
   const products = useSelector((state) => state.product.list || [])
 
-  /* 🔥 Dynamic highest price */
-  const highestPrice = useMemo(() => {
-    return products.length > 0
-      ? Math.max(...products.map(p => Number(p.price) || 0))
-      : 0
-  }, [products])
-
   const [category, setCategory] = useState('all')
   const [sort, setSort] = useState('')
-  const [maxPrice, setMaxPrice] = useState(0)
+  const [priceRange, setPriceRange] = useState('ALL')
   const [showMobileFilter, setShowMobileFilter] = useState(false)
-
-  useEffect(() => {
-    setMaxPrice(highestPrice)
-  }, [highestPrice])
 
   /* 🔥 FILTER + SORT */
   const filteredProducts = useMemo(() => {
     return products
-      .filter(p =>
+      .filter((p) =>
         search
           ? p.name?.toLowerCase().includes(search.toLowerCase())
           : true
       )
-      .filter(p =>
+      .filter((p) =>
         category === 'all'
           ? true
           : p.category?.toLowerCase() === category.toLowerCase()
       )
-      .filter(p => Number(p.price) <= Number(maxPrice))
+      .filter((p) => {
+        const price = Number(p.price) || 0
+
+        switch (priceRange) {
+          case 'UNDER_500':
+            return price < 500
+          case '500_5K':
+            return price >= 500 && price <= 5000
+          case '5K_10K':
+            return price > 5000 && price <= 10000
+          case 'ABOVE_10K':
+            return price > 10000
+          default:
+            return true
+        }
+      })
       .sort((a, b) => {
         if (sort === 'low-high') return Number(a.price) - Number(b.price)
         if (sort === 'high-low') return Number(b.price) - Number(a.price)
         return 0
       })
-  }, [products, search, category, maxPrice, sort])
-
+  }, [products, search, category, priceRange, sort])
 
   /* ✅ BUILD CATEGORIES */
   const allCategories = useMemo(() => {
     const productCategories = products
-      .map(p => p.category)
+      .map((p) => p.category)
       .filter(Boolean)
 
     return Array.from(
-      new Set([
-        'all',
-        ...DEFAULT_CATEGORIES,
-        ...productCategories
-      ])
+      new Set(['all', ...DEFAULT_CATEGORIES, ...productCategories])
     )
   }, [products])
 
@@ -83,37 +91,22 @@ function ShopContent() {
     <section className="min-h-screen bg-[#020617] text-white">
 
       {/* ================= HEADER ================= */}
-      <div className="relative h-[28vh] pt-24 flex items-center justify-center overflow-hidden border-b border-white/5">
-
-        {/* Glow background */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-cyan-900/20 via-transparent to-transparent" />
-
+      <div className="relative h-[28vh] pt-24 flex items-center justify-center border-b border-white/5">
         <div className="relative z-10 text-center">
           <motion.h1
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="text-4xl md:text-6xl font-black tracking-tighter mb-3
-            drop-shadow-[0_10px_40px_rgba(34,211,238,0.6)]"
+            className="text-4xl md:text-6xl font-black tracking-tighter mb-3"
           >
             THE{' '}
-            <span
-              className="text-transparent bg-clip-text bg-gradient-to-r
-              from-cyan-400 to-emerald-400
-              drop-shadow-[0_0_30px_rgba(34,211,238,1)]"
-            >
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-emerald-400">
               COLLECTION
             </span>
           </motion.h1>
-
-          {/* Floating subtitle */}
-          <motion.p
-            animate={{ y: [0, -6, 0] }}
-            transition={{ repeat: Infinity, duration: 4, ease: 'easeInOut' }}
-            className="text-white/40 text-[10px] tracking-[0.4em] uppercase"
-          >
+          <p className="text-white/40 text-[10px] tracking-[0.4em] uppercase">
             Premium Marketplace
-          </motion.p>
+          </p>
         </div>
       </div>
 
@@ -121,7 +114,9 @@ function ShopContent() {
         <div className="flex flex-col lg:flex-row gap-10">
 
           {/* ================= SIDEBAR ================= */}
-          <aside className="hidden lg:block w-64 space-y-10 sticky top-32 h-fit">
+          <aside className="hidden lg:block w-64 space-y-10 sticky top-32">
+
+            {/* CATEGORIES */}
             <div>
               <h3 className="text-[10px] font-bold tracking-widest text-white/30 uppercase mb-6">
                 Categories
@@ -131,10 +126,11 @@ function ShopContent() {
                   <button
                     key={cat}
                     onClick={() => setCategory(cat)}
-                    className={`text-left text-sm py-1 transition-all ${category === cat
+                    className={`text-left text-sm py-1 transition ${
+                      category === cat
                         ? 'text-cyan-400 font-bold translate-x-2'
                         : 'text-white/50 hover:text-white'
-                      }`}
+                    }`}
                   >
                     {cat}
                   </button>
@@ -144,23 +140,24 @@ function ShopContent() {
 
             {/* PRICE RANGE */}
             <div>
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-[10px] font-bold tracking-widest text-white/30 uppercase">
-                  Price Range
-                </h3>
-                <span className="text-cyan-400 font-mono text-xs">
-                  ₹{maxPrice}
-                </span>
+              <h3 className="text-[10px] font-bold tracking-widest text-white/30 uppercase mb-6">
+                Price Range
+              </h3>
+              <div className="flex flex-col gap-2">
+                {PRICE_RANGES.map((range) => (
+                  <button
+                    key={range.value}
+                    onClick={() => setPriceRange(range.value)}
+                    className={`text-left text-sm py-1 transition ${
+                      priceRange === range.value
+                        ? 'text-cyan-400 font-bold translate-x-2'
+                        : 'text-white/50 hover:text-white'
+                    }`}
+                  >
+                    {range.label}
+                  </button>
+                ))}
               </div>
-              <input
-                type="range"
-                min="0"
-                max={highestPrice}
-                step="100"
-                value={maxPrice}
-                onChange={(e) => setMaxPrice(Number(e.target.value))}
-                className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-cyan-400"
-              />
             </div>
           </aside>
 
@@ -170,11 +167,12 @@ function ShopContent() {
               <p className="text-xs text-white/40 uppercase tracking-widest">
                 {filteredProducts.length} Products Found
               </p>
+
               <div className="flex gap-4">
                 <select
                   value={sort}
                   onChange={(e) => setSort(e.target.value)}
-                  className="bg-transparent text-xs font-bold uppercase tracking-wider outline-none cursor-pointer text-white/60 hover:text-white"
+                  className="bg-transparent text-xs font-bold uppercase tracking-wider outline-none text-white/60"
                 >
                   <option className="bg-[#020617]" value="">
                     Sort By
@@ -186,6 +184,7 @@ function ShopContent() {
                     High to Low
                   </option>
                 </select>
+
                 <button
                   onClick={() => setShowMobileFilter(true)}
                   className="lg:hidden p-2 bg-white/5 rounded-full"
@@ -195,17 +194,10 @@ function ShopContent() {
               </div>
             </div>
 
-            {/* 🔥 GRID: 2 on mobile, 3 on tablet, 4 on desktop */}
             <AnimatePresence mode="popLayout">
               <motion.div
                 layout
-                className="
-                  grid
-                  grid-cols-2
-                  md:grid-cols-3
-                  xl:grid-cols-4
-                  gap-4 sm:gap-6
-                "
+                className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6"
               >
                 {filteredProducts.map((product) => (
                   <ProductCard key={product.id} product={product} />
@@ -216,24 +208,21 @@ function ShopContent() {
         </div>
       </div>
 
-      {/* ================= MOBILE FILTER DRAWER ================= */}
+      {/* ================= MOBILE FILTER ================= */}
       <AnimatePresence>
         {showMobileFilter && (
           <>
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
               onClick={() => setShowMobileFilter(false)}
-              className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[100]"
+              className="fixed inset-0 bg-black/90 z-[100]"
             />
             <motion.div
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
-              className="fixed bottom-0 inset-x-0 bg-[#0a0a0a] z-[101] rounded-t-[2.5rem] p-8 border-t border-white/10"
+              className="fixed bottom-0 inset-x-0 bg-[#0a0a0a] z-[101] rounded-t-[2.5rem] p-8"
             >
-              <div className="flex justify-between items-center mb-8">
+              <div className="flex justify-between mb-8">
                 <h2 className="text-xl font-bold">Filters</h2>
                 <button onClick={() => setShowMobileFilter(false)}>
                   <X size={24} />
@@ -243,37 +232,23 @@ function ShopContent() {
               <div className="space-y-8">
                 <div>
                   <h3 className="text-[10px] font-bold text-white/30 uppercase mb-4">
-                    Categories
+                    Price Range
                   </h3>
                   <div className="flex flex-wrap gap-2">
-                    {allCategories.map((cat) => (
+                    {PRICE_RANGES.map((range) => (
                       <button
-                        key={cat}
-                        onClick={() => setCategory(cat)}
-                        className={`px-4 py-2 rounded-full text-xs ${category === cat
+                        key={range.value}
+                        onClick={() => setPriceRange(range.value)}
+                        className={`px-4 py-2 rounded-full text-xs ${
+                          priceRange === range.value
                             ? 'bg-white text-black'
                             : 'bg-white/5 text-white'
-                          }`}
+                        }`}
                       >
-                        {cat}
+                        {range.label}
                       </button>
                     ))}
                   </div>
-                </div>
-
-                <div>
-                  <h3 className="text-[10px] font-bold text-white/30 uppercase mb-4">
-                    Max Price: ₹{maxPrice}
-                  </h3>
-                  <input
-                    type="range"
-                    min="0"
-                    max={highestPrice}
-                    step="100"
-                    value={maxPrice}
-                    onChange={(e) => setMaxPrice(Number(e.target.value))}
-                    className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-cyan-400"
-                  />
                 </div>
               </div>
             </motion.div>
