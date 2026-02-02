@@ -26,17 +26,25 @@ export default function StoreManageProducts() {
                 headers: { Authorization: `Bearer ${token}` }
             })
 
+            const sorted = data.products.sort((a, b) => {
+                if (a.quantity > 0 && b.quantity === 0) return -1
+                if (a.quantity === 0 && b.quantity > 0) return 1
+
+                if (a.quantity < LOW_STOCK_LIMIT && b.quantity >= LOW_STOCK_LIMIT) return -1
+                if (a.quantity >= LOW_STOCK_LIMIT && b.quantity < LOW_STOCK_LIMIT) return 1
+
+                return new Date(b.createdAt) - new Date(a.createdAt)
+            })
+
             setProducts(
-                data.products
-                    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-                    .map(p => ({
-                        ...p,
-                        editPrice: p.price,
-                        editQuantity: p.quantity,
-                        originalPrice: p.price,
-                        originalQuantity: p.quantity,
-                        isEditing: false
-                    }))
+                sorted.map(p => ({
+                    ...p,
+                    editPrice: p.price,
+                    editQuantity: p.quantity,
+                    originalPrice: p.price,
+                    originalQuantity: p.quantity,
+                    isEditing: false
+                }))
             )
 
         } catch (error) {
@@ -107,41 +115,12 @@ export default function StoreManageProducts() {
         }
     }
 
-    // ================= EDIT CONTROLS =================
-    const enableEdit = (id) => {
-        setProducts(prev =>
-            prev.map(p =>
-                p.id === id ? { ...p, isEditing: true } : p
-            )
-        )
-    }
-
-    const cancelEdit = (id) => {
-        setProducts(prev =>
-            prev.map(p =>
-                p.id === id
-                    ? {
-                        ...p,
-                        editPrice: p.originalPrice,
-                        editQuantity: p.originalQuantity,
-                        isEditing: false
-                    }
-                    : p
-            )
-        )
-    }
-
-    // ================= STOCK BADGE =================
     const getStockBadge = (qty) => {
         if (qty === 0) {
             return <span className="text-red-600 font-semibold">Out of Stock</span>
         }
         if (qty < LOW_STOCK_LIMIT) {
-            return (
-                <span className="text-yellow-600 font-semibold">
-                    Low Stock ({qty})
-                </span>
-            )
+            return <span className="text-yellow-600 font-semibold">Low Stock ({qty})</span>
         }
         return <span className="text-green-600 font-semibold">In Stock</span>
     }
@@ -159,7 +138,7 @@ export default function StoreManageProducts() {
             </h1>
 
             <table className="w-full max-w-6xl text-left ring ring-slate-200 rounded text-sm">
-                <thead className="bg-slate-50 uppercase tracking-wider text-gray-700">
+                <thead className="bg-slate-50 uppercase text-gray-700">
                     <tr>
                         <th className="px-4 py-3">Product</th>
                         <th className="px-4 py-3 hidden md:table-cell">MRP</th>
@@ -170,20 +149,23 @@ export default function StoreManageProducts() {
                     </tr>
                 </thead>
 
-                <tbody className="text-slate-700">
+                <tbody>
                     {products.map(product => (
-                        <tr key={product.id} className="border-t hover:bg-gray-50">
-                            <td className="px-4 py-3">
-                                <div className="flex gap-2 items-center">
-                                    <Image
-                                        width={40}
-                                        height={40}
-                                        src={product.images[0]}
-                                        alt={product.name}
-                                        className="rounded shadow"
-                                    />
-                                    {product.name}
-                                </div>
+                        <tr
+                            key={product.id}
+                            className={`border-t ${
+                                product.quantity === 0 ? 'bg-red-50 opacity-80' : 'hover:bg-gray-50'
+                            }`}
+                        >
+                            <td className="px-4 py-3 flex gap-2 items-center">
+                                <Image
+                                    width={40}
+                                    height={40}
+                                    src={product.images[0]}
+                                    alt={product.name}
+                                    className="rounded shadow"
+                                />
+                                {product.name}
                             </td>
 
                             <td className="px-4 py-3 hidden md:table-cell">
@@ -204,14 +186,13 @@ export default function StoreManageProducts() {
                                             )
                                         )
                                     }
-                                    className={`w-24 px-2 py-1 border rounded ${!product.isEditing && 'bg-gray-100 cursor-not-allowed'}`}
+                                    className="w-24 px-2 py-1 border rounded"
                                 />
                             </td>
 
                             <td className="px-4 py-3">
                                 <input
                                     type="number"
-                                    min={0}
                                     disabled={!product.isEditing}
                                     value={product.editQuantity}
                                     onChange={e =>
@@ -223,7 +204,7 @@ export default function StoreManageProducts() {
                                             )
                                         )
                                     }
-                                    className={`w-20 px-2 py-1 border rounded ${!product.isEditing && 'bg-gray-100 cursor-not-allowed'}`}
+                                    className="w-20 px-2 py-1 border rounded"
                                 />
                             </td>
 
@@ -235,18 +216,23 @@ export default function StoreManageProducts() {
                                 {!product.isEditing ? (
                                     <>
                                         <button
-                                            onClick={() => enableEdit(product.id)}
-                                            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                                            disabled={product.quantity === 0}
+                                            onClick={() => setProducts(prev =>
+                                                prev.map(p =>
+                                                    p.id === product.id ? { ...p, isEditing: true } : p
+                                                )
+                                            )}
+                                            className={`px-4 py-2 rounded text-white ${
+                                                product.quantity === 0
+                                                    ? 'bg-gray-400 cursor-not-allowed'
+                                                    : 'bg-blue-600 hover:bg-blue-700'
+                                            }`}
                                         >
                                             Edit
                                         </button>
 
                                         <button
-                                            onClick={() =>
-                                                toast.promise(deleteProduct(product.id), {
-                                                    loading: "Deleting..."
-                                                })
-                                            }
+                                            onClick={() => deleteProduct(product.id)}
                                             className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
                                         >
                                             Delete
@@ -255,19 +241,28 @@ export default function StoreManageProducts() {
                                 ) : (
                                     <>
                                         <button
-                                            onClick={() =>
-                                                toast.promise(saveProduct(product), {
-                                                    loading: "Saving..."
-                                                })
-                                            }
-                                            className="px-4 py-2 bg-slate-800 text-white rounded hover:bg-slate-900"
+                                            onClick={() => saveProduct(product)}
+                                            className="px-4 py-2 bg-slate-800 text-white rounded"
                                         >
                                             Save
                                         </button>
 
                                         <button
-                                            onClick={() => cancelEdit(product.id)}
-                                            className="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400"
+                                            onClick={() =>
+                                                setProducts(prev =>
+                                                    prev.map(p =>
+                                                        p.id === product.id
+                                                            ? {
+                                                                ...p,
+                                                                editPrice: p.originalPrice,
+                                                                editQuantity: p.originalQuantity,
+                                                                isEditing: false
+                                                            }
+                                                            : p
+                                                    )
+                                                )
+                                            }
+                                            className="px-4 py-2 bg-gray-300 rounded"
                                         >
                                             Cancel
                                         </button>
@@ -281,4 +276,3 @@ export default function StoreManageProducts() {
         </>
     )
 }
-    
