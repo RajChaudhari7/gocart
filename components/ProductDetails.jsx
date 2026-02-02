@@ -6,9 +6,9 @@ import Image from "next/image"
 import { StarIcon, EarthIcon, CreditCardIcon, UserIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { setCartItemQuantity } from "@/lib/features/cart/cartSlice"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-motion"
 
-/* -------------------- SHIMMER PLACEHOLDER -------------------- */
+/* -------------------- SHIMMER -------------------- */
 const shimmer = (w, h) => `
 <svg width="${w}" height="${h}" xmlns="http://www.w3.org/2000/svg">
   <defs>
@@ -42,45 +42,40 @@ const ProductDetails = ({ product }) => {
   const [activeIndex, setActiveIndex] = useState(0)
   const [quantity, setQuantity] = useState(1)
   const [inCart, setInCart] = useState(false)
-  const [showQuantity, setShowQuantity] = useState(false)
-  const [animatePlus, setAnimatePlus] = useState(false)
-  const [animateMinus, setAnimateMinus] = useState(false)
 
+  /* ---------- 3D MOTION VALUES ---------- */
+  const x = useMotionValue(0)
+  const y = useMotionValue(0)
+
+  const rotateX = useTransform(y, [-100, 100], [12, -12])
+  const rotateY = useTransform(x, [-100, 100], [-12, 12])
+
+  /* ---------- CART SYNC ---------- */
   useEffect(() => {
-    if (cart[productId]) {
+    if (cart[productId] && cart[productId] > 0) {
       setQuantity(cart[productId])
       setInCart(true)
-      setShowQuantity(true)
+    } else {
+      setInCart(false)
+      setQuantity(1)
     }
   }, [cart, productId])
 
   const handleAddToCart = () => {
     dispatch(setCartItemQuantity({ productId, quantity: 1, maxQuantity: maxQty }))
     setInCart(true)
-    setShowQuantity(true)
-    setAnimatePlus(true)
-    setTimeout(() => setAnimatePlus(false), 300)
   }
 
-  const handleQuantityChange = (newQty, type) => {
-    if (newQty < 1) {
-      setAnimateMinus(true)
-      setTimeout(() => setAnimateMinus(false), 300)
+  const handleQuantityChange = (newQty) => {
+    if (newQty <= 0) {
       dispatch(setCartItemQuantity({ productId, quantity: 0, maxQuantity: maxQty }))
       setInCart(false)
-      setShowQuantity(false)
       setQuantity(1)
-    } else {
-      setQuantity(newQty)
-      dispatch(setCartItemQuantity({ productId, quantity: newQty, maxQuantity: maxQty }))
-      setShowQuantity(true)
-      if (type === "plus") setAnimatePlus(true)
-      if (type === "minus") setAnimateMinus(true)
-      setTimeout(() => {
-        setAnimatePlus(false)
-        setAnimateMinus(false)
-      }, 300)
+      return
     }
+
+    setQuantity(newQty)
+    dispatch(setCartItemQuantity({ productId, quantity: newQty, maxQuantity: maxQty }))
   }
 
   const averageRating = product.rating.length
@@ -88,12 +83,11 @@ const ProductDetails = ({ product }) => {
     : 0
 
   const handleSwipe = (_, info) => {
-    if (info.offset.x < -80 && activeIndex < product.images.length - 1) {
+    if (info.offset.x < -80 && activeIndex < product.images.length - 1)
       setActiveIndex(i => i + 1)
-    }
-    if (info.offset.x > 80 && activeIndex > 0) {
+
+    if (info.offset.x > 80 && activeIndex > 0)
       setActiveIndex(i => i - 1)
-    }
   }
 
   return (
@@ -102,50 +96,53 @@ const ProductDetails = ({ product }) => {
       {/* ---------------- IMAGE GALLERY ---------------- */}
       <div className="flex flex-col lg:flex-row gap-4 w-full lg:w-[58%]">
 
-        {/* MAIN IMAGE / CAROUSEL */}
-        <div className="order-1 lg:order-2 flex justify-center items-center bg-white/5 p-4 sm:p-6 lg:p-6 rounded-2xl w-full overflow-hidden">
+        {/* 3D IMAGE CARD */}
+        <motion.div
+          style={{ rotateX, rotateY }}
+          onMouseMove={(e) => {
+            const rect = e.currentTarget.getBoundingClientRect()
+            x.set(e.clientX - rect.left - rect.width / 2)
+            y.set(e.clientY - rect.top - rect.height / 2)
+          }}
+          onMouseLeave={() => {
+            x.set(0)
+            y.set(0)
+          }}
+          whileHover={{ scale: 1.05 }}
+          transition={{ type: "spring", stiffness: 120, damping: 12 }}
+          className="order-1 lg:order-2 flex justify-center items-center bg-white/5 p-6 rounded-2xl w-full overflow-hidden perspective-[1200px]"
+        >
           <motion.div
-            className="w-full flex justify-center"
             drag="x"
             dragConstraints={{ left: 0, right: 0 }}
             onDragEnd={handleSwipe}
+            className="relative"
           >
             <AnimatePresence mode="wait">
               <motion.div
                 key={activeIndex}
-                initial={{ opacity: 0, x: 40 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -40 }}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
                 transition={{ duration: 0.3 }}
               >
                 <Image
                   src={product.images[activeIndex]}
                   alt={product.name}
-                  width={400}
-                  height={400}
+                  width={420}
+                  height={420}
                   priority
                   placeholder="blur"
-                  blurDataURL={`data:image/svg+xml;base64,${toBase64(
-                    shimmer(400, 400)
-                  )}`}
-                  className="
-                    w-full
-                    max-w-[280px]
-                    sm:max-w-[340px]
-                    lg:max-w-[460px]
-                    xl:max-w-[500px]
-                    h-auto
-                    object-contain
-                    drop-shadow-2xl
-                  "
+                  blurDataURL={`data:image/svg+xml;base64,${toBase64(shimmer(420, 420))}`}
+                  className="object-contain drop-shadow-[0_30px_60px_rgba(0,255,255,0.25)]"
                 />
               </motion.div>
             </AnimatePresence>
           </motion.div>
-        </div>
+        </motion.div>
 
         {/* THUMBNAILS */}
-        <div className="order-2 lg:order-1 flex lg:flex-col gap-3 justify-center lg:justify-start">
+        <div className="order-2 lg:order-1 flex lg:flex-col gap-3 justify-center">
           {product.images.map((img, i) => (
             <button
               key={i}
@@ -156,17 +153,7 @@ const ProductDetails = ({ product }) => {
                   : "border-white/20 hover:border-cyan-400"
                 }`}
             >
-              <Image
-                src={img}
-                alt=""
-                width={56}
-                height={56}
-                placeholder="blur"
-                blurDataURL={`data:image/svg+xml;base64,${toBase64(
-                  shimmer(56, 56)
-                )}`}
-                className="object-contain"
-              />
+              <Image src={img} alt="" width={56} height={56} />
             </button>
           ))}
         </div>
@@ -176,6 +163,7 @@ const ProductDetails = ({ product }) => {
       <div className="flex-1">
         <h1 className="text-3xl md:text-5xl font-bold">{product.name}</h1>
 
+        {/* RATING */}
         <div className="flex items-center gap-2 mt-3">
           {Array(5).fill("").map((_, i) => (
             <StarIcon
@@ -189,6 +177,7 @@ const ProductDetails = ({ product }) => {
           </span>
         </div>
 
+        {/* PRICE */}
         <div className="flex gap-3 items-center mt-5">
           <span className="text-3xl font-bold">{currency}{product.price}</span>
           <span className="line-through text-slate-400">{currency}{product.mrp}</span>
@@ -197,37 +186,36 @@ const ProductDetails = ({ product }) => {
           </span>
         </div>
 
+        {/* CART */}
         <div className="mt-6">
           {inCart ? (
-            <>
-              <p className="font-semibold mb-2">Quantity</p>
-              <div className="flex items-center gap-3">
-                <motion.button
-                  animate={animateMinus ? { scale: 0.8 } : { scale: 1 }}
-                  onClick={() => handleQuantityChange(quantity - 1, "minus")}
-                  className="border px-3 py-1 rounded"
-                >−</motion.button>
+            <div className="flex items-center gap-4">
+              <button onClick={() => handleQuantityChange(quantity - 1)} className="border px-3 py-1 rounded">−</button>
+              <span>{quantity}</span>
+              <button onClick={() => handleQuantityChange(quantity + 1)} className="border px-3 py-1 rounded">+</button>
 
-                <span className="min-w-[20px] text-center">{quantity}</span>
-
-                <motion.button
-                  animate={animatePlus ? { scale: 1.3 } : { scale: 1 }}
-                  onClick={() => handleQuantityChange(quantity + 1, "plus")}
-                  disabled={quantity >= maxQty}
-                  className="border px-3 py-1 rounded disabled:opacity-40"
-                >+</motion.button>
-              </div>
-            </>
+              <motion.button
+                whileHover={{ scale: 1.08 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => router.push("/cart")}
+                className="ml-4 bg-emerald-400 text-black px-6 py-2 rounded-xl font-semibold shadow-lg"
+              >
+                View Cart
+              </motion.button>
+            </div>
           ) : (
-            <button
+            <motion.button
+              whileHover={{ scale: 1.08 }}
+              whileTap={{ scale: 0.95 }}
               onClick={handleAddToCart}
-              className="bg-cyan-400 text-black px-8 py-3 rounded-xl font-semibold hover:scale-105 transition"
+              className="bg-cyan-400 text-black px-8 py-3 rounded-xl font-semibold shadow-lg"
             >
               Add to Cart
-            </button>
+            </motion.button>
           )}
         </div>
 
+        {/* BENEFITS */}
         <div className="flex flex-col gap-3 mt-6 text-slate-400">
           <p className="flex items-center gap-2"><EarthIcon /> Free shipping worldwide</p>
           <p className="flex items-center gap-2"><CreditCardIcon /> Secure payments</p>
