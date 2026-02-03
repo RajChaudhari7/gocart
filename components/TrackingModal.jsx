@@ -96,7 +96,7 @@ export default function TrackingModal({ order, onClose }) {
           </div>
 
           {/* TRACKING TIMELINE */}
-          <div className="relative space-y-5 pl-5">
+          <div className="relative pl-5">
             {/* Vertical line behind steps */}
             <div className="absolute left-4 top-5 bottom-0 w-1 bg-white/20 rounded-full"></div>
 
@@ -111,45 +111,39 @@ export default function TrackingModal({ order, onClose }) {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.08 }}
-                  className="flex items-center gap-4 relative z-10"
+                  className="flex items-center gap-4 relative mb-5 last:mb-0"
                 >
                   {/* Step circle */}
                   <div
                     className={`
-                      flex items-center justify-center w-10 h-10 rounded-full border relative
+                      flex items-center justify-center w-10 h-10 rounded-full border relative z-10
                       ${isCompleted ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400' : ''}
                       ${isActive ? 'bg-indigo-500/20 border-indigo-500 text-indigo-400 shadow-[0_0_12px_rgba(99,102,241,0.6)] animate-pulse' : ''}
                       ${!isCompleted && !isActive ? 'bg-white/10 border-white/20 text-white/40' : ''}
                     `}
                   >
                     <Icon size={18} />
-
-                    {/* Connecting line to next step */}
-                    {index < TRACKING_STEPS.length - 1 && (
-                      <span
-                        className={`
-                          absolute left-1/2 top-full w-0.5 h-full -translate-x-1/2
-                          ${index < currentStep ? 'bg-emerald-500' : 'bg-white/20'}
-                        `}
-                      />
-                    )}
                   </div>
 
                   {/* Step label */}
                   <div className="flex-1">
-                    <p
-                      className={`text-sm font-medium ${
-                        isCompleted || isActive ? 'text-white' : 'text-white/50'
-                      }`}
-                    >
+                    <p className={`text-sm font-medium ${isCompleted || isActive ? 'text-white' : 'text-white/50'}`}>
                       {step.label}
                     </p>
+                    {(isCompleted || isActive) && (
+                      <span className="text-xs text-white/40">Updated</span>
+                    )}
                   </div>
 
-                  {(isCompleted || isActive) && (
-                    <span className="text-xs text-white/40">
-                      Updated
-                    </span>
+                  {/* Completed line overlay */}
+                  {index < TRACKING_STEPS.length - 1 && (
+                    <div
+                      className={`absolute left-4 top-10 w-1 h-full bg-white/20 rounded-full`}
+                    >
+                      {index < currentStep && (
+                        <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500 rounded-full"></div>
+                      )}
+                    </div>
                   )}
                 </motion.div>
               )
