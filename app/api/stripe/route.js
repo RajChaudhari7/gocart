@@ -1,59 +1,74 @@
 import prisma from "@/lib/prisma";
-import { NextResponse } from "next/server";
 import Stripe from "stripe";
+import { headers } from "next/headers";
+import { NextResponse } from "next/server";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+  apiVersion: "2023-10-16",
+});
 
-export async function POST(request) {
+export async function POST(req) {
+  const body = await req.text(); // ✅ RAW BODY
+  const sig = headers().get("stripe-signature");
+
+  if (!sig) {
+    console.error("❌ Missing Stripe signature");
+    return NextResponse.json({ error: "Missing signature" }, { status: 400 });
+  }
+
+  let event;
+
   try {
-    const body = await request.text();
-    const sig = request.headers.get("stripe-signature");
-
-    const event = stripe.webhooks.constructEvent(
+    event = stripe.webhooks.constructEvent(
       body,
       sig,
       process.env.STRIPE_WEBHOOK_SECRET
     );
+  } catch (err) {
+    console.error("❌ Stripe signature verification failed:", err.message);
+    return NextResponse.json({ error: err.message }, { status: 400 });
+  }
 
-    // 🔥 HANDLE CHECKOUT SESSION (NOT PAYMENT INTENT)
-    if (event.type === "checkout.session.completed") {
-      const session = event.data.object;
+  console.log("✅ Stripe Event:", event.type);
 
-      const { orderIds, userId, appId } = session.metadata || {};
+  // ================= HANDLE PAYMENT =================
+  if (event.type === "checkout.session.completed") {
+    const session = event.data.object;
 
-      if (appId !== "globalmart") {
-        return NextResponse.json({ received: true });
-      }
+    console.log("🔥 Webhook Metadata:", session.metadata);
 
-      const orderIdsArray = orderIds.split(",");
+    const { orderIds, userId, appId } = session.metadata || {};
 
-      // ✅ MARK ORDERS AS PAID
-      await Promise.all(
-        orderIdsArray.map((orderId) =>
-          prisma.order.update({
-            where: { id: orderId },
-            data: { isPaid: true },
-          })
-        )
-      );
-
-      // ✅ CLEAR USER CART
-      await prisma.user.update({
-        where: { id: userId },
-        data: { cart: {} },
-      });
+    if (appId !== "globalmart") {
+      console.log("❌ Invalid appId:", appId);
+      return NextResponse.json({ received: true });
     }
 
-    return NextResponse.json({ received: true });
-  } catch (error) {
-    console.error("Stripe Webhook Error:", error);
-    return NextResponse.json(
-      { error: error.message },
-      { status: 400 }
-    );
-  }
-}
+    if (!orderIds || !userId) {
+      console.log("❌ Missing metadata:", session.metadata);
+      return NextResponse.json({ received: true });
+    }
 
-export const config = {
-  api: { bodyParser: false },
-};
+    const orderIdsArray = orderIds.split(",");
+
+    // ✅ Mark orders as PAID
+    await prisma.order.updateMany({
+      where: {
+        id: { in: orderIdsArray },
+      },
+      data: {
+        isPaid: true,
+      },
+    });
+
+    // ✅ Clear user cart
+    await prisma.user.update({
+      where: { id: userId },
+      data: { cart: {} },
+    });
+
+    console.log("🎉 Orders marked paid:", orderIdsArray);
+  }
+
+  return NextResponse.json({ received: true });
+}
