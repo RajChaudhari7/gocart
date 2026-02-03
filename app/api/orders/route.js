@@ -23,13 +23,24 @@ export async function POST(request) {
     }
 
     const isPrimeMember = has({ plan: "prime" });
-
     const ordersByStore = new Map();
 
+    // ---------------- GROUP ITEMS BY STORE ----------------
     for (const item of items) {
       const product = await prisma.product.findUnique({
         where: { id: item.id },
       });
+
+      if (!product) {
+        throw new Error("Product not found");
+      }
+
+      // ✅ STOCK CHECK
+      if (product.quantity < item.quantity) {
+        throw new Error(
+          `Not enough stock for ${product.name}. Available: ${product.quantity}`
+        );
+      }
 
       if (!ordersByStore.has(product.storeId)) {
         ordersByStore.set(product.storeId, []);
@@ -44,48 +55,60 @@ export async function POST(request) {
     let fullAmount = 0;
     let isShippingFeeAdded = false;
 
-    for (const [storeId, sellerItems] of ordersByStore.entries()) {
-      let total = sellerItems.reduce(
-        (acc, item) => acc + item.price * item.quantity,
-        0
-      );
+    // ---------------- TRANSACTION ----------------
+    await prisma.$transaction(async (tx) => {
+      for (const [storeId, sellerItems] of ordersByStore.entries()) {
+        let total = sellerItems.reduce(
+          (acc, item) => acc + item.price * item.quantity,
+          0
+        );
 
-      if (!isPrimeMember && !isShippingFeeAdded) {
-        total += 50;
-        isShippingFeeAdded = true;
+        if (!isPrimeMember && !isShippingFeeAdded) {
+          total += 50;
+          isShippingFeeAdded = true;
+        }
+
+        fullAmount += total;
+        const now = new Date();
+
+        // ✅ CREATE ORDER
+        const order = await tx.order.create({
+          data: {
+            userId,
+            storeId,
+            addressId,
+            total,
+            paymentMethod,
+            status: "ORDER_PLACED",
+            statusHistory: {
+              ORDER_PLACED: now.toISOString(),
+            },
+            orderItems: {
+              create: sellerItems.map((item) => ({
+                productId: item.id,
+                quantity: item.quantity,
+                price: item.price,
+              })),
+            },
+          },
+        });
+
+        orderIds.push(order.id);
+
+        // 🔥 REDUCE STOCK HERE
+        for (const item of sellerItems) {
+          await tx.product.update({
+            where: { id: item.id },
+            data: {
+              quantity: { decrement: item.quantity },
+              inStock: true,
+            },
+          });
+        }
       }
+    });
 
-      fullAmount += total;
-
-      const now = new Date();
-
-      const order = await prisma.order.create({
-        data: {
-          userId,
-          storeId,
-          addressId,
-          total,
-          paymentMethod,
-
-          // ✅ STATUS + HISTORY
-          status: "ORDER_PLACED",
-          statusHistory: {
-            ORDER_PLACED: now.toISOString(),
-          },
-
-          orderItems: {
-            create: sellerItems.map((item) => ({
-              productId: item.id,
-              quantity: item.quantity,
-              price: item.price,
-            })),
-          },
-        },
-      });
-
-      orderIds.push(order.id);
-    }
-
+    // ---------------- STRIPE ----------------
     if (paymentMethod === "STRIPE") {
       const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
       const origin = request.headers.get("origin");

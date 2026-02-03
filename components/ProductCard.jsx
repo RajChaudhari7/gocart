@@ -45,21 +45,23 @@ const ProductCard = ({ product }) => {
   // ================= SLIDER FUNCTIONS =================
   const nextImage = (e) => {
     e?.stopPropagation()
-    if (!hasMultiple) return
+    if (!hasMultiple || isOutOfStock) return
     setIndex((prev) => (prev + 1) % images.length)
   }
 
   const prevImage = (e) => {
     e?.stopPropagation()
-    if (!hasMultiple) return
+    if (!hasMultiple || isOutOfStock) return
     setIndex((prev) => (prev - 1 + images.length) % images.length)
   }
 
   const onTouchStart = (e) => {
+    if (isOutOfStock) return
     touchStartX.current = e.touches[0].clientX
   }
 
   const onTouchEnd = (e) => {
+    if (isOutOfStock) return
     const diff = touchStartX.current - e.changedTouches[0].clientX
     if (diff > 40) nextImage()
     if (diff < -40) prevImage()
@@ -71,6 +73,7 @@ const ProductCard = ({ product }) => {
   // ================= 3D TILT =================
   const handleMouseMove = (e) => {
     if (!cardRef.current || isOutOfStock) return
+
     const rect = cardRef.current.getBoundingClientRect()
     const x = e.clientX - rect.left
     const y = e.clientY - rect.top
@@ -86,13 +89,14 @@ const ProductCard = ({ product }) => {
       scale(1.08)
     `
     cardRef.current.style.boxShadow = `
-      0 ${-rotateX*1.5}px ${Math.abs(rotateX*6)+20}px rgba(34,211,238,0.25),
-      0 ${rotateY*1.5}px ${Math.abs(rotateY*6)+20}px rgba(0,0,0,0.25)
+      0 ${-rotateX * 1.5}px ${Math.abs(rotateX * 6) + 20}px rgba(34,211,238,0.25),
+      0 ${rotateY * 1.5}px ${Math.abs(rotateY * 6) + 20}px rgba(0,0,0,0.25)
     `
   }
 
   const resetTilt = () => {
     if (!cardRef.current) return
+
     cardRef.current.style.transform = `
       perspective(1200px)
       rotateX(0deg)
@@ -115,15 +119,24 @@ const ProductCard = ({ product }) => {
         ref={cardRef}
         onMouseMove={handleMouseMove}
         onMouseLeave={resetTilt}
-        animate={{ y: [0, -12, 0] }} // card floating
-        transition={{ duration: 4, repeat: Infinity, repeatType: 'loop', ease: 'easeInOut' }}
+        animate={!isOutOfStock ? { y: [0, -12, 0] } : {}}
+        transition={{
+          duration: 4,
+          repeat: isOutOfStock ? 0 : Infinity,
+          repeatType: 'loop',
+          ease: 'easeInOut'
+        }}
         className="relative flex flex-col h-full rounded-xl overflow-hidden border transition-all duration-300 will-change-transform
         bg-[#0a0a0a] border-white/5"
-        style={{ boxShadow: '0 20px 40px rgba(0,0,0,0.25)', transformStyle: 'preserve-3d' }}
+        style={{
+          boxShadow: '0 20px 40px rgba(0,0,0,0.25)',
+          transformStyle: 'preserve-3d',
+          opacity: isOutOfStock ? 0.6 : 1
+        }}
       >
-        {/* OUT OF STOCK */}
+        {/* OUT OF STOCK OVERLAY */}
         {isOutOfStock && (
-          <div className="absolute inset-0 z-30 bg-black/60 flex flex-col items-center justify-center gap-2">
+          <div className="absolute inset-0 z-30 bg-black/70 flex flex-col items-center justify-center gap-2">
             <Ban size={28} className="text-red-400" />
             <span className="text-sm font-semibold tracking-wide text-red-400">
               OUT OF STOCK
@@ -137,15 +150,19 @@ const ProductCard = ({ product }) => {
           onTouchStart={onTouchStart}
           onTouchEnd={onTouchEnd}
         >
-          {/* Floating parent div */}
           <motion.div
-            animate={{ x: [0, 3, -3, 0], y: [0, -2, 2, 0] }}
-            transition={{ duration: 5, repeat: Infinity, repeatType: 'loop', ease: 'easeInOut' }}
+            animate={!isOutOfStock ? { x: [0, 3, -3, 0], y: [0, -2, 2, 0] } : {}}
+            transition={{
+              duration: 5,
+              repeat: isOutOfStock ? 0 : Infinity,
+              repeatType: 'loop',
+              ease: 'easeInOut'
+            }}
             className="relative w-full h-full"
           >
             <AnimatePresence mode="wait">
               <motion.div
-                key={index} // must update key for fade effect
+                key={index}
                 initial={{ opacity: 0, x: 30 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -30 }}

@@ -36,12 +36,15 @@ const ProductDetails = ({ product }) => {
   const cart = useSelector(state => state.cart.cartItems)
 
   const productId = product.id
-  const maxQty = product.quantity
+  const maxQty = product.quantity || 0
   const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || "₹"
 
   const [activeIndex, setActiveIndex] = useState(0)
   const [quantity, setQuantity] = useState(1)
   const [inCart, setInCart] = useState(false)
+
+  const isOutOfStock = maxQty <= 0
+  const isAtMaxStock = quantity >= maxQty
 
   /* ---------- 3D MOTION VALUES ---------- */
   const x = useMotionValue(0)
@@ -53,29 +56,49 @@ const ProductDetails = ({ product }) => {
   /* ---------- CART SYNC ---------- */
   useEffect(() => {
     if (cart[productId] && cart[productId] > 0) {
-      setQuantity(cart[productId])
+      const safeQty = Math.min(cart[productId], maxQty)
+      setQuantity(safeQty)
       setInCart(true)
     } else {
       setInCart(false)
       setQuantity(1)
     }
-  }, [cart, productId])
+  }, [cart, productId, maxQty])
 
+  /* ---------- HANDLERS ---------- */
   const handleAddToCart = () => {
-    dispatch(setCartItemQuantity({ productId, quantity: 1, maxQuantity: maxQty }))
+    if (isOutOfStock) return
+
+    dispatch(setCartItemQuantity({
+      productId,
+      quantity: 1,
+      maxQuantity: maxQty
+    }))
+
     setInCart(true)
   }
 
   const handleQuantityChange = (newQty) => {
-    if (newQty <= 0) {
-      dispatch(setCartItemQuantity({ productId, quantity: 0, maxQuantity: maxQty }))
+    if (newQty > maxQty) return
+    if (newQty < 0) return
+
+    if (newQty === 0) {
+      dispatch(setCartItemQuantity({
+        productId,
+        quantity: 0,
+        maxQuantity: maxQty
+      }))
       setInCart(false)
       setQuantity(1)
       return
     }
 
     setQuantity(newQty)
-    dispatch(setCartItemQuantity({ productId, quantity: newQty, maxQuantity: maxQty }))
+    dispatch(setCartItemQuantity({
+      productId,
+      quantity: newQty,
+      maxQuantity: maxQty
+    }))
   }
 
   const averageRating = product.rating.length
@@ -186,13 +209,41 @@ const ProductDetails = ({ product }) => {
           </span>
         </div>
 
+        {/* LOW STOCK WARNING */}
+        {maxQty > 0 && maxQty <= 5 && (
+          <p className="mt-2 text-amber-400 font-medium">
+            Only {maxQty} left in stock!
+          </p>
+        )}
+
+        {isOutOfStock && (
+          <p className="mt-2 text-red-400 font-semibold">
+            Out of stock
+          </p>
+        )}
+
         {/* CART */}
         <div className="mt-6">
           {inCart ? (
             <div className="flex items-center gap-4">
-              <button onClick={() => handleQuantityChange(quantity - 1)} className="border px-3 py-1 rounded">−</button>
+              <button
+                onClick={() => handleQuantityChange(quantity - 1)}
+                className="border px-3 py-1 rounded"
+              >
+                −
+              </button>
+
               <span>{quantity}</span>
-              <button onClick={() => handleQuantityChange(quantity + 1)} className="border px-3 py-1 rounded">+</button>
+
+              <button
+                disabled={isAtMaxStock}
+                onClick={() => handleQuantityChange(quantity + 1)}
+                className={`border px-3 py-1 rounded
+                  ${isAtMaxStock ? "opacity-40 cursor-not-allowed" : ""}
+                `}
+              >
+                +
+              </button>
 
               <motion.button
                 whileHover={{ scale: 1.08 }}
@@ -205,19 +256,25 @@ const ProductDetails = ({ product }) => {
             </div>
           ) : (
             <motion.button
-              whileHover={{ scale: 1.08 }}
-              whileTap={{ scale: 0.95 }}
+              whileHover={!isOutOfStock ? { scale: 1.08 } : {}}
+              whileTap={!isOutOfStock ? { scale: 0.95 } : {}}
               onClick={handleAddToCart}
-              className="bg-cyan-400 text-black px-8 py-3 rounded-xl font-semibold shadow-lg"
+              disabled={isOutOfStock}
+              className={`px-8 py-3 rounded-xl font-semibold shadow-lg
+                ${isOutOfStock
+                  ? "bg-slate-600 cursor-not-allowed"
+                  : "bg-cyan-400 text-black"
+                }
+              `}
             >
-              Add to Cart
+              {isOutOfStock ? "Out of Stock" : "Add to Cart"}
             </motion.button>
           )}
         </div>
 
         {/* BENEFITS */}
         <div className="flex flex-col gap-3 mt-6 text-slate-400">
-          <p className="flex items-center gap-2"><EarthIcon /> Free shipping worldwide</p>
+          <p className="flex items-center gap-2"><EarthIcon /> Fast shipping worldwide</p>
           <p className="flex items-center gap-2"><CreditCardIcon /> Secure payments</p>
           <p className="flex items-center gap-2"><UserIcon /> Trusted sellers</p>
         </div>

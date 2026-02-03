@@ -26,10 +26,9 @@ model Product {
   description String
   mrp         Float
   price       Float
-  quantity    Int
+  quantity    Int      @default(0) // ✅ single source of truth
   images      String[]
   category    String
-  inStock     Boolean  @default(true)
   storeId     String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -62,12 +61,12 @@ enum PaymentMethod {
 // ✅ UPDATED ORDER MODEL
 ////////////////////////////////////
 model Order {
-  id            String        @id @default(cuid())
-  total         Float
-  status        OrderStatus   @default(ORDER_PLACED)
+  id     String      @id @default(cuid())
+  total  Float
+  status OrderStatus @default(ORDER_PLACED)
 
   /// 🔥 TRACKING HISTORY FOR DATE & TIME
-  statusHistory Json          @default("{}")
+  statusHistory Json @default("{}")
 
   userId        String
   storeId       String
@@ -79,7 +78,7 @@ model Order {
   isCouponUsed  Boolean       @default(false)
   coupon        Json          @default("{}")
 
-  orderItems    OrderItem[]
+  orderItems OrderItem[]
 
   user    User    @relation("BuyerRelation", fields: [userId], references: [id])
   store   Store   @relation(fields: [storeId], references: [id])
