@@ -1,211 +1,168 @@
 'use client'
 
 import Image from "next/image"
-import { CreditCard, CheckCircle, Truck, Package, Circle } from "lucide-react"
-import { useSelector } from "react-redux"
-import Rating from "./Rating"
-import { useState } from "react"
-import RatingModal from "./RatingModal"
 import { motion, AnimatePresence } from "framer-motion"
-
-const STATUS_FLOW = [
-  { key: 'PLACED', label: 'Placed', icon: Package },
-  { key: 'SHIPPED', label: 'Shipped', icon: Truck },
-  { key: 'OUT_FOR_DELIVERY', label: 'Out for delivery', icon: Truck },
-  { key: 'DELIVERED', label: 'Delivered', icon: CheckCircle },
-]
+import { CreditCard, Truck, CheckCircle, XCircle } from "lucide-react"
 
 const statusConfig = {
-  CONFIRMED: 'PLACED',
-  PLACED: 'PLACED',
-  SHIPPED: 'SHIPPED',
-  OUT_FOR_DELIVERY: 'OUT_FOR_DELIVERY',
-  DELIVERED: 'DELIVERED',
-  CANCELLED: 'CANCELLED',
+  PLACED: {
+    label: "Order Placed",
+    color: "bg-sky-500/20 text-sky-400 border-sky-500/30",
+    icon: Truck,
+  },
+  SHIPPED: {
+    label: "Shipped",
+    color: "bg-indigo-500/20 text-indigo-400 border-indigo-500/30",
+    icon: Truck,
+  },
+  DELIVERED: {
+    label: "Delivered",
+    color: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
+    icon: CheckCircle,
+  },
+  CANCELED: {
+    label: "Canceled",
+    color: "bg-red-500/20 text-red-400 border-red-500/30",
+    icon: XCircle,
+  },
 }
 
-const badgeConfig = {
-  PLACED: 'text-yellow-400 bg-yellow-400/15 border-yellow-400/30',
-  SHIPPED: 'text-cyan-400 bg-cyan-400/15 border-cyan-400/30',
-  OUT_FOR_DELIVERY: 'text-indigo-400 bg-indigo-400/15 border-indigo-400/30',
-  DELIVERED: 'text-emerald-400 bg-emerald-400/15 border-emerald-400/30',
-  CANCELLED: 'text-red-400 bg-red-400/15 border-red-400/30',
-}
-
-const OrderItem = ({ order, mobile, onCancel }) => {
-  // ✅ BUILD SAFE GUARD
+export default function OrderItem({ order, onCancel, mobile = false }) {
+  // 🔥 CRITICAL: BUILD-SAFE GUARD
   if (!order) return null
 
-  const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '₹'
-  const [ratingModal, setRatingModal] = useState(null)
-  const { ratings = [] } = useSelector(state => state.rating || {})
+  const safeStatus = order.status || 'PLACED'
+  const status = statusConfig[safeStatus] || statusConfig.PLACED
+  const StatusIcon = status.icon
 
-  const paymentLabel = {
-    STRIPE: 'Card / Stripe',
-    RAZORPAY: 'Razorpay',
-    COD: 'Cash on Delivery',
-    UPI: 'UPI',
-  }[order.paymentMethod] || order.paymentMethod || 'N/A'
+  if (mobile) {
+    return (
+      <div className="bg-white/5 border border-white/10 rounded-2xl p-4 backdrop-blur-xl">
+        <div className="flex gap-4">
+          <Image
+            src={order?.product?.image || '/placeholder.png'}
+            alt={order?.product?.title || 'Product'}
+            width={70}
+            height={70}
+            className="rounded-xl object-cover"
+          />
 
-  const normalizedStatus =
-    statusConfig[order.status] || 'PLACED'
+          <div className="flex-1">
+            <h3 className="font-semibold leading-tight">
+              {order?.product?.title}
+            </h3>
+            <p className="text-sm text-white/50">
+              ₹{order?.product?.price} × {order?.quantity}
+            </p>
 
-  const isDelivered = normalizedStatus === 'DELIVERED'
-  const isCanceled = normalizedStatus === 'CANCELLED'
+            <div className="mt-3 flex items-center justify-between">
+              <span className="font-semibold">
+                ₹{order?.total}
+              </span>
 
-  const currentStepIndex = STATUS_FLOW.findIndex(
-    s => s.key === normalizedStatus
-  )
+              <StatusBadge status={status} StatusIcon={StatusIcon} />
+            </div>
 
+            <div className="mt-3 flex justify-end">
+              {safeStatus !== 'DELIVERED' && (
+                <button
+                  onClick={onCancel}
+                  className="text-red-400 hover:text-red-300 text-sm"
+                >
+                  Cancel
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // DESKTOP
   return (
-    <>
-      {/* ================= DESKTOP ================= */}
-      <tr className="hidden md:table-row bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl">
-
-        {/* PRODUCT */}
-        <td className="py-6 pl-6 align-top">
-          <div className="flex flex-col gap-6">
-            {(order.orderItems || []).map((item, index) => {
-              const existingRating = ratings.find(
-                r => r.orderId === order.id && r.productId === item?.product?.id
-              )
-
-              return (
-                <div key={index} className="flex items-center gap-4">
-                  <div className="w-20 aspect-square bg-white/10 rounded-xl flex items-center justify-center">
-                    <Image
-                      src={item?.product?.images?.[0] || '/placeholder.png'}
-                      alt={item?.product?.name || 'Product'}
-                      width={56}
-                      height={56}
-                      className="object-contain"
-                    />
-                  </div>
-
-                  <div>
-                    <p className="font-medium text-white">
-                      {item?.product?.name}
-                    </p>
-                    <p className="text-sm text-white/60">
-                      {currency}{item?.price} × {item?.quantity}
-                    </p>
-                    <p className="text-xs text-white/40">
-                      {order.createdAt
-                        ? new Date(order.createdAt).toDateString()
-                        : ''}
-                    </p>
-
-                    {existingRating ? (
-                      <Rating value={existingRating.rating} />
-                    ) : (
-                      isDelivered && (
-                        <button
-                          onClick={() =>
-                            setRatingModal({
-                              orderId: order.id,
-                              productId: item?.product?.id,
-                            })
-                          }
-                          className="text-emerald-400 text-sm hover:underline"
-                        >
-                          Rate Product
-                        </button>
-                      )
-                    )}
-                  </div>
-                </div>
-              )
-            })}
+    <tr className="bg-white/5 border border-white/10 rounded-2xl backdrop-blur-xl">
+      <td className="pl-6 py-5">
+        <div className="flex items-center gap-4">
+          <Image
+            src={order?.product?.image || '/placeholder.png'}
+            alt={order?.product?.title || 'Product'}
+            width={64}
+            height={64}
+            className="rounded-xl object-cover"
+          />
+          <div>
+            <p className="font-semibold">{order?.product?.title}</p>
+            <p className="text-sm text-white/50">
+              ₹{order?.product?.price} × {order?.quantity}
+            </p>
+            <p className="text-xs text-white/40">
+              {order?.createdAt
+                ? new Date(order.createdAt).toDateString()
+                : ''}
+            </p>
           </div>
-        </td>
+        </div>
+      </td>
 
-        {/* TOTAL */}
-        <td className="text-center font-semibold align-top">
-          {currency}{order.total || 0}
-        </td>
+      <td className="text-center font-semibold">
+        ₹{order?.total}
+      </td>
 
-        {/* PAYMENT */}
-        <td className="text-center align-top">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/15 text-sm">
-            <CreditCard size={14} />
-            {paymentLabel}
-          </div>
-        </td>
+      <td className="text-center">
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 border border-white/10">
+          <CreditCard size={14} />
+          <span className="text-sm">Cash on Delivery</span>
+        </div>
+      </td>
 
-        {/* ADDRESS */}
-        <td className="text-white/60 max-w-xs align-top">
-          <p className="font-medium text-white">
-            {order.address?.name}
+      <td>
+        <div className="text-sm leading-relaxed">
+          <p className="font-medium">{order?.address?.name}</p>
+          <p className="text-white/60">
+            {order?.address?.city}, {order?.address?.state}
           </p>
-          <p>
-            {order.address?.city}, {order.address?.state}
-          </p>
-        </td>
+        </div>
+      </td>
 
-        {/* ===== LIVE STATUS TIMELINE ===== */}
-        <td className="align-top">
-          <div className="flex items-center gap-3">
-            {STATUS_FLOW.map((step, idx) => {
-              const Icon = step.icon
-              const isActive = idx <= currentStepIndex
+      <td className="text-center">
+        <StatusBadge status={status} StatusIcon={StatusIcon} />
+      </td>
 
-              return (
-                <div key={step.key} className="flex items-center gap-2">
-                  <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center border
-                      ${isActive
-                        ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400'
-                        : 'bg-white/10 border-white/20 text-white/40'
-                      }`}
-                  >
-                    <Icon size={16} />
-                  </div>
-
-                  {idx < STATUS_FLOW.length - 1 && (
-                    <div
-                      className={`w-8 h-[2px]
-                        ${isActive ? 'bg-emerald-400' : 'bg-white/20'}`}
-                    />
-                  )}
-                </div>
-              )
-            })}
-          </div>
-
-          <div
-            className={`mt-2 inline-flex px-4 py-1.5 rounded-full text-xs border ${badgeConfig[normalizedStatus]}`}
+      <td className="text-center">
+        {safeStatus !== 'DELIVERED' ? (
+          <button
+            onClick={onCancel}
+            className="px-4 py-1.5 rounded-full bg-red-500/15 text-red-400 border border-red-500/30 hover:bg-red-500/25 transition"
           >
-            {normalizedStatus.replace(/_/g, ' ')}
-          </div>
-        </td>
-
-        {/* ACTION */}
-        <td className="text-center align-top">
-          {!isCanceled && onCancel && !isDelivered && (
-            <button
-              onClick={onCancel}
-              className="px-4 py-1.5 rounded-full bg-red-500/15 text-red-400 border border-red-500/30 hover:bg-red-500/25 transition text-sm"
-            >
-              Cancel
-            </button>
-          )}
-
-          {isDelivered && (
-            <span className="text-emerald-400 text-sm">
-              Completed
-            </span>
-          )}
-        </td>
-      </tr>
-
-      {ratingModal && (
-        <RatingModal
-          ratingModal={ratingModal}
-          setRatingModal={setRatingModal}
-        />
-      )}
-    </>
+            Cancel
+          </button>
+        ) : (
+          <span className="text-emerald-400 text-sm">Completed</span>
+        )}
+      </td>
+    </tr>
   )
 }
 
-export default OrderItem
+/* ---------------- PREMIUM STATUS BADGE ---------------- */
+
+function StatusBadge({ status, StatusIcon }) {
+  if (!status) return null
+
+  return (
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={status.label}
+        initial={{ opacity: 0, y: 6, scale: 0.95 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: -6, scale: 0.95 }}
+        transition={{ duration: 0.2 }}
+        className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-medium ${status.color}`}
+      >
+        <StatusIcon size={14} />
+        {status.label}
+      </motion.div>
+    </AnimatePresence>
+  )
+}
