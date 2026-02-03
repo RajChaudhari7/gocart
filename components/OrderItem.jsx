@@ -1,66 +1,81 @@
 'use client'
 
 import Image from "next/image"
-import { CreditCard, Package, Truck, MapPin, CheckCircle } from "lucide-react"
+import { CreditCard, CheckCircle, Truck, Package, Circle } from "lucide-react"
 import { useSelector } from "react-redux"
 import Rating from "./Rating"
 import { useState } from "react"
 import RatingModal from "./RatingModal"
 import { motion, AnimatePresence } from "framer-motion"
 
-/* ---------------- STATUS TIMELINE CONFIG ---------------- */
-
-const TIMELINE_STEPS = [
-  { key: 'CONFIRMED', label: 'Placed', icon: Package },
+const STATUS_FLOW = [
+  { key: 'PLACED', label: 'Placed', icon: Package },
   { key: 'SHIPPED', label: 'Shipped', icon: Truck },
-  { key: 'OUT_FOR_DELIVERY', label: 'Out for delivery', icon: MapPin },
+  { key: 'OUT_FOR_DELIVERY', label: 'Out for delivery', icon: Truck },
   { key: 'DELIVERED', label: 'Delivered', icon: CheckCircle },
 ]
 
-const STATUS_INDEX = {
-  CONFIRMED: 0,
-  SHIPPED: 1,
-  OUT_FOR_DELIVERY: 2,
-  DELIVERED: 3,
+const statusConfig = {
+  CONFIRMED: 'PLACED',
+  PLACED: 'PLACED',
+  SHIPPED: 'SHIPPED',
+  OUT_FOR_DELIVERY: 'OUT_FOR_DELIVERY',
+  DELIVERED: 'DELIVERED',
+  CANCELLED: 'CANCELLED',
 }
 
-/* ---------------- MAIN COMPONENT ---------------- */
+const badgeConfig = {
+  PLACED: 'text-yellow-400 bg-yellow-400/15 border-yellow-400/30',
+  SHIPPED: 'text-cyan-400 bg-cyan-400/15 border-cyan-400/30',
+  OUT_FOR_DELIVERY: 'text-indigo-400 bg-indigo-400/15 border-indigo-400/30',
+  DELIVERED: 'text-emerald-400 bg-emerald-400/15 border-emerald-400/30',
+  CANCELLED: 'text-red-400 bg-red-400/15 border-red-400/30',
+}
 
 const OrderItem = ({ order, mobile, onCancel }) => {
+  // ✅ BUILD SAFE GUARD
+  if (!order) return null
+
   const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '₹'
   const [ratingModal, setRatingModal] = useState(null)
-  const { ratings } = useSelector(state => state.rating)
+  const { ratings = [] } = useSelector(state => state.rating || {})
 
   const paymentLabel = {
     STRIPE: 'Card / Stripe',
     RAZORPAY: 'Razorpay',
     COD: 'Cash on Delivery',
     UPI: 'UPI',
-  }[order.paymentMethod] || order.paymentMethod
+  }[order.paymentMethod] || order.paymentMethod || 'N/A'
 
-  const currentStep = STATUS_INDEX[order.status] ?? 0
+  const normalizedStatus =
+    statusConfig[order.status] || 'PLACED'
 
-  const isDelivered = order.status === 'DELIVERED'
-  const isCanceled = order.status === 'CANCELLED'
+  const isDelivered = normalizedStatus === 'DELIVERED'
+  const isCanceled = normalizedStatus === 'CANCELLED'
+
+  const currentStepIndex = STATUS_FLOW.findIndex(
+    s => s.key === normalizedStatus
+  )
 
   return (
     <>
       {/* ================= DESKTOP ================= */}
       <tr className="hidden md:table-row bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl">
+
         {/* PRODUCT */}
         <td className="py-6 pl-6 align-top">
           <div className="flex flex-col gap-6">
-            {order.orderItems.map((item, index) => {
+            {(order.orderItems || []).map((item, index) => {
               const existingRating = ratings.find(
-                r => r.orderId === order.id && r.productId === item.product.id
+                r => r.orderId === order.id && r.productId === item?.product?.id
               )
 
               return (
                 <div key={index} className="flex items-center gap-4">
                   <div className="w-20 aspect-square bg-white/10 rounded-xl flex items-center justify-center">
                     <Image
-                      src={item.product.images[0]}
-                      alt={item.product.name}
+                      src={item?.product?.images?.[0] || '/placeholder.png'}
+                      alt={item?.product?.name || 'Product'}
                       width={56}
                       height={56}
                       className="object-contain"
@@ -69,34 +84,34 @@ const OrderItem = ({ order, mobile, onCancel }) => {
 
                   <div>
                     <p className="font-medium text-white">
-                      {item.product.name}
+                      {item?.product?.name}
                     </p>
                     <p className="text-sm text-white/60">
-                      {currency}{item.price} × {item.quantity}
+                      {currency}{item?.price} × {item?.quantity}
                     </p>
                     <p className="text-xs text-white/40">
-                      {new Date(order.createdAt).toDateString()}
+                      {order.createdAt
+                        ? new Date(order.createdAt).toDateString()
+                        : ''}
                     </p>
 
-                    <div className="mt-1">
-                      {existingRating ? (
-                        <Rating value={existingRating.rating} />
-                      ) : (
-                        isDelivered && (
-                          <button
-                            onClick={() =>
-                              setRatingModal({
-                                orderId: order.id,
-                                productId: item.product.id,
-                              })
-                            }
-                            className="text-emerald-400 text-sm hover:underline"
-                          >
-                            Rate Product
-                          </button>
-                        )
-                      )}
-                    </div>
+                    {existingRating ? (
+                      <Rating value={existingRating.rating} />
+                    ) : (
+                      isDelivered && (
+                        <button
+                          onClick={() =>
+                            setRatingModal({
+                              orderId: order.id,
+                              productId: item?.product?.id,
+                            })
+                          }
+                          className="text-emerald-400 text-sm hover:underline"
+                        >
+                          Rate Product
+                        </button>
+                      )
+                    )}
                   </div>
                 </div>
               )
@@ -106,7 +121,7 @@ const OrderItem = ({ order, mobile, onCancel }) => {
 
         {/* TOTAL */}
         <td className="text-center font-semibold align-top">
-          {currency}{order.total}
+          {currency}{order.total || 0}
         </td>
 
         {/* PAYMENT */}
@@ -120,16 +135,48 @@ const OrderItem = ({ order, mobile, onCancel }) => {
         {/* ADDRESS */}
         <td className="text-white/60 max-w-xs align-top">
           <p className="font-medium text-white">
-            {order.address.name}
+            {order.address?.name}
           </p>
           <p>
-            {order.address.city}, {order.address.state}
+            {order.address?.city}, {order.address?.state}
           </p>
         </td>
 
-        {/* LIVE STATUS TIMELINE */}
+        {/* ===== LIVE STATUS TIMELINE ===== */}
         <td className="align-top">
-          <StatusTimeline currentStep={currentStep} />
+          <div className="flex items-center gap-3">
+            {STATUS_FLOW.map((step, idx) => {
+              const Icon = step.icon
+              const isActive = idx <= currentStepIndex
+
+              return (
+                <div key={step.key} className="flex items-center gap-2">
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center border
+                      ${isActive
+                        ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400'
+                        : 'bg-white/10 border-white/20 text-white/40'
+                      }`}
+                  >
+                    <Icon size={16} />
+                  </div>
+
+                  {idx < STATUS_FLOW.length - 1 && (
+                    <div
+                      className={`w-8 h-[2px]
+                        ${isActive ? 'bg-emerald-400' : 'bg-white/20'}`}
+                    />
+                  )}
+                </div>
+              )
+            })}
+          </div>
+
+          <div
+            className={`mt-2 inline-flex px-4 py-1.5 rounded-full text-xs border ${badgeConfig[normalizedStatus]}`}
+          >
+            {normalizedStatus.replace(/_/g, ' ')}
+          </div>
         </td>
 
         {/* ACTION */}
@@ -142,74 +189,12 @@ const OrderItem = ({ order, mobile, onCancel }) => {
               Cancel
             </button>
           )}
+
           {isDelivered && (
             <span className="text-emerald-400 text-sm">
               Completed
             </span>
           )}
-        </td>
-      </tr>
-
-      {/* ================= MOBILE ================= */}
-      <tr className="md:hidden">
-        <td colSpan={6} className="py-6">
-          <div className="rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 p-6 space-y-4">
-            {order.orderItems.map((item, idx) => {
-              const existingRating = ratings.find(
-                r => r.orderId === order.id && r.productId === item.product.id
-              )
-
-              return (
-                <div
-                  key={idx}
-                  className="border-b border-white/10 pb-3 mb-3 last:border-none last:pb-0 last:mb-0"
-                >
-                  <div className="w-20 aspect-square bg-white/10 rounded-xl flex items-center justify-center mb-2">
-                    <Image
-                      src={item.product.images[0]}
-                      alt={item.product.name}
-                      width={56}
-                      height={56}
-                      className="object-contain"
-                    />
-                  </div>
-
-                  <p className="text-sm font-medium text-white">
-                    {item.product.name}
-                  </p>
-                  <p className="text-xs text-white/60">
-                    {currency}{item.price} × {item.quantity}
-                  </p>
-                </div>
-              )
-            })}
-
-            {/* MOBILE TIMELINE */}
-            <StatusTimeline currentStep={currentStep} mobile />
-
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-white/60">Payment</span>
-              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/15 text-xs">
-                <CreditCard size={12} />
-                {paymentLabel}
-              </span>
-            </div>
-
-            <p className="text-sm text-white/60">
-              {order.address.name}, {order.address.city}, {order.address.state}
-            </p>
-
-            {!isCanceled && onCancel && !isDelivered && (
-              <div className="flex justify-end">
-                <button
-                  onClick={onCancel}
-                  className="px-4 py-1.5 rounded-full bg-red-500/15 text-red-400 border border-red-500/30 text-sm"
-                >
-                  Cancel
-                </button>
-              </div>
-            )}
-          </div>
         </td>
       </tr>
 
@@ -224,57 +209,3 @@ const OrderItem = ({ order, mobile, onCancel }) => {
 }
 
 export default OrderItem
-
-/* ---------------- PREMIUM STATUS TIMELINE ---------------- */
-
-function StatusTimeline({ currentStep = 0, mobile = false }) {
-  return (
-    <div className={`flex ${mobile ? 'flex-col gap-4' : 'items-center gap-2'}`}>
-      {TIMELINE_STEPS.map((step, index) => {
-        const Icon = step.icon
-        const isCompleted = index < currentStep
-        const isActive = index === currentStep
-
-        return (
-          <div key={step.key} className="flex items-center">
-            {/* NODE */}
-            <motion.div
-              initial={false}
-              animate={{
-                scale: isActive ? 1.1 : 1,
-              }}
-              className={`
-                flex items-center justify-center size-8 rounded-full border
-                ${isCompleted ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400' : ''}
-                ${isActive ? 'bg-indigo-500/20 border-indigo-500 text-indigo-400 shadow-[0_0_12px_rgba(99,102,241,0.6)]' : ''}
-                ${!isCompleted && !isActive ? 'bg-white/10 border-white/20 text-white/40' : ''}
-              `}
-            >
-              <Icon size={16} />
-            </motion.div>
-
-            {/* LABEL */}
-            <span
-              className={`
-                ml-2 mr-3 text-xs whitespace-nowrap
-                ${isCompleted || isActive ? 'text-white' : 'text-white/40'}
-              `}
-            >
-              {step.label}
-            </span>
-
-            {/* CONNECTOR */}
-            {index < TIMELINE_STEPS.length - 1 && !mobile && (
-              <div
-                className={`
-                  h-[2px] w-8
-                  ${isCompleted ? 'bg-emerald-400' : 'bg-white/20'}
-                `}
-              />
-            )}
-          </div>
-        )
-      })}
-    </div>
-  )
-}
