@@ -1,12 +1,12 @@
 'use client'
 
 import Image from "next/image"
-import { CreditCard, Package, Truck, MapPin, CheckCircle } from "lucide-react"
+import { CreditCard, Package, Truck, MapPin, CheckCircle, XCircle } from "lucide-react"
 import { useSelector } from "react-redux"
 import Rating from "./Rating"
 import { useState } from "react"
 import RatingModal from "./RatingModal"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion } from "framer-motion"
 
 /* ---------------- STATUS TIMELINE CONFIG ---------------- */
 
@@ -38,15 +38,19 @@ const OrderItem = ({ order, mobile, onCancel }) => {
     UPI: 'UPI',
   }[order.paymentMethod] || order.paymentMethod
 
-  const currentStep = STATUS_INDEX[order.status] ?? 0
-
   const isDelivered = order.status === 'DELIVERED'
   const isCanceled = order.status === 'CANCELLED'
+
+  const currentStep = isCanceled
+    ? -1
+    : (STATUS_INDEX[order.status] ?? 0)
 
   return (
     <>
       {/* ================= DESKTOP ================= */}
-      <tr className="hidden md:table-row bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl">
+      <tr className={`hidden md:table-row bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl
+        ${isCanceled ? 'opacity-70' : ''}`}>
+        
         {/* PRODUCT */}
         <td className="py-6 pl-6 align-top">
           <div className="flex flex-col gap-6">
@@ -82,7 +86,7 @@ const OrderItem = ({ order, mobile, onCancel }) => {
                       {existingRating ? (
                         <Rating value={existingRating.rating} />
                       ) : (
-                        isDelivered && (
+                        isDelivered && !isCanceled && (
                           <button
                             onClick={() =>
                               setRatingModal({
@@ -127,9 +131,12 @@ const OrderItem = ({ order, mobile, onCancel }) => {
           </p>
         </td>
 
-        {/* LIVE STATUS TIMELINE */}
+        {/* LIVE STATUS / CANCELLED */}
         <td className="align-top">
-          <StatusTimeline currentStep={currentStep} />
+          <StatusTimeline
+            currentStep={currentStep}
+            isCanceled={isCanceled}
+          />
         </td>
 
         {/* ACTION */}
@@ -142,9 +149,17 @@ const OrderItem = ({ order, mobile, onCancel }) => {
               Cancel
             </button>
           )}
+
           {isDelivered && (
             <span className="text-emerald-400 text-sm">
               Completed
+            </span>
+          )}
+
+          {isCanceled && (
+            <span className="inline-flex items-center gap-1 text-red-400 text-sm font-medium">
+              <XCircle size={14} />
+              Cancelled
             </span>
           )}
         </td>
@@ -153,39 +168,39 @@ const OrderItem = ({ order, mobile, onCancel }) => {
       {/* ================= MOBILE ================= */}
       <tr className="md:hidden">
         <td colSpan={6} className="py-6">
-          <div className="rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 p-6 space-y-4">
-            {order.orderItems.map((item, idx) => {
-              const existingRating = ratings.find(
-                r => r.orderId === order.id && r.productId === item.product.id
-              )
+          <div className={`rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 p-6 space-y-4
+            ${isCanceled ? 'opacity-70' : ''}`}>
 
-              return (
-                <div
-                  key={idx}
-                  className="border-b border-white/10 pb-3 mb-3 last:border-none last:pb-0 last:mb-0"
-                >
-                  <div className="w-20 aspect-square bg-white/10 rounded-xl flex items-center justify-center mb-2">
-                    <Image
-                      src={item.product.images[0]}
-                      alt={item.product.name}
-                      width={56}
-                      height={56}
-                      className="object-contain"
-                    />
-                  </div>
-
-                  <p className="text-sm font-medium text-white">
-                    {item.product.name}
-                  </p>
-                  <p className="text-xs text-white/60">
-                    {currency}{item.price} × {item.quantity}
-                  </p>
+            {order.orderItems.map((item, idx) => (
+              <div
+                key={idx}
+                className="border-b border-white/10 pb-3 mb-3 last:border-none last:pb-0 last:mb-0"
+              >
+                <div className="w-20 aspect-square bg-white/10 rounded-xl flex items-center justify-center mb-2">
+                  <Image
+                    src={item.product.images[0]}
+                    alt={item.product.name}
+                    width={56}
+                    height={56}
+                    className="object-contain"
+                  />
                 </div>
-              )
-            })}
 
-            {/* MOBILE TIMELINE */}
-            <StatusTimeline currentStep={currentStep} mobile />
+                <p className="text-sm font-medium text-white">
+                  {item.product.name}
+                </p>
+                <p className="text-xs text-white/60">
+                  {currency}{item.price} × {item.quantity}
+                </p>
+              </div>
+            ))}
+
+            {/* MOBILE STATUS / CANCELLED */}
+            <StatusTimeline
+              currentStep={currentStep}
+              mobile
+              isCanceled={isCanceled}
+            />
 
             <div className="flex items-center justify-between">
               <span className="text-sm text-white/60">Payment</span>
@@ -209,6 +224,12 @@ const OrderItem = ({ order, mobile, onCancel }) => {
                 </button>
               </div>
             )}
+
+            {isCanceled && (
+              <div className="flex justify-end text-red-400 text-sm font-medium">
+                Order Cancelled
+              </div>
+            )}
           </div>
         </td>
       </tr>
@@ -225,9 +246,22 @@ const OrderItem = ({ order, mobile, onCancel }) => {
 
 export default OrderItem
 
-/* ---------------- PREMIUM STATUS TIMELINE ---------------- */
+/* ---------------- STATUS TIMELINE ---------------- */
 
-function StatusTimeline({ currentStep = 0, mobile = false }) {
+function StatusTimeline({ currentStep = 0, mobile = false, isCanceled = false }) {
+  if (isCanceled) {
+    return (
+      <div className="flex items-center gap-2">
+        <div className="flex items-center justify-center size-8 rounded-full bg-red-500/20 border border-red-500 text-red-400">
+          <XCircle size={16} />
+        </div>
+        <span className="text-sm text-red-400 font-medium">
+          Order Cancelled
+        </span>
+      </div>
+    )
+  }
+
   return (
     <div className={`flex ${mobile ? 'flex-col gap-4' : 'items-center gap-2'}`}>
       {TIMELINE_STEPS.map((step, index) => {
@@ -237,12 +271,9 @@ function StatusTimeline({ currentStep = 0, mobile = false }) {
 
         return (
           <div key={step.key} className="flex items-center">
-            {/* NODE */}
             <motion.div
               initial={false}
-              animate={{
-                scale: isActive ? 1.1 : 1,
-              }}
+              animate={{ scale: isActive ? 1.1 : 1 }}
               className={`
                 flex items-center justify-center size-8 rounded-full border
                 ${isCompleted ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400' : ''}
@@ -253,7 +284,6 @@ function StatusTimeline({ currentStep = 0, mobile = false }) {
               <Icon size={16} />
             </motion.div>
 
-            {/* LABEL */}
             <span
               className={`
                 ml-2 mr-3 text-xs whitespace-nowrap
@@ -263,7 +293,6 @@ function StatusTimeline({ currentStep = 0, mobile = false }) {
               {step.label}
             </span>
 
-            {/* CONNECTOR */}
             {index < TIMELINE_STEPS.length - 1 && !mobile && (
               <div
                 className={`
