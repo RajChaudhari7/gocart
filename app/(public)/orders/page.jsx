@@ -21,6 +21,7 @@ export default function Orders() {
 
   const fetchOrders = async () => {
     try {
+      setLoading(true)
       const token = await getToken()
       const { data } = await axios.get('/api/orders', {
         headers: { Authorization: `Bearer ${token}` },
@@ -38,6 +39,16 @@ export default function Orders() {
       user ? fetchOrders() : router.push('/')
     }
   }, [isLoaded, user])
+
+  // 🔥 REFRESH ORDERS WHEN USER RETURNS FROM STRIPE / TAB FOCUS
+  useEffect(() => {
+    const onFocus = () => {
+      if (user) fetchOrders()
+    }
+
+    window.addEventListener('focus', onFocus)
+    return () => window.removeEventListener('focus', onFocus)
+  }, [user])
 
   const cancelOrder = async (order) => {
     if (order.status === 'DELIVERED') return
@@ -61,7 +72,7 @@ export default function Orders() {
     <section className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#020617] to-black text-white px-6">
       <div className="max-w-7xl mx-auto py-24">
 
-        {/* Updated Page Title */}
+        {/* Page Title */}
         <div className="mb-12">
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-2">
             Your Orders

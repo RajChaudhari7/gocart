@@ -108,7 +108,7 @@ export async function POST(request) {
 
     // ---------------- STRIPE ----------------
     if (paymentMethod === "STRIPE") {
-      const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
+      const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
       const origin = request.headers.get("origin");
 
       const session = await stripe.checkout.sessions.create({
@@ -126,12 +126,17 @@ export async function POST(request) {
         mode: "payment",
         success_url: `${origin}/loading?nextUrl=orders`,
         cancel_url: `${origin}/cart`,
-        metadata: { orderIds: orderIds.join(","), userId },
+        metadata: {
+          orderIds: orderIds.join(","),
+          userId,
+          appId: "globalmart", // ✅ REQUIRED FOR WEBHOOK
+        },
       });
 
       return NextResponse.json({ session });
     }
 
+    // ---------------- COD ----------------
     return NextResponse.json({ message: "Order Placed Successfully" });
   } catch (error) {
     console.error(error);
@@ -142,7 +147,7 @@ export async function POST(request) {
   }
 }
 
-
+// ================= GET USER ORDERS =================
 export async function GET(request) {
   try {
     const { userId } = getAuth(request);
@@ -155,7 +160,7 @@ export async function GET(request) {
           {
             AND: [
               { paymentMethod: PaymentMethod.STRIPE },
-              { isPaid: true },
+              { isPaid: true }, // ✅ Stripe only when paid
             ],
           },
         ],
