@@ -33,11 +33,11 @@ export default function TrackingModal({ order, onClose }) {
 
   const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || "₹";
   const currentStep = TRACK_INDEX[order.status] ?? 0;
-  const [lineWidth, setLineWidth] = useState(0);
+  const [lineHeight, setLineHeight] = useState(0);
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      setLineWidth((currentStep / (TRACKING_STEPS.length - 1)) * 100);
+      setLineHeight(currentStep);
     }, 300);
     return () => clearTimeout(timer);
   }, [currentStep]);
@@ -103,16 +103,22 @@ export default function TrackingModal({ order, onClose }) {
           {/* TRACKING TIMELINE */}
           <div className="relative pl-5">
             {/* Vertical line behind steps */}
-            <div className="absolute left-4 top-5 bottom-0 w-1 bg-white/30 rounded-full"></div>
+            <div className="absolute left-4 top-0 bottom-0 w-1 bg-white/30 rounded-full"></div>
 
             {/* Animated line */}
-            <motion.div
-              initial={{ height: 0 }}
-              animate={{ height: `${lineWidth}%` }}
-              transition={{ duration: 1, ease: "easeInOut" }}
-              className="absolute left-4 top-5 w-1 bg-emerald-500 rounded-full"
-            />
+            {lineHeight > 0 && (
+              <motion.div
+                initial={{ height: 0 }}
+                animate={{ height: "100%" }}
+                transition={{ duration: 1, ease: "easeInOut" }}
+                className="absolute left-4 top-0 w-1 bg-emerald-500 rounded-full"
+                style={{
+                  height: `${(lineHeight / (TRACKING_STEPS.length - 1)) * 100}%`,
+                }}
+              />
+            )}
 
+            {/* Steps */}
             {TRACKING_STEPS.map((step, index) => {
               const Icon = step.icon;
               const isCompleted = index < currentStep;
@@ -144,6 +150,7 @@ export default function TrackingModal({ order, onClose }) {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.08 }}
                   className="flex items-center gap-4 relative mb-5 last:mb-0"
+                  style={{ minHeight: "50px" }}
                 >
                   {/* Step circle */}
                   <div className={stepCircleClasses}>
