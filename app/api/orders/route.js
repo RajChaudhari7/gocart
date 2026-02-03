@@ -7,15 +7,13 @@ import Stripe from "stripe";
 export async function POST(request) {
   try {
     const { userId, has } = getAuth(request);
-
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { items, addressId, couponCode, paymentMethod } =
-      await request.json();
+    const { items, addressId, paymentMethod } = await request.json();
 
-    if (!items || !items.length || !addressId || !paymentMethod) {
+    if (!items?.length || !addressId || !paymentMethod) {
       return NextResponse.json(
         { error: "All fields are required" },
         { status: 400 }
@@ -25,38 +23,38 @@ export async function POST(request) {
     const isPrimeMember = has({ plan: "prime" });
     const ordersByStore = new Map();
 
-    // ---------------- GROUP ITEMS BY STORE ----------------
-    for (const item of items) {
-      const product = await prisma.product.findUnique({
-        where: { id: item.id },
-      });
-
-      if (!product) {
-        throw new Error("Product not found");
-      }
-
-      // ✅ STOCK CHECK
-      if (product.quantity < item.quantity) {
-        throw new Error(
-          `Not enough stock for ${product.name}. Available: ${product.quantity}`
-        );
-      }
-
-      if (!ordersByStore.has(product.storeId)) {
-        ordersByStore.set(product.storeId, []);
-      }
-
-      ordersByStore
-        .get(product.storeId)
-        .push({ ...item, price: product.price });
-    }
-
     let orderIds = [];
     let fullAmount = 0;
     let isShippingFeeAdded = false;
 
-    // ---------------- TRANSACTION ----------------
+    // 🔥 EVERYTHING INSIDE ONE TRANSACTION
     await prisma.$transaction(async (tx) => {
+      // 1️⃣ Lock + validate + group
+      for (const item of items) {
+        const product = await tx.product.findUnique({
+          where: { id: item.id },
+        });
+
+        if (!product) {
+          throw new Error("Product not found");
+        }
+
+        if (product.quantity < item.quantity) {
+          throw new Error(
+            `Not enough stock for ${product.name}. Available: ${product.quantity}`
+          );
+        }
+
+        if (!ordersByStore.has(product.storeId)) {
+          ordersByStore.set(product.storeId, []);
+        }
+
+        ordersByStore
+          .get(product.storeId)
+          .push({ ...item, price: product.price });
+      }
+
+      // 2️⃣ Create orders + decrement stock atomically
       for (const [storeId, sellerItems] of ordersByStore.entries()) {
         let total = sellerItems.reduce(
           (acc, item) => acc + item.price * item.quantity,
@@ -71,7 +69,6 @@ export async function POST(request) {
         fullAmount += total;
         const now = new Date();
 
-        // ✅ CREATE ORDER
         const order = await tx.order.create({
           data: {
             userId,
@@ -95,13 +92,14 @@ export async function POST(request) {
 
         orderIds.push(order.id);
 
-        // 🔥 REDUCE STOCK HERE
+        // 🔥 DECREMENT STOCK SAFELY
         for (const item of sellerItems) {
           await tx.product.update({
             where: { id: item.id },
             data: {
-              quantity: { decrement: item.quantity },
-              inStock: true,
+              quantity: {
+                decrement: item.quantity,
+              },
             },
           });
         }
@@ -143,6 +141,7 @@ export async function POST(request) {
     );
   }
 }
+
 
 export async function GET(request) {
   try {
