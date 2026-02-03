@@ -33,6 +33,10 @@ export default function TrackingModal({ order, onClose }) {
   const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '₹'
   const currentStep = TRACK_INDEX[order.status] ?? 0
 
+  // % height for animated line
+  const progressPercent =
+    (currentStep / (TRACKING_STEPS.length - 1)) * 100
+
   return (
     <AnimatePresence>
       <motion.div
@@ -97,8 +101,15 @@ export default function TrackingModal({ order, onClose }) {
 
           {/* TRACKING TIMELINE */}
           <div className="relative pl-5">
-            {/* Vertical line behind steps */}
-            <div className="absolute left-4 top-5 bottom-0 w-1 bg-white/20 rounded-full"></div>
+            {/* Animated Gradient Progress Line */}
+            <motion.div
+              initial={{ height: 0 }}
+              animate={{ height: `${progressPercent}%` }}
+              transition={{ duration: 0.8, ease: 'easeInOut' }}
+              className="absolute left-4 top-5 w-1 rounded-full origin-top
+                         bg-gradient-to-b from-emerald-400 via-cyan-400 to-indigo-500
+                         shadow-[0_0_12px_rgba(52,211,153,0.8)]"
+            />
 
             {TRACKING_STEPS.map((step, index) => {
               const Icon = step.icon
@@ -110,41 +121,54 @@ export default function TrackingModal({ order, onClose }) {
                   key={step.key}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.08 }}
-                  className="flex items-center gap-4 relative mb-5 last:mb-0"
+                  transition={{ delay: index * 0.1 }}
+                  className="flex items-center gap-4 relative mb-6 last:mb-0"
                 >
-                  {/* Step circle */}
-                  <div
+                  {/* Step circle with glow */}
+                  <motion.div
+                    initial={false}
+                    animate={{
+                      boxShadow:
+                        isCompleted || isActive
+                          ? '0 0 18px rgba(52,211,153,0.9)'
+                          : '0 0 0 rgba(0,0,0,0)',
+                      scale: isActive ? 1.1 : 1,
+                    }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 20 }}
                     className={`
                       flex items-center justify-center w-10 h-10 rounded-full border relative z-10
-                      ${isCompleted ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400' : ''}
-                      ${isActive ? 'bg-indigo-500/20 border-indigo-500 text-indigo-400 shadow-[0_0_12px_rgba(99,102,241,0.6)] animate-pulse' : ''}
-                      ${!isCompleted && !isActive ? 'bg-white/10 border-white/20 text-white/40' : ''}
+                      ${isCompleted
+                        ? 'bg-emerald-500/20 border-emerald-400 text-emerald-400'
+                        : ''}
+                      ${isActive
+                        ? 'bg-indigo-500/20 border-indigo-400 text-indigo-400'
+                        : ''}
+                      ${!isCompleted && !isActive
+                        ? 'bg-white/10 border-white/20 text-white/40'
+                        : ''}
                     `}
                   >
                     <Icon size={18} />
-                  </div>
+                  </motion.div>
 
                   {/* Step label */}
                   <div className="flex-1">
-                    <p className={`text-sm font-medium ${isCompleted || isActive ? 'text-white' : 'text-white/50'}`}>
+                    <p
+                      className={`text-sm font-medium ${
+                        isCompleted || isActive
+                          ? 'text-white'
+                          : 'text-white/50'
+                      }`}
+                    >
                       {step.label}
                     </p>
+
                     {(isCompleted || isActive) && (
-                      <span className="text-xs text-white/40">Updated</span>
+                      <span className="text-xs text-white/40">
+                        Updated
+                      </span>
                     )}
                   </div>
-
-                  {/* Completed line overlay */}
-                  {index < TRACKING_STEPS.length - 1 && (
-                    <div
-                      className={`absolute left-4 top-10 w-1 h-full bg-white/20 rounded-full`}
-                    >
-                      {index < currentStep && (
-                        <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500 rounded-full"></div>
-                      )}
-                    </div>
-                  )}
                 </motion.div>
               )
             })}
