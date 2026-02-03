@@ -8,7 +8,7 @@ import toast from 'react-hot-toast'
 import { useRouter } from 'next/navigation'
 import { Protect, useAuth, useUser } from '@clerk/nextjs'
 import axios from 'axios'
-import { fetchCart } from '@/lib/features/cart/cartSlice'
+import { clearCart } from '@/lib/features/cart/cartSlice'
 
 const OrderSummary = ({ totalPrice, items }) => {
   const { user } = useUser()
@@ -64,20 +64,33 @@ const OrderSummary = ({ totalPrice, items }) => {
         addressId: selectedAddress.id,
         items,
         paymentMethod,
-        couponCode: coupon?.code,
+        couponCode: coupon?.code, // ✅ KEEP COUPON
       }
 
       const { data } = await axios.post('/api/orders', orderData, {
         headers: { Authorization: `Bearer ${token}` },
       })
 
+      // ================= STRIPE =================
       if (paymentMethod === 'STRIPE') {
         window.location.href = data.session.url
-      } else {
-        toast.success(data.message)
-        router.push('/orders')
-        dispatch(fetchCart({ getToken }))
+        return
       }
+
+      // ================= COD =================
+      toast.success(data.message || 'Order placed successfully')
+
+      // 🔥 CLEAR SERVER CART
+      await axios.delete('/api/cart', {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+
+      // 🔥 CLEAR REDUX CART
+      dispatch(clearCart())
+
+      // 🔥 REDIRECT TO ORDERS
+      router.push('/orders')
+
     } catch (err) {
       toast.error(err?.response?.data?.error || err.message)
     }
@@ -101,16 +114,14 @@ const OrderSummary = ({ totalPrice, items }) => {
 
       {/* PAYMENT METHOD */}
       <div className="mt-5 space-y-2">
-        <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
-          Payment Method
-        </p>
+        <p className="text-sm font-medium">Payment Method</p>
 
         <label className="flex items-center gap-2 cursor-pointer">
           <input
             type="radio"
+            name="paymentMethod"
             checked={paymentMethod === 'COD'}
             onChange={() => setPaymentMethod('COD')}
-            className="accent-slate-800"
           />
           Cash on Delivery
         </label>
@@ -118,27 +129,27 @@ const OrderSummary = ({ totalPrice, items }) => {
         <label className="flex items-center gap-2 cursor-pointer">
           <input
             type="radio"
+            name="paymentMethod"
             checked={paymentMethod === 'STRIPE'}
             onChange={() => setPaymentMethod('STRIPE')}
-            className="accent-slate-800"
           />
           Stripe Payment
         </label>
       </div>
 
       {/* ADDRESS */}
-      <div className="mt-6 border-t border-slate-200 dark:border-slate-700 pt-4">
+      <div className="mt-6 border-t pt-4">
         <p className="text-sm font-medium mb-2">Delivery Address</p>
 
         {selectedAddress ? (
           <div className="flex items-start justify-between gap-2">
-            <p className="text-sm text-slate-700 dark:text-slate-300">
+            <p className="text-sm">
               {selectedAddress.name}, {selectedAddress.city},{' '}
               {selectedAddress.state} - {selectedAddress.zip}
             </p>
             <SquarePenIcon
               size={18}
-              className="cursor-pointer text-slate-600 dark:text-slate-400"
+              className="cursor-pointer"
               onClick={() => setSelectedAddress(null)}
             />
           </div>
@@ -146,13 +157,13 @@ const OrderSummary = ({ totalPrice, items }) => {
           <>
             {addressList.length > 0 && (
               <select
-                className="
-                  w-full mt-2 p-2 rounded
-                  bg-white dark:bg-slate-800
-                  border border-slate-300 dark:border-slate-600
-                  text-slate-800 dark:text-slate-200
-                "
-                onChange={e => setSelectedAddress(addressList[e.target.value])}
+                className="w-full mt-2 p-2 rounded border"
+                onChange={e => {
+                  const index = e.target.value
+                  if (index !== '') {
+                    setSelectedAddress(addressList[index])
+                  }
+                }}
               >
                 <option value="">Select Address</option>
                 {addressList.map((addr, i) => (
@@ -165,7 +176,7 @@ const OrderSummary = ({ totalPrice, items }) => {
 
             <button
               onClick={() => setShowAddressModal(true)}
-              className="flex items-center gap-1 text-sm text-slate-700 dark:text-slate-300 mt-2"
+              className="flex items-center gap-1 text-sm mt-2"
             >
               Add Address <PlusIcon size={16} />
             </button>
@@ -174,7 +185,7 @@ const OrderSummary = ({ totalPrice, items }) => {
       </div>
 
       {/* PRICE BREAKDOWN */}
-      <div className="mt-6 border-t border-slate-200 dark:border-slate-700 pt-4 space-y-2 text-sm">
+      <div className="mt-6 border-t pt-4 space-y-2 text-sm">
         <div className="flex justify-between">
           <span>Subtotal</span>
           <span>{currency}{totalPrice.toLocaleString()}</span>
@@ -188,7 +199,7 @@ const OrderSummary = ({ totalPrice, items }) => {
         </div>
 
         {coupon && (
-          <div className="flex justify-between text-green-600 dark:text-green-400">
+          <div className="flex justify-between text-green-600">
             <span>Coupon</span>
             <span>-{currency}{discount.toFixed(2)}</span>
           </div>
@@ -201,12 +212,7 @@ const OrderSummary = ({ totalPrice, items }) => {
               value={couponCodeInput}
               onChange={e => setCouponCodeInput(e.target.value)}
               placeholder="Coupon Code"
-              className="
-                flex-1 p-2 rounded
-                bg-white dark:bg-slate-800
-                border border-slate-300 dark:border-slate-600
-                text-slate-800 dark:text-slate-200
-              "
+              className="flex-1 p-2 rounded border"
             />
             <button className="bg-slate-800 text-white px-4 rounded">
               Apply
@@ -214,7 +220,9 @@ const OrderSummary = ({ totalPrice, items }) => {
           </form>
         ) : (
           <div className="flex items-center justify-between mt-2 text-xs">
-            <span className="font-medium">{coupon.code.toUpperCase()}</span>
+            <span className="font-medium">
+              {coupon.code.toUpperCase()}
+            </span>
             <XIcon
               size={16}
               className="cursor-pointer hover:text-red-500"
@@ -233,13 +241,7 @@ const OrderSummary = ({ totalPrice, items }) => {
       {/* PLACE ORDER */}
       <button
         onClick={handlePlaceOrder}
-        className="
-          w-full mt-6 py-3 rounded-xl
-          bg-slate-900 dark:bg-white
-          text-white dark:text-slate-900
-          hover:opacity-90
-          transition
-        "
+        className="w-full mt-6 py-3 rounded-xl bg-slate-900 text-white"
       >
         Place Order
       </button>
