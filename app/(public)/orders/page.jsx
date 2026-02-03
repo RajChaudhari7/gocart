@@ -78,7 +78,7 @@ export default function Orders() {
                 <tr className="text-sm text-white/60">
                   <th className="text-left pl-6">Product</th>
                   <th className="text-center">Total</th>
-                  <th className="text-left">Payment</th>
+                  <th className="text-center">Payment</th>
                   <th className="text-left">Address</th>
                   <th className="text-center">Action</th>
                 </tr>
