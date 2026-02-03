@@ -42,6 +42,12 @@ export default function TrackingModal({ order, onClose }) {
     return () => clearTimeout(timer);
   }, [currentStep]);
 
+  // Calculate the height percentage for the animated line
+  const getLineHeight = () => {
+    const stepHeight = 100 / (TRACKING_STEPS.length - 1);
+    return lineHeight * stepHeight;
+  };
+
   return (
     <AnimatePresence>
       <motion.div
@@ -109,12 +115,9 @@ export default function TrackingModal({ order, onClose }) {
             {lineHeight > 0 && (
               <motion.div
                 initial={{ height: 0 }}
-                animate={{ height: "100%" }}
+                animate={{ height: `${getLineHeight()}%` }}
                 transition={{ duration: 1, ease: "easeInOut" }}
                 className="absolute left-4 top-0 w-1 bg-emerald-500 rounded-full"
-                style={{
-                  height: `${(lineHeight / (TRACKING_STEPS.length - 1)) * 100}%`,
-                }}
               />
             )}
 
