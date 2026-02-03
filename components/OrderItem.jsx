@@ -1,168 +1,280 @@
 'use client'
 
 import Image from "next/image"
+import { CreditCard, Package, Truck, MapPin, CheckCircle } from "lucide-react"
+import { useSelector } from "react-redux"
+import Rating from "./Rating"
+import { useState } from "react"
+import RatingModal from "./RatingModal"
 import { motion, AnimatePresence } from "framer-motion"
-import { CreditCard, Truck, CheckCircle, XCircle } from "lucide-react"
 
-const statusConfig = {
-  PLACED: {
-    label: "Order Placed",
-    color: "bg-sky-500/20 text-sky-400 border-sky-500/30",
-    icon: Truck,
-  },
-  SHIPPED: {
-    label: "Shipped",
-    color: "bg-indigo-500/20 text-indigo-400 border-indigo-500/30",
-    icon: Truck,
-  },
-  DELIVERED: {
-    label: "Delivered",
-    color: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
-    icon: CheckCircle,
-  },
-  CANCELED: {
-    label: "Canceled",
-    color: "bg-red-500/20 text-red-400 border-red-500/30",
-    icon: XCircle,
-  },
+/* ---------------- STATUS TIMELINE CONFIG ---------------- */
+
+const TIMELINE_STEPS = [
+  { key: 'CONFIRMED', label: 'Placed', icon: Package },
+  { key: 'SHIPPED', label: 'Shipped', icon: Truck },
+  { key: 'OUT_FOR_DELIVERY', label: 'Out for delivery', icon: MapPin },
+  { key: 'DELIVERED', label: 'Delivered', icon: CheckCircle },
+]
+
+const STATUS_INDEX = {
+  CONFIRMED: 0,
+  SHIPPED: 1,
+  OUT_FOR_DELIVERY: 2,
+  DELIVERED: 3,
 }
 
-export default function OrderItem({ order, onCancel, mobile = false }) {
-  // 🔥 CRITICAL: BUILD-SAFE GUARD
-  if (!order) return null
+/* ---------------- MAIN COMPONENT ---------------- */
 
-  const safeStatus = order.status || 'PLACED'
-  const status = statusConfig[safeStatus] || statusConfig.PLACED
-  const StatusIcon = status.icon
+const OrderItem = ({ order, mobile, onCancel }) => {
+  const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '₹'
+  const [ratingModal, setRatingModal] = useState(null)
+  const { ratings } = useSelector(state => state.rating)
 
-  if (mobile) {
-    return (
-      <div className="bg-white/5 border border-white/10 rounded-2xl p-4 backdrop-blur-xl">
-        <div className="flex gap-4">
-          <Image
-            src={order?.product?.image || '/placeholder.png'}
-            alt={order?.product?.title || 'Product'}
-            width={70}
-            height={70}
-            className="rounded-xl object-cover"
-          />
+  const paymentLabel = {
+    STRIPE: 'Card / Stripe',
+    RAZORPAY: 'Razorpay',
+    COD: 'Cash on Delivery',
+    UPI: 'UPI',
+  }[order.paymentMethod] || order.paymentMethod
 
-          <div className="flex-1">
-            <h3 className="font-semibold leading-tight">
-              {order?.product?.title}
-            </h3>
-            <p className="text-sm text-white/50">
-              ₹{order?.product?.price} × {order?.quantity}
-            </p>
+  const currentStep = STATUS_INDEX[order.status] ?? 0
 
-            <div className="mt-3 flex items-center justify-between">
-              <span className="font-semibold">
-                ₹{order?.total}
+  const isDelivered = order.status === 'DELIVERED'
+  const isCanceled = order.status === 'CANCELLED'
+
+  return (
+    <>
+      {/* ================= DESKTOP ================= */}
+      <tr className="hidden md:table-row bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl">
+        {/* PRODUCT */}
+        <td className="py-6 pl-6 align-top">
+          <div className="flex flex-col gap-6">
+            {order.orderItems.map((item, index) => {
+              const existingRating = ratings.find(
+                r => r.orderId === order.id && r.productId === item.product.id
+              )
+
+              return (
+                <div key={index} className="flex items-center gap-4">
+                  <div className="w-20 aspect-square bg-white/10 rounded-xl flex items-center justify-center">
+                    <Image
+                      src={item.product.images[0]}
+                      alt={item.product.name}
+                      width={56}
+                      height={56}
+                      className="object-contain"
+                    />
+                  </div>
+
+                  <div>
+                    <p className="font-medium text-white">
+                      {item.product.name}
+                    </p>
+                    <p className="text-sm text-white/60">
+                      {currency}{item.price} × {item.quantity}
+                    </p>
+                    <p className="text-xs text-white/40">
+                      {new Date(order.createdAt).toDateString()}
+                    </p>
+
+                    <div className="mt-1">
+                      {existingRating ? (
+                        <Rating value={existingRating.rating} />
+                      ) : (
+                        isDelivered && (
+                          <button
+                            onClick={() =>
+                              setRatingModal({
+                                orderId: order.id,
+                                productId: item.product.id,
+                              })
+                            }
+                            className="text-emerald-400 text-sm hover:underline"
+                          >
+                            Rate Product
+                          </button>
+                        )
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </td>
+
+        {/* TOTAL */}
+        <td className="text-center font-semibold align-top">
+          {currency}{order.total}
+        </td>
+
+        {/* PAYMENT */}
+        <td className="text-center align-top">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/15 text-sm">
+            <CreditCard size={14} />
+            {paymentLabel}
+          </div>
+        </td>
+
+        {/* ADDRESS */}
+        <td className="text-white/60 max-w-xs align-top">
+          <p className="font-medium text-white">
+            {order.address.name}
+          </p>
+          <p>
+            {order.address.city}, {order.address.state}
+          </p>
+        </td>
+
+        {/* LIVE STATUS TIMELINE */}
+        <td className="align-top">
+          <StatusTimeline currentStep={currentStep} />
+        </td>
+
+        {/* ACTION */}
+        <td className="text-center align-top">
+          {!isCanceled && onCancel && !isDelivered && (
+            <button
+              onClick={onCancel}
+              className="px-4 py-1.5 rounded-full bg-red-500/15 text-red-400 border border-red-500/30 hover:bg-red-500/25 transition text-sm"
+            >
+              Cancel
+            </button>
+          )}
+          {isDelivered && (
+            <span className="text-emerald-400 text-sm">
+              Completed
+            </span>
+          )}
+        </td>
+      </tr>
+
+      {/* ================= MOBILE ================= */}
+      <tr className="md:hidden">
+        <td colSpan={6} className="py-6">
+          <div className="rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 p-6 space-y-4">
+            {order.orderItems.map((item, idx) => {
+              const existingRating = ratings.find(
+                r => r.orderId === order.id && r.productId === item.product.id
+              )
+
+              return (
+                <div
+                  key={idx}
+                  className="border-b border-white/10 pb-3 mb-3 last:border-none last:pb-0 last:mb-0"
+                >
+                  <div className="w-20 aspect-square bg-white/10 rounded-xl flex items-center justify-center mb-2">
+                    <Image
+                      src={item.product.images[0]}
+                      alt={item.product.name}
+                      width={56}
+                      height={56}
+                      className="object-contain"
+                    />
+                  </div>
+
+                  <p className="text-sm font-medium text-white">
+                    {item.product.name}
+                  </p>
+                  <p className="text-xs text-white/60">
+                    {currency}{item.price} × {item.quantity}
+                  </p>
+                </div>
+              )
+            })}
+
+            {/* MOBILE TIMELINE */}
+            <StatusTimeline currentStep={currentStep} mobile />
+
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-white/60">Payment</span>
+              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/15 text-xs">
+                <CreditCard size={12} />
+                {paymentLabel}
               </span>
-
-              <StatusBadge status={status} StatusIcon={StatusIcon} />
             </div>
 
-            <div className="mt-3 flex justify-end">
-              {safeStatus !== 'DELIVERED' && (
+            <p className="text-sm text-white/60">
+              {order.address.name}, {order.address.city}, {order.address.state}
+            </p>
+
+            {!isCanceled && onCancel && !isDelivered && (
+              <div className="flex justify-end">
                 <button
                   onClick={onCancel}
-                  className="text-red-400 hover:text-red-300 text-sm"
+                  className="px-4 py-1.5 rounded-full bg-red-500/15 text-red-400 border border-red-500/30 text-sm"
                 >
                   Cancel
                 </button>
-              )}
-            </div>
+              </div>
+            )}
           </div>
-        </div>
-      </div>
-    )
-  }
+        </td>
+      </tr>
 
-  // DESKTOP
-  return (
-    <tr className="bg-white/5 border border-white/10 rounded-2xl backdrop-blur-xl">
-      <td className="pl-6 py-5">
-        <div className="flex items-center gap-4">
-          <Image
-            src={order?.product?.image || '/placeholder.png'}
-            alt={order?.product?.title || 'Product'}
-            width={64}
-            height={64}
-            className="rounded-xl object-cover"
-          />
-          <div>
-            <p className="font-semibold">{order?.product?.title}</p>
-            <p className="text-sm text-white/50">
-              ₹{order?.product?.price} × {order?.quantity}
-            </p>
-            <p className="text-xs text-white/40">
-              {order?.createdAt
-                ? new Date(order.createdAt).toDateString()
-                : ''}
-            </p>
-          </div>
-        </div>
-      </td>
-
-      <td className="text-center font-semibold">
-        ₹{order?.total}
-      </td>
-
-      <td className="text-center">
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 border border-white/10">
-          <CreditCard size={14} />
-          <span className="text-sm">Cash on Delivery</span>
-        </div>
-      </td>
-
-      <td>
-        <div className="text-sm leading-relaxed">
-          <p className="font-medium">{order?.address?.name}</p>
-          <p className="text-white/60">
-            {order?.address?.city}, {order?.address?.state}
-          </p>
-        </div>
-      </td>
-
-      <td className="text-center">
-        <StatusBadge status={status} StatusIcon={StatusIcon} />
-      </td>
-
-      <td className="text-center">
-        {safeStatus !== 'DELIVERED' ? (
-          <button
-            onClick={onCancel}
-            className="px-4 py-1.5 rounded-full bg-red-500/15 text-red-400 border border-red-500/30 hover:bg-red-500/25 transition"
-          >
-            Cancel
-          </button>
-        ) : (
-          <span className="text-emerald-400 text-sm">Completed</span>
-        )}
-      </td>
-    </tr>
+      {ratingModal && (
+        <RatingModal
+          ratingModal={ratingModal}
+          setRatingModal={setRatingModal}
+        />
+      )}
+    </>
   )
 }
 
-/* ---------------- PREMIUM STATUS BADGE ---------------- */
+export default OrderItem
 
-function StatusBadge({ status, StatusIcon }) {
-  if (!status) return null
+/* ---------------- PREMIUM STATUS TIMELINE ---------------- */
 
+function StatusTimeline({ currentStep = 0, mobile = false }) {
   return (
-    <AnimatePresence mode="wait">
-      <motion.div
-        key={status.label}
-        initial={{ opacity: 0, y: 6, scale: 0.95 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: -6, scale: 0.95 }}
-        transition={{ duration: 0.2 }}
-        className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-medium ${status.color}`}
-      >
-        <StatusIcon size={14} />
-        {status.label}
-      </motion.div>
-    </AnimatePresence>
+    <div className={`flex ${mobile ? 'flex-col gap-4' : 'items-center gap-2'}`}>
+      {TIMELINE_STEPS.map((step, index) => {
+        const Icon = step.icon
+        const isCompleted = index < currentStep
+        const isActive = index === currentStep
+
+        return (
+          <div key={step.key} className="flex items-center">
+            {/* NODE */}
+            <motion.div
+              initial={false}
+              animate={{
+                scale: isActive ? 1.1 : 1,
+              }}
+              className={`
+                flex items-center justify-center size-8 rounded-full border
+                ${isCompleted ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400' : ''}
+                ${isActive ? 'bg-indigo-500/20 border-indigo-500 text-indigo-400 shadow-[0_0_12px_rgba(99,102,241,0.6)]' : ''}
+                ${!isCompleted && !isActive ? 'bg-white/10 border-white/20 text-white/40' : ''}
+              `}
+            >
+              <Icon size={16} />
+            </motion.div>
+
+            {/* LABEL */}
+            <span
+              className={`
+                ml-2 mr-3 text-xs whitespace-nowrap
+                ${isCompleted || isActive ? 'text-white' : 'text-white/40'}
+              `}
+            >
+              {step.label}
+            </span>
+
+            {/* CONNECTOR */}
+            {index < TIMELINE_STEPS.length - 1 && !mobile && (
+              <div
+                className={`
+                  h-[2px] w-8
+                  ${isCompleted ? 'bg-emerald-400' : 'bg-white/20'}
+                `}
+              />
+            )}
+          </div>
+        )
+      })}
+    </div>
   )
 }

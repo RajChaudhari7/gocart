@@ -1,165 +1,122 @@
 'use client'
 
-import Image from "next/image"
-import { motion, AnimatePresence } from "framer-motion"
-import { CreditCard, Truck, CheckCircle, XCircle } from "lucide-react"
+import PageTitle from "@/components/PageTitle"
+import { useEffect, useState } from "react"
+import OrderItem from "@/components/OrderItem"
+import { useAuth, useUser } from "@clerk/nextjs"
+import axios from "axios"
+import toast from "react-hot-toast"
+import { useRouter } from "next/navigation"
+import Loading from "@/components/Loading"
 
-const statusConfig = {
-  PLACED: {
-    label: "Order Placed",
-    color: "bg-sky-500/20 text-sky-400 border-sky-500/30",
-    icon: Truck,
-  },
-  SHIPPED: {
-    label: "Shipped",
-    color: "bg-indigo-500/20 text-indigo-400 border-indigo-500/30",
-    icon: Truck,
-  },
-  DELIVERED: {
-    label: "Delivered",
-    color: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
-    icon: CheckCircle,
-  },
-  CANCELED: {
-    label: "Canceled",
-    color: "bg-red-500/20 text-red-400 border-red-500/30",
-    icon: XCircle,
-  },
-}
+export default function Orders() {
+  const { getToken } = useAuth()
+  const { user, isLoaded } = useUser()
+  const router = useRouter()
 
-export default function OrderItem({ order, onCancel, mobile = false }) {
-  // 🚨 BUILD-SAFE GUARD (REQUIRED)
-  if (!order) return null
+  const [orders, setOrders] = useState([])
+  const [loading, setLoading] = useState(true)
 
-  const safeStatus = order?.status || 'PLACED'
-  const status = statusConfig[safeStatus] || statusConfig.PLACED
-  const StatusIcon = status.icon
-
-  if (mobile) {
-    return (
-      <div className="bg-white/5 border border-white/10 rounded-2xl p-4 backdrop-blur-xl">
-        <div className="flex gap-4">
-          <Image
-            src={order?.product?.image || '/placeholder.png'}
-            alt={order?.product?.title || 'Product'}
-            width={70}
-            height={70}
-            className="rounded-xl object-cover"
-          />
-
-          <div className="flex-1">
-            <h3 className="font-semibold leading-tight">
-              {order?.product?.title}
-            </h3>
-            <p className="text-sm text-white/50">
-              ₹{order?.product?.price} × {order?.quantity}
-            </p>
-
-            <div className="mt-3 flex items-center justify-between">
-              <span className="font-semibold">
-                ₹{order?.total}
-              </span>
-
-              <StatusBadge status={status} StatusIcon={StatusIcon} />
-            </div>
-
-            <div className="mt-3 flex justify-end">
-              {safeStatus !== 'DELIVERED' && (
-                <button
-                  onClick={onCancel}
-                  className="text-red-400 hover:text-red-300 text-sm"
-                >
-                  Cancel
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-    )
+  const fetchOrders = async () => {
+    try {
+      const token = await getToken()
+      const { data } = await axios.get('/api/orders', {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      setOrders(data.orders)
+    } catch (error) {
+      toast.error(error?.response?.data?.error || error.message)
+    } finally {
+      setLoading(false)
+    }
   }
 
+  useEffect(() => {
+    if (isLoaded) {
+      user ? fetchOrders() : router.push('/')
+    }
+  }, [isLoaded, user])
+
+  const cancelOrder = async (order) => {
+    if (order.status === 'DELIVERED') return
+
+    if (!confirm("Are you sure you want to cancel this order?")) return
+    try {
+      const token = await getToken()
+      await axios.post(`/api/orders/cancel`, { orderId: order.id }, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      toast.success("Order canceled successfully")
+      fetchOrders()
+    } catch (error) {
+      toast.error(error?.response?.data?.error || error.message)
+    }
+  }
+
+  if (!isLoaded || loading) return <Loading />
+
   return (
-    <tr className="bg-white/5 border border-white/10 rounded-2xl backdrop-blur-xl">
-      <td className="pl-6 py-5">
-        <div className="flex items-center gap-4">
-          <Image
-            src={order?.product?.image || '/placeholder.png'}
-            alt={order?.product?.title || 'Product'}
-            width={64}
-            height={64}
-            className="rounded-xl object-cover"
-          />
-          <div>
-            <p className="font-semibold">{order?.product?.title}</p>
-            <p className="text-sm text-white/50">
-              ₹{order?.product?.price} × {order?.quantity}
-            </p>
-            <p className="text-xs text-white/40">
-              {order?.createdAt
-                ? new Date(order.createdAt).toDateString()
-                : ''}
-            </p>
+    <section className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#020617] to-black text-white px-6">
+      <div className="max-w-7xl mx-auto py-24">
+        <PageTitle
+          heading="My Orders"
+          text={`You have placed ${orders.length} orders`}
+          linkText="Go to home"
+        />
+
+        {orders.length > 0 ? (
+          <div className="mt-16 overflow-x-auto">
+            <table className="w-full border-separate border-spacing-y-6 hidden md:table">
+              <thead>
+                <tr className="text-sm text-white/60">
+                  <th className="text-left pl-6">Product</th>
+                  <th className="text-center">Total</th>
+                  <th className="text-left">Payment</th>
+                  <th className="text-left">Address</th>
+                  <th className="text-left">Status</th>
+                  <th className="text-center">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {orders.map(order => (
+                  <OrderItem
+                    key={order.id}
+                    order={order}
+                    onCancel={() => cancelOrder(order)}
+                  />
+                ))}
+              </tbody>
+            </table>
+
+            {/* Mobile */}
+            <div className="space-y-6 md:hidden">
+              {orders.map(order => (
+                <OrderItem
+                  key={order.id}
+                  order={order}
+                  mobile
+                  onCancel={() => cancelOrder(order)}
+                />
+              ))}
+            </div>
           </div>
-        </div>
-      </td>
-
-      <td className="text-center font-semibold">
-        ₹{order?.total}
-      </td>
-
-      <td className="text-center">
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 border border-white/10">
-          <CreditCard size={14} />
-          <span className="text-sm">Cash on Delivery</span>
-        </div>
-      </td>
-
-      <td>
-        <div className="text-sm leading-relaxed">
-          <p className="font-medium">{order?.address?.name}</p>
-          <p className="text-white/60">
-            {order?.address?.city}, {order?.address?.state}
-          </p>
-        </div>
-      </td>
-
-      <td className="text-center">
-        <StatusBadge status={status} StatusIcon={StatusIcon} />
-      </td>
-
-      <td className="text-center">
-        {safeStatus !== 'DELIVERED' ? (
-          <button
-            onClick={onCancel}
-            className="px-4 py-1.5 rounded-full bg-red-500/15 text-red-400 border border-red-500/30 hover:bg-red-500/25 transition"
-          >
-            Cancel
-          </button>
         ) : (
-          <span className="text-emerald-400 text-sm">Completed</span>
+          <div className="flex items-center justify-center min-h-[60vh] text-center">
+            <div>
+              <h1 className="text-3xl font-semibold mb-2">No Orders Yet</h1>
+              <p className="text-white/60 mb-6">
+                Looks like you haven’t placed any orders.
+              </p>
+              <button
+                onClick={() => router.push('/')}
+                className="px-6 py-3 bg-indigo-600 rounded-lg hover:bg-indigo-500 transition"
+              >
+                Shop Now
+              </button>
+            </div>
+          </div>
         )}
-      </td>
-    </tr>
-  )
-}
-
-function StatusBadge({ status, StatusIcon }) {
-  if (!status) return null
-
-  return (
-    <AnimatePresence mode="wait">
-      <motion.div
-        key={status.label}
-        initial={{ opacity: 0, y: 6, scale: 0.95 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: -6, scale: 0.95 }}
-        transition={{ duration: 0.2 }}
-        className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-medium ${status.color}`}
-      >
-        <StatusIcon size={14} />
-        {status.label}
-      </motion.div>
-    </AnimatePresence>
+      </div>
+    </section>
   )
 }
