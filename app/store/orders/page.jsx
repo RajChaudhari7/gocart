@@ -7,20 +7,27 @@ import axios from "axios"
 import toast from "react-hot-toast"
 import jsPDF from "jspdf"
 import html2canvas from "html2canvas"
-import { useOrderStore } from "@/hooks/use-order-store" // Added import
+import { useOrderStore } from "@/hooks/use-order-store"
 
-const STATUS_FLOW = ["ORDER_PLACED", "PROCESSING", "SHIPPED", "DELIVERED"]
+const STATUS_FLOW = [
+    "ORDER_PLACED",
+    "PACKED",
+    "PROCESSING",
+    "SHIPPED",
+    "OUT_FOR_DELIVERY",
+    "DELIVERED"
+]
 
 export default function StoreOrders() {
     const { getToken } = useAuth()
-    const { setOrderCount } = useOrderStore() // Added state setter
+    const { setOrderCount } = useOrderStore()
 
     const [orders, setOrders] = useState([])
     const [loading, setLoading] = useState(true)
     const [selectedOrder, setSelectedOrder] = useState(null)
     const [isModalOpen, setIsModalOpen] = useState(false)
 
-    /* ================= UPDATED FETCH ================= */
+    /* ================= FETCH ================= */
     const fetchOrders = async () => {
         try {
             const token = await getToken();
@@ -29,9 +36,6 @@ export default function StoreOrders() {
             });
 
             setOrders(data.orders);
-
-            // This line syncs the Navbar badge with the backend count
-            // (The activeCount from the API excludes DELIVERED/CANCELLED)
             setOrderCount(data.activeCount);
 
         } catch (error) {
@@ -41,9 +45,16 @@ export default function StoreOrders() {
         }
     };
 
-    /* ================= UPDATED UPDATE STATUS ================= */
+    /* ================= UPDATE STATUS (FIXED) ================= */
     const updateOrderStatus = async (order, newStatus) => {
-        // ... keep your existing STATUS_FLOW validation logic ...
+        const currentIndex = STATUS_FLOW.indexOf(order.status)
+        const newIndex = STATUS_FLOW.indexOf(newStatus)
+
+        // Prevent backward or invalid updates
+        if (newIndex < currentIndex) {
+            toast.error("You cannot move order status backwards")
+            return
+        }
 
         try {
             const token = await getToken();
@@ -53,10 +64,9 @@ export default function StoreOrders() {
                 { headers: { Authorization: `Bearer ${token}` } }
             );
 
-            // Refreshing here is key: it re-fetches the list AND the new count
-            fetchOrders();
-
+            await fetchOrders();
             toast.success(`Order status updated to ${newStatus}`);
+
         } catch (error) {
             toast.error(error?.response?.data?.error || error.message);
         }
@@ -75,15 +85,14 @@ export default function StoreOrders() {
                 { headers: { Authorization: `Bearer ${token}` } }
             )
             toast.success("Order canceled successfully")
-            fetchOrders() // Re-fetches and updates badge count
+            fetchOrders()
         } catch (error) {
             toast.error(error?.response?.data?.error || error.message)
         }
     }
 
-    /* ================= REDESIGNED PDF INVOICE ================= */
+    /* ================= PDF INVOICE (UNCHANGED) ================= */
     const downloadInvoicePDF = async (order) => {
-        // Helper to convert logo to Base64
         const getBase64Image = (url) => {
             return new Promise((resolve) => {
                 if (!url) return resolve('');
