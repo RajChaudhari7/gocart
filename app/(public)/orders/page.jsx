@@ -10,7 +10,6 @@ import { useRouter } from "next/navigation"
 import Loading from "@/components/Loading"
 import TrackingModal from "@/components/TrackingModal"
 
-
 export default function Orders() {
   const { getToken } = useAuth()
   const { user, isLoaded } = useUser()
@@ -61,11 +60,16 @@ export default function Orders() {
   return (
     <section className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#020617] to-black text-white px-6">
       <div className="max-w-7xl mx-auto py-24">
-        <PageTitle
-          heading="My Orders"
-          text={`You have placed ${orders.length} orders`}
-          linkText="Go to home"
-        />
+
+        {/* Updated Page Title */}
+        <div className="mb-12">
+          <h1 className="text-4xl md:text-5xl font-bold text-white mb-2">
+            Your Orders
+          </h1>
+          <p className="text-white/60 text-lg">
+            You have placed <span className="text-indigo-400 font-semibold">{orders.length}</span> {orders.length === 1 ? 'order' : 'orders'}.
+          </p>
+        </div>
 
         {orders.length > 0 ? (
           <div className="mt-16 overflow-x-auto">
@@ -76,7 +80,6 @@ export default function Orders() {
                   <th className="text-center">Total</th>
                   <th className="text-left">Payment</th>
                   <th className="text-left">Address</th>
-                  <th className="text-left">Status</th>
                   <th className="text-center">Action</th>
                 </tr>
               </thead>
@@ -102,7 +105,6 @@ export default function Orders() {
                   onCancel={() => cancelOrder(order)}
                   onTrack={() => setTrackingOrder(order)}
                 />
-
               ))}
             </div>
           </div>
@@ -123,13 +125,13 @@ export default function Orders() {
           </div>
         )}
       </div>
+
       {trackingOrder && (
         <TrackingModal
           order={trackingOrder}
           onClose={() => setTrackingOrder(null)}
         />
       )}
-
     </section>
   )
 }
