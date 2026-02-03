@@ -34,6 +34,9 @@ const AddressModal = ({ setShowAddressModal }) => {
   const [loadingStates, setLoadingStates] = useState(false)
   const [pinLoading, setPinLoading] = useState(false)
 
+  // ✅ PIN verification flag
+  const [isPinVerified, setIsPinVerified] = useState(false)
+
   /* ---------------- FETCH COUNTRIES + PRELOAD INDIA ---------------- */
   useEffect(() => {
     const init = async () => {
@@ -48,7 +51,11 @@ const AddressModal = ({ setShowAddressModal }) => {
           ...prev,
           country: INDIA_NAME,
           state: '',
+          city: '',
+          zip: '',
         }))
+
+        setIsPinVerified(false)
 
         // 🇮🇳 Preload Indian states
         setLoadingStates(true)
@@ -78,6 +85,11 @@ const AddressModal = ({ setShowAddressModal }) => {
     if (name === 'zip') {
       if (!/^\d*$/.test(value)) return
       if (value.length > 6) return
+      setIsPinVerified(false) // zip edited → invalidate
+    }
+
+    if (name === 'city') {
+      setIsPinVerified(false)
     }
 
     setAddress({ ...address, [name]: value })
@@ -97,6 +109,8 @@ const AddressModal = ({ setShowAddressModal }) => {
       city: '',
       zip: '',
     }))
+
+    setIsPinVerified(false)
 
     if (!countryCode) {
       setStates([])
@@ -119,6 +133,7 @@ const AddressModal = ({ setShowAddressModal }) => {
   /* ---------------- STATE CHANGE ---------------- */
   const handleStateSelect = (e) => {
     setAddress((prev) => ({ ...prev, state: e.target.value }))
+    setIsPinVerified(false)
   }
 
   /* ---------------- 🇮🇳 PIN CODE LOOKUP ---------------- */
@@ -129,7 +144,6 @@ const AddressModal = ({ setShowAddressModal }) => {
     try {
       setPinLoading(true)
 
-      // India Post API
       const { data } = await axios.get(
         `https://api.postalpincode.in/pincode/${address.zip}`
       )
@@ -139,6 +153,7 @@ const AddressModal = ({ setShowAddressModal }) => {
           ...prev,
           zip: 'Invalid PIN code',
         }))
+        setIsPinVerified(false)
         return
       }
 
@@ -146,19 +161,20 @@ const AddressModal = ({ setShowAddressModal }) => {
       const detectedCity = postOffice.District
       const detectedState = postOffice.State
 
-      // Auto-fill City & State
       setAddress((prev) => ({
         ...prev,
         city: detectedCity,
         state: detectedState,
       }))
 
+      setIsPinVerified(true)
       setErrors((prev) => ({ ...prev, zip: '' }))
     } catch (err) {
       setErrors((prev) => ({
         ...prev,
         zip: 'PIN verification failed',
       }))
+      setIsPinVerified(false)
     } finally {
       setPinLoading(false)
     }
@@ -172,8 +188,14 @@ const AddressModal = ({ setShowAddressModal }) => {
       newErrors.phone = 'Phone number must be exactly 10 digits'
     }
 
-    if (address.country === INDIA_NAME && address.zip.length !== 6) {
-      newErrors.zip = 'Indian PIN must be 6 digits'
+    if (address.country === INDIA_NAME) {
+      if (address.zip.length !== 6) {
+        newErrors.zip = 'Indian PIN must be 6 digits'
+      }
+
+      if (!isPinVerified) {
+        newErrors.zip = 'Please verify PIN code'
+      }
     }
 
     setErrors(newErrors)
@@ -236,6 +258,7 @@ const AddressModal = ({ setShowAddressModal }) => {
               onChange={handleAddressChange}
               placeholder="City (Auto-filled by PIN)"
               required
+              disabled={isPinVerified}
               className="input"
             />
 
@@ -243,8 +266,8 @@ const AddressModal = ({ setShowAddressModal }) => {
               value={address.state}
               onChange={handleStateSelect}
               required
+              disabled={loadingStates || isPinVerified}
               className="input"
-              disabled={loadingStates}
             >
               <option value="">
                 {loadingStates ? 'Loading states...' : 'Select State'}
@@ -269,6 +292,9 @@ const AddressModal = ({ setShowAddressModal }) => {
               />
               {pinLoading && (
                 <p className="text-xs text-slate-500">Verifying PIN...</p>
+              )}
+              {isPinVerified && (
+                <p className="text-xs text-green-600">PIN verified ✓</p>
               )}
               {errors.zip && <p className="error-text">{errors.zip}</p>}
             </div>
