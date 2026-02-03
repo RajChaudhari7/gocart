@@ -33,7 +33,7 @@ const STATUS_INDEX = {
 
 /* ---------------- MAIN COMPONENT ---------------- */
 
-const OrderItem = ({ order, mobile, onCancel }) => {
+const OrderItem = ({ order, mobile, onCancel, onTrack }) => {
   const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '₹'
   const [ratingModal, setRatingModal] = useState(null)
   const { ratings } = useSelector(state => state.rating)
@@ -156,6 +156,17 @@ const OrderItem = ({ order, mobile, onCancel }) => {
 
       {/* ACTION */}
       <td className="text-center align-top">
+        {!isCanceled && (
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={onTrack}
+            className="ml-2 px-4 py-1.5 rounded-full bg-indigo-500/15 text-indigo-400 border border-indigo-500/30 hover:bg-indigo-500/25 transition text-sm"
+          >
+            Track
+          </motion.button>
+        )}
+
         {!isCanceled && onCancel && !isDelivered && (
           <motion.button
             whileHover={{ scale: 1.05 }}
@@ -232,18 +243,30 @@ const OrderItem = ({ order, mobile, onCancel }) => {
         {order.address.name}, {order.address.city}, {order.address.state}
       </p>
 
-      {!isCanceled && onCancel && !isDelivered && (
-        <div className="flex justify-end">
+      {!isCanceled && (
+        <div className="flex justify-between">
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={onCancel}
-            className="px-4 py-1.5 rounded-full bg-red-500/15 text-red-400 border border-red-500/30 text-sm"
+            onClick={onTrack}
+            className="px-4 py-1.5 rounded-full bg-indigo-500/15 text-indigo-400 border border-indigo-500/30 text-sm"
           >
-            Cancel
+            Track Order
           </motion.button>
+
+          {!isDelivered && onCancel && (
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={onCancel}
+              className="px-4 py-1.5 rounded-full bg-red-500/15 text-red-400 border border-red-500/30 text-sm"
+            >
+              Cancel
+            </motion.button>
+          )}
         </div>
       )}
+
     </motion.div>
   )
 
