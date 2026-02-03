@@ -1,12 +1,19 @@
 'use client'
 
 import Image from "next/image"
-import { CreditCard, Package, Truck, MapPin, CheckCircle, XCircle } from "lucide-react"
+import {
+  CreditCard,
+  Package,
+  Truck,
+  MapPin,
+  CheckCircle,
+  XCircle
+} from "lucide-react"
 import { useSelector } from "react-redux"
 import Rating from "./Rating"
 import { useState } from "react"
 import RatingModal from "./RatingModal"
-import { motion } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 
 /* ---------------- STATUS TIMELINE CONFIG ---------------- */
 
@@ -45,138 +52,31 @@ const OrderItem = ({ order, mobile, onCancel }) => {
     ? -1
     : (STATUS_INDEX[order.status] ?? 0)
 
-  return (
-    <>
-      {/* ================= DESKTOP ================= */}
-      <tr className={`hidden md:table-row bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl
-        ${isCanceled ? 'opacity-70' : ''}`}>
-        
-        {/* PRODUCT */}
-        <td className="py-6 pl-6 align-top">
-          <div className="flex flex-col gap-6">
-            {order.orderItems.map((item, index) => {
-              const existingRating = ratings.find(
-                r => r.orderId === order.id && r.productId === item.product.id
-              )
+  /* ---------------- DESKTOP ROW ---------------- */
+  const DesktopRow = (
+    <motion.tr
+      layout
+      initial={{ opacity: 0, y: 20 }}
+      animate={{
+        opacity: 1,
+        y: 0,
+        filter: isCanceled ? 'grayscale(100%)' : 'grayscale(0%)',
+      }}
+      transition={{ duration: 0.4 }}
+      className={`hidden md:table-row bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl
+        ${isCanceled ? 'opacity-60' : ''}`}
+    >
+      {/* PRODUCT */}
+      <td className="py-6 pl-6 align-top">
+        <div className="flex flex-col gap-6">
+          {order.orderItems.map((item, index) => {
+            const existingRating = ratings.find(
+              r => r.orderId === order.id && r.productId === item.product.id
+            )
 
-              return (
-                <div key={index} className="flex items-center gap-4">
-                  <div className="w-20 aspect-square bg-white/10 rounded-xl flex items-center justify-center">
-                    <Image
-                      src={item.product.images[0]}
-                      alt={item.product.name}
-                      width={56}
-                      height={56}
-                      className="object-contain"
-                    />
-                  </div>
-
-                  <div>
-                    <p className="font-medium text-white">
-                      {item.product.name}
-                    </p>
-                    <p className="text-sm text-white/60">
-                      {currency}{item.price} × {item.quantity}
-                    </p>
-                    <p className="text-xs text-white/40">
-                      {new Date(order.createdAt).toDateString()}
-                    </p>
-
-                    <div className="mt-1">
-                      {existingRating ? (
-                        <Rating value={existingRating.rating} />
-                      ) : (
-                        isDelivered && !isCanceled && (
-                          <button
-                            onClick={() =>
-                              setRatingModal({
-                                orderId: order.id,
-                                productId: item.product.id,
-                              })
-                            }
-                            className="text-emerald-400 text-sm hover:underline"
-                          >
-                            Rate Product
-                          </button>
-                        )
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </td>
-
-        {/* TOTAL */}
-        <td className="text-center font-semibold align-top">
-          {currency}{order.total}
-        </td>
-
-        {/* PAYMENT */}
-        <td className="text-center align-top">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/15 text-sm">
-            <CreditCard size={14} />
-            {paymentLabel}
-          </div>
-        </td>
-
-        {/* ADDRESS */}
-        <td className="text-white/60 max-w-xs align-top">
-          <p className="font-medium text-white">
-            {order.address.name}
-          </p>
-          <p>
-            {order.address.city}, {order.address.state}
-          </p>
-        </td>
-
-        {/* LIVE STATUS / CANCELLED */}
-        <td className="align-top">
-          <StatusTimeline
-            currentStep={currentStep}
-            isCanceled={isCanceled}
-          />
-        </td>
-
-        {/* ACTION */}
-        <td className="text-center align-top">
-          {!isCanceled && onCancel && !isDelivered && (
-            <button
-              onClick={onCancel}
-              className="px-4 py-1.5 rounded-full bg-red-500/15 text-red-400 border border-red-500/30 hover:bg-red-500/25 transition text-sm"
-            >
-              Cancel
-            </button>
-          )}
-
-          {isDelivered && (
-            <span className="text-emerald-400 text-sm">
-              Completed
-            </span>
-          )}
-
-          {isCanceled && (
-            <span className="inline-flex items-center gap-1 text-red-400 text-sm font-medium">
-              <XCircle size={14} />
-              Cancelled
-            </span>
-          )}
-        </td>
-      </tr>
-
-      {/* ================= MOBILE ================= */}
-      <tr className="md:hidden">
-        <td colSpan={6} className="py-6">
-          <div className={`rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 p-6 space-y-4
-            ${isCanceled ? 'opacity-70' : ''}`}>
-
-            {order.orderItems.map((item, idx) => (
-              <div
-                key={idx}
-                className="border-b border-white/10 pb-3 mb-3 last:border-none last:pb-0 last:mb-0"
-              >
-                <div className="w-20 aspect-square bg-white/10 rounded-xl flex items-center justify-center mb-2">
+            return (
+              <div key={index} className="flex items-center gap-4">
+                <div className="w-20 aspect-square bg-white/10 rounded-xl flex items-center justify-center">
                   <Image
                     src={item.product.images[0]}
                     alt={item.product.name}
@@ -186,53 +86,178 @@ const OrderItem = ({ order, mobile, onCancel }) => {
                   />
                 </div>
 
-                <p className="text-sm font-medium text-white">
-                  {item.product.name}
-                </p>
-                <p className="text-xs text-white/60">
-                  {currency}{item.price} × {item.quantity}
-                </p>
-              </div>
-            ))}
+                <div>
+                  <p className="font-medium text-white">
+                    {item.product.name}
+                  </p>
+                  <p className="text-sm text-white/60">
+                    {currency}{item.price} × {item.quantity}
+                  </p>
+                  <p className="text-xs text-white/40">
+                    {new Date(order.createdAt).toDateString()}
+                  </p>
 
-            {/* MOBILE STATUS / CANCELLED */}
-            <StatusTimeline
-              currentStep={currentStep}
-              mobile
-              isCanceled={isCanceled}
+                  <div className="mt-1">
+                    {existingRating ? (
+                      <Rating value={existingRating.rating} />
+                    ) : (
+                      isDelivered && !isCanceled && (
+                        <button
+                          onClick={() =>
+                            setRatingModal({
+                              orderId: order.id,
+                              productId: item.product.id,
+                            })
+                          }
+                          className="text-emerald-400 text-sm hover:underline"
+                        >
+                          Rate Product
+                        </button>
+                      )
+                    )}
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </td>
+
+      {/* TOTAL */}
+      <td className="text-center font-semibold align-top">
+        {currency}{order.total}
+      </td>
+
+      {/* PAYMENT */}
+      <td className="text-center align-top">
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/15 text-sm">
+          <CreditCard size={14} />
+          {paymentLabel}
+        </div>
+      </td>
+
+      {/* ADDRESS */}
+      <td className="text-white/60 max-w-xs align-top">
+        <p className="font-medium text-white">
+          {order.address.name}
+        </p>
+        <p>
+          {order.address.city}, {order.address.state}
+        </p>
+      </td>
+
+      {/* STATUS */}
+      <td className="align-top">
+        <StatusTimeline
+          currentStep={currentStep}
+          isCanceled={isCanceled}
+        />
+      </td>
+
+      {/* ACTION */}
+      <td className="text-center align-top">
+        {!isCanceled && onCancel && !isDelivered && (
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={onCancel}
+            className="px-4 py-1.5 rounded-full bg-red-500/15 text-red-400 border border-red-500/30 hover:bg-red-500/25 transition text-sm"
+          >
+            Cancel
+          </motion.button>
+        )}
+
+        {isDelivered && (
+          <span className="text-emerald-400 text-sm">
+            Completed
+          </span>
+        )}
+      </td>
+    </motion.tr>
+  )
+
+  /* ---------------- MOBILE CARD ---------------- */
+  const MobileCard = (
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 20 }}
+      animate={{
+        opacity: 1,
+        y: 0,
+        filter: isCanceled ? 'grayscale(100%)' : 'grayscale(0%)',
+      }}
+      transition={{ duration: 0.4 }}
+      className={`rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 p-6 space-y-4
+        ${isCanceled ? 'opacity-60' : ''}`}
+    >
+      {order.orderItems.map((item, idx) => (
+        <div
+          key={idx}
+          className="border-b border-white/10 pb-3 mb-3 last:border-none last:pb-0 last:mb-0"
+        >
+          <div className="w-20 aspect-square bg-white/10 rounded-xl flex items-center justify-center mb-2">
+            <Image
+              src={item.product.images[0]}
+              alt={item.product.name}
+              width={56}
+              height={56}
+              className="object-contain"
             />
-
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-white/60">Payment</span>
-              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/15 text-xs">
-                <CreditCard size={12} />
-                {paymentLabel}
-              </span>
-            </div>
-
-            <p className="text-sm text-white/60">
-              {order.address.name}, {order.address.city}, {order.address.state}
-            </p>
-
-            {!isCanceled && onCancel && !isDelivered && (
-              <div className="flex justify-end">
-                <button
-                  onClick={onCancel}
-                  className="px-4 py-1.5 rounded-full bg-red-500/15 text-red-400 border border-red-500/30 text-sm"
-                >
-                  Cancel
-                </button>
-              </div>
-            )}
-
-            {isCanceled && (
-              <div className="flex justify-end text-red-400 text-sm font-medium">
-                Order Cancelled
-              </div>
-            )}
           </div>
-        </td>
-      </tr>
+
+          <p className="text-sm font-medium text-white">
+            {item.product.name}
+          </p>
+          <p className="text-xs text-white/60">
+            {currency}{item.price} × {item.quantity}
+          </p>
+        </div>
+      ))}
+
+      <StatusTimeline
+        currentStep={currentStep}
+        mobile
+        isCanceled={isCanceled}
+      />
+
+      <div className="flex items-center justify-between">
+        <span className="text-sm text-white/60">Payment</span>
+        <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/15 text-xs">
+          <CreditCard size={12} />
+          {paymentLabel}
+        </span>
+      </div>
+
+      <p className="text-sm text-white/60">
+        {order.address.name}, {order.address.city}, {order.address.state}
+      </p>
+
+      {!isCanceled && onCancel && !isDelivered && (
+        <div className="flex justify-end">
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={onCancel}
+            className="px-4 py-1.5 rounded-full bg-red-500/15 text-red-400 border border-red-500/30 text-sm"
+          >
+            Cancel
+          </motion.button>
+        </div>
+      )}
+    </motion.div>
+  )
+
+  return (
+    <>
+      <AnimatePresence mode="wait">
+        {!mobile ? DesktopRow : (
+          <tr className="md:hidden">
+            <td colSpan={6} className="py-6">
+              {MobileCard}
+            </td>
+          </tr>
+        )}
+      </AnimatePresence>
 
       {ratingModal && (
         <RatingModal
