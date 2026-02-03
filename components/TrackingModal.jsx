@@ -13,19 +13,34 @@ import {
 import { useEffect, useState } from "react";
 
 const TRACKING_STEPS = [
-  { key: "CONFIRMED", label: "Order Placed", icon: Package },
+  { key: "ORDER_PLACED", label: "Order Placed", icon: Package },
   { key: "PACKED", label: "Packed", icon: Archive },
+  { key: "PROCESSING", label: "Processing", icon: Archive },
   { key: "SHIPPED", label: "Shipped", icon: Truck },
   { key: "OUT_FOR_DELIVERY", label: "Out for delivery", icon: MapPin },
   { key: "DELIVERED", label: "Delivered", icon: CheckCircle },
 ];
 
 const TRACK_INDEX = {
-  CONFIRMED: 0,
+  ORDER_PLACED: 0,
   PACKED: 1,
-  SHIPPED: 2,
-  OUT_FOR_DELIVERY: 3,
-  DELIVERED: 4,
+  PROCESSING: 2,
+  SHIPPED: 3,
+  OUT_FOR_DELIVERY: 4,
+  DELIVERED: 5,
+};
+
+const formatDateTime = (dateStr) => {
+  if (!dateStr) return null;
+
+  const date = new Date(dateStr);
+  return date.toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 };
 
 export default function TrackingModal({ order, onClose }) {
@@ -35,6 +50,8 @@ export default function TrackingModal({ order, onClose }) {
   const currentStep = TRACK_INDEX[order.status] ?? 0;
   const [lineHeight, setLineHeight] = useState(0);
 
+  const statusHistory = order.statusHistory || {};
+
   useEffect(() => {
     const timer = setTimeout(() => {
       setLineHeight(currentStep);
@@ -42,7 +59,6 @@ export default function TrackingModal({ order, onClose }) {
     return () => clearTimeout(timer);
   }, [currentStep]);
 
-  // Calculate the height percentage for the animated line
   const getLineHeight = () => {
     const stepHeight = 100 / (TRACKING_STEPS.length - 1);
     return lineHeight * stepHeight;
@@ -108,10 +124,8 @@ export default function TrackingModal({ order, onClose }) {
 
           {/* TRACKING TIMELINE */}
           <div className="relative pl-5">
-            {/* Vertical line behind steps */}
             <div className="absolute left-4 top-0 bottom-0 w-1 bg-white/30 rounded-full"></div>
 
-            {/* Animated line */}
             {lineHeight > 0 && (
               <motion.div
                 initial={{ height: 0 }}
@@ -121,29 +135,19 @@ export default function TrackingModal({ order, onClose }) {
               />
             )}
 
-            {/* Steps */}
             {TRACKING_STEPS.map((step, index) => {
               const Icon = step.icon;
               const isCompleted = index < currentStep;
               const isActive = index === currentStep;
 
+              const updatedAt = statusHistory[step.key];
+              const formattedDate = formatDateTime(updatedAt);
+
               const stepCircleClasses = `
                 flex items-center justify-center w-10 h-10 rounded-full border relative z-10
-                ${
-                  isCompleted
-                    ? "bg-emerald-500 border-emerald-500 text-white"
-                    : ""
-                }
-                ${
-                  isActive
-                    ? "bg-indigo-500 border-indigo-500 text-white shadow-[0_0_15px_rgba(99,102,241,0.8)] animate-pulse"
-                    : ""
-                }
-                ${
-                  !isCompleted && !isActive
-                    ? "bg-white/10 border-white/20 text-white/40"
-                    : ""
-                }
+                ${isCompleted ? "bg-emerald-500 border-emerald-500 text-white" : ""}
+                ${isActive ? "bg-indigo-500 border-indigo-500 text-white shadow-[0_0_15px_rgba(99,102,241,0.8)] animate-pulse" : ""}
+                ${!isCompleted && !isActive ? "bg-white/10 border-white/20 text-white/40" : ""}
               `;
 
               return (
@@ -153,14 +157,12 @@ export default function TrackingModal({ order, onClose }) {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.08 }}
                   className="flex items-center gap-4 relative mb-5 last:mb-0"
-                  style={{ minHeight: "50px" }}
+                  style={{ minHeight: "55px" }}
                 >
-                  {/* Step circle */}
                   <div className={stepCircleClasses}>
                     <Icon size={18} />
                   </div>
 
-                  {/* Step label */}
                   <div className="flex-1">
                     <p
                       className={`text-sm font-medium ${
@@ -169,8 +171,15 @@ export default function TrackingModal({ order, onClose }) {
                     >
                       {step.label}
                     </p>
-                    {(isCompleted || isActive) && (
-                      <span className="text-xs text-white/40">Updated</span>
+
+                    {formattedDate ? (
+                      <span className="text-xs text-white/40">
+                        {formattedDate}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-white/30 italic">
+                        Pending
+                      </span>
                     )}
                   </div>
                 </motion.div>
