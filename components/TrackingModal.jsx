@@ -28,39 +28,19 @@ const TRACK_INDEX = {
   DELIVERED: 4,
 };
 
-export default function TrackingModal({ order }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [lineWidth, setLineWidth] = useState(0);
+export default function TrackingModal({ order, onClose }) {
+  if (!order) return null;
+
   const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || "₹";
-  const currentStep = TRACK_INDEX[order?.status] ?? 0;
+  const currentStep = TRACK_INDEX[order.status] ?? 0;
+  const [lineWidth, setLineWidth] = useState(0);
 
-  // Load modal state from localStorage on component mount
-  useEffect(() => {
-    const savedIsOpen = localStorage.getItem("trackingModalOpen");
-    if (savedIsOpen === "true") {
-      setIsOpen(true);
-    }
-  }, []);
-
-  // Save modal state to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem("trackingModalOpen", isOpen.toString());
-  }, [isOpen]);
-
-  // Animate the line to the current step
   useEffect(() => {
     const timer = setTimeout(() => {
       setLineWidth((currentStep / (TRACKING_STEPS.length - 1)) * 100);
     }, 300);
     return () => clearTimeout(timer);
   }, [currentStep]);
-
-  const handleClose = () => {
-    setIsOpen(false);
-    localStorage.setItem("trackingModalOpen", "false");
-  };
-
-  if (!isOpen || !order) return null;
 
   return (
     <AnimatePresence>
@@ -80,7 +60,7 @@ export default function TrackingModal({ order }) {
           {/* HEADER */}
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-semibold">Track Order</h2>
-            <button onClick={handleClose} className="p-2 rounded-lg hover:bg-white/10">
+            <button onClick={onClose} className="p-2 rounded-lg hover:bg-white/10">
               <X />
             </button>
           </div>
