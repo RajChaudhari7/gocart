@@ -150,7 +150,7 @@ const Footer = () => {
             <Link href="/privacy" className="text-[10px] uppercase tracking-widest text-white/30 hover:text-white transition">
               Privacy Policy
             </Link>
-            <Link href="#" className="text-[10px] uppercase tracking-widest text-white/30 hover:text-white transition">
+            <Link href="/cookie" className="text-[10px] uppercase tracking-widest text-white/30 hover:text-white transition">
               Cookie Settings
             </Link>
           </div>
