@@ -34,6 +34,7 @@
     "nextjs-toploader": "^3.9.17",
     "nodemailer": "^7.0.13",
     "openai": "^5.20.2",
+    "pdfkit": "^0.17.2",
     "razorpay": "^2.9.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

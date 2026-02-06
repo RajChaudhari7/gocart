@@ -3,8 +3,11 @@ import { authSeller } from "@/middlewares/authSeller"
 import { getAuth } from "@clerk/nextjs/server"
 import { NextResponse } from "next/server"
 import { sendEmail } from "@/lib/sendEmail"
+import PDFDocument from "pdfkit"
+import fs from "fs"
+import path from "path"
 
-// ✅ Must match Prisma + frontend
+// ================= STATUS FLOW =================
 const STATUS_FLOW = [
   "ORDER_PLACED",
   "PACKED",
@@ -14,7 +17,7 @@ const STATUS_FLOW = [
   "DELIVERED"
 ]
 
-// ================= UPDATE SELLER ORDER STATUS =================
+// ================= UPDATE ORDER STATUS =================
 export async function POST(request) {
   try {
     const { userId } = getAuth(request)
@@ -25,19 +28,19 @@ export async function POST(request) {
     }
 
     const { orderId, status } = await request.json()
-
     if (!orderId || !status) {
       return NextResponse.json({ error: "Invalid request" }, { status: 400 })
     }
 
-    // ✅ IMPORTANT: product included
+    // ================= FETCH ORDER =================
     const order = await prisma.order.findUnique({
       where: { id: orderId },
       include: {
+        user: true,
+        store: true,
         orderItems: {
           include: { product: true }
-        },
-        user: true
+        }
       }
     })
 
@@ -45,21 +48,19 @@ export async function POST(request) {
       return NextResponse.json({ error: "Order not found" }, { status: 404 })
     }
 
-    // ❌ FINAL STATES LOCK
     if (["CANCELLED", "DELIVERED"].includes(order.status)) {
       return NextResponse.json(
-        { error: "Order status cannot be changed once finalized" },
+        { error: "Finalized orders cannot be updated" },
         { status: 400 }
       )
     }
 
-    // ❌ NO BACKWARD STATUS
     const currentIndex = STATUS_FLOW.indexOf(order.status)
     const newIndex = STATUS_FLOW.indexOf(status)
 
     if (newIndex === -1 || newIndex <= currentIndex) {
       return NextResponse.json(
-        { error: "Invalid order status flow" },
+        { error: "Invalid status flow" },
         { status: 400 }
       )
     }
@@ -67,7 +68,7 @@ export async function POST(request) {
     // ================= DB TRANSACTION =================
     await prisma.$transaction(async (tx) => {
 
-      // RESTOCK ON CANCEL
+      // ✅ RESTOCK ON CANCEL (NOT REMOVED)
       if (status === "CANCELLED") {
         for (const item of order.orderItems) {
           await tx.product.update({
@@ -80,7 +81,6 @@ export async function POST(request) {
         }
       }
 
-      // UPDATE STATUS + HISTORY
       await tx.order.update({
         where: { id: orderId },
         data: {
@@ -93,105 +93,73 @@ export async function POST(request) {
       })
     })
 
-    // ================= SEND INVOICE EMAIL =================
-    try {
-      const userEmail = order.user?.email
-      if (userEmail) {
+    // ================= PDF INVOICE =================
+    const invoicePath = path.join(
+      process.cwd(),
+      "tmp",
+      `invoice-${orderId}.pdf`
+    )
 
-        const itemsHtml = order.orderItems
-          .map(item => `
-            <tr>
-              <td style="border:1px solid #ddd;padding:8px;">
-                ${item.product?.name || "Product"}
-              </td>
-              <td align="center" style="border:1px solid #ddd;">
-                ${item.quantity}
-              </td>
-              <td align="right" style="border:1px solid #ddd;">
-                ₹${item.price}
-              </td>
-              <td align="right" style="border:1px solid #ddd;">
-                ₹${item.price * item.quantity}
-              </td>
-            </tr>
-          `).join("")
+    fs.mkdirSync(path.dirname(invoicePath), { recursive: true })
 
-        const grandTotal = order.orderItems.reduce(
-          (sum, item) => sum + item.price * item.quantity,
-          0
-        )
+    const doc = new PDFDocument({ margin: 40 })
+    doc.pipe(fs.createWriteStream(invoicePath))
 
-        await sendEmail({
-          to: userEmail,
-          subject: `Invoice – Order #${orderId} (${status})`,
-          html: `
-          <div style="font-family:Arial,sans-serif;background:#f9fafb;padding:20px;">
-            <div style="max-width:600px;margin:auto;background:#fff;padding:24px;border-radius:8px;">
+    doc.fontSize(20).text(order.store.name || "Store", { align: "left" })
+    doc.fontSize(10).text("INVOICE", { align: "right" })
 
-              <div style="display:flex;justify-content:space-between;">
-                <h2 style="margin:0;">INVOICE</h2>
-                <span style="color:#16a34a;font-weight:600;">${status}</span>
-              </div>
+    doc.moveDown()
+    doc.text(`Order ID: ${orderId}`)
+    doc.text(`Status: ${status}`)
+    doc.text(`Date: ${new Date().toLocaleDateString()}`)
 
-              <p style="color:#555;">
-                Order ID: <b>#${orderId}</b><br/>
-                Date: ${new Date().toLocaleDateString()}
-              </p>
+    doc.moveDown()
+    doc.text(`Billed To:`)
+    doc.text(order.user?.name || "Customer")
+    doc.text(order.user?.email)
 
-              <hr/>
+    doc.moveDown().text("Order Items:")
 
-              <p>
-                <b>Billed To:</b><br/>
-                ${order.user?.name || "Customer"}<br/>
-                ${order.user?.email}
-              </p>
+    let total = 0
+    order.orderItems.forEach((item) => {
+      const lineTotal = item.price * item.quantity
+      total += lineTotal
+      doc.text(
+        `${item.product?.name} | Qty: ${item.quantity} | ₹${lineTotal}`
+      )
+    })
 
-              <h3>Order Summary</h3>
+    doc.moveDown()
+    doc.fontSize(14).text(`Grand Total: ₹${total}`, { align: "right" })
 
-              <table width="100%" cellspacing="0" cellpadding="8" style="border-collapse:collapse;">
-                <thead>
-                  <tr style="background:#f3f4f6;">
-                    <th align="left" style="border:1px solid #ddd;">Product</th>
-                    <th style="border:1px solid #ddd;">Qty</th>
-                    <th align="right" style="border:1px solid #ddd;">Price</th>
-                    <th align="right" style="border:1px solid #ddd;">Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${itemsHtml}
-                </tbody>
-              </table>
+    doc.end()
 
-              <p style="text-align:right;margin-top:16px;">
-                <b>Grand Total: ₹${grandTotal}</b>
-              </p>
-
-              <hr/>
-
-              <p>
-                Your order is currently <b>${status}</b>.
-                We’ll notify you when the status changes.
-              </p>
-
-              <p style="margin-top:24px;">
-                Thank you for shopping with us ❤️<br/>
-                <b>Your Store Team</b>
-              </p>
-
-              <small style="color:#777;">
-                This is an automated email. Please do not reply.
-              </small>
-
-            </div>
-          </div>
-          `
-        })
-      }
-    } catch (err) {
-      console.error("Email sending failed:", err.message)
+    // ================= EMAIL =================
+    if (order.user?.email) {
+      await sendEmail({
+        to: order.user.email,
+        subject: `Invoice – Order #${orderId}`,
+        html: `
+        <div style="font-family:Arial;padding:20px">
+          <img src="${order.store.logo || ""}" height="50" />
+          <h2>${order.store.name}</h2>
+          <p>Your order status is <b>${status}</b></p>
+          <p>Invoice attached as PDF.</p>
+          <p>Thank you for shopping with us.</p>
+        </div>
+        `,
+        attachments: [
+          {
+            filename: `invoice-${orderId}.pdf`,
+            path: invoicePath
+          }
+        ]
+      })
     }
 
-    return NextResponse.json({ message: "Order status updated successfully" })
+    return NextResponse.json({
+      message: "Order status updated & invoice sent"
+    })
 
   } catch (error) {
     console.error(error)
@@ -199,7 +167,7 @@ export async function POST(request) {
   }
 }
 
-// ================= GET ALL SELLER ORDERS =================
+// ================= GET SELLER ORDERS =================
 export async function GET(request) {
   try {
     const { userId } = getAuth(request)
@@ -222,19 +190,14 @@ export async function GET(request) {
       orderBy: { createdAt: "desc" }
     })
 
-    const activeOrdersCount = await prisma.order.count({
+    const activeCount = await prisma.order.count({
       where: {
         storeId,
-        NOT: {
-          status: { in: ["DELIVERED", "CANCELLED"] }
-        }
+        NOT: { status: { in: ["DELIVERED", "CANCELLED"] } }
       }
     })
 
-    return NextResponse.json({
-      orders,
-      activeCount: activeOrdersCount
-    })
+    return NextResponse.json({ orders, activeCount })
 
   } catch (error) {
     console.error(error)
