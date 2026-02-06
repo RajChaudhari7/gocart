@@ -104,17 +104,66 @@ export async function POST(request) {
       const userEmail = order.user?.email
 
       if (userEmail) {
+        const itemsHtml = order.orderItems
+          .map(item => `
+      <tr>
+        <td style="padding:8px;border:1px solid #ddd;">${item.productName}</td>
+        <td style="padding:8px;border:1px solid #ddd;text-align:center;">${item.quantity}</td>
+        <td style="padding:8px;border:1px solid #ddd;text-align:right;">₹${item.price}</td>
+        <td style="padding:8px;border:1px solid #ddd;text-align:right;">
+          ₹${item.price * item.quantity}
+        </td>
+      </tr>
+    `)
+          .join("")
+
         await sendEmail({
           to: userEmail,
-          subject: `Order status updated to ${status}`,
+          subject: `Your order is now ${status}`,
           html: `
-        <h2>Order Update</h2>
-        <p>Your order <b>#${orderId}</b> status has been updated.</p>
-        <p><b>Current Status:</b> ${status}</p>
-        <p>Thank you for shopping with us.</p>
-      `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; color: #333;">
+        <h2 style="color:#111;">Order Status Update</h2>
+
+        <p>Hello,</p>
+        <p>
+          Your order <b>#${orderId}</b> status has been updated to
+          <b style="color:#16a34a;"> ${status}</b>.
+        </p>
+
+        <h3 style="margin-top:20px;">Order Summary</h3>
+
+        <table style="width:100%; border-collapse: collapse; margin-top:10px;">
+          <thead>
+            <tr style="background:#f3f4f6;">
+              <th style="padding:8px;border:1px solid #ddd;text-align:left;">Product</th>
+              <th style="padding:8px;border:1px solid #ddd;">Qty</th>
+              <th style="padding:8px;border:1px solid #ddd;text-align:right;">Price</th>
+              <th style="padding:8px;border:1px solid #ddd;text-align:right;">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${itemsHtml}
+          </tbody>
+        </table>
+
+        <p style="margin-top:20px;">
+          If you have any questions, feel free to contact our support team.
+        </p>
+
+        <p style="margin-top:30px;">
+          Thank you for shopping with us ❤️<br/>
+          <strong>Your Store Team</strong>
+        </p>
+
+        <hr style="margin-top:30px;" />
+        <small style="color:#666;">
+          This is an automated email. Please do not reply.
+        </small>
+      </div>
+    `
         })
       }
+
     } catch (err) {
       console.error("Email sending failed:", err.message)
     }
