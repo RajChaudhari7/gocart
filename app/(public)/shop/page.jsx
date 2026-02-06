@@ -126,11 +126,10 @@ function ShopContent() {
                   <button
                     key={cat}
                     onClick={() => setCategory(cat)}
-                    className={`text-left text-sm py-1 transition ${
-                      category === cat
+                    className={`text-left text-sm py-1 transition ${category === cat
                         ? 'text-cyan-400 font-bold translate-x-2'
                         : 'text-white/50 hover:text-white'
-                    }`}
+                      }`}
                   >
                     {cat}
                   </button>
@@ -148,11 +147,10 @@ function ShopContent() {
                   <button
                     key={range.value}
                     onClick={() => setPriceRange(range.value)}
-                    className={`text-left text-sm py-1 transition ${
-                      priceRange === range.value
+                    className={`text-left text-sm py-1 transition ${priceRange === range.value
                         ? 'text-cyan-400 font-bold translate-x-2'
                         : 'text-white/50 hover:text-white'
-                    }`}
+                      }`}
                   >
                     {range.label}
                   </button>
@@ -216,12 +214,15 @@ function ShopContent() {
               onClick={() => setShowMobileFilter(false)}
               className="fixed inset-0 bg-black/90 z-[100]"
             />
+
             <motion.div
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
-              className="fixed bottom-0 inset-x-0 bg-[#0a0a0a] z-[101] rounded-t-[2.5rem] p-8"
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="fixed bottom-0 inset-x-0 bg-[#0a0a0a] z-[101] rounded-t-[2.5rem] p-8 max-h-[85vh] overflow-y-auto"
             >
+              {/* HEADER */}
               <div className="flex justify-between mb-8">
                 <h2 className="text-xl font-bold">Filters</h2>
                 <button onClick={() => setShowMobileFilter(false)}>
@@ -229,32 +230,64 @@ function ShopContent() {
                 </button>
               </div>
 
-              <div className="space-y-8">
+              <div className="space-y-10">
+
+                {/* ✅ CATEGORIES (NEW – MOBILE ONLY) */}
+                <div>
+                  <h3 className="text-[10px] font-bold text-white/30 uppercase mb-4">
+                    Categories
+                  </h3>
+
+                  <div className="flex flex-wrap gap-2">
+                    {allCategories.map((cat) => (
+                      <button
+                        key={cat}
+                        onClick={() => {
+                          setCategory(cat)
+                          setShowMobileFilter(false) // auto close (optional)
+                        }}
+                        className={`px-4 py-2 rounded-full text-xs capitalize transition ${category === cat
+                            ? 'bg-cyan-400 text-black font-bold'
+                            : 'bg-white/5 text-white'
+                          }`}
+                      >
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* PRICE RANGE */}
                 <div>
                   <h3 className="text-[10px] font-bold text-white/30 uppercase mb-4">
                     Price Range
                   </h3>
+
                   <div className="flex flex-wrap gap-2">
                     {PRICE_RANGES.map((range) => (
                       <button
                         key={range.value}
-                        onClick={() => setPriceRange(range.value)}
-                        className={`px-4 py-2 rounded-full text-xs ${
-                          priceRange === range.value
-                            ? 'bg-white text-black'
+                        onClick={() => {
+                          setPriceRange(range.value)
+                          setShowMobileFilter(false) // auto close (optional)
+                        }}
+                        className={`px-4 py-2 rounded-full text-xs transition ${priceRange === range.value
+                            ? 'bg-white text-black font-bold'
                             : 'bg-white/5 text-white'
-                        }`}
+                          }`}
                       >
                         {range.label}
                       </button>
                     ))}
                   </div>
                 </div>
+
               </div>
             </motion.div>
           </>
         )}
       </AnimatePresence>
+
     </section>
   )
 }
