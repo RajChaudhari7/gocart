@@ -107,7 +107,7 @@ export async function POST(request) {
         const itemsHtml = order.orderItems
           .map(item => `
       <tr>
-        <td style="padding:8px;border:1px solid #ddd;">${item.name}</td>
+        <td style="padding:8px;border:1px solid #ddd;">${item.product.name}</td>
         <td style="padding:8px;border:1px solid #ddd;text-align:center;">${item.quantity}</td>
         <td style="padding:8px;border:1px solid #ddd;text-align:right;">₹${item.price}</td>
         <td style="padding:8px;border:1px solid #ddd;text-align:right;">
