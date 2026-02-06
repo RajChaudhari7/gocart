@@ -2,6 +2,8 @@ import prisma from "@/lib/prisma"
 import { authSeller } from "@/middlewares/authSeller"
 import { getAuth } from "@clerk/nextjs/server"
 import { NextResponse } from "next/server"
+import { sendEmail } from "@/lib/sendEmail"
+
 
 // ✅ Must match Prisma + frontend
 const STATUS_FLOW = [
@@ -31,8 +33,12 @@ export async function POST(request) {
 
     const order = await prisma.order.findUnique({
       where: { id: orderId },
-      include: { orderItems: true }
+      include: {
+        orderItems: true,
+        user: true   // 👈 REQUIRED for email
+      }
     })
+
 
     if (!order || order.storeId !== storeId) {
       return NextResponse.json({ error: "Order not found" }, { status: 404 })
@@ -65,6 +71,8 @@ export async function POST(request) {
     }
 
     await prisma.$transaction(async (tx) => {
+
+
       // RESTOCK ON CANCEL
       if (status === "CANCELLED") {
         for (const item of order.orderItems) {
@@ -90,6 +98,27 @@ export async function POST(request) {
         }
       })
     })
+
+    // 🔔 SEND EMAIL AFTER STATUS UPDATE
+    try {
+      const userEmail = order.user?.email
+
+      if (userEmail) {
+        await sendEmail({
+          to: userEmail,
+          subject: `Order status updated to ${status}`,
+          html: `
+        <h2>Order Update</h2>
+        <p>Your order <b>#${orderId}</b> status has been updated.</p>
+        <p><b>Current Status:</b> ${status}</p>
+        <p>Thank you for shopping with us.</p>
+      `
+        })
+      }
+    } catch (err) {
+      console.error("Email sending failed:", err.message)
+    }
+
 
     return NextResponse.json({ message: "Order status updated successfully" })
 
