@@ -4,7 +4,6 @@ import { getAuth } from "@clerk/nextjs/server"
 import { NextResponse } from "next/server"
 import { sendEmail } from "@/lib/sendEmail"
 
-
 // ✅ Must match Prisma + frontend
 const STATUS_FLOW = [
   "ORDER_PLACED",
@@ -31,14 +30,16 @@ export async function POST(request) {
       return NextResponse.json({ error: "Invalid request" }, { status: 400 })
     }
 
+    // ✅ IMPORTANT: product included
     const order = await prisma.order.findUnique({
       where: { id: orderId },
       include: {
-        orderItems: true,
-        user: true   // 👈 REQUIRED for email
+        orderItems: {
+          include: { product: true }
+        },
+        user: true
       }
     })
-
 
     if (!order || order.storeId !== storeId) {
       return NextResponse.json({ error: "Order not found" }, { status: 404 })
@@ -56,22 +57,15 @@ export async function POST(request) {
     const currentIndex = STATUS_FLOW.indexOf(order.status)
     const newIndex = STATUS_FLOW.indexOf(status)
 
-    if (newIndex === -1) {
+    if (newIndex === -1 || newIndex <= currentIndex) {
       return NextResponse.json(
-        { error: "Invalid status value" },
+        { error: "Invalid order status flow" },
         { status: 400 }
       )
     }
 
-    if (newIndex <= currentIndex) {
-      return NextResponse.json(
-        { error: "Order status cannot go backward" },
-        { status: 400 }
-      )
-    }
-
+    // ================= DB TRANSACTION =================
     await prisma.$transaction(async (tx) => {
-
 
       // RESTOCK ON CANCEL
       if (status === "CANCELLED") {
@@ -86,7 +80,7 @@ export async function POST(request) {
         }
       }
 
-      // ✅ UPDATE STATUS + STATUS HISTORY
+      // UPDATE STATUS + HISTORY
       await tx.order.update({
         where: { id: orderId },
         data: {
@@ -99,75 +93,103 @@ export async function POST(request) {
       })
     })
 
-    // 🔔 SEND EMAIL AFTER STATUS UPDATE
+    // ================= SEND INVOICE EMAIL =================
     try {
       const userEmail = order.user?.email
-
       if (userEmail) {
+
         const itemsHtml = order.orderItems
           .map(item => `
-      <tr>
-        <td style="padding:8px;border:1px solid #ddd;">${item.product.name}</td>
-        <td style="padding:8px;border:1px solid #ddd;text-align:center;">${item.quantity}</td>
-        <td style="padding:8px;border:1px solid #ddd;text-align:right;">₹${item.price}</td>
-        <td style="padding:8px;border:1px solid #ddd;text-align:right;">
-          ₹${item.price * item.quantity}
-        </td>
-      </tr>
-    `)
-          .join("")
+            <tr>
+              <td style="border:1px solid #ddd;padding:8px;">
+                ${item.product?.name || "Product"}
+              </td>
+              <td align="center" style="border:1px solid #ddd;">
+                ${item.quantity}
+              </td>
+              <td align="right" style="border:1px solid #ddd;">
+                ₹${item.price}
+              </td>
+              <td align="right" style="border:1px solid #ddd;">
+                ₹${item.price * item.quantity}
+              </td>
+            </tr>
+          `).join("")
+
+        const grandTotal = order.orderItems.reduce(
+          (sum, item) => sum + item.price * item.quantity,
+          0
+        )
 
         await sendEmail({
           to: userEmail,
-          subject: `Your order is now ${status}`,
+          subject: `Invoice – Order #${orderId} (${status})`,
           html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; color: #333;">
-        <h2 style="color:#111;">Order Status Update</h2>
+          <div style="font-family:Arial,sans-serif;background:#f9fafb;padding:20px;">
+            <div style="max-width:600px;margin:auto;background:#fff;padding:24px;border-radius:8px;">
 
-        <p>Hello,</p>
-        <p>
-          Your order <b>#${orderId}</b> status has been updated to
-          <b style="color:#16a34a;"> ${status}</b>.
-        </p>
+              <div style="display:flex;justify-content:space-between;">
+                <h2 style="margin:0;">INVOICE</h2>
+                <span style="color:#16a34a;font-weight:600;">${status}</span>
+              </div>
 
-        <h3 style="margin-top:20px;">Order Summary</h3>
+              <p style="color:#555;">
+                Order ID: <b>#${orderId}</b><br/>
+                Date: ${new Date().toLocaleDateString()}
+              </p>
 
-        <table style="width:100%; border-collapse: collapse; margin-top:10px;">
-          <thead>
-            <tr style="background:#f3f4f6;">
-              <th style="padding:8px;border:1px solid #ddd;text-align:left;">Product</th>
-              <th style="padding:8px;border:1px solid #ddd;">Qty</th>
-              <th style="padding:8px;border:1px solid #ddd;text-align:right;">Price</th>
-              <th style="padding:8px;border:1px solid #ddd;text-align:right;">Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${itemsHtml}
-          </tbody>
-        </table>
+              <hr/>
 
-        <p style="margin-top:20px;">
-          If you have any questions, feel free to contact our support team.
-        </p>
+              <p>
+                <b>Billed To:</b><br/>
+                ${order.user?.name || "Customer"}<br/>
+                ${order.user?.email}
+              </p>
 
-        <p style="margin-top:30px;">
-          Thank you for shopping with us ❤️<br/>
-          <strong>Your Store Team</strong>
-        </p>
+              <h3>Order Summary</h3>
 
-        <hr style="margin-top:30px;" />
-        <small style="color:#666;">
-          This is an automated email. Please do not reply.
-        </small>
-      </div>
-    `
+              <table width="100%" cellspacing="0" cellpadding="8" style="border-collapse:collapse;">
+                <thead>
+                  <tr style="background:#f3f4f6;">
+                    <th align="left" style="border:1px solid #ddd;">Product</th>
+                    <th style="border:1px solid #ddd;">Qty</th>
+                    <th align="right" style="border:1px solid #ddd;">Price</th>
+                    <th align="right" style="border:1px solid #ddd;">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${itemsHtml}
+                </tbody>
+              </table>
+
+              <p style="text-align:right;margin-top:16px;">
+                <b>Grand Total: ₹${grandTotal}</b>
+              </p>
+
+              <hr/>
+
+              <p>
+                Your order is currently <b>${status}</b>.
+                We’ll notify you when the status changes.
+              </p>
+
+              <p style="margin-top:24px;">
+                Thank you for shopping with us ❤️<br/>
+                <b>Your Store Team</b>
+              </p>
+
+              <small style="color:#777;">
+                This is an automated email. Please do not reply.
+              </small>
+
+            </div>
+          </div>
+          `
         })
       }
-
     } catch (err) {
       console.error("Email sending failed:", err.message)
     }
-
 
     return NextResponse.json({ message: "Order status updated successfully" })
 
