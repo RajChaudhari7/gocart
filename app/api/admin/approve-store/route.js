@@ -65,6 +65,7 @@ export async function POST(request) {
         // 📧 Send Email to Store Owner
         await sendEmail({
             to: store.user.email,
+            type:"store",
             subject:
                 status === "approved"
                     ? "🎉 Your Store Has Been Approved"

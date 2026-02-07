@@ -129,6 +129,7 @@ export async function POST(request) {
 
         await sendEmail({
           to: userEmail,
+          type:"order",
           subject: `Invoice – Order #${orderId} (${status})`,
           html: `
 <div style="font-family:Arial,Helvetica,sans-serif;background:#f9fafb;padding:20px;">
