@@ -81,7 +81,7 @@ export default function Orders() {
       const token = await getToken()
 
       await axios.post(
-        "/api/order/verify-delivery-otp",
+        "/api/orders/verify-delivery-otp",
         {
           orderId: otpOrder.id,
           otp

@@ -297,19 +297,30 @@ export default function StoreOrders() {
                                     >
 
                                         {STATUS_FLOW.map(s => (
-                                            <option key={s} value={s}>{s}</option>
+                                            <option
+                                                key={s}
+                                                value={s}
+                                                disabled={
+                                                    s === "DELIVERY_INITIATED" &&
+                                                    order.status !== "OUT_FOR_DELIVERY"
+                                                }
+                                            >
+                                                {s.replaceAll("_", " ")}
+                                            </option>
                                         ))}
+
                                     </select>
                                 )}
 
-                                {order.status !== "DELIVERED" && order.status !== "CANCELLED" && (
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); cancelOrder(order) }}
-                                        className="px-3 py-1 bg-red-600 text-white rounded text-sm"
-                                    >
-                                        Cancel
-                                    </button>
-                                )}
+                                {!["SHIPPED", "OUT_FOR_DELIVERY", "DELIVERY_INITIATED", "DELIVERED", "CANCELLED"]
+                                    .includes(order.status) && (
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); cancelOrder(order) }}
+                                            className="px-3 py-1 bg-red-600 text-white rounded text-sm"
+                                        >
+                                            Cancel
+                                        </button>
+                                    )}
 
                                 {/* Download PDF outside modal */}
                                 <button
