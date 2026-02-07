@@ -18,18 +18,20 @@ const STATUS_FLOW = [
     "DELIVERY_INITIATED"
 ]
 
-const [showOtpModal, setShowOtpModal] = useState(false)
-const [otpOrder, setOtpOrder] = useState(null)
-const [enteredOtp, setEnteredOtp] = useState("")
-const [verifyingOtp, setVerifyingOtp] = useState(false)
-const [otpExpiryTime, setOtpExpiryTime] = useState(null)
-const [timeLeft, setTimeLeft] = useState(0)
+
 
 
 
 export default function StoreOrders() {
     const { getToken } = useAuth()
     const { setOrderCount } = useOrderStore()
+    const [otpExpiryTime, setOtpExpiryTime] = useState(null)
+    const [timeLeft, setTimeLeft] = useState(0)
+    const [showOtpModal, setShowOtpModal] = useState(false)
+    const [otpOrder, setOtpOrder] = useState(null)
+    const [enteredOtp, setEnteredOtp] = useState("")
+    const [verifyingOtp, setVerifyingOtp] = useState(false)
+
 
     const [orders, setOrders] = useState([])
     const [loading, setLoading] = useState(true)
