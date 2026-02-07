@@ -32,24 +32,19 @@ export async function POST(request) {
       return NextResponse.json({ error: "Invalid request" }, { status: 400 })
     }
 
-    // ✅ IMPORTANT: product included
     const order = await prisma.order.findUnique({
       where: { id: orderId },
       include: {
-        orderItems: {
-          include: { product: true }
-        },
+        orderItems: { include: { product: true } },
         user: true,
-        store: true // ✅ ADD THIS
+        store: true
       }
     })
-
 
     if (!order || order.storeId !== storeId) {
       return NextResponse.json({ error: "Order not found" }, { status: 404 })
     }
 
-    // ❌ FINAL STATES LOCK
     if (["CANCELLED", "DELIVERED"].includes(order.status)) {
       return NextResponse.json(
         { error: "Order status cannot be changed once finalized" },
@@ -57,7 +52,6 @@ export async function POST(request) {
       )
     }
 
-    // ❌ NO BACKWARD STATUS
     const currentIndex = STATUS_FLOW.indexOf(order.status)
     const newIndex = STATUS_FLOW.indexOf(status)
 
@@ -68,25 +62,27 @@ export async function POST(request) {
       )
     }
 
-    // ================= OTP GENERATION ON DELIVERY_INITIATED =================
+    // ================= TRANSACTION =================
     let plainOtp = null
 
-    if (status === "DELIVERY_INITIATED") {
-      plainOtp = generateOtp()
-      const hashedOtp = hashOtp(plainOtp)
-
-      await prisma.order.update({
-        where: { id: orderId },
-        data: {
-          deliveryOtp: hashedOtp,
-          deliveryOtpExpiry: new Date(Date.now() + 10 * 60 * 1000), // 10 min
-          otpVerified: false
-        }
-      })
-    }
-
-    // ================= DB TRANSACTION =================
     await prisma.$transaction(async (tx) => {
+
+      // 🔥 GENERATE OTP SAFELY INSIDE TRANSACTION
+      if (status === "DELIVERY_INITIATED") {
+        plainOtp = generateOtp()
+        const hashedOtp = hashOtp(plainOtp)
+
+        await tx.order.update({
+          where: { id: orderId },
+          data: {
+            deliveryOtp: hashedOtp,
+            deliveryOtpExpiry: new Date(Date.now() + 10 * 60 * 1000),
+            otpVerified: false,
+            otpVerifyAttempts: 0,   // ✅ RESET
+            otpResendCount: 0      // ✅ RESET
+          }
+        })
+      }
 
       // RESTOCK ON CANCEL
       if (status === "CANCELLED") {
@@ -132,7 +128,7 @@ export async function POST(request) {
   <p><b>Do NOT share</b> this OTP with anyone except the delivery person.</p>
   <p>This OTP will expire in 10 minutes.</p>
 </div>
-        `
+`
           })
         }
       } catch (err) {
@@ -288,9 +284,7 @@ export async function GET(request) {
         user: true,
         address: true,
         store: true,
-        orderItems: {
-          include: { product: true }
-        }
+        orderItems: { include: { product: true } }
       },
       orderBy: { createdAt: "desc" }
     })
@@ -298,9 +292,7 @@ export async function GET(request) {
     const activeOrdersCount = await prisma.order.count({
       where: {
         storeId,
-        NOT: {
-          status: { in: ["DELIVERED", "CANCELLED"] }
-        }
+        NOT: { status: { in: ["DELIVERED", "CANCELLED"] } }
       }
     })
 

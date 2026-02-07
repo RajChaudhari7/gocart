@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
-import crypto from "crypto"
 import prisma from "@/lib/prisma"
+import { hashOtp } from "@/lib/otp"
 
 const MAX_VERIFY_ATTEMPTS = 5
 
@@ -8,18 +8,28 @@ export async function POST(req) {
   try {
     const { orderId, otp } = await req.json()
 
-    const order = await prisma.order.findUnique({
-      where: { id: orderId }
-    })
-
-    if (!order || order.status !== "DELIVERY_INITIATED") {
+    if (!orderId || !otp) {
       return NextResponse.json(
-        { error: "Invalid order state" },
+        { error: "orderId and otp are required" },
         { status: 400 }
       )
     }
 
-    // 🔒 Check verify attempts
+    const order = await prisma.order.findUnique({
+      where: { id: orderId }
+    })
+
+    if (!order) {
+      return NextResponse.json({ error: "Order not found" }, { status: 404 })
+    }
+
+    if (order.status !== "DELIVERY_INITIATED") {
+      return NextResponse.json(
+        { error: `Invalid order status: ${order.status}` },
+        { status: 400 }
+      )
+    }
+
     if ((order.otpVerifyAttempts || 0) >= MAX_VERIFY_ATTEMPTS) {
       return NextResponse.json(
         { error: "Too many failed attempts. OTP locked." },
@@ -29,7 +39,7 @@ export async function POST(req) {
 
     if (!order.deliveryOtp || !order.deliveryOtpExpiry) {
       return NextResponse.json(
-        { error: "OTP not found" },
+        { error: "OTP not generated" },
         { status: 400 }
       )
     }
@@ -41,19 +51,24 @@ export async function POST(req) {
       )
     }
 
-    const hashedOtp = crypto
-      .createHash("sha256")
-      .update(String(otp))
-      .digest("hex")
+    const cleanOtp = String(otp).trim()
+    const hashedUserOtp = hashOtp(cleanOtp)
+
+    // 🔍 DEBUG (REMOVE IN PROD)
+    console.log("🔐 DB OTP HASH:", order.deliveryOtp)
+    console.log("👤 USER OTP:", cleanOtp)
+    console.log("🔑 HASHED USER OTP:", hashedUserOtp)
 
     // ❌ WRONG OTP
-    if (hashedOtp !== order.deliveryOtp) {
-      await prisma.order.update({
+    if (hashedUserOtp !== order.deliveryOtp) {
+      const updated = await prisma.order.update({
         where: { id: orderId },
         data: {
-          otpVerifyAttempts: { increment: 1 } // 👈 count attempts
+          otpVerifyAttempts: { increment: 1 }
         }
       })
+
+      console.log("❌ OTP FAILED, attempts:", updated.otpVerifyAttempts)
 
       return NextResponse.json(
         { error: "Invalid OTP" },
@@ -69,8 +84,8 @@ export async function POST(req) {
         deliveredAt: new Date(),
         deliveryOtp: null,
         deliveryOtpExpiry: null,
-        otpVerifyAttempts: 0,   // reset
-        otpResendCount: 0,     // reset (for resend feature)
+        otpVerifyAttempts: 0,
+        otpResendCount: 0,
         otpVerified: true
       }
     })

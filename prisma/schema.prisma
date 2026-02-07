@@ -71,18 +71,19 @@ model Order {
 
   deliveryOtp       String?
   deliveryOtpExpiry DateTime?
-  otpVerified       Boolean   @default(false)
-  otpVerifyAttempts Int       @default(0) 
-  otpResendCount    Int       @default(0) 
-  userId        String
-  storeId       String
-  addressId     String
-  isPaid        Boolean       @default(false)
-  paymentMethod PaymentMethod
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  isCouponUsed  Boolean       @default(false)
-  coupon        Json          @default("{}")
+  otpVerified       Boolean       @default(false)
+  otpVerifyAttempts Int           @default(0)
+  otpResendCount    Int           @default(0)
+  deliveredAt       DateTime?
+  userId            String
+  storeId           String
+  addressId         String
+  isPaid            Boolean       @default(false)
+  paymentMethod     PaymentMethod
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  isCouponUsed      Boolean       @default(false)
+  coupon            Json          @default("{}")
 
   orderItems OrderItem[]
 

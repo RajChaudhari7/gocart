@@ -297,8 +297,16 @@ export default function StoreOrders() {
 
             toast.success("OTP resent to customer email")
 
-            setOtpExpiryTime(new Date(data.expiry))
-            setTimeLeft(Math.floor((new Date(data.expiry) - new Date()) / 1000))
+            // ✅ USE RESPONSE ORDER (IMPORTANT)
+            if (data.order) {
+                setOtpOrder(data.order)
+
+                if (data.order.deliveryOtpExpiry) {
+                    const exp = new Date(data.order.deliveryOtpExpiry)
+                    setOtpExpiryTime(exp)
+                    setTimeLeft(Math.floor((exp - new Date()) / 1000))
+                }
+            }
 
             setResendCooldown(60)
 
@@ -308,6 +316,7 @@ export default function StoreOrders() {
             setResendingOtp(false)
         }
     }
+
 
 
 
@@ -391,17 +400,24 @@ export default function StoreOrders() {
                                     <button
                                         onClick={(e) => {
                                             e.stopPropagation()
+
                                             setOtpOrder(order)
-                                            setOtpExpiryTime(new Date(order.deliveryOtpExpiry))
                                             setShowOtpModal(true)
+
+                                            if (order.deliveryOtpExpiry) {
+                                                const exp = new Date(order.deliveryOtpExpiry)
+                                                setOtpExpiryTime(exp)
+                                                setTimeLeft(Math.floor((exp - new Date()) / 1000))
+                                            } else {
+                                                // 🔥 Force generate OTP if missing
+                                                resendOtp()
+                                            }
                                         }}
                                         className="px-3 py-1 bg-emerald-600 text-white rounded text-sm"
                                     >
                                         Verify Delivery OTP
                                     </button>
                                 )}
-
-
 
                                 {order.status !== "DELIVERED" && order.status !== "CANCELLED" && (
                                     <button
