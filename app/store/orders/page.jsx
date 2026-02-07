@@ -15,8 +15,17 @@ const STATUS_FLOW = [
     "PROCESSING",
     "SHIPPED",
     "OUT_FOR_DELIVERY",
-    "DELIVERED"
+    "DELIVERY_INITIATED"
 ]
+
+const [showOtpModal, setShowOtpModal] = useState(false)
+const [otpOrder, setOtpOrder] = useState(null)
+const [enteredOtp, setEnteredOtp] = useState("")
+const [verifyingOtp, setVerifyingOtp] = useState(false)
+const [otpExpiryTime, setOtpExpiryTime] = useState(null)
+const [timeLeft, setTimeLeft] = useState(0)
+
+
 
 export default function StoreOrders() {
     const { getToken } = useAuth()
@@ -90,6 +99,39 @@ export default function StoreOrders() {
             toast.error(error?.response?.data?.error || error.message)
         }
     }
+
+    // function to verify otp
+    const verifyDeliveryOtp = async () => {
+        if (!enteredOtp || enteredOtp.length < 6) {
+            toast.error("Please enter valid 6-digit OTP")
+            return
+        }
+
+        try {
+            setVerifyingOtp(true)
+            const token = await getToken()
+
+            await axios.post(
+                "/api/orders/verify-otp",
+                { orderId: otpOrder.id, otp: enteredOtp },
+                { headers: { Authorization: `Bearer ${token}` } }
+            )
+
+            toast.success("Delivery verified. Order marked as DELIVERED ✅")
+
+            setShowOtpModal(false)
+            setEnteredOtp("")
+            setOtpOrder(null)
+
+            await fetchOrders()
+
+        } catch (error) {
+            toast.error(error?.response?.data?.error || "OTP verification failed")
+        } finally {
+            setVerifyingOtp(false)
+        }
+    }
+
 
     /* ================= PDF INVOICE (UNCHANGED) ================= */
     const downloadInvoicePDF = async (order) => {
@@ -229,9 +271,30 @@ export default function StoreOrders() {
         setIsModalOpen(false)
     }
 
+    const formatTime = (seconds) => {
+        const m = Math.floor(seconds / 60)
+        const s = seconds % 60
+        return `${m.toString().padStart(2, "0")}:${s
+            .toString()
+            .padStart(2, "0")}`
+    }
+
+
     useEffect(() => {
         fetchOrders()
     }, [])
+
+    useEffect(() => {
+        if (!showOtpModal || !otpExpiryTime) return
+
+        const interval = setInterval(() => {
+            const diff = otpExpiryTime - new Date()
+            setTimeLeft(Math.max(0, Math.floor(diff / 1000)))
+        }, 1000)
+
+        return () => clearInterval(interval)
+    }, [showOtpModal, otpExpiryTime])
+
 
     if (loading) return <Loading />
 
@@ -281,6 +344,22 @@ export default function StoreOrders() {
                                         ))}
                                     </select>
                                 )}
+
+                                {order.status === "DELIVERY_INITIATED" && (
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            setOtpOrder(order)
+                                            setOtpExpiryTime(new Date(order.deliveryOtpExpiry))
+                                            setShowOtpModal(true)
+                                        }}
+                                        className="px-3 py-1 bg-emerald-600 text-white rounded text-sm"
+                                    >
+                                        Verify Delivery OTP
+                                    </button>
+                                )}
+
+
 
                                 {order.status !== "DELIVERED" && order.status !== "CANCELLED" && (
                                     <button
@@ -378,6 +457,79 @@ export default function StoreOrders() {
                     </div>
                 </div>
             )}
+            {/* ================= OTP VERIFY MODAL ================= */}
+            {showOtpModal && otpOrder && (
+                <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+                    <div
+                        onClick={(e) => e.stopPropagation()}
+                        className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl"
+                    >
+                        <h2 className="text-xl font-semibold mb-2 text-center">
+                            Verify Delivery OTP
+                        </h2>
+
+                        <div className="text-center mb-4">
+                            <p className="text-sm text-gray-600">
+                                Ask customer for the OTP sent to their email
+                            </p>
+
+                            {timeLeft > 0 ? (
+                                <p
+                                    className={`mt-1 text-sm font-semibold ${timeLeft <= 60 ? "text-red-600" : "text-emerald-600"
+                                        }`}
+                                >
+                                    OTP expires in {formatTime(timeLeft)}
+                                </p>
+                            ) : (
+                                <p className="mt-1 text-sm font-semibold text-red-700">
+                                    OTP has expired
+                                </p>
+                            )}
+                        </div>
+
+
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium mb-1">
+                                Enter 6-digit OTP
+                            </label>
+                            <input
+                                type="text"
+                                maxLength={6}
+                                value={enteredOtp}
+                                onChange={(e) =>
+                                    setEnteredOtp(e.target.value.replace(/\D/g, ""))
+                                }
+                                className="w-full border rounded-lg px-4 py-2 text-center text-xl tracking-widest focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                placeholder="••••••"
+                            />
+                        </div>
+
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => {
+                                    setShowOtpModal(false)
+                                    setEnteredOtp("")
+                                    setOtpOrder(null)
+                                }}
+                                className="flex-1 px-4 py-2 bg-slate-200 rounded-lg"
+                                disabled={verifyingOtp}
+                            >
+                                Cancel
+                            </button>
+
+                            <button
+                                onClick={verifyDeliveryOtp}
+                                disabled={verifyingOtp || timeLeft <= 0}
+                                className="flex-1 px-4 py-2 bg-emerald-600 text-white rounded-lg font-semibold disabled:opacity-60"
+                            >
+                                {verifyingOtp ? "Verifying..." : "Verify OTP"}
+                            </button>
+
+                        </div>
+                    </div>
+                </div>
+            )}
+
         </>
     )
 }

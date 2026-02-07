@@ -3,6 +3,8 @@ import { authSeller } from "@/middlewares/authSeller"
 import { getAuth } from "@clerk/nextjs/server"
 import { NextResponse } from "next/server"
 import { sendEmail } from "@/lib/sendEmail"
+import { generateOtp, hashOtp } from "@/lib/otp"
+
 
 // ✅ Must match Prisma + frontend
 const STATUS_FLOW = [
@@ -11,7 +13,7 @@ const STATUS_FLOW = [
   "PROCESSING",
   "SHIPPED",
   "OUT_FOR_DELIVERY",
-  "DELIVERED"
+  "DELIVERY_INITIATED"
 ]
 
 // ================= UPDATE SELLER ORDER STATUS =================
@@ -66,6 +68,23 @@ export async function POST(request) {
       )
     }
 
+    // ================= OTP GENERATION ON DELIVERY_INITIATED =================
+    let plainOtp = null
+
+    if (status === "DELIVERY_INITIATED") {
+      plainOtp = generateOtp()
+      const hashedOtp = hashOtp(plainOtp)
+
+      await prisma.order.update({
+        where: { id: orderId },
+        data: {
+          deliveryOtp: hashedOtp,
+          deliveryOtpExpiry: new Date(Date.now() + 10 * 60 * 1000), // 10 min
+          otpVerified: false
+        }
+      })
+    }
+
     // ================= DB TRANSACTION =================
     await prisma.$transaction(async (tx) => {
 
@@ -94,6 +113,33 @@ export async function POST(request) {
         }
       })
     })
+
+    // ================= SEND DELIVERY OTP EMAIL =================
+    if (status === "DELIVERY_INITIATED" && plainOtp) {
+      try {
+        const userEmail = order.user?.email
+
+        if (userEmail) {
+          await sendEmail({
+            to: userEmail,
+            type: "otp",
+            subject: `Your Delivery OTP for Order #${orderId}`,
+            html: `
+<div style="font-family:Arial;padding:20px;">
+  <h2>Delivery OTP</h2>
+  <p>Your OTP for confirming delivery is:</p>
+  <h1 style="letter-spacing:4px;">${plainOtp}</h1>
+  <p><b>Do NOT share</b> this OTP with anyone except the delivery person.</p>
+  <p>This OTP will expire in 10 minutes.</p>
+</div>
+        `
+          })
+        }
+      } catch (err) {
+        console.error("OTP email failed:", err.message)
+      }
+    }
+
 
     // ================= SEND INVOICE EMAIL =================
     try {
@@ -129,7 +175,7 @@ export async function POST(request) {
 
         await sendEmail({
           to: userEmail,
-          type:"order",
+          type: "order",
           subject: `Invoice – Order #${orderId} (${status})`,
           html: `
 <div style="font-family:Arial,Helvetica,sans-serif;background:#f9fafb;padding:20px;">
