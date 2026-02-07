@@ -3,24 +3,16 @@ import { authSeller } from "@/middlewares/authSeller"
 import { getAuth } from "@clerk/nextjs/server"
 import { NextResponse } from "next/server"
 import { sendEmail } from "@/lib/sendEmail"
-import crypto from "crypto"
 
-// ================= STATUS FLOW =================
+// ✅ Must match Prisma + frontend
 const STATUS_FLOW = [
   "ORDER_PLACED",
   "PACKED",
   "PROCESSING",
   "SHIPPED",
   "OUT_FOR_DELIVERY",
-  "DELIVERY_INITIATED"
+  "DELIVERED"
 ]
-
-// ================= OTP HELPERS =================
-const generateOtp = () =>
-  Math.floor(100000 + Math.random() * 900000).toString()
-
-const hashOtp = (otp) =>
-  crypto.createHash("sha256").update(otp).digest("hex")
 
 // ================= UPDATE SELLER ORDER STATUS =================
 export async function POST(request) {
@@ -38,14 +30,18 @@ export async function POST(request) {
       return NextResponse.json({ error: "Invalid request" }, { status: 400 })
     }
 
+    // ✅ IMPORTANT: product included
     const order = await prisma.order.findUnique({
       where: { id: orderId },
       include: {
-        orderItems: { include: { product: true } },
+        orderItems: {
+          include: { product: true }
+        },
         user: true,
-        store: true
+        store: true // ✅ ADD THIS
       }
     })
+
 
     if (!order || order.storeId !== storeId) {
       return NextResponse.json({ error: "Order not found" }, { status: 404 })
@@ -59,7 +55,7 @@ export async function POST(request) {
       )
     }
 
-    // ❌ STATUS FLOW VALIDATION
+    // ❌ NO BACKWARD STATUS
     const currentIndex = STATUS_FLOW.indexOf(order.status)
     const newIndex = STATUS_FLOW.indexOf(status)
 
@@ -70,62 +66,10 @@ export async function POST(request) {
       )
     }
 
-    // ❌ SELLER CANNOT DIRECTLY MARK DELIVERED
-    if (status === "DELIVERED") {
-      return NextResponse.json(
-        { error: "Delivery requires customer OTP verification" },
-        { status: 400 }
-      )
-    }
-
-    // ================= DELIVERY INITIATED (OTP) =================
-    if (status === "DELIVERY_INITIATED") {
-      if (order.status !== "OUT_FOR_DELIVERY") {
-        return NextResponse.json(
-          { error: "Invalid delivery step" },
-          { status: 400 }
-        )
-      }
-
-      const otp = generateOtp()
-      const hashedOtp = hashOtp(otp)
-      const expiry = new Date(Date.now() + 10 * 60 * 1000)
-
-      await prisma.order.update({
-        where: { id: orderId },
-        data: {
-          status: "DELIVERY_INITIATED",
-          deliveryOtp: hashedOtp,
-          deliveryOtpExpiry: expiry,
-          otpVerified: false,
-          statusHistory: {
-            ...(order.statusHistory || {}),
-            DELIVERY_INITIATED: new Date().toISOString()
-          }
-        }
-      })
-
-      await sendEmail({
-        to: order.user.email,
-        subject: "🔐 Delivery OTP – Confirm Your Order",
-        html: `
-    <h2>Order Delivery OTP</h2>
-    <p>Your OTP for order <b>#${orderId}</b>:</p>
-    <h1 style="letter-spacing:6px;">${otp}</h1>
-    <p>Valid for 10 minutes.</p>
-  `
-      })
-
-
-      return NextResponse.json({
-        message: "OTP sent to customer. Awaiting verification."
-      })
-    }
-
     // ================= DB TRANSACTION =================
     await prisma.$transaction(async (tx) => {
 
-      // 🔁 RESTOCK ON CANCEL
+      // RESTOCK ON CANCEL
       if (status === "CANCELLED") {
         for (const item of order.orderItems) {
           await tx.product.update({
@@ -138,7 +82,7 @@ export async function POST(request) {
         }
       }
 
-      // 🔄 UPDATE STATUS + HISTORY
+      // UPDATE STATUS + HISTORY
       await tx.order.update({
         where: { id: orderId },
         data: {
@@ -185,7 +129,7 @@ export async function POST(request) {
 
         await sendEmail({
           to: userEmail,
-          type: "order",
+          type:"order",
           subject: `Invoice – Order #${orderId} (${status})`,
           html: `
 <div style="font-family:Arial,Helvetica,sans-serif;background:#f9fafb;padding:20px;">
@@ -281,6 +225,7 @@ export async function POST(request) {
     return NextResponse.json({ error: error.message }, { status: 400 })
   }
 }
+
 // ================= GET ALL SELLER ORDERS =================
 export async function GET(request) {
   try {
@@ -297,7 +242,9 @@ export async function GET(request) {
         user: true,
         address: true,
         store: true,
-        orderItems: { include: { product: true } }
+        orderItems: {
+          include: { product: true }
+        }
       },
       orderBy: { createdAt: "desc" }
     })
@@ -305,7 +252,9 @@ export async function GET(request) {
     const activeOrdersCount = await prisma.order.count({
       where: {
         storeId,
-        NOT: { status: { in: ["DELIVERED", "CANCELLED"] } }
+        NOT: {
+          status: { in: ["DELIVERED", "CANCELLED"] }
+        }
       }
     })
 

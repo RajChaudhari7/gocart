@@ -15,7 +15,7 @@ const STATUS_FLOW = [
     "PROCESSING",
     "SHIPPED",
     "OUT_FOR_DELIVERY",
-    "DELIVERY_INITIATED"
+    "DELIVERED"
 ]
 
 export default function StoreOrders() {
@@ -47,49 +47,35 @@ export default function StoreOrders() {
 
     /* ================= UPDATE STATUS (FIXED) ================= */
     const updateOrderStatus = async (order, newStatus) => {
-        if (order.status === newStatus) return
-
-        // 🚫 seller can never move beyond DELIVERY_INITIATED
-        if (newStatus === "DELIVERED") {
-            toast.error("Delivery confirmation requires customer OTP")
-            return
-        }
-
         const currentIndex = STATUS_FLOW.indexOf(order.status)
         const newIndex = STATUS_FLOW.indexOf(newStatus)
 
+        // Prevent backward or invalid updates
         if (newIndex < currentIndex) {
             toast.error("You cannot move order status backwards")
             return
         }
 
-        if (order.status === "DELIVERY_INITIATED") {
-            toast.error("Waiting for seller OTP verification")
-            return
-        }
-
         try {
-            const token = await getToken()
+            const token = await getToken();
             await axios.post(
                 '/api/store/orders',
                 { orderId: order.id, status: newStatus },
                 { headers: { Authorization: `Bearer ${token}` } }
-            )
+            );
 
-            toast.success(`Order moved to ${newStatus.replaceAll("_", " ")}`)
-            fetchOrders()
+            await fetchOrders();
+            toast.success(`Order status updated to ${newStatus}`);
 
         } catch (error) {
-            toast.error(error?.response?.data?.error || error.message)
+            toast.error(error?.response?.data?.error || error.message);
         }
-    }
-
+    };
 
     /* ================= CANCEL ================= */
     const cancelOrder = async (order) => {
-        if (["DELIVERED", "CANCELLED"].includes(order.status)) return
+        if (order.status === "DELIVERED" || order.status === "CANCELLED") return
         if (!confirm("Are you sure you want to cancel this order?")) return
-
 
         try {
             const token = await getToken()
@@ -104,24 +90,6 @@ export default function StoreOrders() {
             toast.error(error?.response?.data?.error || error.message)
         }
     }
-
-    const verifyDeliveryOtp = async (orderId, otp) => {
-        try {
-            const token = await getToken()
-            await axios.post(
-                "/api/store/orders/verify-delivery-otp",
-                { orderId, otp },
-                { headers: { Authorization: `Bearer ${token}` } }
-            )
-
-            toast.success("Order marked as DELIVERED")
-            fetchOrders()
-
-        } catch (error) {
-            toast.error(error?.response?.data?.error || "OTP verification failed")
-        }
-    }
-
 
     /* ================= PDF INVOICE (UNCHANGED) ================= */
     const downloadInvoicePDF = async (order) => {
@@ -283,20 +251,12 @@ export default function StoreOrders() {
                         >
                             <div className="flex justify-between items-center mb-3">
                                 <h2 className="text-lg font-medium">{order.user?.name}</h2>
-                                <span
-                                    className={`px-3 py-1 rounded-full text-sm font-semibold
-                                            ${order.status === "DELIVERED"
-                                            ? "bg-green-100 text-green-800"
-                                            : order.status === "DELIVERY_INITIATED"
-                                                ? "bg-blue-100 text-blue-800"
-                                                : order.status === "CANCELLED"
-                                                    ? "bg-red-100 text-red-800"
-                                                    : "bg-yellow-100 text-yellow-800"
-                                        }`}
-                                >
-                                    {order.status.replaceAll("_", " ")}
+                                <span className={`px-3 py-1 rounded-full text-sm font-semibold
+                                    ${order.status === "DELIVERED" ? "bg-green-100 text-green-800" :
+                                        order.status === "CANCELLED" ? "bg-red-100 text-red-800" :
+                                            "bg-yellow-100 text-yellow-800"}`}>
+                                    {order.status}
                                 </span>
-
                             </div>
 
                             <div className="grid grid-cols-2 gap-3 text-gray-600 text-sm">
@@ -310,56 +270,26 @@ export default function StoreOrders() {
                                 {order.status !== "CANCELLED" && (
                                     <select
                                         value={order.status}
-                                        disabled={[
-                                            "DELIVERY_INITIATED",
-                                            "DELIVERED",
-                                            "CANCELLED"
-                                        ].includes(order.status)}
-
+                                        disabled={order.status === "DELIVERED"}
                                         onClick={(e) => e.stopPropagation()}
                                         onChange={(e) => updateOrderStatus(order, e.target.value)}
                                         className="border rounded px-3 py-1 text-sm"
                                     >
 
-                                        {order.status === "DELIVERY_INITIATED" && (
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation()
-                                                    const otp = prompt("Enter delivery OTP")
-                                                    if (!otp) return
-                                                    verifyDeliveryOtp(order.id, otp)
-                                                }}
-                                                className="px-3 py-1 bg-green-600 hover:bg-green-500 text-white rounded text-sm"
-                                            >
-                                                Verify OTP
-                                            </button>
-                                        )}
-
                                         {STATUS_FLOW.map(s => (
-                                            <option
-                                                key={s}
-                                                value={s}
-                                                disabled={
-                                                    s === "DELIVERY_INITIATED" &&
-                                                    order.status !== "OUT_FOR_DELIVERY"
-                                                }
-                                            >
-                                                {s.replaceAll("_", " ")}
-                                            </option>
+                                            <option key={s} value={s}>{s}</option>
                                         ))}
-
                                     </select>
                                 )}
 
-                                {!["SHIPPED", "OUT_FOR_DELIVERY", "DELIVERY_INITIATED", "DELIVERED", "CANCELLED"]
-                                    .includes(order.status) && (
-                                        <button
-                                            onClick={(e) => { e.stopPropagation(); cancelOrder(order) }}
-                                            className="px-3 py-1 bg-red-600 text-white rounded text-sm"
-                                        >
-                                            Cancel
-                                        </button>
-                                    )}
+                                {order.status !== "DELIVERED" && order.status !== "CANCELLED" && (
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); cancelOrder(order) }}
+                                        className="px-3 py-1 bg-red-600 text-white rounded text-sm"
+                                    >
+                                        Cancel
+                                    </button>
+                                )}
 
                                 {/* Download PDF outside modal */}
                                 <button
