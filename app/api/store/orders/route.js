@@ -13,7 +13,8 @@ const STATUS_FLOW = [
   "PROCESSING",
   "SHIPPED",
   "OUT_FOR_DELIVERY",
-  "DELIVERY_INITIATED"
+  "DELIVERY_INITIATED",
+  "DELIVERED"
 ]
 
 // ================= UPDATE SELLER ORDER STATUS =================
