@@ -32,6 +32,7 @@ const TRACK_INDEX = {
 
 const formatDateTime = (dateStr) => {
   if (!dateStr) return null;
+
   const date = new Date(dateStr);
   return date.toLocaleString("en-IN", {
     day: "2-digit",
@@ -47,20 +48,9 @@ export default function TrackingModal({ order, onClose }) {
 
   const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || "₹";
   const currentStep = TRACK_INDEX[order.status] ?? 0;
-  const statusHistory = order.statusHistory || {};
-
   const [lineHeight, setLineHeight] = useState(0);
 
-  // AI CHAT STATE
-  const [showChat, setShowChat] = useState(false);
-  const [messages, setMessages] = useState([
-    {
-      role: "assistant",
-      content: "Hi 👋 I can help you with this order. Click a step or ask anything.",
-    },
-  ]);
-  const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
+  const statusHistory = order.statusHistory || {};
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -72,48 +62,6 @@ export default function TrackingModal({ order, onClose }) {
   const getLineHeight = () => {
     const stepHeight = 100 / (TRACKING_STEPS.length - 1);
     return lineHeight * stepHeight;
-  };
-
-  // SEND MESSAGE TO AI
-  const sendMessage = async (content, stepContext = null) => {
-    if (!content) return;
-
-    const userMsg = { role: "user", content };
-    setMessages((prev) => [...prev, userMsg]);
-    setInput("");
-    setLoading(true);
-    setShowChat(true);
-
-    try {
-      const res = await fetch("/api/ai/order-support", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          orderId: order._id,
-          status: order.status,
-          statusHistory: order.statusHistory,
-          step: stepContext,
-          messages: [...messages, userMsg],
-        }),
-      });
-
-      const data = await res.json();
-
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: data.reply },
-      ]);
-    } catch (err) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content: "Sorry 😕 something went wrong. Please try again.",
-        },
-      ]);
-    }
-
-    setLoading(false);
   };
 
   return (
@@ -128,7 +76,8 @@ export default function TrackingModal({ order, onClose }) {
           initial={{ scale: 0.9, y: 40, opacity: 0 }}
           animate={{ scale: 1, y: 0, opacity: 1 }}
           exit={{ scale: 0.9, y: 40, opacity: 0 }}
-          className="relative w-full max-w-2xl bg-gradient-to-br from-[#0f172a] via-[#020617] to-black border border-white/10 rounded-2xl p-6 text-white"
+          transition={{ type: "spring", stiffness: 260, damping: 20 }}
+          className="w-full max-w-2xl bg-gradient-to-br from-[#0f172a] via-[#020617] to-black border border-white/10 rounded-2xl p-6 text-white"
         >
           {/* HEADER */}
           <div className="flex items-center justify-between mb-6">
@@ -151,10 +100,12 @@ export default function TrackingModal({ order, onClose }) {
                     className="object-contain"
                   />
                 </div>
+
                 <div className="flex-1">
                   <p className="font-medium">{item.product.name}</p>
                   <p className="text-sm text-white/60">Qty: {item.quantity}</p>
                 </div>
+
                 <p className="text-sm font-semibold">
                   {currency}
                   {item.price * item.quantity}
@@ -171,15 +122,15 @@ export default function TrackingModal({ order, onClose }) {
             </span>
           </div>
 
-          {/* TRACKING */}
+          {/* TRACKING TIMELINE */}
           <div className="relative pl-5">
-            <div className="absolute left-4 top-0 bottom-0 w-1 bg-white/30 rounded-full" />
+            <div className="absolute left-4 top-0 bottom-0 w-1 bg-white/30 rounded-full"></div>
 
             {lineHeight > 0 && (
               <motion.div
                 initial={{ height: 0 }}
                 animate={{ height: `${getLineHeight()}%` }}
-                transition={{ duration: 1 }}
+                transition={{ duration: 1, ease: "easeInOut" }}
                 className="absolute left-4 top-0 w-1 bg-emerald-500 rounded-full"
               />
             )}
@@ -188,104 +139,53 @@ export default function TrackingModal({ order, onClose }) {
               const Icon = step.icon;
               const isCompleted = index < currentStep;
               const isActive = index === currentStep;
-              const formattedDate = formatDateTime(
-                statusHistory[step.key]
-              );
+
+              const updatedAt = statusHistory[step.key];
+              const formattedDate = formatDateTime(updatedAt);
+
+              const stepCircleClasses = `
+                flex items-center justify-center w-10 h-10 rounded-full border relative z-10
+                ${isCompleted ? "bg-emerald-500 border-emerald-500 text-white" : ""}
+                ${isActive ? "bg-indigo-500 border-indigo-500 text-white shadow-[0_0_15px_rgba(99,102,241,0.8)] animate-pulse" : ""}
+                ${!isCompleted && !isActive ? "bg-white/10 border-white/20 text-white/40" : ""}
+              `;
 
               return (
                 <motion.div
                   key={step.key}
-                  onClick={() =>
-                    sendMessage(`Explain the "${step.label}" status`, step.key)
-                  }
-                  className="flex items-center gap-4 mb-5 cursor-pointer"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.08 }}
+                  className="flex items-center gap-4 relative mb-5 last:mb-0"
+                  style={{ minHeight: "55px" }}
                 >
-                  <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center border
-                      ${
-                        isCompleted
-                          ? "bg-emerald-500 border-emerald-500"
-                          : isActive
-                          ? "bg-indigo-500 border-indigo-500 animate-pulse"
-                          : "bg-white/10 border-white/20"
-                      }
-                    `}
-                  >
+                  <div className={stepCircleClasses}>
                     <Icon size={18} />
                   </div>
 
-                  <div>
-                    <p className="text-sm font-medium">{step.label}</p>
-                    <p className="text-xs text-white/40">
-                      {formattedDate || "Pending"}
+                  <div className="flex-1">
+                    <p
+                      className={`text-sm font-medium ${
+                        isCompleted || isActive ? "text-white" : "text-white/70"
+                      }`}
+                    >
+                      {step.label}
                     </p>
+
+                    {formattedDate ? (
+                      <span className="text-xs text-white/40">
+                        {formattedDate}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-white/30 italic">
+                        Pending
+                      </span>
+                    )}
                   </div>
                 </motion.div>
               );
             })}
           </div>
-
-          {/* CHAT BUTTON */}
-          <button
-            onClick={() => setShowChat(true)}
-            className="fixed bottom-6 right-6 bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded-full shadow-lg"
-          >
-            Need help?
-          </button>
-
-          {/* CHAT PANEL */}
-          <AnimatePresence>
-            {showChat && (
-              <motion.div
-                initial={{ y: 40, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ y: 40, opacity: 0 }}
-                className="fixed bottom-20 right-6 w-80 bg-[#020617] border border-white/10 rounded-xl overflow-hidden flex flex-col"
-              >
-                <div className="flex justify-between items-center px-4 py-2 border-b border-white/10">
-                  <span className="text-sm font-semibold">Order Assistant</span>
-                  <button onClick={() => setShowChat(false)}>
-                    <X size={16} />
-                  </button>
-                </div>
-
-                <div className="flex-1 p-3 overflow-y-auto space-y-2 text-sm">
-                  {messages.map((msg, i) => (
-                    <div
-                      key={i}
-                      className={`p-2 rounded-lg max-w-[85%]
-                        ${
-                          msg.role === "user"
-                            ? "ml-auto bg-indigo-600"
-                            : "bg-white/10"
-                        }`}
-                    >
-                      {msg.content}
-                    </div>
-                  ))}
-                  {loading && (
-                    <p className="text-xs text-white/40">AI typing…</p>
-                  )}
-                </div>
-
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    sendMessage(input);
-                  }}
-                  className="flex border-t border-white/10"
-                >
-                  <input
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    placeholder="Ask about your order..."
-                    className="flex-1 bg-transparent px-3 py-2 text-sm outline-none"
-                  />
-                  <button className="px-4 text-indigo-400">Send</button>
-                </form>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </motion.div>
       </motion.div>
     </AnimatePresence>
