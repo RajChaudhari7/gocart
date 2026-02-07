@@ -12,8 +12,7 @@ const STATUS_FLOW = [
   "PROCESSING",
   "SHIPPED",
   "OUT_FOR_DELIVERY",
-  "DELIVERY_INITIATED",
-  "DELIVERED"
+  "DELIVERY_INITIATED"
 ]
 
 // ================= OTP HELPERS =================
@@ -108,15 +107,15 @@ export async function POST(request) {
 
       await sendEmail({
         to: order.user.email,
-        type: "order",
         subject: "🔐 Delivery OTP – Confirm Your Order",
         html: `
-          <h2>Order Delivery OTP</h2>
-          <p>Your OTP for order <b>#${orderId}</b>:</p>
-          <h1 style="letter-spacing:6px;">${otp}</h1>
-          <p>Valid for 10 minutes.</p>
-        `
+    <h2>Order Delivery OTP</h2>
+    <p>Your OTP for order <b>#${orderId}</b>:</p>
+    <h1 style="letter-spacing:6px;">${otp}</h1>
+    <p>Valid for 10 minutes.</p>
+  `
       })
+
 
       return NextResponse.json({
         message: "OTP sent to customer. Awaiting verification."
