@@ -49,6 +49,12 @@ export default function StoreOrders() {
     const updateOrderStatus = async (order, newStatus) => {
         if (order.status === newStatus) return
 
+        // 🚫 seller can never move beyond DELIVERY_INITIATED
+        if (newStatus === "DELIVERED") {
+            toast.error("Delivery confirmation requires customer OTP")
+            return
+        }
+
         const currentIndex = STATUS_FLOW.indexOf(order.status)
         const newIndex = STATUS_FLOW.indexOf(newStatus)
 
@@ -70,7 +76,7 @@ export default function StoreOrders() {
                 { headers: { Authorization: `Bearer ${token}` } }
             )
 
-            toast.success(`Order moved to ${newStatus}`)
+            toast.success(`Order moved to ${newStatus.replaceAll("_", " ")}`)
             fetchOrders()
 
         } catch (error) {
@@ -81,8 +87,9 @@ export default function StoreOrders() {
 
     /* ================= CANCEL ================= */
     const cancelOrder = async (order) => {
-        if (order.status === "DELIVERED" || order.status === "CANCELLED") return
+        if (["DELIVERED", "CANCELLED"].includes(order.status)) return
         if (!confirm("Are you sure you want to cancel this order?")) return
+
 
         try {
             const token = await getToken()
@@ -285,11 +292,11 @@ export default function StoreOrders() {
                                 {order.status !== "CANCELLED" && (
                                     <select
                                         value={order.status}
-                                        disabled={
-                                            order.status === "DELIVERY_INITIATED" ||
-                                            order.status === "DELIVERED" ||
-                                            order.status === "CANCELLED"
-                                        }
+                                        disabled={[
+                                            "DELIVERY_INITIATED",
+                                            "DELIVERED",
+                                            "CANCELLED"
+                                        ].includes(order.status)}
 
                                         onClick={(e) => e.stopPropagation()}
                                         onChange={(e) => updateOrderStatus(order, e.target.value)}
