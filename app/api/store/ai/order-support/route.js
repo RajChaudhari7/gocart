@@ -1,34 +1,56 @@
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
 
-const openai = new OpenAI({
+const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
+  baseURL: process.env.OPENAI_BASE_URL, // 👈 Gemini OpenAI-compatible endpoint
 });
 
 export async function POST(req) {
-  const body = await req.json();
-  const { orderId, status, statusHistory, step, messages } = body;
+  try {
+    const {
+      orderId,
+      status,
+      statusHistory,
+      step,
+      messages,
+    } = await req.json();
 
-  const systemPrompt = `
-You are a helpful e-commerce order support assistant.
+    const systemPrompt = `
+You are a professional e-commerce order support assistant.
 
 Order ID: ${orderId}
 Current Status: ${status}
 Status History: ${JSON.stringify(statusHistory)}
 
-If the user clicks a tracking step, explain it clearly.
-Be friendly, short, and reassuring.
+Rules:
+- Be short, clear, and friendly
+- Explain tracking steps simply
+- Reassure users if delays happen
+- If Delivered, congratulate the user
 `;
 
-  const completion = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
-    messages: [
-      { role: "system", content: systemPrompt },
-      ...messages,
-    ],
-  });
+    const completion = await client.chat.completions.create({
+      model: process.env.OPENAI_MODEL,
+      messages: [
+        { role: "system", content: systemPrompt },
+        ...messages,
+      ],
+      temperature: 0.4,
+    });
 
-  return NextResponse.json({
-    reply: completion.choices[0].message.content,
-  });
+    return NextResponse.json({
+      reply: completion.choices[0].message.content,
+    });
+  } catch (error) {
+    console.error("AI ERROR:", error);
+
+    return NextResponse.json(
+      {
+        reply:
+          "Sorry 😕 I'm having trouble right now. Please try again in a moment.",
+      },
+      { status: 500 }
+    );
+  }
 }
