@@ -7,7 +7,7 @@ import { useState } from "react"
 import RatingModal from "./RatingModal"
 import { motion, AnimatePresence } from "framer-motion"
 
-const OrderItem = ({ order, mobile, onCancel, onTrack }) => {
+const OrderItem = ({ order, mobile, onCancel, onTrack, onVerifyOtp }) => {
   const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '₹'
   const [ratingModal, setRatingModal] = useState(null)
   const { ratings } = useSelector(state => state.rating)
@@ -20,6 +20,7 @@ const OrderItem = ({ order, mobile, onCancel, onTrack }) => {
   }[order.paymentMethod] || order.paymentMethod
 
   const isDelivered = order.status === 'DELIVERED'
+  const isDeliveryInitiated = order.status === "DELIVERY_INITIATED"
   const isCanceled = order.status === 'CANCELLED'
 
   /* ---------------- DESKTOP ROW ---------------- */
@@ -71,6 +72,7 @@ const OrderItem = ({ order, mobile, onCancel, onTrack }) => {
 
       {/* ACTION */}
       <td className="text-center align-top space-x-2">
+
         {!isCanceled && (
           <>
             <motion.button
@@ -81,6 +83,18 @@ const OrderItem = ({ order, mobile, onCancel, onTrack }) => {
             >
               Track
             </motion.button>
+
+            {isDeliveryInitiated && (
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={onVerifyOtp}
+                className="px-4 py-1.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25 text-sm"
+              >
+                Verify OTP
+              </motion.button>
+            )}
+
 
             {!isDelivered && onCancel && (
               <motion.button
@@ -149,6 +163,18 @@ const OrderItem = ({ order, mobile, onCancel, onTrack }) => {
             >
               Track
             </motion.button>
+
+            {isDeliveryInitiated && (
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={onVerifyOtp}
+                className="flex-1 px-4 py-2 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-sm"
+              >
+                Verify OTP
+              </motion.button>
+            )}
+
 
             {!isDelivered && onCancel && (
               <motion.button

@@ -47,6 +47,7 @@ enum OrderStatus {
   PROCESSING
   SHIPPED
   OUT_FOR_DELIVERY
+  DELIVERY_INITIATED
   DELIVERED
   CANCELLED
 }
@@ -67,6 +68,10 @@ model Order {
 
   /// 🔥 TRACKING HISTORY FOR DATE & TIME
   statusHistory Json @default("{}")
+
+  deliveryOtp        String?
+  deliveryOtpExpiry  DateTime?
+  otpVerified        Boolean  @default(false)
 
   userId        String
   storeId       String
