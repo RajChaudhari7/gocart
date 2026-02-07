@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 
 const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
-  baseURL: process.env.OPENAI_BASE_URL, // 👈 Gemini OpenAI-compatible endpoint
+  baseURL: process.env.OPENAI_BASE_URL,
 });
 
 export async function POST(req) {
@@ -12,43 +12,43 @@ export async function POST(req) {
       orderId,
       status,
       statusHistory,
-      step,
       messages,
     } = await req.json();
 
     const systemPrompt = `
-You are a professional e-commerce order support assistant.
+You are an e-commerce order support assistant.
 
 Order ID: ${orderId}
 Current Status: ${status}
 Status History: ${JSON.stringify(statusHistory)}
 
-Rules:
-- Be short, clear, and friendly
-- Explain tracking steps simply
-- Reassure users if delays happen
-- If Delivered, congratulate the user
+Answer clearly and politely.
+Explain tracking steps if asked.
 `;
 
-    const completion = await client.chat.completions.create({
+    // 🔥 USE RESPONSES API (Gemini-compatible)
+    const response = await client.responses.create({
       model: process.env.OPENAI_MODEL,
-      messages: [
-        { role: "system", content: systemPrompt },
+      input: [
+        {
+          role: "system",
+          content: systemPrompt,
+        },
         ...messages,
       ],
       temperature: 0.4,
     });
 
     return NextResponse.json({
-      reply: completion.choices[0].message.content,
+      reply: response.output_text,
     });
   } catch (error) {
-    console.error("AI ERROR:", error);
+    console.error("GEMINI ERROR:", error);
 
     return NextResponse.json(
       {
         reply:
-          "Sorry 😕 I'm having trouble right now. Please try again in a moment.",
+          "Sorry 😕 I couldn’t fetch the details right now. Please try again.",
       },
       { status: 500 }
     );
