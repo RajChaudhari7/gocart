@@ -11,7 +11,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 const ratingLabels = ['Poor', 'Fair', 'Good', 'Very Good', 'Excellent'];
 const MAX_PHOTOS = 5;
 
-const RatingModal = ({ ratingModal, setRatingModal }) => {
+const RatingModal = ({ order, onClose, onSuccess }) => {
   const { getToken } = useAuth();
   const dispatch = useDispatch();
 
@@ -49,8 +49,8 @@ const RatingModal = ({ ratingModal, setRatingModal }) => {
       const token = await getToken();
 
       const formData = new FormData();
-      formData.append('productId', ratingModal.productId);
-      formData.append('orderId', ratingModal.orderId);
+      formData.append('productId', firstItem.product.id);
+      formData.append('orderId', order.id);
       formData.append('rating', rating);
       formData.append('review', review);
 
@@ -66,7 +66,8 @@ const RatingModal = ({ ratingModal, setRatingModal }) => {
       setRating(0);
       setReview('');
       setPhotos([]);
-      setRatingModal(null);
+      onSuccess?.()
+      onClose();
     } catch (error) {
       toast.error(error?.response?.data?.error || error.message);
     } finally {
@@ -76,7 +77,6 @@ const RatingModal = ({ ratingModal, setRatingModal }) => {
 
   return (
     <AnimatePresence>
-      {ratingModal && (
         <motion.div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
           initial={{ opacity: 0 }}
@@ -110,11 +110,10 @@ const RatingModal = ({ ratingModal, setRatingModal }) => {
                   onClick={() => setRating(i + 1)}
                 >
                   <Star
-                    className={`cursor-pointer transition ${
-                      rating > i
-                        ? 'text-yellow-400 fill-current scale-110'
-                        : 'text-gray-600'
-                    }`}
+                    className={`cursor-pointer transition ${rating > i
+                      ? 'text-yellow-400 fill-current scale-110'
+                      : 'text-gray-600'
+                      }`}
                   />
                 </motion.div>
               ))}
@@ -187,7 +186,6 @@ const RatingModal = ({ ratingModal, setRatingModal }) => {
             </motion.button>
           </motion.div>
         </motion.div>
-      )}
     </AnimatePresence>
   );
 };

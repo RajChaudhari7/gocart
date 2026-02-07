@@ -9,6 +9,8 @@ import toast from "react-hot-toast"
 import { useRouter } from "next/navigation"
 import Loading from "@/components/Loading"
 import TrackingModal from "@/components/TrackingModal"
+import RatingModal from "@/components/RatingModal"
+
 
 export default function Orders() {
   const { getToken } = useAuth()
@@ -18,6 +20,8 @@ export default function Orders() {
   const [orders, setOrders] = useState([])
   const [trackingOrder, setTrackingOrder] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [ratingOrder, setRatingOrder] = useState(null)
+
 
   const fetchOrders = async () => {
     try {
@@ -101,6 +105,7 @@ export default function Orders() {
                     order={order}
                     onCancel={() => cancelOrder(order)}
                     onTrack={() => setTrackingOrder(order)}
+                    onRate={() => setRatingOrder(order)}
                   />
                 ))}
               </tbody>
@@ -115,6 +120,7 @@ export default function Orders() {
                   mobile
                   onCancel={() => cancelOrder(order)}
                   onTrack={() => setTrackingOrder(order)}
+                  onRate={() => setRatingOrder(order)}
                 />
               ))}
             </div>
@@ -143,6 +149,18 @@ export default function Orders() {
           onClose={() => setTrackingOrder(null)}
         />
       )}
+
+      {ratingOrder && (
+        <RatingModal
+          order={ratingOrder}
+          onClose={() => setRatingOrder(null)}
+          onSuccess={() => {
+            setRatingOrder(null)
+            fetchOrders() // refresh after rating
+          }}
+        />
+      )}
+
     </section>
   )
 }

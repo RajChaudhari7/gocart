@@ -31,6 +31,9 @@ export default function StoreOrders() {
     const [otpOrder, setOtpOrder] = useState(null)
     const [enteredOtp, setEnteredOtp] = useState("")
     const [verifyingOtp, setVerifyingOtp] = useState(false)
+    const [resendCooldown, setResendCooldown] = useState(0)
+    const [resendingOtp, setResendingOtp] = useState(false)
+
 
 
     const [orders, setOrders] = useState([])
@@ -114,7 +117,7 @@ export default function StoreOrders() {
             const token = await getToken()
 
             await axios.post(
-                "/api/orders/verify-otp",
+                "/api/orders/verify-delivery-otp",
                 { orderId: otpOrder.id, otp: enteredOtp },
                 { headers: { Authorization: `Bearer ${token}` } }
             )
@@ -281,10 +284,47 @@ export default function StoreOrders() {
             .padStart(2, "0")}`
     }
 
+    const resendOtp = async () => {
+        try {
+            setResendingOtp(true)
+            const token = await getToken()
+
+            const { data } = await axios.post(
+                "/api/orders/resend-otp",
+                { orderId: otpOrder.id },
+                { headers: { Authorization: `Bearer ${token}` } }
+            )
+
+            toast.success("OTP resent to customer email")
+
+            setOtpExpiryTime(new Date(data.expiry))
+            setTimeLeft(Math.floor((new Date(data.expiry) - new Date()) / 1000))
+
+            setResendCooldown(60)
+
+        } catch (error) {
+            toast.error(error?.response?.data?.error || "Resend failed")
+        } finally {
+            setResendingOtp(false)
+        }
+    }
+
+
 
     useEffect(() => {
         fetchOrders()
     }, [])
+
+    useEffect(() => {
+        if (resendCooldown <= 0) return
+
+        const t = setInterval(() => {
+            setResendCooldown(prev => prev - 1)
+        }, 1000)
+
+        return () => clearInterval(t)
+    }, [resendCooldown])
+
 
     useEffect(() => {
         if (!showOtpModal || !otpExpiryTime) return
@@ -526,6 +566,23 @@ export default function StoreOrders() {
                             >
                                 {verifyingOtp ? "Verifying..." : "Verify OTP"}
                             </button>
+
+                            <div className="text-center mt-3">
+                                {resendCooldown > 0 ? (
+                                    <p className="text-sm text-gray-500">
+                                        Resend available in {formatTime(resendCooldown)}
+                                    </p>
+                                ) : (
+                                    <button
+                                        onClick={resendOtp}
+                                        disabled={resendingOtp}
+                                        className="text-sm text-emerald-600 font-semibold hover:underline disabled:opacity-50"
+                                    >
+                                        {resendingOtp ? "Resending..." : "Resend OTP"}
+                                    </button>
+                                )}
+                            </div>
+
 
                         </div>
                     </div>

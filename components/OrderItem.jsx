@@ -4,12 +4,11 @@ import Image from "next/image"
 import { CreditCard } from "lucide-react"
 import { useSelector } from "react-redux"
 import { useState } from "react"
-import RatingModal from "./RatingModal"
 import { motion, AnimatePresence } from "framer-motion"
 
-const OrderItem = ({ order, mobile, onCancel, onTrack, onVerifyOtp }) => {
+const OrderItem = ({ order, mobile, onCancel, onTrack, onVerifyOtp, onRate }) => {
   const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '₹'
-  const [ratingModal, setRatingModal] = useState(null)
+
   const { ratings } = useSelector(state => state.rating)
 
   const paymentLabel = {
@@ -95,6 +94,18 @@ const OrderItem = ({ order, mobile, onCancel, onTrack, onVerifyOtp }) => {
               </motion.button>
             )}
 
+            {isDelivered && onRate && (
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={onRate}
+                className="px-4 py-1.5 rounded-full bg-yellow-500/15 text-yellow-400 border border-yellow-500/30 hover:bg-yellow-500/25 text-sm"
+              >
+                ⭐ Rate
+              </motion.button>
+            )}
+
+
 
             {!isDelivered && onCancel && (
               <motion.button
@@ -175,6 +186,18 @@ const OrderItem = ({ order, mobile, onCancel, onTrack, onVerifyOtp }) => {
               </motion.button>
             )}
 
+            {isDelivered && onRate && (
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={onRate}
+                className="flex-1 px-4 py-2 rounded-full bg-yellow-500/15 text-yellow-400 border border-yellow-500/30 text-sm"
+              >
+                ⭐ Rate
+              </motion.button>
+            )}
+
+
 
             {!isDelivered && onCancel && (
               <motion.button
@@ -205,7 +228,7 @@ const OrderItem = ({ order, mobile, onCancel, onTrack, onVerifyOtp }) => {
         )}
       </AnimatePresence>
 
-      {ratingModal && <RatingModal ratingModal={ratingModal} setRatingModal={setRatingModal} />}
+      
     </>
   )
 }
