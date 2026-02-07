@@ -1,10 +1,4 @@
-import OpenAI from "openai";
 import { NextResponse } from "next/server";
-
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-  baseURL: process.env.OPENAI_BASE_URL,
-});
 
 export async function POST(req) {
   try {
@@ -15,40 +9,60 @@ export async function POST(req) {
       messages,
     } = await req.json();
 
-    const systemPrompt = `
+    const prompt = `
 You are an e-commerce order support assistant.
 
 Order ID: ${orderId}
 Current Status: ${status}
 Status History: ${JSON.stringify(statusHistory)}
 
-Answer clearly and politely.
-Explain tracking steps if asked.
+Conversation:
+${messages
+  .map((m) => `${m.role.toUpperCase()}: ${m.content}`)
+  .join("\n")}
+
+Rules:
+- Be clear and polite
+- Answer in simple language
+- Explain order steps if asked
 `;
 
-    // 🔥 USE RESPONSES API (Gemini-compatible)
-    const response = await client.responses.create({
-      model: process.env.OPENAI_MODEL,
-      input: [
-        {
-          role: "system",
-          content: systemPrompt,
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.OPENAI_API_KEY}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-        ...messages,
-      ],
-      temperature: 0.4,
-    });
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [{ text: prompt }],
+            },
+          ],
+        }),
+      }
+    );
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      console.error("GEMINI RAW ERROR:", data);
+      throw new Error("Gemini request failed");
+    }
 
     return NextResponse.json({
-      reply: response.output_text,
+      reply:
+        data.candidates?.[0]?.content?.parts?.[0]?.text ||
+        "I couldn’t understand that. Please try again.",
     });
   } catch (error) {
-    console.error("GEMINI ERROR:", error);
+    console.error("AI ERROR:", error);
 
     return NextResponse.json(
       {
         reply:
-          "Sorry 😕 I couldn’t fetch the details right now. Please try again.",
+          "Sorry 😕 I’m having trouble right now. Please try again.",
       },
       { status: 500 }
     );
