@@ -64,7 +64,7 @@ export default function StoreOrders() {
         }
 
         if (order.status === "DELIVERY_INITIATED") {
-            toast.error("Waiting for customer OTP verification")
+            toast.error("Waiting for seller OTP verification")
             return
         }
 
@@ -104,6 +104,24 @@ export default function StoreOrders() {
             toast.error(error?.response?.data?.error || error.message)
         }
     }
+
+    const verifyDeliveryOtp = async (orderId, otp) => {
+        try {
+            const token = await getToken()
+            await axios.post(
+                "/api/store/orders/verify-delivery-otp",
+                { orderId, otp },
+                { headers: { Authorization: `Bearer ${token}` } }
+            )
+
+            toast.success("Order marked as DELIVERED")
+            fetchOrders()
+
+        } catch (error) {
+            toast.error(error?.response?.data?.error || "OTP verification failed")
+        }
+    }
+
 
     /* ================= PDF INVOICE (UNCHANGED) ================= */
     const downloadInvoicePDF = async (order) => {
@@ -302,6 +320,20 @@ export default function StoreOrders() {
                                         onChange={(e) => updateOrderStatus(order, e.target.value)}
                                         className="border rounded px-3 py-1 text-sm"
                                     >
+
+                                        {order.status === "DELIVERY_INITIATED" && (
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation()
+                                                    const otp = prompt("Enter delivery OTP")
+                                                    if (!otp) return
+                                                    verifyDeliveryOtp(order.id, otp)
+                                                }}
+                                                className="px-3 py-1 bg-green-600 hover:bg-green-500 text-white rounded text-sm"
+                                            >
+                                                Verify OTP
+                                            </button>
+                                        )}
 
                                         {STATUS_FLOW.map(s => (
                                             <option
