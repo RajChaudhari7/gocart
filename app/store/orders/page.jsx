@@ -117,7 +117,7 @@ export default function StoreOrders() {
             const token = await getToken()
 
             await axios.post(
-                "/api/orders/verify-delivery-otp",
+                "/api/store/orders/verify-delivery-otp",
                 { orderId: otpOrder.id, otp: enteredOtp },
                 { headers: { Authorization: `Bearer ${token}` } }
             )
@@ -290,7 +290,7 @@ export default function StoreOrders() {
             const token = await getToken()
 
             const { data } = await axios.post(
-                "/api/orders/resend-otp",
+                "/api/store/orders/resend-otp",
                 { orderId: otpOrder.id },
                 { headers: { Authorization: `Bearer ${token}` } }
             )
