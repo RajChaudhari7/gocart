@@ -81,7 +81,7 @@ export default function StoreOrders() {
 
     /* ================= CANCEL ================= */
     const cancelOrder = async (order) => {
-        if (order.status === "DELIVERY_INITIATED" || order.status === "CANCELLED") return
+        if (order.status === "DELIVERED" || order.status === "CANCELLED") return
         if (!confirm("Are you sure you want to cancel this order?")) return
 
         try {
