@@ -15,7 +15,7 @@ const STATUS_FLOW = [
     "PROCESSING",
     "SHIPPED",
     "OUT_FOR_DELIVERY",
-    "DELIVERED"
+    "DELIVERY_INITIATED"
 ]
 
 export default function StoreOrders() {
@@ -47,30 +47,37 @@ export default function StoreOrders() {
 
     /* ================= UPDATE STATUS (FIXED) ================= */
     const updateOrderStatus = async (order, newStatus) => {
+        if (order.status === newStatus) return
+
         const currentIndex = STATUS_FLOW.indexOf(order.status)
         const newIndex = STATUS_FLOW.indexOf(newStatus)
 
-        // Prevent backward or invalid updates
         if (newIndex < currentIndex) {
             toast.error("You cannot move order status backwards")
             return
         }
 
+        if (order.status === "DELIVERY_INITIATED") {
+            toast.error("Waiting for customer OTP verification")
+            return
+        }
+
         try {
-            const token = await getToken();
+            const token = await getToken()
             await axios.post(
                 '/api/store/orders',
                 { orderId: order.id, status: newStatus },
                 { headers: { Authorization: `Bearer ${token}` } }
-            );
+            )
 
-            await fetchOrders();
-            toast.success(`Order status updated to ${newStatus}`);
+            toast.success(`Order moved to ${newStatus}`)
+            fetchOrders()
 
         } catch (error) {
-            toast.error(error?.response?.data?.error || error.message);
+            toast.error(error?.response?.data?.error || error.message)
         }
-    };
+    }
+
 
     /* ================= CANCEL ================= */
     const cancelOrder = async (order) => {
@@ -251,12 +258,20 @@ export default function StoreOrders() {
                         >
                             <div className="flex justify-between items-center mb-3">
                                 <h2 className="text-lg font-medium">{order.user?.name}</h2>
-                                <span className={`px-3 py-1 rounded-full text-sm font-semibold
-                                    ${order.status === "DELIVERED" ? "bg-green-100 text-green-800" :
-                                        order.status === "CANCELLED" ? "bg-red-100 text-red-800" :
-                                            "bg-yellow-100 text-yellow-800"}`}>
-                                    {order.status}
+                                <span
+                                    className={`px-3 py-1 rounded-full text-sm font-semibold
+                                            ${order.status === "DELIVERED"
+                                            ? "bg-green-100 text-green-800"
+                                            : order.status === "DELIVERY_INITIATED"
+                                                ? "bg-blue-100 text-blue-800"
+                                                : order.status === "CANCELLED"
+                                                    ? "bg-red-100 text-red-800"
+                                                    : "bg-yellow-100 text-yellow-800"
+                                        }`}
+                                >
+                                    {order.status.replaceAll("_", " ")}
                                 </span>
+
                             </div>
 
                             <div className="grid grid-cols-2 gap-3 text-gray-600 text-sm">
@@ -270,7 +285,12 @@ export default function StoreOrders() {
                                 {order.status !== "CANCELLED" && (
                                     <select
                                         value={order.status}
-                                        disabled={order.status === "DELIVERED"}
+                                        disabled={
+                                            order.status === "DELIVERY_INITIATED" ||
+                                            order.status === "DELIVERED" ||
+                                            order.status === "CANCELLED"
+                                        }
+
                                         onClick={(e) => e.stopPropagation()}
                                         onChange={(e) => updateOrderStatus(order, e.target.value)}
                                         className="border rounded px-3 py-1 text-sm"
