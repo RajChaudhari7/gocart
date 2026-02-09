@@ -38,8 +38,10 @@ model Product {
   orderItems OrderItem[]
   rating     Rating[]
 
-  @@unique([barcode, storeId]) // 🔥 THIS IS THE KEY
+  @@unique([barcode, storeId])
+  @@index([barcode, storeId])
 }
+
 
 ////////////////////////////////////
 // ✅ UPDATED ORDER STATUS ENUM

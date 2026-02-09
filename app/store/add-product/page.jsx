@@ -147,9 +147,6 @@ export default function StoreAddProduct() {
         }
     }
 
-
-
-
     const onSubmitHandler = async (e) => {
         e.preventDefault()
 
