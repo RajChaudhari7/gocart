@@ -116,34 +116,37 @@ export default function StoreAddProduct() {
             }
         }
     }
-const handleBarcodeLookup = async () => {
-  if (!productInfo.barcode) return
+    const handleBarcodeLookup = async () => {
+        if (!productInfo.barcode) return
 
-  try {
-    const { data } = await axios.get(
-      `/api/store/barcode/${productInfo.barcode}`
-    )
+        try {
+            const { data } = await axios.get(
+                `/api/store/barcode/${productInfo.barcode}`
+            )
 
-    // ✅ PRODUCT EXISTS IN YOUR DB
-    if (data?.found && data?.product) {
-      toast.success("Product already exists. Quantity will be updated 📦")
+            if (data.found && data.product) {
+                setBarcodeExists(true)
 
-      setProductInfo(prev => ({
-        ...prev,
-        name: data.product.name,
-        description: data.product.description,
-        category: data.product.category,
-        quantity: prev.quantity + 1, // 🔥 AUTO INCREASE
-      }))
+                toast.success("Product exists. Stock will be updated 📦")
+
+                setProductInfo(prev => ({
+                    ...prev,
+                    name: data.product.name,
+                    description: data.product.description,
+                    category: data.product.category,
+                    mrp: data.product.mrp,
+                    price: data.product.price,
+                }))
+            } else {
+                setBarcodeExists(false)
+                toast("New product. Please enter details ✍️", { icon: "ℹ️" })
+            }
+
+        } catch {
+            toast.error("Barcode lookup failed")
+        }
     }
 
-  } catch (error) {
-    // ✅ THIS IS NOT AN ERROR — IT'S A NEW PRODUCT
-    toast("New product. Please enter details ✍️", {
-      icon: "ℹ️",
-    })
-  }
-}
 
 
 
@@ -157,8 +160,16 @@ const handleBarcodeLookup = async () => {
 
         if (!finalCategory) return toast.error("Please enter a category")
         if (productInfo.quantity === 0) return toast.error("Product is out of stock")
-        if (!images[1] && !images[2] && !images[3] && !images[4])
+        if (
+            !barcodeExists &&
+            !images[1] &&
+            !images[2] &&
+            !images[3] &&
+            !images[4]
+        ) {
             return toast.error("Please upload at least one image")
+        }
+
 
         try {
             setLoading(true)
