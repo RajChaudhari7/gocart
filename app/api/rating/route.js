@@ -1,4 +1,4 @@
-
+export const runtime = "nodejs" // 🔥 REQUIRED FOR BUFFER + IMAGE UPLOADS
 
 import prisma from "@/lib/prisma"
 import { getAuth } from "@clerk/nextjs/server"
@@ -98,14 +98,14 @@ export async function POST(request) {
         )
       }
 
+      // ✅ Node.js runtime required
       const buffer = Buffer.from(await file.arrayBuffer())
 
       const upload = await imagekit.upload({
-        file: buffer.toString("base64"), // 🔥 THIS
+        file: buffer.toString("base64"),
         fileName: `review-${orderId}-${Date.now()}-${file.name}`,
         folder: "/reviews",
       })
-
 
       uploadedUrls.push(upload.url)
     }
