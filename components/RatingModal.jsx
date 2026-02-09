@@ -24,7 +24,7 @@ const RatingModal = ({ order, onClose, onSuccess }) => {
 
   // ✅ Safely get first product from order
   const firstItem = useMemo(() => {
-    return order?.items?.[0] || null
+    return order?.orderItems?.[0] || null
   }, [order])
 
   useEffect(() => {
@@ -49,7 +49,7 @@ const RatingModal = ({ order, onClose, onSuccess }) => {
   }
 
   const handleSubmit = async () => {
-    if (!firstItem?.product?.id) {
+    if (!firstItem?.productId) {
       toast.error('Product not found for this order')
       return
     }
