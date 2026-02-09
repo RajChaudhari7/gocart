@@ -180,50 +180,56 @@ export default function StoreAddProduct() {
         try {
             setScanning(true)
 
-            const hints = new Map()
-            hints.set(DecodeHintType.POSSIBLE_FORMATS, [
-                BarcodeFormat.EAN_13,
-                BarcodeFormat.EAN_8,
-                BarcodeFormat.UPC_A,
-                BarcodeFormat.UPC_E,
-                BarcodeFormat.CODE_128,
-                BarcodeFormat.CODE_39,
-                BarcodeFormat.CODE_93,
-                BarcodeFormat.ITF,
-                BarcodeFormat.QR_CODE, // optional but useful
-            ])
-
-            const codeReader = new BrowserMultiFormatReader(hints)
-
             const videoElement = document.getElementById("barcode-video")
 
-            await codeReader.decodeFromVideoDevice(
-                null,
+            // Get all available video devices (cameras)
+            const devices = await BrowserMultiFormatReader.listVideoInputDevices()
+            if (devices.length === 0) throw new Error("No camera found")
+
+            const selectedDeviceId = devices[0].deviceId // use first camera
+            console.log("Starting scan on device:", selectedDeviceId)
+
+            const codeReader = new BrowserMultiFormatReader()
+
+            codeReader.decodeFromVideoDevice(
+                selectedDeviceId,
                 videoElement,
                 (result, error) => {
                     if (result) {
+                        // Barcode successfully scanned
                         const scannedCode = result.getText()
-
                         console.log("BARCODE SCANNED:", scannedCode)
 
+                        // Stop scanning immediately
                         codeReader.reset()
                         setScanning(false)
 
+                        // Set barcode in form
                         setProductInfo(prev => ({
                             ...prev,
                             barcode: scannedCode,
                         }))
 
+                        // Lookup product info via API
                         handleBarcodeLookup(scannedCode)
+                    }
+
+                    // Handle unexpected errors (ignore NotFoundException which means "no barcode found yet")
+                    if (error && !(error instanceof ZXing.NotFoundException)) {
+                        console.error("Barcode scan error:", error)
+                        toast.error("Barcode scanning failed")
+                        codeReader.reset()
+                        setScanning(false)
                     }
                 }
             )
         } catch (err) {
             console.error("SCAN ERROR:", err)
-            toast.error("Barcode scanning failed")
+            toast.error("Barcode scanning failed: " + err.message)
             setScanning(false)
         }
     }
+
 
     const onSubmitHandler = async (e) => {
         e.preventDefault()
