@@ -8,32 +8,21 @@ export async function GET(req, { params }) {
     const { barcode } = params
 
     if (!barcode) {
-      return NextResponse.json(
-        { error: "Barcode is required" },
-        { status: 400 }
-      )
+      return NextResponse.json({ found: false }, { status: 200 })
     }
 
-    // ✅ CORRECT WAY IN APP ROUTER
     const { userId } = auth()
 
     if (!userId) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     const storeId = await authSeller(userId)
 
     if (!storeId) {
-      return NextResponse.json(
-        { error: "Store not found" },
-        { status: 403 }
-      )
+      return NextResponse.json({ error: "Store not found" }, { status: 403 })
     }
 
-    // 🔍 STRICT: barcode + storeId
     const product = await prisma.product.findUnique({
       where: {
         barcode_storeId: {
@@ -44,19 +33,15 @@ export async function GET(req, { params }) {
     })
 
     if (!product) {
-      return NextResponse.json(
-        { found: false },
-        { status: 200 } // ✅ IMPORTANT (not 404)
-      )
+      return NextResponse.json({ found: false }, { status: 200 })
     }
 
     return NextResponse.json({
       found: true,
       product,
     })
-
-  } catch (error) {
-    console.error("BARCODE LOOKUP ERROR:", error)
+  } catch (err) {
+    console.error("BARCODE LOOKUP ERROR:", err)
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
