@@ -216,12 +216,16 @@ export default function StoreAddProduct() {
                         handleBarcodeLookup(scannedCode)
                     }
 
-                    if (error && !(error instanceof ZXing.NotFoundException)) {
+                    if (error) {
+                        // Ignore NotFoundException (occurs when no barcode is detected in current frame)
+                        if (error.message && error.message.includes("NotFoundException")) return
+
                         console.error("Barcode scan error:", error)
                         toast.error("Barcode scanning failed")
                         codeReader.reset()
                         setScanning(false)
                     }
+
                 },
                 {
                     video: {
