@@ -1,9 +1,10 @@
 import prisma from "@/lib/prisma"
-import { NextResponse } from "next/server"
 import { getAuth } from "@clerk/nextjs/server"
 import { authSeller } from "@/middlewares/authSeller"
+import { NextResponse } from "next/server"
 
 export async function GET(req, { params }) {
+  const { barcode } = params
   const { userId } = getAuth(req)
   const storeId = await authSeller(userId)
 
@@ -11,25 +12,25 @@ export async function GET(req, { params }) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const { barcode } = params
-
-  if (!barcode) {
-    return NextResponse.json({ error: "Barcode required" }, { status: 400 })
-  }
-
-  const product = await prisma.product.findUnique({
-    where: { barcode }
+  // 🔍 CHECK YOUR OWN DATABASE FIRST
+  const product = await prisma.product.findFirst({
+    where: {
+      barcode,
+      storeId,
+    },
   })
 
-  if (!product) {
-    return NextResponse.json({ found: false })
+  if (product) {
+    return NextResponse.json({
+      found: true,
+      source: "local",
+      product,
+    })
   }
 
-  return NextResponse.json({
-    found: true,
-    name: product.name,
-    description: product.description,
-    category: product.category,
-    image: product.images?.[0] || null
-  })
+  // OPTIONAL: external API later
+  return NextResponse.json(
+    { found: false },
+    { status: 404 }
+  )
 }

@@ -114,39 +114,35 @@ export default function StoreAddProduct() {
             }
         }
     }
+const handleBarcodeLookup = async () => {
+  if (!productInfo.barcode) return
 
-    const handleBarcodeLookup = async () => {
-        if (!productInfo.barcode) return
+  try {
+    const { data } = await axios.get(
+      `/api/store/barcode/${productInfo.barcode}`
+    )
 
-        try {
-            const { data } = await axios.get(
-                `/api/store/barcode/${productInfo.barcode}`
-            )
+    // ✅ PRODUCT EXISTS IN YOUR DB
+    if (data?.found && data?.product) {
+      toast.success("Product already exists. Quantity will be updated 📦")
 
-            setProductInfo(prev => ({
-                ...prev,
-                name: data.name || prev.name,
-                description: data.description || prev.description,
-                category: data.category || prev.category,
-            }))
-
-            // Auto-attach image if found
-            if (data.image) {
-                const imgRes = await fetch(data.image)
-                const blob = await imgRes.blob()
-                const file = new File([blob], "barcode-product.jpg", {
-                    type: blob.type,
-                })
-
-                setImages(prev => ({ ...prev, 1: file }))
-            }
-
-            toast.success("Product details fetched from barcode 📦")
-
-        } catch (error) {
-            toast.error("No product found for this barcode")
-        }
+      setProductInfo(prev => ({
+        ...prev,
+        name: data.product.name,
+        description: data.product.description,
+        category: data.product.category,
+        quantity: prev.quantity + 1, // 🔥 AUTO INCREASE
+      }))
     }
+
+  } catch (error) {
+    // ✅ THIS IS NOT AN ERROR — IT'S A NEW PRODUCT
+    toast("New product. Please enter details ✍️", {
+      icon: "ℹ️",
+    })
+  }
+}
+
 
 
     const onSubmitHandler = async (e) => {

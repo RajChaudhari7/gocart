@@ -35,30 +35,27 @@ export async function POST(request) {
     }
 
     // 🔍 CHECK IF PRODUCT ALREADY EXISTS
+    // 1️⃣ CHECK BARCODE FIRST
     const existingProduct = await prisma.product.findFirst({
-      where: {
-        barcode,
-        storeId,
-      },
+      where: { barcode, storeId },
     })
 
-    // ================= BARCODE FOUND → INCREMENT =================
     if (existingProduct) {
+      const incrementBy = quantity > 0 ? quantity : 1
+
       await prisma.product.update({
         where: { id: existingProduct.id },
         data: {
-          quantity: {
-            increment: quantity, // 🔥 THIS IS THE MAGIC
-          },
+          quantity: { increment: incrementBy },
         },
       })
 
       return NextResponse.json({
-        message: "Product exists. Quantity increased ✅",
+        message: "Product exists. Quantity updated ✅",
       })
     }
 
-    // ================= BARCODE NOT FOUND → CREATE =================
+    // 2️⃣ VALIDATE NEW PRODUCT
     if (
       !name ||
       !description ||
@@ -72,6 +69,9 @@ export async function POST(request) {
         { status: 400 }
       )
     }
+
+    // 3️⃣ UPLOAD IMAGES + CREATE PRODUCT
+
 
     const imagesUrl = await Promise.all(
       images.map(async (image) => {
