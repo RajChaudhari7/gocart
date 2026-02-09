@@ -14,7 +14,7 @@ const ProductDescription = ({ product }) => {
 
   /* ✅ Rating Summary */
   const ratingSummary = useMemo(() => {
-    const ratings = product.rating || [];
+    const ratings = useMemo(() => product?.rating ?? [], [product]);
     const total = ratings.length;
 
     const counts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
@@ -34,9 +34,9 @@ const ProductDescription = ({ product }) => {
 
   /* ✅ Filtered Reviews */
   const filteredReviews = useMemo(() => {
-    if (!filterStar) return product.rating;
-    return product.rating.filter(r => r.rating === filterStar);
-  }, [filterStar, product.rating]);
+    if (!filterStar) return ratings;
+    return ratings.filter(r => r.rating === filterStar);
+  }, [filterStar, ratings]);
 
   return (
     <div className="my-12 px-4 sm:px-6 max-w-7xl mx-auto text-gray-900">
@@ -105,7 +105,8 @@ const ProductDescription = ({ product }) => {
                           key={i}
                           size={18}
                           className={
-                            ratingSummary.avg >= i + 1
+                            Math.round(ratingSummary.avg) >= i + 1
+
                               ? "text-purple-500 fill-purple-500"
                               : "text-gray-300"
                           }
@@ -122,7 +123,9 @@ const ProductDescription = ({ product }) => {
                     {[5, 4, 3, 2, 1].map(star => (
                       <div
                         key={star}
-                        onClick={() => setFilterStar(star)}
+                        onClick={() =>
+                          setFilterStar(prev => (prev === star ? null : star))
+                        }
                         className="flex items-center gap-3 cursor-pointer"
                       >
                         <span className="w-8 text-sm">{star}.0</span>
@@ -177,9 +180,9 @@ const ProductDescription = ({ product }) => {
               </p>
             )}
 
-            {filteredReviews.map((item, index) => (
+            {filteredReviews.map((item) => (
               <motion.div
-                key={index}
+                key={item.id}
                 whileHover={{ scale: 1.01 }}
                 className="flex gap-4 bg-white p-5 rounded-2xl border shadow-sm"
               >
