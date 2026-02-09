@@ -35,9 +35,6 @@ export default function StoreOrders() {
     const [verifyingOtp, setVerifyingOtp] = useState(false)
     const [resendCooldown, setResendCooldown] = useState(0)
     const [resendingOtp, setResendingOtp] = useState(false)
-
-
-
     const [orders, setOrders] = useState([])
     const [loading, setLoading] = useState(true)
     const [selectedOrder, setSelectedOrder] = useState(null)

@@ -32,6 +32,8 @@ export default function StoreAddProduct() {
     const [aiUsed, setAiUsed] = useState(false)
     const [customCategory, setCustomCategory] = useState("")
     const [discount, setDiscount] = useState(0)
+    const [barcodeExists, setBarcodeExists] = useState(false)
+
 
     const onChangeHandler = (e) => {
         const { name, value } = e.target
