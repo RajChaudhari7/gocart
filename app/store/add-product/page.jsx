@@ -6,6 +6,8 @@ import axios from "axios"
 import Image from "next/image"
 import { useEffect, useState } from "react"
 import { toast } from "react-hot-toast"
+import { BrowserMultiFormatReader } from "@zxing/browser"
+
 
 export default function StoreAddProduct() {
 
@@ -170,62 +172,42 @@ export default function StoreAddProduct() {
     }
 
     const startBarcodeScan = async () => {
-        if (!("BarcodeDetector" in window)) {
-            toast.error("Barcode scanning not supported on this browser")
-            return
-        }
-
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: "environment" }
-            })
-
-            setVideoStream(stream)
             setScanning(true)
 
-            const video = document.getElementById("barcode-video")
-            video.srcObject = stream
-            video.play()
+            const codeReader = new BrowserMultiFormatReader()
 
-            const barcodeDetector = new BarcodeDetector({
-                formats: ["ean_13", "ean_8", "code_128", "upc_a", "upc_e"]
-            })
+            const videoElement = document.getElementById("barcode-video")
 
-            const scanInterval = setInterval(async () => {
-                if (!video || video.readyState !== 4) return
+            await codeReader.decodeFromVideoDevice(
+                null,
+                videoElement,
+                (result, err) => {
+                    if (result) {
+                        const scannedCode = result.getText()
 
-                const barcodes = await barcodeDetector.detect(video)
+                        codeReader.reset()
+                        stopBarcodeScan()
 
-                if (barcodes.length > 0) {
-                    const scannedCode = barcodes[0].rawValue
+                        setProductInfo(prev => ({
+                            ...prev,
+                            barcode: scannedCode
+                        }))
 
-                    clearInterval(scanInterval)
-                    stopBarcodeScan()
-
-                    setProductInfo(prev => ({
-                        ...prev,
-                        barcode: scannedCode
-                    }))
-
-                    handleBarcodeLookup(scannedCode)
+                        handleBarcodeLookup(scannedCode)
+                    }
                 }
-            }, 500)
+            )
         } catch (error) {
             console.error(error)
-            toast.error("Camera access denied")
+            toast.error("Camera access failed")
+            setScanning(false)
         }
     }
 
     const stopBarcodeScan = () => {
-        if (videoStream) {
-            videoStream.getTracks().forEach(track => track.stop())
-        }
         setScanning(false)
-        setVideoStream(null)
     }
-
-
-
 
     const onSubmitHandler = async (e) => {
         e.preventDefault()
