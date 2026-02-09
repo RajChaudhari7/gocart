@@ -8,6 +8,7 @@ import { useDispatch } from 'react-redux'
 import axios from 'axios'
 import { addRating } from '@/lib/features/rating/ratingSlice'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useRef } from 'react'
 
 const ratingLabels = ['Poor', 'Fair', 'Good', 'Very Good', 'Excellent']
 const MAX_PHOTOS = 5
@@ -15,6 +16,8 @@ const MAX_PHOTOS = 5
 const RatingModal = ({ order, onClose, onSuccess }) => {
   const { getToken } = useAuth()
   const dispatch = useDispatch()
+  const fileInputRef = useRef(null)
+
 
   const [rating, setRating] = useState(0)
   const [review, setReview] = useState('')
@@ -83,7 +86,6 @@ const RatingModal = ({ order, onClose, onSuccess }) => {
       const { data } = await axios.post('/api/rating', formData, {
         headers: {
           Authorization: `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data',
         },
       })
 
@@ -144,11 +146,10 @@ const RatingModal = ({ order, onClose, onSuccess }) => {
                 onClick={() => setRating(i + 1)}
               >
                 <Star
-                  className={`cursor-pointer transition ${
-                    rating > i
-                      ? 'text-yellow-400 fill-current scale-110'
-                      : 'text-gray-600'
-                  }`}
+                  className={`cursor-pointer transition ${rating > i
+                    ? 'text-yellow-400 fill-current scale-110'
+                    : 'text-gray-600'
+                    }`}
                 />
               </motion.div>
             ))}
@@ -176,14 +177,17 @@ const RatingModal = ({ order, onClose, onSuccess }) => {
               {isMobile ? 'Take or upload photos' : 'Upload photos'} ({photos.length}/{MAX_PHOTOS})
             </span>
             <input
+              ref={fileInputRef}
               type="file"
-              name = "photos"
+              name="photos"
               accept="image/*"
               multiple
+              disabled={submitting}   // 🔒 prevents reset
               onChange={handlePhotoChange}
               hidden
               {...(isMobile ? { capture: 'environment' } : {})}
             />
+
           </label>
 
           {/* 🖼 Preview */}
