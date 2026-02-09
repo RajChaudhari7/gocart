@@ -182,44 +182,52 @@ export default function StoreAddProduct() {
 
             const videoElement = document.getElementById("barcode-video")
 
-            // Get all available video devices (cameras)
+            // List video devices
             const devices = await BrowserMultiFormatReader.listVideoInputDevices()
             if (devices.length === 0) throw new Error("No camera found")
 
-            const selectedDeviceId = devices[0].deviceId // use first camera
-            console.log("Starting scan on device:", selectedDeviceId)
+            let selectedDeviceId = devices[0].deviceId
+
+            // Prefer rear camera if available
+            const rearCamera = devices.find(device =>
+                /back|rear|environment/i.test(device.label)
+            )
+            if (rearCamera) selectedDeviceId = rearCamera.deviceId
 
             const codeReader = new BrowserMultiFormatReader()
 
-            codeReader.decodeFromVideoDevice(
+            // Use decodeFromVideoDevice with constraints for mobile
+            await codeReader.decodeFromVideoDevice(
                 selectedDeviceId,
                 videoElement,
                 (result, error) => {
                     if (result) {
-                        // Barcode successfully scanned
                         const scannedCode = result.getText()
                         console.log("BARCODE SCANNED:", scannedCode)
 
-                        // Stop scanning immediately
                         codeReader.reset()
                         setScanning(false)
 
-                        // Set barcode in form
                         setProductInfo(prev => ({
                             ...prev,
                             barcode: scannedCode,
                         }))
 
-                        // Lookup product info via API
                         handleBarcodeLookup(scannedCode)
                     }
 
-                    // Handle unexpected errors (ignore NotFoundException which means "no barcode found yet")
                     if (error && !(error instanceof ZXing.NotFoundException)) {
                         console.error("Barcode scan error:", error)
                         toast.error("Barcode scanning failed")
                         codeReader.reset()
                         setScanning(false)
+                    }
+                },
+                {
+                    video: {
+                        facingMode: "environment", // force rear camera
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
                     }
                 }
             )
@@ -229,7 +237,6 @@ export default function StoreAddProduct() {
             setScanning(false)
         }
     }
-
 
     const onSubmitHandler = async (e) => {
         e.preventDefault()
