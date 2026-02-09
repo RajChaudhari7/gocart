@@ -1,6 +1,6 @@
 'use client'
 
-import { Star, X, Camera } from 'lucide-react'
+import { Star, X } from 'lucide-react'
 import { useState, useEffect, useMemo } from 'react'
 import toast from 'react-hot-toast'
 import { useAuth } from '@clerk/nextjs'
@@ -8,48 +8,20 @@ import { useDispatch } from 'react-redux'
 import axios from 'axios'
 import { addRating } from '@/lib/features/rating/ratingSlice'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useRef } from 'react'
 
 const ratingLabels = ['Poor', 'Fair', 'Good', 'Very Good', 'Excellent']
-const MAX_PHOTOS = 5
 
 const RatingModal = ({ order, onClose, onSuccess }) => {
   const { getToken } = useAuth()
   const dispatch = useDispatch()
-  const fileInputRef = useRef(null)
-
 
   const [rating, setRating] = useState(0)
   const [review, setReview] = useState('')
-  const [photos, setPhotos] = useState([])
   const [submitting, setSubmitting] = useState(false)
-  const [isMobile, setIsMobile] = useState(false)
 
-  // ✅ Safely get first order item
   const firstItem = useMemo(() => {
     return order?.orderItems?.[0] || null
   }, [order])
-
-  useEffect(() => {
-    if (typeof navigator !== 'undefined') {
-      setIsMobile(/Mobi|Android/i.test(navigator.userAgent))
-    }
-  }, [])
-
-  const handlePhotoChange = (e) => {
-    const files = Array.from(e.target.files || [])
-
-    if (photos.length + files.length > MAX_PHOTOS) {
-      toast(`You can upload up to ${MAX_PHOTOS} photos`)
-      return
-    }
-
-    setPhotos((prev) => [...prev, ...files])
-  }
-
-  const removePhoto = (index) => {
-    setPhotos((prev) => prev.filter((_, i) => i !== index))
-  }
 
   const handleSubmit = async () => {
     if (!firstItem?.productId) {
@@ -73,17 +45,14 @@ const RatingModal = ({ order, onClose, onSuccess }) => {
     try {
       const token = await getToken()
 
-      const formData = new FormData()
-      formData.append('productId', firstItem.productId) // ✅ FIXED
-      formData.append('orderId', order.id)
-      formData.append('rating', rating.toString())
-      formData.append('review', review)
+      const payload = {
+        productId: firstItem.productId,
+        orderId: order.id,
+        rating,
+        review,
+      }
 
-      photos.forEach((photo) => {
-        formData.append('photos', photo)
-      })
-
-      const { data } = await axios.post('/api/rating', formData, {
+      const { data } = await axios.post('/api/rating', payload, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -92,10 +61,8 @@ const RatingModal = ({ order, onClose, onSuccess }) => {
       dispatch(addRating(data.rating))
       toast.success(data.message || 'Rating submitted', { id: toastId })
 
-      // ✅ Reset state
       setRating(0)
       setReview('')
-      setPhotos([])
 
       onSuccess?.()
       onClose()
@@ -125,10 +92,10 @@ const RatingModal = ({ order, onClose, onSuccess }) => {
           exit={{ scale: 0.8, opacity: 0 }}
           transition={{ type: 'spring', stiffness: 300, damping: 25 }}
         >
-          {/* ❌ Close */}
+          {/* Close */}
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 text-white/70 hover:text-white transition"
+            className="absolute top-4 right-4 text-white/70 hover:text-white"
           >
             <X size={24} />
           </button>
@@ -137,7 +104,7 @@ const RatingModal = ({ order, onClose, onSuccess }) => {
             Rate Product
           </h2>
 
-          {/* ⭐ Stars */}
+          {/* Stars */}
           <div className="flex justify-center gap-2 mb-1">
             {Array.from({ length: 5 }, (_, i) => (
               <motion.div
@@ -146,16 +113,16 @@ const RatingModal = ({ order, onClose, onSuccess }) => {
                 onClick={() => setRating(i + 1)}
               >
                 <Star
-                  className={`cursor-pointer transition ${rating > i
-                    ? 'text-yellow-400 fill-current scale-110'
-                    : 'text-gray-600'
-                    }`}
+                  className={`cursor-pointer ${
+                    rating > i
+                      ? 'text-yellow-400 fill-current scale-110'
+                      : 'text-gray-600'
+                  }`}
                 />
               </motion.div>
             ))}
           </div>
 
-          {/* ⭐ Label */}
           {rating > 0 && (
             <p className="text-center text-yellow-400 text-sm mb-3">
               {ratingLabels[rating - 1]}
@@ -163,63 +130,17 @@ const RatingModal = ({ order, onClose, onSuccess }) => {
           )}
 
           <textarea
-            className="w-full p-3 rounded-xl border border-white/20 bg-white/5 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-yellow-400 mb-4 transition"
+            className="w-full p-3 rounded-xl border border-white/20 bg-white/5 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-yellow-400 mb-4"
             placeholder="Write your review..."
             rows={4}
             value={review}
             onChange={(e) => setReview(e.target.value)}
           />
 
-          {/* 📷 Upload */}
-          <label className="flex items-center gap-3 cursor-pointer mb-4">
-            <Camera className="text-white/70" size={24} />
-            <span className="text-white/70 text-sm">
-              {isMobile ? 'Take or upload photos' : 'Upload photos'} ({photos.length}/{MAX_PHOTOS})
-            </span>
-            <input
-              ref={fileInputRef}
-              type="file"
-              name="photos"
-              accept="image/*"
-              multiple
-              disabled={submitting}   // 🔒 prevents reset
-              onChange={handlePhotoChange}
-              hidden
-              {...(isMobile ? { capture: 'environment' } : {})}
-            />
-
-          </label>
-
-          {/* 🖼 Preview */}
-          {photos.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-4">
-              {photos.map((file, idx) => {
-                const preview = URL.createObjectURL(file)
-                return (
-                  <div key={idx} className="relative">
-                    <img
-                      src={preview}
-                      alt="preview"
-                      className="w-24 h-24 sm:w-28 sm:h-28 object-cover rounded-lg"
-                      onLoad={() => URL.revokeObjectURL(preview)}
-                    />
-                    <button
-                      onClick={() => removePhoto(idx)}
-                      className="absolute -top-2 -right-2 bg-black/70 rounded-full p-1"
-                    >
-                      <X size={14} className="text-white" />
-                    </button>
-                  </div>
-                )
-              })}
-            </div>
-          )}
-
-          {/* 🚀 Submit */}
           <motion.button
             disabled={submitting}
             onClick={handleSubmit}
-            className="w-full bg-yellow-400 hover:bg-yellow-500 disabled:opacity-50 text-gray-900 font-semibold py-2 rounded-2xl transition"
+            className="w-full bg-yellow-400 hover:bg-yellow-500 disabled:opacity-50 text-gray-900 font-semibold py-2 rounded-2xl"
             whileTap={{ scale: 0.95 }}
           >
             {submitting ? 'Submitting...' : 'Submit Rating'}
