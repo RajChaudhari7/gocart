@@ -37,15 +37,27 @@ export default function StoreAddProduct() {
 
     const onChangeHandler = (e) => {
         const { name, value } = e.target
-        const numValue = Number(value)
 
-        if (name === "price" && numValue > productInfo.mrp) {
-            toast.error("Offer price cannot exceed Actual price")
+        // Block editing fields if barcode exists
+        if (
+            barcodeExists &&
+            ["name", "description", "mrp", "price", "category"].includes(name)
+        ) {
             return
         }
 
-        setProductInfo({ ...productInfo, [name]: value })
+        // Price validation
+        if (name === "price" && Number(value) > Number(productInfo.mrp)) {
+            toast.error("Offer price cannot exceed MRP")
+            return
+        }
+
+        setProductInfo(prev => ({
+            ...prev,
+            [name]: value,
+        }))
     }
+
 
     useEffect(() => {
         if (productInfo.mrp > 0 && productInfo.price > 0) {
@@ -116,25 +128,22 @@ export default function StoreAddProduct() {
             }
         }
     }
-    const handleBarcodeLookup = async () => {
-        if (!productInfo.barcode) return
+    const handleBarcodeLookup = async (barcodeValue) => {
+        if (!barcodeValue) return
 
         try {
-            const token = await getToken() // 🔥 REQUIRED
-
+            const token = await getToken()
             const { data } = await axios.get(
-                `/api/store/barcode/${productInfo.barcode}`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
+                `/api/store/barcode/${barcodeValue}`,
+                { headers: { Authorization: `Bearer ${token}` } }
             )
+
+            setBarcodeChecked(true)
 
             if (data.found) {
                 setBarcodeExists(true)
 
-                toast.success("Product exists. Stock will be updated 📦")
+                toast.success("Barcode exists. Product loaded 📦")
 
                 setProductInfo(prev => ({
                     ...prev,
@@ -143,14 +152,13 @@ export default function StoreAddProduct() {
                     category: data.product.category,
                     mrp: data.product.mrp,
                     price: data.product.price,
+                    quantity: "" // 🔥 force user to enter new quantity
                 }))
             } else {
                 setBarcodeExists(false)
-                toast("New product. Please enter details ✍️", { icon: "ℹ️" })
+                toast("New product. Fill details ✍️", { icon: "ℹ️" })
             }
-
-        } catch (error) {
-            console.error("BARCODE LOOKUP ERROR:", error)
+        } catch (err) {
             toast.error("Barcode lookup failed")
         }
     }
@@ -270,7 +278,6 @@ export default function StoreAddProduct() {
                                 barcode: value,
                             }))
                         }}
-                        onBlur={handleBarcodeLookup}
                         placeholder="Scan or enter barcode"
                         className="w-full mt-1 p-3 border rounded-lg"
                     />

@@ -5,13 +5,12 @@ import { NextResponse } from "next/server"
 
 export async function GET(req, { params }) {
   try {
-    let { barcode } = params
-
-    if (!barcode) {
+    const rawBarcode = params?.barcode
+    if (!rawBarcode) {
       return NextResponse.json({ found: false })
     }
 
-    barcode = barcode.trim() // 🔥 VERY IMPORTANT
+    const barcode = rawBarcode.trim()
 
     const { userId } = auth()
     if (!userId) {
@@ -32,11 +31,9 @@ export async function GET(req, { params }) {
       },
     })
 
-    console.log("LOOKUP:", { barcode, storeId, found: !!product })
-
     return NextResponse.json({
-      found: !!product,
-      product: product || null,
+      found: Boolean(product),
+      product,
     })
   } catch (err) {
     console.error("BARCODE LOOKUP ERROR:", err)
