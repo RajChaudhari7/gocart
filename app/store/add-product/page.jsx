@@ -6,7 +6,12 @@ import axios from "axios"
 import Image from "next/image"
 import { useEffect, useState } from "react"
 import { toast } from "react-hot-toast"
-import { BrowserMultiFormatReader } from "@zxing/browser"
+import {
+    BrowserMultiFormatReader,
+    BarcodeFormat,
+    DecodeHintType
+} from "@zxing/browser"
+
 
 
 export default function StoreAddProduct() {
@@ -175,38 +180,49 @@ export default function StoreAddProduct() {
         try {
             setScanning(true)
 
-            const codeReader = new BrowserMultiFormatReader()
+            const hints = new Map()
+            hints.set(DecodeHintType.POSSIBLE_FORMATS, [
+                BarcodeFormat.EAN_13,
+                BarcodeFormat.EAN_8,
+                BarcodeFormat.UPC_A,
+                BarcodeFormat.UPC_E,
+                BarcodeFormat.CODE_128,
+                BarcodeFormat.CODE_39,
+                BarcodeFormat.CODE_93,
+                BarcodeFormat.ITF,
+                BarcodeFormat.QR_CODE, // optional but useful
+            ])
+
+            const codeReader = new BrowserMultiFormatReader(hints)
 
             const videoElement = document.getElementById("barcode-video")
 
             await codeReader.decodeFromVideoDevice(
                 null,
                 videoElement,
-                (result, err) => {
+                (result, error) => {
                     if (result) {
                         const scannedCode = result.getText()
 
+                        console.log("BARCODE SCANNED:", scannedCode)
+
                         codeReader.reset()
-                        stopBarcodeScan()
+                        setScanning(false)
 
                         setProductInfo(prev => ({
                             ...prev,
-                            barcode: scannedCode
+                            barcode: scannedCode,
                         }))
 
                         handleBarcodeLookup(scannedCode)
                     }
                 }
             )
-        } catch (error) {
-            console.error(error)
-            toast.error("Camera access failed")
+        } catch (err) {
+            console.error("SCAN ERROR:", err)
+            toast.error("Barcode scanning failed")
             setScanning(false)
         }
-    }
-
-    const stopBarcodeScan = () => {
-        setScanning(false)
     }
 
     const onSubmitHandler = async (e) => {
@@ -340,20 +356,14 @@ export default function StoreAddProduct() {
                     </div>
 
                     {scanning && (
-                        <div className="mt-3 relative">
+                        <div className="mt-3">
                             <video
                                 id="barcode-video"
-                                className="w-full rounded-lg border"
+                                className="w-full h-64 border rounded-lg object-cover"
                             />
-                            <button
-                                type="button"
-                                onClick={stopBarcodeScan}
-                                className="absolute top-2 right-2 bg-red-600 text-white text-xs px-3 py-1 rounded"
-                            >
-                                Stop
-                            </button>
                         </div>
                     )}
+
                 </div>
 
 
