@@ -25,6 +25,8 @@ export async function POST(request) {
     const quantity = Number(formData.get("quantity"));
     const category = formData.get("category");
     const images = formData.getAll("images");
+    const barcode = formData.get("barcode");
+
 
     if (
       !name ||
@@ -33,6 +35,7 @@ export async function POST(request) {
       price <= 0 ||
       quantity < 0 ||
       !category ||
+      !barcode ||
       images.length === 0
     ) {
       return NextResponse.json(
@@ -71,6 +74,7 @@ export async function POST(request) {
         category,
         images: imagesUrl,
         storeId,
+        barcode,
       },
     });
 

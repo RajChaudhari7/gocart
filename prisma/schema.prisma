@@ -28,6 +28,7 @@ model Product {
   price       Float
   quantity    Int      @default(0) // ✅ single source of truth
   images      String[]
+  barcode     String?  @unique
   category    String
   storeId     String
   createdAt   DateTime @default(now())

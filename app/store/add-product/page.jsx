@@ -25,6 +25,7 @@ export default function StoreAddProduct() {
         price: 0,
         quantity: 0,
         category: "",
+        barcode: "",
     })
 
     const [loading, setLoading] = useState(false)
@@ -114,6 +115,40 @@ export default function StoreAddProduct() {
         }
     }
 
+    const handleBarcodeLookup = async () => {
+        if (!productInfo.barcode) return
+
+        try {
+            const { data } = await axios.get(
+                `/api/store/barcode/${productInfo.barcode}`
+            )
+
+            setProductInfo(prev => ({
+                ...prev,
+                name: data.name || prev.name,
+                description: data.description || prev.description,
+                category: data.category || prev.category,
+            }))
+
+            // Auto-attach image if found
+            if (data.image) {
+                const imgRes = await fetch(data.image)
+                const blob = await imgRes.blob()
+                const file = new File([blob], "barcode-product.jpg", {
+                    type: blob.type,
+                })
+
+                setImages(prev => ({ ...prev, 1: file }))
+            }
+
+            toast.success("Product details fetched from barcode 📦")
+
+        } catch (error) {
+            toast.error("No product found for this barcode")
+        }
+    }
+
+
     const onSubmitHandler = async (e) => {
         e.preventDefault()
 
@@ -137,6 +172,8 @@ export default function StoreAddProduct() {
             formData.append('price', productInfo.price)
             formData.append('quantity', productInfo.quantity)
             formData.append('category', finalCategory)
+            formData.append("barcode", productInfo.barcode)
+
 
             Object.keys(images).forEach(key => {
                 images[key] && formData.append('images', images[key])
@@ -203,6 +240,22 @@ export default function StoreAddProduct() {
                         ))}
                     </div>
                 </div>
+
+                {/* Barcode */}
+                <div>
+                    <label className="text-sm">Barcode</label>
+                    <input
+                        type="text"
+                        value={productInfo.barcode}
+                        onChange={(e) =>
+                            setProductInfo({ ...productInfo, barcode: e.target.value })
+                        }
+                        onBlur={handleBarcodeLookup}
+                        placeholder="Scan or enter barcode"
+                        className="w-full mt-1 p-3 border rounded-lg"
+                    />
+                </div>
+
 
                 {/* Name */}
                 <div>
