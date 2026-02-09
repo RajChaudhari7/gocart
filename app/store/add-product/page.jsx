@@ -120,8 +120,15 @@ export default function StoreAddProduct() {
         if (!productInfo.barcode) return
 
         try {
+            const token = await getToken() // 🔥 REQUIRED
+
             const { data } = await axios.get(
-                `/api/store/barcode/${productInfo.barcode}`
+                `/api/store/barcode/${productInfo.barcode}`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
             )
 
             if (data.found) {
@@ -136,7 +143,6 @@ export default function StoreAddProduct() {
                     category: data.product.category,
                     mrp: data.product.mrp,
                     price: data.product.price,
-                    // quantity handled on submit (backend increment)
                 }))
             } else {
                 setBarcodeExists(false)
@@ -144,10 +150,11 @@ export default function StoreAddProduct() {
             }
 
         } catch (error) {
-            console.error(error)
+            console.error("BARCODE LOOKUP ERROR:", error)
             toast.error("Barcode lookup failed")
         }
     }
+
 
 
     const onSubmitHandler = async (e) => {
