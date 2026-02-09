@@ -26,9 +26,9 @@ model Product {
   description String
   mrp         Float
   price       Float
-  quantity    Int      @default(0) // ✅ single source of truth
+  quantity    Int      @default(0)
   images      String[]
-  barcode     String?  @unique
+  barcode     String?
   category    String
   storeId     String
   createdAt   DateTime @default(now())
@@ -37,6 +37,8 @@ model Product {
   store      Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
   orderItems OrderItem[]
   rating     Rating[]
+
+  @@unique([barcode, storeId]) // 🔥 THIS IS THE KEY
 }
 
 ////////////////////////////////////
