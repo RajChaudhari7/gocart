@@ -205,7 +205,11 @@ export default function StoreAddProduct() {
                         const scannedCode = result.getText()
                         console.log("BARCODE SCANNED:", scannedCode)
 
-                        codeReader.reset()
+                        const video = document.getElementById("barcode-video")
+                        if (video && video.srcObject) {
+                            video.srcObject.getTracks().forEach(track => track.stop())
+                        }
+
                         setScanning(false)
 
                         setProductInfo(prev => ({
