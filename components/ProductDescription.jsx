@@ -11,10 +11,10 @@ const tabs = ['Description', 'Reviews'];
 const ProductDescription = ({ product }) => {
   const [selectedTab, setSelectedTab] = useState('Description');
   const [filterStar, setFilterStar] = useState(null);
+  const ratings = useMemo(() => product?.rating ?? [], [product]);
 
   /* ✅ Rating Summary */
   const ratingSummary = useMemo(() => {
-    const ratings = useMemo(() => product?.rating ?? [], [product]);
     const total = ratings.length;
 
     const counts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
@@ -28,15 +28,17 @@ const ProductDescription = ({ product }) => {
     return {
       avg: total ? (sum / total).toFixed(1) : 0,
       counts,
-      total
+      total,
     };
-  }, [product.rating]);
+  }, [ratings]);
+
 
   /* ✅ Filtered Reviews */
   const filteredReviews = useMemo(() => {
     if (!filterStar) return ratings;
     return ratings.filter(r => r.rating === filterStar);
   }, [filterStar, ratings]);
+
 
   return (
     <div className="my-12 px-4 sm:px-6 max-w-7xl mx-auto text-gray-900">
