@@ -133,19 +133,19 @@ export default function StoreAddProduct() {
     const handleBarcodeLookup = async (barcodeValue) => {
         if (!barcodeValue) return
 
+        const cleanBarcode = barcodeValue.trim()
+
         try {
             const token = await getToken()
             const { data } = await axios.get(
-                `/api/store/barcode/${barcodeValue}`,
+                `/api/store/barcode/${cleanBarcode}`,
                 { headers: { Authorization: `Bearer ${token}` } }
             )
 
-            setBarcodeChecked(true)
-
-            if (data.found) {
+            if (data.found && data.product) {
                 setBarcodeExists(true)
 
-                toast.success("Barcode exists. Product loaded 📦")
+                toast.success("Product exists. Stock will be updated 📦")
 
                 setProductInfo(prev => ({
                     ...prev,
@@ -154,13 +154,14 @@ export default function StoreAddProduct() {
                     category: data.product.category,
                     mrp: data.product.mrp,
                     price: data.product.price,
-                    quantity: "" // 🔥 force user to enter new quantity
+                    quantity: "" // force seller to enter added stock
                 }))
             } else {
                 setBarcodeExists(false)
                 toast("New product. Fill details ✍️", { icon: "ℹ️" })
             }
         } catch (err) {
+            console.error(err)
             toast.error("Barcode lookup failed")
         }
     }
@@ -274,25 +275,18 @@ export default function StoreAddProduct() {
                         type="text"
                         value={productInfo.barcode}
                         onChange={(e) => {
-                            const value = e.target.value.replace(/\s/g, "")
-                            setProductInfo(prev => ({ ...prev, barcode: value }))
+                            const clean = e.target.value.replace(/\s/g, "")
+                            setProductInfo(prev => ({
+                                ...prev,
+                                barcode: clean
+                            }))
                         }}
-                        onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                                e.preventDefault()
-                                handleBarcodeLookup(productInfo.barcode)
-                            }
-                        }}
-                        onBlur={() => {
-                            if (productInfo.barcode.length >= 6) {
-                                handleBarcodeLookup(productInfo.barcode)
-                            }
-                        }}
+                        onBlur={() => handleBarcodeLookup(productInfo.barcode)}
                         placeholder="Scan or enter barcode"
                         className="w-full mt-1 p-3 border rounded-lg"
                     />
-
                 </div>
+
 
                 {/* Name */}
                 <div>

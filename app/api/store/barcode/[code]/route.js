@@ -5,21 +5,18 @@ import { NextResponse } from "next/server"
 
 export async function GET(req, { params }) {
   try {
-    const rawBarcode = params?.barcode
-    if (!rawBarcode) {
+    let { barcode } = params
+    if (!barcode) {
       return NextResponse.json({ found: false })
     }
 
-    const barcode = rawBarcode.trim()
+    barcode = barcode.trim() // 🔥 REQUIRED
 
-    const { userId } = auth()
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
+    const { userId } = getAuth(req)
     const storeId = await authSeller(userId)
+
     if (!storeId) {
-      return NextResponse.json({ error: "Store not found" }, { status: 403 })
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     const product = await prisma.product.findUnique({
@@ -31,9 +28,11 @@ export async function GET(req, { params }) {
       },
     })
 
+    console.log("LOOKUP:", barcode, "FOUND:", !!product)
+
     return NextResponse.json({
-      found: Boolean(product),
-      product,
+      found: !!product,
+      product: product || null,
     })
   } catch (err) {
     console.error("BARCODE LOOKUP ERROR:", err)
