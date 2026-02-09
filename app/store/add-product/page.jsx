@@ -124,7 +124,7 @@ export default function StoreAddProduct() {
                 `/api/store/barcode/${productInfo.barcode}`
             )
 
-            if (data.found && data.product) {
+            if (data.found) {
                 setBarcodeExists(true)
 
                 toast.success("Product exists. Stock will be updated 📦")
@@ -136,16 +136,19 @@ export default function StoreAddProduct() {
                     category: data.product.category,
                     mrp: data.product.mrp,
                     price: data.product.price,
+                    // quantity handled on submit (backend increment)
                 }))
             } else {
                 setBarcodeExists(false)
                 toast("New product. Please enter details ✍️", { icon: "ℹ️" })
             }
 
-        } catch {
+        } catch (error) {
+            console.error(error)
             toast.error("Barcode lookup failed")
         }
     }
+
 
     const onSubmitHandler = async (e) => {
         e.preventDefault()

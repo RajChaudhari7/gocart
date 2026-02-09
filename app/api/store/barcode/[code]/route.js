@@ -1,12 +1,21 @@
 import prisma from "@/lib/prisma"
-import { getAuth } from "@clerk/nextjs/server"
 import { authSeller } from "@/middlewares/authSeller"
+import { auth } from "@clerk/nextjs/server"
 import { NextResponse } from "next/server"
 
 export async function GET(req, { params }) {
   try {
-    /* ================= AUTH ================= */
-    const { userId } = getAuth(req)
+    const { barcode } = params
+
+    if (!barcode) {
+      return NextResponse.json(
+        { error: "Barcode is required" },
+        { status: 400 }
+      )
+    }
+
+    // ✅ CORRECT WAY IN APP ROUTER
+    const { userId } = auth()
 
     if (!userId) {
       return NextResponse.json(
@@ -19,60 +28,35 @@ export async function GET(req, { params }) {
 
     if (!storeId) {
       return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
+        { error: "Store not found" },
+        { status: 403 }
       )
     }
 
-    /* ================= BARCODE NORMALIZATION ================= */
-    const rawBarcode = params?.barcode
-
-    if (!rawBarcode) {
-      return NextResponse.json(
-        { error: "Barcode is required" },
-        { status: 400 }
-      )
-    }
-
-    const barcode = rawBarcode.trim()
-
-    /* ================= LOOKUP (STORE-SCOPED) ================= */
-    const product = await prisma.product.findFirst({
+    // 🔍 STRICT: barcode + storeId
+    const product = await prisma.product.findUnique({
       where: {
-        barcode,
-        storeId, // 🔒 MULTI-VENDOR SAFE
-      },
-      select: {
-        id: true,
-        name: true,
-        description: true,
-        mrp: true,
-        price: true,
-        category: true,
-        quantity: true,
-        images: true,
-        barcode: true,
+        barcode_storeId: {
+          barcode,
+          storeId,
+        },
       },
     })
 
-    /* ================= FOUND ================= */
-    if (product) {
-      return NextResponse.json({
-        found: true,
-        source: "local",
-        product,
-      })
+    if (!product) {
+      return NextResponse.json(
+        { found: false },
+        { status: 200 } // ✅ IMPORTANT (not 404)
+      )
     }
 
-    /* ================= NOT FOUND ================= */
-    return NextResponse.json(
-      { found: false },
-      { status: 404 }
-    )
+    return NextResponse.json({
+      found: true,
+      product,
+    })
 
   } catch (error) {
     console.error("BARCODE LOOKUP ERROR:", error)
-
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
