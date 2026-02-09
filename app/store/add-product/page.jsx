@@ -33,6 +33,8 @@ export default function StoreAddProduct() {
     const [customCategory, setCustomCategory] = useState("")
     const [discount, setDiscount] = useState(0)
     const [barcodeExists, setBarcodeExists] = useState(false)
+    const [barcodeChecked, setBarcodeChecked] = useState(false)
+
 
 
     const onChangeHandler = (e) => {
@@ -272,17 +274,23 @@ export default function StoreAddProduct() {
                         type="text"
                         value={productInfo.barcode}
                         onChange={(e) => {
-                            const value = e.target.value.replace(/\s/g, "") // 🔥 remove spaces
+                            const value = e.target.value.replace(/\s/g, "")
                             setProductInfo(prev => ({
                                 ...prev,
                                 barcode: value,
                             }))
                         }}
+                        onBlur={() => handleBarcodeLookup(productInfo.barcode)} // ✅ FIX
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                                e.preventDefault()
+                                handleBarcodeLookup(productInfo.barcode) // ✅ scanner support
+                            }
+                        }}
                         placeholder="Scan or enter barcode"
                         className="w-full mt-1 p-3 border rounded-lg"
                     />
                 </div>
-
 
                 {/* Name */}
                 <div>

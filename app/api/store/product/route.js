@@ -22,9 +22,9 @@ export async function POST(request) {
     const description = formData.get("description")
     const mrp = Number(formData.get("mrp"))
     const price = Number(formData.get("price"))
-    const quantity = Number(formData.get("quantity"))
+    const quantity = Math.max(0, Number(formData.get("quantity")) || 0)
     const category = formData.get("category")
-    const barcode = formData.get("barcode")
+    const barcode = formData.get("barcode")?.trim()
     const images = formData.getAll("images")
 
     if (!barcode) {
@@ -34,19 +34,29 @@ export async function POST(request) {
       )
     }
 
-    // ================= 1️⃣ CHECK BARCODE =================
-    const existingProduct = await prisma.product.findFirst({
-      where: { barcode, storeId },
+    if (price > mrp) {
+      return NextResponse.json(
+        { error: "Price cannot be greater than MRP" },
+        { status: 400 }
+      )
+    }
+
+    // 🔍 CHECK BARCODE (SAFE)
+    const existingProduct = await prisma.product.findUnique({
+      where: {
+        barcode_storeId: {
+          barcode,
+          storeId,
+        },
+      },
     })
 
-    // ================= 2️⃣ BARCODE EXISTS → ONLY UPDATE STOCK =================
+    // 🔁 BARCODE EXISTS → INCREMENT ONLY
     if (existingProduct) {
-      const incrementBy = quantity > 0 ? quantity : 1
-
       await prisma.product.update({
         where: { id: existingProduct.id },
         data: {
-          quantity: { increment: incrementBy },
+          quantity: { increment: quantity > 0 ? quantity : 1 },
         },
       })
 
@@ -56,7 +66,7 @@ export async function POST(request) {
       })
     }
 
-    // ================= 3️⃣ BARCODE NEW → FULL VALIDATION =================
+    // 🆕 NEW PRODUCT VALIDATION
     if (
       !name ||
       !description ||
@@ -71,7 +81,7 @@ export async function POST(request) {
       )
     }
 
-    // ================= 4️⃣ UPLOAD IMAGES =================
+    // 📸 UPLOAD IMAGES
     const imagesUrl = await Promise.all(
       images.map(async (image) => {
         const buffer = Buffer.from(await image.arrayBuffer())
@@ -92,7 +102,7 @@ export async function POST(request) {
       })
     )
 
-    // ================= 5️⃣ CREATE PRODUCT =================
+    // 🧾 CREATE PRODUCT
     await prisma.product.create({
       data: {
         name,
@@ -116,6 +126,7 @@ export async function POST(request) {
     return NextResponse.json({ error: error.message }, { status: 400 })
   }
 }
+
 
 
 
