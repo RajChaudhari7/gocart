@@ -263,9 +263,13 @@ export default function StoreAddProduct() {
                     <input
                         type="text"
                         value={productInfo.barcode}
-                        onChange={(e) =>
-                            setProductInfo({ ...productInfo, barcode: e.target.value })
-                        }
+                        onChange={(e) => {
+                            const value = e.target.value.replace(/\s/g, "") // 🔥 remove spaces
+                            setProductInfo(prev => ({
+                                ...prev,
+                                barcode: value,
+                            }))
+                        }}
                         onBlur={handleBarcodeLookup}
                         placeholder="Scan or enter barcode"
                         className="w-full mt-1 p-3 border rounded-lg"

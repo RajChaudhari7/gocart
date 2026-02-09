@@ -5,20 +5,20 @@ import { NextResponse } from "next/server"
 
 export async function GET(req, { params }) {
   try {
-    const { barcode } = params
+    let { barcode } = params
 
     if (!barcode) {
-      return NextResponse.json({ found: false }, { status: 200 })
+      return NextResponse.json({ found: false })
     }
 
-    const { userId } = auth()
+    barcode = barcode.trim() // 🔥 VERY IMPORTANT
 
+    const { userId } = auth()
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     const storeId = await authSeller(userId)
-
     if (!storeId) {
       return NextResponse.json({ error: "Store not found" }, { status: 403 })
     }
@@ -32,19 +32,14 @@ export async function GET(req, { params }) {
       },
     })
 
-    if (!product) {
-      return NextResponse.json({ found: false }, { status: 200 })
-    }
+    console.log("LOOKUP:", { barcode, storeId, found: !!product })
 
     return NextResponse.json({
-      found: true,
-      product,
+      found: !!product,
+      product: product || null,
     })
   } catch (err) {
     console.error("BARCODE LOOKUP ERROR:", err)
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: "Server error" }, { status: 500 })
   }
 }
