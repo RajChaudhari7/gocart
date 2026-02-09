@@ -1,41 +1,46 @@
 import prisma from "@/lib/prisma"
 import { authSeller } from "@/middlewares/authSeller"
-import { auth } from "@clerk/nextjs/server"
+import { getAuth } from "@clerk/nextjs/server"
 import { NextResponse } from "next/server"
 
 export async function GET(req, { params }) {
-    try {
-        let { barcode } = params
-        if (!barcode) {
-            return NextResponse.json({ found: false })
-        }
+  try {
+    // ✅ FIX: param name MUST match folder name
+    let { code } = params
 
-        barcode = barcode.trim() // 🔥 REQUIRED
-
-        const { userId } = getAuth(req)
-        const storeId = await authSeller(userId)
-
-        if (!storeId) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-        }
-
-        const product = await prisma.product.findUnique({
-            where: {
-                barcode_storeId: {
-                    barcode,
-                    storeId,
-                },
-            },
-        })
-
-        console.log("LOOKUP:", barcode, "FOUND:", !!product)
-
-        return NextResponse.json({
-            found: !!product,
-            product: product || null,
-        })
-    } catch (err) {
-        console.error("BARCODE LOOKUP ERROR:", err)
-        return NextResponse.json({ error: "Server error" }, { status: 500 })
+    if (!code) {
+      return NextResponse.json({ found: false })
     }
+
+    const barcode = code.trim()
+
+    const { userId } = getAuth(req)
+    const storeId = await authSeller(userId)
+
+    if (!storeId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const product = await prisma.product.findUnique({
+      where: {
+        barcode_storeId: {
+          barcode,
+          storeId,
+        },
+      },
+    })
+
+    console.log("BARCODE LOOKUP:", barcode, "STORE:", storeId, "FOUND:", !!product)
+
+    return NextResponse.json({
+      found: Boolean(product),
+      product: product ?? null,
+    })
+  } catch (error) {
+    console.error("BARCODE LOOKUP ERROR:", error)
+    return NextResponse.json(
+      { error: "Server error" },
+      { status: 500 }
+    )
+  }
 }
