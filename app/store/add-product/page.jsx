@@ -33,7 +33,9 @@ export default function StoreAddProduct() {
     const [customCategory, setCustomCategory] = useState("")
     const [discount, setDiscount] = useState(0)
     const [barcodeExists, setBarcodeExists] = useState(false)
-    const [barcodeChecked, setBarcodeChecked] = useState(false)
+    const [scanning, setScanning] = useState(false)
+    const [videoStream, setVideoStream] = useState(null)
+
 
 
 
@@ -167,6 +169,62 @@ export default function StoreAddProduct() {
         }
     }
 
+    const startBarcodeScan = async () => {
+        if (!("BarcodeDetector" in window)) {
+            toast.error("Barcode scanning not supported on this browser")
+            return
+        }
+
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: "environment" }
+            })
+
+            setVideoStream(stream)
+            setScanning(true)
+
+            const video = document.getElementById("barcode-video")
+            video.srcObject = stream
+            video.play()
+
+            const barcodeDetector = new BarcodeDetector({
+                formats: ["ean_13", "ean_8", "code_128", "upc_a", "upc_e"]
+            })
+
+            const scanInterval = setInterval(async () => {
+                if (!video || video.readyState !== 4) return
+
+                const barcodes = await barcodeDetector.detect(video)
+
+                if (barcodes.length > 0) {
+                    const scannedCode = barcodes[0].rawValue
+
+                    clearInterval(scanInterval)
+                    stopBarcodeScan()
+
+                    setProductInfo(prev => ({
+                        ...prev,
+                        barcode: scannedCode
+                    }))
+
+                    handleBarcodeLookup(scannedCode)
+                }
+            }, 500)
+        } catch (error) {
+            console.error(error)
+            toast.error("Camera access denied")
+        }
+    }
+
+    const stopBarcodeScan = () => {
+        if (videoStream) {
+            videoStream.getTracks().forEach(track => track.stop())
+        }
+        setScanning(false)
+        setVideoStream(null)
+    }
+
+
 
 
     const onSubmitHandler = async (e) => {
@@ -272,23 +330,50 @@ export default function StoreAddProduct() {
                 {/* Barcode */}
                 <div>
                     <label className="text-sm">Barcode</label>
-                    <input
-                        type="text"
-                        value={productInfo.barcode}
-                        onChange={(e) => {
-                            const value = e.target.value.replace(/\s/g, "")
-                            setProductInfo(prev => ({
-                                ...prev,
-                                barcode: value,
-                            }))
-                            setBarcodeExists(false) // 🔥 reset when barcode changes
-                        }}
-                        onBlur={() => handleBarcodeLookup(productInfo.barcode)} // ✅ REQUIRED
-                        placeholder="Scan or enter barcode"
-                        className="w-full mt-1 p-3 border rounded-lg"
-                    />
 
+                    <div className="flex gap-2">
+                        <input
+                            type="text"
+                            value={productInfo.barcode}
+                            onChange={(e) => {
+                                const value = e.target.value.replace(/\s/g, "")
+                                setProductInfo(prev => ({
+                                    ...prev,
+                                    barcode: value,
+                                }))
+                                setBarcodeExists(false)
+                            }}
+                            onBlur={() => handleBarcodeLookup(productInfo.barcode)}
+                            placeholder="Scan or enter barcode"
+                            className="flex-1 mt-1 p-3 border rounded-lg"
+                        />
+
+                        <button
+                            type="button"
+                            onClick={startBarcodeScan}
+                            className="mt-1 px-4 rounded-lg bg-slate-900 text-white text-sm"
+                        >
+                            📷 Scan
+                        </button>
+                    </div>
+
+                    {scanning && (
+                        <div className="mt-3 relative">
+                            <video
+                                id="barcode-video"
+                                className="w-full rounded-lg border"
+                            />
+                            <button
+                                type="button"
+                                onClick={stopBarcodeScan}
+                                className="absolute top-2 right-2 bg-red-600 text-white text-xs px-3 py-1 rounded"
+                            >
+                                Stop
+                            </button>
+                        </div>
+                    )}
                 </div>
+
 
 
                 {/* Name */}
