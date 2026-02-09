@@ -22,7 +22,7 @@ const RatingModal = ({ order, onClose, onSuccess }) => {
   const [submitting, setSubmitting] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
 
-  // ✅ Safely get first product from order
+  // ✅ Safely get first order item
   const firstItem = useMemo(() => {
     return order?.orderItems?.[0] || null
   }, [order])
@@ -41,11 +41,11 @@ const RatingModal = ({ order, onClose, onSuccess }) => {
       return
     }
 
-    setPhotos(prev => [...prev, ...files])
+    setPhotos((prev) => [...prev, ...files])
   }
 
   const removePhoto = (index) => {
-    setPhotos(prev => prev.filter((_, i) => i !== index))
+    setPhotos((prev) => prev.filter((_, i) => i !== index))
   }
 
   const handleSubmit = async () => {
@@ -64,28 +64,33 @@ const RatingModal = ({ order, onClose, onSuccess }) => {
       return
     }
 
+    const toastId = toast.loading('Submitting...')
+    setSubmitting(true)
+
     try {
-      setSubmitting(true)
       const token = await getToken()
 
       const formData = new FormData()
-      formData.append('productId', firstItem.product.id)
+      formData.append('productId', firstItem.productId) // ✅ FIXED
       formData.append('orderId', order.id)
-      formData.append('rating', rating)
+      formData.append('rating', rating.toString())
       formData.append('review', review)
 
-      photos.forEach(photo => formData.append('photos', photo))
+      photos.forEach((photo) => {
+        formData.append('photos', photo)
+      })
 
       const { data } = await axios.post('/api/rating', formData, {
         headers: {
           Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
         },
       })
 
       dispatch(addRating(data.rating))
-      toast.success(data.message || 'Rating submitted')
+      toast.success(data.message || 'Rating submitted', { id: toastId })
 
-      // ✅ Reset
+      // ✅ Reset state
       setRating(0)
       setReview('')
       setPhotos([])
@@ -94,7 +99,10 @@ const RatingModal = ({ order, onClose, onSuccess }) => {
       onClose()
     } catch (error) {
       console.error('RATING ERROR:', error)
-      toast.error(error?.response?.data?.error || error.message)
+      toast.error(
+        error?.response?.data?.error || error.message,
+        { id: toastId }
+      )
     } finally {
       setSubmitting(false)
     }
@@ -205,11 +213,7 @@ const RatingModal = ({ order, onClose, onSuccess }) => {
           {/* 🚀 Submit */}
           <motion.button
             disabled={submitting}
-            onClick={() =>
-              toast.promise(handleSubmit(), {
-                loading: 'Submitting...',
-              })
-            }
+            onClick={handleSubmit}
             className="w-full bg-yellow-400 hover:bg-yellow-500 disabled:opacity-50 text-gray-900 font-semibold py-2 rounded-2xl transition"
             whileTap={{ scale: 0.95 }}
           >

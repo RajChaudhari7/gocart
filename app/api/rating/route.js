@@ -1,4 +1,4 @@
-export const runtime = "nodejs";
+
 
 import prisma from "@/lib/prisma"
 import { getAuth } from "@clerk/nextjs/server"
@@ -101,10 +101,11 @@ export async function POST(request) {
       const buffer = Buffer.from(await file.arrayBuffer())
 
       const upload = await imagekit.upload({
-        file: buffer,
+        file: buffer.toString("base64"), // 🔥 THIS
         fileName: `review-${orderId}-${Date.now()}-${file.name}`,
         folder: "/reviews",
       })
+
 
       uploadedUrls.push(upload.url)
     }
