@@ -24,22 +24,22 @@ export async function POST(request) {
     const price = Number(formData.get("price"))
     const quantity = Number(formData.get("quantity"))
     const category = formData.get("category")
+    const barcode = formData.get("barcode")
     const images = formData.getAll("images")
-    const barcode = formData.get("barcode") || null
 
-    if (!barcode || quantity <= 0) {
+    if (!barcode) {
       return NextResponse.json(
-        { error: "Barcode and quantity are required" },
+        { error: "Barcode is required" },
         { status: 400 }
       )
     }
 
-    // 🔍 CHECK IF PRODUCT ALREADY EXISTS
-    // 1️⃣ CHECK BARCODE FIRST
+    // ================= 1️⃣ CHECK BARCODE =================
     const existingProduct = await prisma.product.findFirst({
       where: { barcode, storeId },
     })
 
+    // ================= 2️⃣ BARCODE EXISTS → ONLY UPDATE STOCK =================
     if (existingProduct) {
       const incrementBy = quantity > 0 ? quantity : 1
 
@@ -51,11 +51,12 @@ export async function POST(request) {
       })
 
       return NextResponse.json({
-        message: "Product exists. Quantity updated ✅",
+        message: "Product exists. Quantity increased ✅",
+        mode: "INCREMENT",
       })
     }
 
-    // 2️⃣ VALIDATE NEW PRODUCT
+    // ================= 3️⃣ BARCODE NEW → FULL VALIDATION =================
     if (
       !name ||
       !description ||
@@ -70,9 +71,7 @@ export async function POST(request) {
       )
     }
 
-    // 3️⃣ UPLOAD IMAGES + CREATE PRODUCT
-
-
+    // ================= 4️⃣ UPLOAD IMAGES =================
     const imagesUrl = await Promise.all(
       images.map(async (image) => {
         const buffer = Buffer.from(await image.arrayBuffer())
@@ -93,13 +92,14 @@ export async function POST(request) {
       })
     )
 
+    // ================= 5️⃣ CREATE PRODUCT =================
     await prisma.product.create({
       data: {
         name,
         description,
         mrp,
         price,
-        quantity,
+        quantity: quantity > 0 ? quantity : 1,
         category,
         images: imagesUrl,
         storeId,
@@ -109,12 +109,14 @@ export async function POST(request) {
 
     return NextResponse.json({
       message: "New product added successfully 🎉",
+      mode: "CREATE",
     })
   } catch (error) {
     console.error(error)
     return NextResponse.json({ error: error.message }, { status: 400 })
   }
 }
+
 
 
 // ================= GET SELLER PRODUCTS =================
