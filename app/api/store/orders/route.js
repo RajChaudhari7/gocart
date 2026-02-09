@@ -63,6 +63,31 @@ export async function POST(request) {
       )
     }
 
+    // ❌ BLOCK DELIVERY WITHOUT OTP VERIFICATION
+    if (status === "DELIVERED") {
+      if (order.status !== "DELIVERY_INITIATED") {
+        return NextResponse.json(
+          { error: "Order must be in DELIVERY_INITIATED state" },
+          { status: 400 }
+        )
+      }
+
+      if (!order.deliveryOtp) {
+        return NextResponse.json(
+          { error: "Delivery OTP not generated" },
+          { status: 400 }
+        )
+      }
+
+      if (!order.otpVerified) {
+        return NextResponse.json(
+          { error: "Delivery OTP not verified" },
+          { status: 400 }
+        )
+      }
+    }
+
+
     // ================= TRANSACTION =================
     let plainOtp = null
 
