@@ -1,39 +1,35 @@
+import prisma from "@/lib/prisma"
 import { NextResponse } from "next/server"
+import { getAuth } from "@clerk/nextjs/server"
+import { authSeller } from "@/middlewares/authSeller"
 
 export async function GET(req, { params }) {
-    try {
-        const { code } = params
+  const { userId } = getAuth(req)
+  const storeId = await authSeller(userId)
 
-        // OpenFoodFacts (FREE, no auth)
-        const res = await fetch(
-            `https://world.openfoodfacts.org/api/v0/product/${code}.json`
-        )
+  if (!storeId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
 
-        const data = await res.json()
+  const { barcode } = params
 
-        if (!data.product) {
-            return NextResponse.json(
-                { error: "Product not found for this barcode" },
-                { status: 404 }
-            )
-        }
+  if (!barcode) {
+    return NextResponse.json({ error: "Barcode required" }, { status: 400 })
+  }
 
-        const product = data.product
+  const product = await prisma.product.findUnique({
+    where: { barcode }
+  })
 
-        return NextResponse.json({
-            name: product.product_name || "",
-            description:
-                product.ingredients_text ||
-                product.generic_name ||
-                "",
-            category: product.categories_tags?.[0]?.replace("en:", "") || "Others",
-            image: product.image_url || null,
-        })
+  if (!product) {
+    return NextResponse.json({ found: false })
+  }
 
-    } catch (error) {
-        return NextResponse.json(
-            { error: "Barcode lookup failed" },
-            { status: 500 }
-        )
-    }
+  return NextResponse.json({
+    found: true,
+    name: product.name,
+    description: product.description,
+    category: product.category,
+    image: product.images?.[0] || null
+  })
 }
