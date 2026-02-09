@@ -275,21 +275,23 @@ export default function StoreAddProduct() {
                         value={productInfo.barcode}
                         onChange={(e) => {
                             const value = e.target.value.replace(/\s/g, "")
-                            setProductInfo(prev => ({
-                                ...prev,
-                                barcode: value,
-                            }))
+                            setProductInfo(prev => ({ ...prev, barcode: value }))
                         }}
-                        onBlur={() => handleBarcodeLookup(productInfo.barcode)} // ✅ FIX
                         onKeyDown={(e) => {
                             if (e.key === "Enter") {
                                 e.preventDefault()
-                                handleBarcodeLookup(productInfo.barcode) // ✅ scanner support
+                                handleBarcodeLookup(productInfo.barcode)
+                            }
+                        }}
+                        onBlur={() => {
+                            if (productInfo.barcode.length >= 6) {
+                                handleBarcodeLookup(productInfo.barcode)
                             }
                         }}
                         placeholder="Scan or enter barcode"
                         className="w-full mt-1 p-3 border rounded-lg"
                     />
+
                 </div>
 
                 {/* Name */}
