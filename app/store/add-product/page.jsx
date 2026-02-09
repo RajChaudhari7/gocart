@@ -137,6 +137,7 @@ export default function StoreAddProduct() {
 
         try {
             const token = await getToken()
+
             const { data } = await axios.get(
                 `/api/store/barcode/${cleanBarcode}`,
                 { headers: { Authorization: `Bearer ${token}` } }
@@ -154,14 +155,14 @@ export default function StoreAddProduct() {
                     category: data.product.category,
                     mrp: data.product.mrp,
                     price: data.product.price,
-                    quantity: "" // force seller to enter added stock
+                    quantity: "", // 🔥 seller adds new stock
                 }))
             } else {
                 setBarcodeExists(false)
                 toast("New product. Fill details ✍️", { icon: "ℹ️" })
             }
-        } catch (err) {
-            console.error(err)
+        } catch (error) {
+            console.error("BARCODE LOOKUP ERROR:", error)
             toast.error("Barcode lookup failed")
         }
     }
@@ -275,16 +276,18 @@ export default function StoreAddProduct() {
                         type="text"
                         value={productInfo.barcode}
                         onChange={(e) => {
-                            const clean = e.target.value.replace(/\s/g, "")
+                            const value = e.target.value.replace(/\s/g, "")
                             setProductInfo(prev => ({
                                 ...prev,
-                                barcode: clean
+                                barcode: value,
                             }))
+                            setBarcodeExists(false) // 🔥 reset when barcode changes
                         }}
-                        onBlur={() => handleBarcodeLookup(productInfo.barcode)}
+                        onBlur={() => handleBarcodeLookup(productInfo.barcode)} // ✅ REQUIRED
                         placeholder="Scan or enter barcode"
                         className="w-full mt-1 p-3 border rounded-lg"
                     />
+
                 </div>
 
 
