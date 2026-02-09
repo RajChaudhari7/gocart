@@ -62,12 +62,15 @@ enum PaymentMethod {
 // ✅ UPDATED ORDER MODEL
 ////////////////////////////////////
 model Order {
-  id     String      @id @default(cuid())
-  total  Float
-  status OrderStatus @default(ORDER_PLACED)
+  id String @id @default(cuid())
 
-  /// 🔥 TRACKING HISTORY FOR DATE & TIME
-  statusHistory Json @default("{}")
+  // 🔥 SOFT DELETE
+  deletedAt     DateTime?
+  stockRestored Boolean   @default(false)
+
+  total         Float
+  status        OrderStatus @default(ORDER_PLACED)
+  statusHistory Json        @default("{}")
 
   deliveryOtp       String?
   deliveryOtpExpiry DateTime?
