@@ -177,6 +177,7 @@ const RatingModal = ({ order, onClose, onSuccess }) => {
             </span>
             <input
               type="file"
+              name = "photos"
               accept="image/*"
               multiple
               onChange={handlePhotoChange}
