@@ -17,26 +17,6 @@ const STATUS_FLOW = [
   "DELIVERED"
 ]
 
-async function restoreStockIfNeeded(tx, order) {
-  if (order.stockRestored) return
-
-  for (const item of order.orderItems) {
-    await tx.product.update({
-      where: { id: item.productId },
-      data: {
-        quantity: { increment: item.quantity },
-        inStock: true
-      }
-    })
-  }
-
-  await tx.order.update({
-    where: { id: order.id },
-    data: { stockRestored: true }
-  })
-}
-
-
 // ================= UPDATE SELLER ORDER STATUS =================
 export async function POST(request) {
   try {
@@ -49,22 +29,26 @@ export async function POST(request) {
 
     const { orderId, status } = await request.json()
 
+    if (!orderId || !status) {
+      return NextResponse.json({ error: "Invalid request" }, { status: 400 })
+    }
+
     const order = await prisma.order.findUnique({
       where: { id: orderId },
       include: {
-        orderItems: true,
+        orderItems: { include: { product: true } },
         user: true,
         store: true
       }
     })
 
-    if (!order || order.storeId !== storeId || order.deletedAt) {
+    if (!order || order.storeId !== storeId) {
       return NextResponse.json({ error: "Order not found" }, { status: 404 })
     }
 
     if (["CANCELLED", "DELIVERED"].includes(order.status)) {
       return NextResponse.json(
-        { error: "Order already finalized" },
+        { error: "Order status cannot be changed once finalized" },
         { status: 400 }
       )
     }
@@ -79,31 +63,42 @@ export async function POST(request) {
       )
     }
 
+    // ================= TRANSACTION =================
     let plainOtp = null
 
     await prisma.$transaction(async (tx) => {
 
-      // 🔐 DELIVERY OTP
+      // 🔥 GENERATE OTP SAFELY INSIDE TRANSACTION
       if (status === "DELIVERY_INITIATED") {
         plainOtp = generateOtp()
+        const hashedOtp = hashOtp(plainOtp)
+
         await tx.order.update({
           where: { id: orderId },
           data: {
-            deliveryOtp: hashOtp(plainOtp),
+            deliveryOtp: hashedOtp,
             deliveryOtpExpiry: new Date(Date.now() + 10 * 60 * 1000),
             otpVerified: false,
-            otpVerifyAttempts: 0,
-            otpResendCount: 0
+            otpVerifyAttempts: 0,   // ✅ RESET
+            otpResendCount: 0      // ✅ RESET
           }
         })
       }
 
-
       // RESTOCK ON CANCEL
       if (status === "CANCELLED") {
-        await restoreStockIfNeeded(tx, order)
+        for (const item of order.orderItems) {
+          await tx.product.update({
+            where: { id: item.productId },
+            data: {
+              quantity: { increment: item.quantity },
+              inStock: true
+            }
+          })
+        }
       }
 
+      // UPDATE STATUS + HISTORY
       await tx.order.update({
         where: { id: orderId },
         data: {
@@ -274,56 +269,6 @@ export async function POST(request) {
   }
 }
 
-export async function DELETE(request) {
-  try {
-    const { userId } = getAuth(request)
-    const storeId = await authSeller(userId)
-
-    if (!storeId) {
-      return NextResponse.json({ error: "Not authorized" }, { status: 401 })
-    }
-
-    const { orderId } = await request.json()
-
-    const order = await prisma.order.findUnique({
-      where: { id: orderId },
-      include: { orderItems: true }
-    })
-
-    if (!order || order.storeId !== storeId || order.deletedAt) {
-      return NextResponse.json({ error: "Order not found" }, { status: 404 })
-    }
-
-    if (order.status === "DELIVERED") {
-      return NextResponse.json(
-        { error: "Delivered orders cannot be deleted" },
-        { status: 400 }
-      )
-    }
-
-    await prisma.$transaction(async (tx) => {
-      await restoreStockIfNeeded(tx, order)
-
-      await tx.order.update({
-        where: { id: orderId },
-        data: {
-          deletedAt: new Date()
-        }
-      })
-    })
-
-    return NextResponse.json({
-      message: "Order deleted safely"
-    })
-
-  } catch (error) {
-    console.error(error)
-    return NextResponse.json({ error: error.message }, { status: 400 })
-  }
-}
-
-
-
 // ================= GET ALL SELLER ORDERS =================
 export async function GET(request) {
   try {
@@ -335,10 +280,7 @@ export async function GET(request) {
     }
 
     const orders = await prisma.order.findMany({
-      where: {
-        storeId,
-        deletedAt: null
-      },
+      where: { storeId },
       include: {
         user: true,
         address: true,
@@ -351,7 +293,6 @@ export async function GET(request) {
     const activeOrdersCount = await prisma.order.count({
       where: {
         storeId,
-        deletedAt: null,
         NOT: { status: { in: ["DELIVERED", "CANCELLED"] } }
       }
     })

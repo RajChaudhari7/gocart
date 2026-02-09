@@ -16,7 +16,7 @@ const STATUS_FLOW = [
     "SHIPPED",
     "OUT_FOR_DELIVERY",
     "DELIVERY_INITIATED",
-    "DELIVERED",      // ✅ ADD THIS
+     "DELIVERED",      // ✅ ADD THIS
     "CANCELLED"
 ]
 
@@ -136,34 +136,6 @@ export default function StoreOrders() {
             toast.error(error?.response?.data?.error || "OTP verification failed")
         } finally {
             setVerifyingOtp(false)
-        }
-    }
-
-    /* ================= DELETE ORDER ================= */
-    const deleteOrder = async (order) => {
-        if (order.status === "DELIVERED") {
-            toast.error("Delivered orders cannot be deleted")
-            return
-        }
-
-        if (!confirm("This will delete the order and restore stock. Continue?")) return
-
-        try {
-            const token = await getToken()
-
-            await axios.delete(
-                "/api/store/orders",
-                {
-                    headers: { Authorization: `Bearer ${token}` },
-                    data: { orderId: order.id } // 👈 DELETE uses body like this
-                }
-            )
-
-            toast.success("Order deleted and stock restored")
-            fetchOrders()
-
-        } catch (error) {
-            toast.error(error?.response?.data?.error || error.message)
         }
     }
 
@@ -457,19 +429,6 @@ export default function StoreOrders() {
                                         Cancel
                                     </button>
                                 )}
-
-                                {order.status !== "DELIVERED" && (
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation()
-                                            deleteOrder(order)
-                                        }}
-                                        className="px-3 py-1 bg-red-700 text-white rounded text-sm hover:bg-red-800"
-                                    >
-                                        Delete
-                                    </button>
-                                )}
-
 
                                 {/* Download PDF outside modal */}
                                 <button
