@@ -9,6 +9,8 @@ import { useAuth } from "@clerk/nextjs"
 import Loading from "../Loading"
 import SellerNavbar from "./StoreNavbar"
 import SellerSidebar from "./StoreSidebar"
+import MobileBreadcrumbs from "./MobileBreadcrumbs"
+
 
 const StoreLayout = ({ children }) => {
   const { getToken } = useAuth()
@@ -102,6 +104,9 @@ const StoreLayout = ({ children }) => {
       {/* Top Navbar */}
       <SellerNavbar />
 
+      {/* Mobile Breadcrumbs */}
+      <MobileBreadcrumbs />
+
       {/* Body */}
       <div className="flex flex-1 overflow-hidden">
 
@@ -114,7 +119,7 @@ const StoreLayout = ({ children }) => {
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-10 py-6">
+        <main className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-10 py-6 pb-24">
           {children}
         </main>
       </div>
