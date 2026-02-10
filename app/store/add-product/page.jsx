@@ -10,6 +10,7 @@ import {
     BrowserMultiFormatReader,
     BarcodeFormat,
     NotFoundException,
+
 } from "@zxing/browser";
 
 
@@ -187,28 +188,24 @@ export default function StoreAddProduct() {
         const initializeScanner = async () => {
             try {
                 const videoElement = document.getElementById("barcode-video");
-                if (!videoElement) throw new Error("Video element not found");
+                if (!videoElement) {
+                    throw new Error("Video element not found");
+                }
 
                 const devices = await BrowserMultiFormatReader.listVideoInputDevices();
-                if (devices.length === 0) throw new Error("No camera found or permission denied");
+                if (devices.length === 0) {
+                    throw new Error("No camera found or permission denied");
+                }
 
                 let selectedDeviceId = devices[0].deviceId;
                 const rearCamera = devices.find((device) =>
                     /back|rear|environment/i.test(device.label)
                 );
-                if (rearCamera) selectedDeviceId = rearCamera.deviceId;
+                if (rearCamera) {
+                    selectedDeviceId = rearCamera.deviceId;
+                }
 
                 codeReader = new BrowserMultiFormatReader();
-
-                const formats = [
-                    BarcodeFormat.EAN_13,
-                    BarcodeFormat.UPC_A,
-                    BarcodeFormat.CODE_128,
-                    BarcodeFormat.QR_CODE,
-                    BarcodeFormat.CODE_39,
-                    BarcodeFormat.ITF,
-                    BarcodeFormat.EAN_8,
-                ];
 
                 await codeReader.decodeFromVideoDevice(
                     selectedDeviceId,
@@ -232,19 +229,13 @@ export default function StoreAddProduct() {
                             handleBarcodeLookup(scannedCode);
                         }
 
-                        if (error) {
-                            // Check if the error message indicates that no barcode was found
-                            if (error.message.includes("No MultiFormat Readers were able to detect the code")) {
-                                return;
-                            }
+                        if (error && !error.message.includes("No MultiFormat Readers were able to detect the code")) {
                             console.error("Barcode scan error:", error);
                             toast.error("Barcode scanning failed");
                             setScanning(false);
                         }
                     }
                 );
-
-                codeReader.getDecodeHintManager().setFormats(formats);
 
             } catch (err) {
                 console.error("SCAN ERROR:", err);
@@ -271,6 +262,7 @@ export default function StoreAddProduct() {
             }
         };
     }, [scanning]);
+
 
 
     const onSubmitHandler = async (e) => {
