@@ -75,7 +75,7 @@ const ProductCard = ({ product, storeIsActive }) => {
 
   // ================= 3D TILT =================
   const handleMouseMove = (e) => {
-    if (!cardRef.current || isOutOfStock) return
+    if (!cardRef.current || isOutOfStock || isShopClosed) return
 
     const rect = cardRef.current.getBoundingClientRect()
     const x = e.clientX - rect.left
@@ -212,7 +212,7 @@ const ProductCard = ({ product, storeIsActive }) => {
           )}
 
           {/* VIEW ICON */}
-          {!isOutOfStock && (
+          {!isOutOfStock && !isShopClosed && (
             <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition z-10">
               <Link
                 href={`/product/${product.id}`}
