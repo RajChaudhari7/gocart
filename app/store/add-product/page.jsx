@@ -181,26 +181,34 @@ export default function StoreAddProduct() {
     };
 
     useEffect(() => {
-        let codeReader = null;
+        let codeReader;
 
         const initializeScanner = async () => {
             try {
                 const videoElement = document.getElementById("barcode-video");
-                if (!videoElement) throw new Error("Video element not found");
+                if (!videoElement) {
+                    throw new Error("Video element not found");
+                }
 
+                // Request camera permissions and list video input devices
                 const devices = await BrowserMultiFormatReader.listVideoInputDevices();
-                if (devices.length === 0) throw new Error("No camera found or permission denied");
+                if (devices.length === 0) {
+                    throw new Error("No camera found or permission denied");
+                }
 
+                // Prefer the rear camera if available
                 let selectedDeviceId = devices[0].deviceId;
-                const rearCamera = devices.find(device =>
+                const rearCamera = devices.find((device) =>
                     /back|rear|environment/i.test(device.label)
                 );
-                if (rearCamera) selectedDeviceId = rearCamera.deviceId;
+                if (rearCamera) {
+                    selectedDeviceId = rearCamera.deviceId;
+                }
 
-                // Initialize with supported barcode formats
+                // Initialize the barcode reader
                 codeReader = new BrowserMultiFormatReader();
 
-                // Explicitly set the formats to detect
+                // Define the barcode formats you want to detect
                 const formats = [
                     BarcodeFormat.EAN_13,
                     BarcodeFormat.UPC_A,
@@ -211,22 +219,23 @@ export default function StoreAddProduct() {
                     BarcodeFormat.EAN_8,
                 ];
 
-                // Decode from the video device with specified formats
+                // Start decoding from the video device
                 await codeReader.decodeFromVideoDevice(
                     selectedDeviceId,
                     videoElement,
                     (result, error) => {
                         if (result) {
                             const scannedCode = result.getText();
-                            console.log("BARCODE SCANNED:", scannedCode);
+                            console.log("Scanned Barcode:", scannedCode);
 
+                            // Stop the video stream
                             if (videoElement.srcObject) {
-                                videoElement.srcObject.getTracks().forEach(track => track.stop());
+                                videoElement.srcObject.getTracks().forEach((track) => track.stop());
                                 videoElement.srcObject = null;
                             }
 
                             setScanning(false);
-                            setProductInfo(prev => ({
+                            setProductInfo((prev) => ({
                                 ...prev,
                                 barcode: scannedCode,
                             }));
@@ -234,19 +243,17 @@ export default function StoreAddProduct() {
                             handleBarcodeLookup(scannedCode);
                         }
 
-                        if (error) {
-                            if (
-                                error.name === "NotFoundException" ||
-                                error.message.includes("NotFoundException")
-                            ) return; // Ignore if no barcode is found yet
-
+                        if (error && !(error instanceof NotFoundException)) {
                             console.error("Barcode scan error:", error);
                             toast.error("Barcode scanning failed");
                             setScanning(false);
                         }
-                    },
-                    { formats } // Pass the formats here
+                    }
                 );
+
+                // Set the formats to detect
+                codeReader.getDecodeHintManager().setFormats(formats);
+
             } catch (err) {
                 console.error("SCAN ERROR:", err);
                 toast.error(
@@ -387,12 +394,12 @@ export default function StoreAddProduct() {
                             type="text"
                             value={productInfo.barcode}
                             onChange={(e) => {
-                                const value = e.target.value.replace(/\s/g, "")
-                                setProductInfo(prev => ({
+                                const value = e.target.value.replace(/\s/g, "");
+                                setProductInfo((prev) => ({
                                     ...prev,
                                     barcode: value,
-                                }))
-                                setBarcodeExists(false)
+                                }));
+                                setBarcodeExists(false);
                             }}
                             onBlur={() => handleBarcodeLookup(productInfo.barcode)}
                             placeholder="Scan or enter barcode"
@@ -408,7 +415,6 @@ export default function StoreAddProduct() {
                         </button>
                     </div>
 
-                    {/* Add this video element */}
                     {scanning && (
                         <div className="mt-3">
                             <video
@@ -418,7 +424,6 @@ export default function StoreAddProduct() {
                             />
                         </div>
                     )}
-
                 </div>
 
 
