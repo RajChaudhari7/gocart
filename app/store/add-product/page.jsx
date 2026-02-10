@@ -181,85 +181,69 @@ export default function StoreAddProduct() {
     };
 
     useEffect(() => {
-        let codeReader = null;
+        let codeReader;
 
-        if (scanning) {
-            const initializeScanner = async () => {
-                try {
-                    const videoElement = document.getElementById("barcode-video");
-                    if (!videoElement) throw new Error("Video element not found");
+        const initializeScanner = async () => {
+            try {
+                const videoElement = document.getElementById("barcode-video");
+                if (!videoElement) throw new Error("Video element not found");
 
-                    const devices = await BrowserMultiFormatReader.listVideoInputDevices();
-                    if (devices.length === 0) throw new Error("No camera found");
+                const devices = await BrowserMultiFormatReader.listVideoInputDevices();
+                if (devices.length === 0) throw new Error("No camera found");
 
-                    let selectedDeviceId = devices[0].deviceId;
-                    const rearCamera = devices.find((device) =>
-                        /back|rear|environment/i.test(device.label)
-                    );
-                    if (rearCamera) selectedDeviceId = rearCamera.deviceId;
+                let selectedDeviceId = devices[0].deviceId;
+                const rearCamera = devices.find((device) =>
+                    /back|rear|environment/i.test(device.label)
+                );
+                if (rearCamera) selectedDeviceId = rearCamera.deviceId;
 
-                    // Initialize with supported formats and hints
-                    codeReader = new BrowserMultiFormatReader(
-                        undefined,
-                        {
-                            formats: [
-                                BarcodeFormat.EAN_13,
-                                BarcodeFormat.UPC_A,
-                                BarcodeFormat.CODE_128,
-                                BarcodeFormat.QR_CODE,
-                                BarcodeFormat.CODE_39,
-                                BarcodeFormat.ITF,
-                                BarcodeFormat.EAN_8,
-                            ],
-                            hints: new Map(),
-                        }
-                    );
+                codeReader = new BrowserMultiFormatReader();
 
-                    // Set the TRY_HARDER hint
-                    codeReader.hints.set(DecodeHintType.TRY_HARDER, true);
+                await codeReader.decodeFromVideoDevice(
+                    selectedDeviceId,
+                    videoElement,
+                    (result, error) => {
+                        if (result) {
+                            const scannedCode = result.getText();
+                            console.log("BARCODE SCANNED:", scannedCode);
 
-                    codeReader.decodeFromVideoDevice(
-                        selectedDeviceId,
-                        videoElement,
-                        (result, error) => {
-                            if (result) {
-                                const scannedCode = result.getText();
-                                console.log("BARCODE SCANNED:", scannedCode);
+                            if (videoElement.srcObject) {
+                                videoElement.srcObject.getTracks().forEach((track) => track.stop());
+                                videoElement.srcObject = null;
+                            }
 
-                                if (videoElement.srcObject) {
-                                    videoElement.srcObject.getTracks().forEach((track) => track.stop());
-                                    videoElement.srcObject = null;
-                                }
+                            setScanning(false);
+                            setProductInfo((prev) => ({
+                                ...prev,
+                                barcode: scannedCode,
+                            }));
 
-                                setScanning(false);
-                                setProductInfo((prev) => ({
-                                    ...prev,
-                                    barcode: scannedCode,
-                                }));
-
-                                handleBarcodeLookup(scannedCode);
+                            handleBarcodeLookup(scannedCode);
+                            if (codeReader) {
                                 codeReader.reset();
                             }
-
-                            if (error) {
-                                if (
-                                    error.name === "NotFoundException" ||
-                                    error.message.includes("NotFoundException")
-                                )
-                                    return;
-                                console.error("Barcode scan error:", error);
-                                toast.error("Barcode scanning failed");
-                                setScanning(false);
-                            }
                         }
-                    );
-                } catch (err) {
-                    console.error("SCAN ERROR:", err);
-                    toast.error("Barcode scanning failed: " + err.message);
-                    setScanning(false);
-                }
-            };
 
+                        if (error) {
+                            if (
+                                error.name === "NotFoundException" ||
+                                error.message.includes("NotFoundException")
+                            )
+                                return;
+                            console.error("Barcode scan error:", error);
+                            toast.error("Barcode scanning failed");
+                            setScanning(false);
+                        }
+                    }
+                );
+            } catch (err) {
+                console.error("SCAN ERROR:", err);
+                toast.error("Barcode scanning failed: " + err.message);
+                setScanning(false);
+            }
+        };
+
+        if (scanning) {
             initializeScanner();
         }
 
@@ -269,6 +253,7 @@ export default function StoreAddProduct() {
             }
         };
     }, [scanning]);
+
 
 
 
