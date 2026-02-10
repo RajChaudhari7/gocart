@@ -92,8 +92,8 @@ const StoreSidebar = ({ storeInfo, pendingOrdersCount = 0 }) => {
       </aside>
 
       {/* ================= MOBILE BOTTOM NAV ================= */}
-      <div className="sm:hidden fixed bottom-0 inset-x-0 z-50 bg-black/90 backdrop-blur-xl border-t border-white/10">
-        <div className="flex justify-around py-2">
+      <div className="sm:hidden fixed bottom-0 inset-x-0 z-50 bg-black border-t border-white/10">
+        <div className="flex justify-around items-center h-16">
           {sidebarLinks.map((link) => {
             const active = pathname === link.href
             const Icon = link.icon
@@ -102,30 +102,52 @@ const StoreSidebar = ({ storeInfo, pendingOrdersCount = 0 }) => {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`
-                  relative flex flex-col items-center gap-1 text-xs transition
-                  ${active ? 'text-emerald-400' : 'text-white/60'}
-                `}
+                className="relative flex flex-col items-center justify-center w-full"
               >
-                <Icon size={18} />
+                {/* Icon Container */}
+                <div
+                  className={`
+              relative flex items-center justify-center
+              w-10 h-10 rounded-xl transition-all duration-200
+              ${active
+                      ? 'bg-emerald-500 text-black scale-110'
+                      : 'text-white/60'}
+            `}
+                >
+                  <Icon size={20} />
 
-                {/* Mobile Badge */}
-                {link.badge > 0 && (
-                  <span className="
-                    absolute -top-1 -right-3
-                    bg-emerald-500 text-black text-[10px]
-                    px-1.5 rounded-full
-                  ">
-                    {link.badge}
-                  </span>
+                  {/* Badge */}
+                  {link.badge > 0 && (
+                    <span className="
+                absolute -top-1 -right-1
+                bg-emerald-400 text-black text-[10px]
+                px-1.5 rounded-full
+              ">
+                      {link.badge}
+                    </span>
+                  )}
+                </div>
+
+                {/* Label */}
+                <span
+                  className={`
+              mt-1 text-[11px] font-medium
+              ${active ? 'text-emerald-400' : 'text-white/60'}
+            `}
+                >
+                  {link.name}
+                </span>
+
+                {/* Active Indicator Line */}
+                {active && (
+                  <span className="absolute bottom-0 w-6 h-1 bg-emerald-400 rounded-full" />
                 )}
-
-                <span>{link.name}</span>
               </Link>
             )
           })}
         </div>
       </div>
+
     </>
   )
 }
