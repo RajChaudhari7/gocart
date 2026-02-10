@@ -7,7 +7,7 @@ import { ArrowRightIcon } from "lucide-react"
 import { useAuth } from "@clerk/nextjs"
 
 import Loading from "../Loading"
-import SellerSidebar from "./StoreSidebar"
+import StoreSidebar from "./StoreSidebar"
 
 const StoreLayout = ({ children }) => {
   const { getToken } = useAuth()
@@ -51,7 +51,7 @@ const StoreLayout = ({ children }) => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="min-h-screen flex items-center justify-center">
         <Loading />
       </div>
     )
@@ -60,15 +60,15 @@ const StoreLayout = ({ children }) => {
   if (!isSeller) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center text-center px-6">
-        <h1 className="text-2xl sm:text-4xl font-semibold text-slate-700">
-          You are not authorized to access this page
+        <h1 className="text-2xl font-semibold">
+          You are not authorized
         </h1>
 
         <Link
           href="/"
-          className="mt-8 inline-flex items-center gap-2 rounded-full bg-slate-900 text-white px-6 py-2 text-sm"
+          className="mt-8 inline-flex items-center gap-2 rounded-full bg-black text-white px-6 py-2 text-sm"
         >
-          Go to home <ArrowRightIcon size={16} />
+          Go home <ArrowRightIcon size={16} />
         </Link>
       </div>
     )
@@ -77,33 +77,23 @@ const StoreLayout = ({ children }) => {
   return (
     <div className="min-h-screen flex bg-slate-50">
 
-      {/* Desktop Sidebar */}
-      <aside className="hidden lg:block w-64 bg-black">
-        <SellerSidebar
-          storeInfo={storeInfo}
-          pendingOrdersCount={pendingOrdersCount}
-        />
-      </aside>
+      {/* SIDEBAR (DESKTOP + MOBILE HANDLED INSIDE) */}
+      <StoreSidebar
+        storeInfo={storeInfo}
+        pendingOrdersCount={pendingOrdersCount}
+      />
 
-      {/* Page Content */}
+      {/* PAGE CONTENT */}
       <main
         className="
           flex-1
           px-4 sm:px-6 lg:px-10
           py-6
-          pb-24 
+          pb-28
         "
       >
         {children}
       </main>
-
-      {/* Mobile Bottom Sidebar */}
-      <div className="lg:hidden">
-        <SellerSidebar
-          storeInfo={storeInfo}
-          pendingOrdersCount={pendingOrdersCount}
-        />
-      </div>
     </div>
   )
 }
