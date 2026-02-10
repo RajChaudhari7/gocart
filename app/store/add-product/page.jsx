@@ -178,73 +178,69 @@ export default function StoreAddProduct() {
 
     const startBarcodeScan = async () => {
         try {
-            setScanning(true)
+            setScanning(true);
 
-            const videoElement = document.getElementById("barcode-video")
+            const videoElement = document.getElementById("barcode-video");
+            if (!videoElement) throw new Error("Video element not found");
 
             // List video devices
-            const devices = await BrowserMultiFormatReader.listVideoInputDevices()
-            if (devices.length === 0) throw new Error("No camera found")
-
-            let selectedDeviceId = devices[0].deviceId
+            const devices = await BrowserMultiFormatReader.listVideoInputDevices();
+            if (devices.length === 0) throw new Error("No camera found");
 
             // Prefer rear camera if available
+            let selectedDeviceId = devices[0].deviceId;
             const rearCamera = devices.find(device =>
                 /back|rear|environment/i.test(device.label)
-            )
-            if (rearCamera) selectedDeviceId = rearCamera.deviceId
+            );
+            if (rearCamera) selectedDeviceId = rearCamera.deviceId;
 
-            const codeReader = new BrowserMultiFormatReader()
+            const codeReader = new BrowserMultiFormatReader();
 
-            // Use decodeFromVideoDevice with constraints for mobile
-            await codeReader.decodeFromVideoDevice(
+            // Start decoding from video
+            codeReader.decodeFromVideoDevice(
                 selectedDeviceId,
                 videoElement,
                 (result, error) => {
                     if (result) {
-                        const scannedCode = result.getText()
-                        console.log("BARCODE SCANNED:", scannedCode)
+                        const scannedCode = result.getText();
+                        console.log("BARCODE SCANNED:", scannedCode);
 
-                        const video = document.getElementById("barcode-video")
-                        if (video && video.srcObject) {
-                            video.srcObject.getTracks().forEach(track => track.stop())
+                        // Stop video stream
+                        if (videoElement.srcObject) {
+                            videoElement.srcObject.getTracks().forEach(track => track.stop());
+                            videoElement.srcObject = null;
                         }
 
-                        setScanning(false)
+                        setScanning(false);
 
                         setProductInfo(prev => ({
                             ...prev,
-                            barcode: scannedCode,
-                        }))
+                            barcode: scannedCode
+                        }));
 
-                        handleBarcodeLookup(scannedCode)
+                        handleBarcodeLookup(scannedCode);
+
+                        // Dispose reader
+                        codeReader.reset();
                     }
 
                     if (error) {
-                        // Ignore NotFoundException (occurs when no barcode is detected in current frame)
-                        if (error.message && error.message.includes("NotFoundException")) return
-
-                        console.error("Barcode scan error:", error)
-                        toast.error("Barcode scanning failed")
-                        codeReader.reset()
-                        setScanning(false)
-                    }
-
-                },
-                {
-                    video: {
-                        facingMode: "environment", // force rear camera
-                        width: { ideal: 1280 },
-                        height: { ideal: 720 }
+                        if (
+                            error.name === "NotFoundException" ||
+                            error.message.includes("NotFoundException")
+                        ) return; // ignore if no barcode found
+                        console.error("Barcode scan error:", error);
+                        toast.error("Barcode scanning failed");
                     }
                 }
-            )
+            );
         } catch (err) {
-            console.error("SCAN ERROR:", err)
-            toast.error("Barcode scanning failed: " + err.message)
-            setScanning(false)
+            console.error("SCAN ERROR:", err);
+            toast.error("Barcode scanning failed: " + err.message);
+            setScanning(false);
         }
-    }
+    };
+
 
     const onSubmitHandler = async (e) => {
         e.preventDefault()
