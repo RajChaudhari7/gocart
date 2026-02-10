@@ -9,8 +9,9 @@ import { toast } from "react-hot-toast"
 import {
     BrowserMultiFormatReader,
     BarcodeFormat,
-    DecodeHintType,
+    NotFoundException,
 } from "@zxing/browser";
+
 
 
 
@@ -407,7 +408,7 @@ export default function StoreAddProduct() {
                         </div>
                     )}
                 </div>
-                
+
                 {/* Name */}
                 <div>
                     <label className="text-sm">Name</label>
