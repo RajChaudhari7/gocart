@@ -177,69 +177,80 @@ export default function StoreAddProduct() {
     }
 
     const startBarcodeScan = async () => {
-        try {
-            setScanning(true);
-
-            const videoElement = document.getElementById("barcode-video");
-            if (!videoElement) throw new Error("Video element not found");
-
-            // List video devices
-            const devices = await BrowserMultiFormatReader.listVideoInputDevices();
-            if (devices.length === 0) throw new Error("No camera found");
-
-            // Prefer rear camera if available
-            let selectedDeviceId = devices[0].deviceId;
-            const rearCamera = devices.find(device =>
-                /back|rear|environment/i.test(device.label)
-            );
-            if (rearCamera) selectedDeviceId = rearCamera.deviceId;
-
-            const codeReader = new BrowserMultiFormatReader();
-
-            // Start decoding from video
-            codeReader.decodeFromVideoDevice(
-                selectedDeviceId,
-                videoElement,
-                (result, error) => {
-                    if (result) {
-                        const scannedCode = result.getText();
-                        console.log("BARCODE SCANNED:", scannedCode);
-
-                        // Stop video stream
-                        if (videoElement.srcObject) {
-                            videoElement.srcObject.getTracks().forEach(track => track.stop());
-                            videoElement.srcObject = null;
-                        }
-
-                        setScanning(false);
-
-                        setProductInfo(prev => ({
-                            ...prev,
-                            barcode: scannedCode
-                        }));
-
-                        handleBarcodeLookup(scannedCode);
-
-                        // Dispose reader
-                        codeReader.reset();
-                    }
-
-                    if (error) {
-                        if (
-                            error.name === "NotFoundException" ||
-                            error.message.includes("NotFoundException")
-                        ) return; // ignore if no barcode found
-                        console.error("Barcode scan error:", error);
-                        toast.error("Barcode scanning failed");
-                    }
-                }
-            );
-        } catch (err) {
-            console.error("SCAN ERROR:", err);
-            toast.error("Barcode scanning failed: " + err.message);
-            setScanning(false);
-        }
+        setScanning(true);
     };
+
+    useEffect(() => {
+        let codeReader = null;
+
+        if (scanning) {
+            const initializeScanner = async () => {
+                try {
+                    const videoElement = document.getElementById("barcode-video");
+                    if (!videoElement) throw new Error("Video element not found");
+
+                    const devices = await BrowserMultiFormatReader.listVideoInputDevices();
+                    if (devices.length === 0) throw new Error("No camera found");
+
+                    let selectedDeviceId = devices[0].deviceId;
+                    const rearCamera = devices.find(device =>
+                        /back|rear|environment/i.test(device.label)
+                    );
+                    if (rearCamera) selectedDeviceId = rearCamera.deviceId;
+
+                    codeReader = new BrowserMultiFormatReader();
+
+                    codeReader.decodeFromVideoDevice(
+                        selectedDeviceId,
+                        videoElement,
+                        (result, error) => {
+                            if (result) {
+                                const scannedCode = result.getText();
+                                console.log("BARCODE SCANNED:", scannedCode);
+
+                                if (videoElement.srcObject) {
+                                    videoElement.srcObject.getTracks().forEach(track => track.stop());
+                                    videoElement.srcObject = null;
+                                }
+
+                                setScanning(false);
+                                setProductInfo(prev => ({
+                                    ...prev,
+                                    barcode: scannedCode,
+                                }));
+
+                                handleBarcodeLookup(scannedCode);
+                                codeReader.reset();
+                            }
+
+                            if (error) {
+                                if (
+                                    error.name === "NotFoundException" ||
+                                    error.message.includes("NotFoundException")
+                                )
+                                    return;
+                                console.error("Barcode scan error:", error);
+                                toast.error("Barcode scanning failed");
+                                setScanning(false);
+                            }
+                        }
+                    );
+                } catch (err) {
+                    console.error("SCAN ERROR:", err);
+                    toast.error("Barcode scanning failed: " + err.message);
+                    setScanning(false);
+                }
+            };
+
+            initializeScanner();
+        }
+
+        return () => {
+            if (codeReader) {
+                codeReader.reset();
+            }
+        };
+    }, [scanning]);
 
 
     const onSubmitHandler = async (e) => {
@@ -378,10 +389,11 @@ export default function StoreAddProduct() {
                             <video
                                 id="barcode-video"
                                 className="w-full h-64 border rounded-lg object-cover"
-                                playsInline // Important for mobile devices
+                                playsInline
                             />
                         </div>
                     )}
+
                 </div>
 
 
