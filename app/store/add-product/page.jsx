@@ -207,6 +207,19 @@ export default function StoreAddProduct() {
 
                 codeReader = new BrowserMultiFormatReader();
 
+                // Define a wide range of barcode formats to support multi-vendor products
+                const formats = [
+                    BarcodeFormat.EAN_13,
+                    BarcodeFormat.UPC_A,
+                    BarcodeFormat.EAN_8,
+                    BarcodeFormat.CODE_128,
+                    BarcodeFormat.CODE_39,
+                    BarcodeFormat.ITF,
+                    BarcodeFormat.QR_CODE,
+                    BarcodeFormat.DATA_MATRIX,
+                    BarcodeFormat.PDF_417,
+                ];
+
                 await codeReader.decodeFromVideoDevice(
                     selectedDeviceId,
                     videoElement,
@@ -234,7 +247,8 @@ export default function StoreAddProduct() {
                             toast.error("Barcode scanning failed");
                             setScanning(false);
                         }
-                    }
+                    },
+                    { formats } // Pass the formats here
                 );
 
             } catch (err) {
@@ -262,7 +276,6 @@ export default function StoreAddProduct() {
             }
         };
     }, [scanning]);
-
 
 
     const onSubmitHandler = async (e) => {
