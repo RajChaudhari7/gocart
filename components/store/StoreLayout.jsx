@@ -119,7 +119,7 @@ const StoreLayout = ({ children }) => {
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-10 py-6 pb-24">
+        <main className="relative z-10 flex-1 overflow-y-auto px-4 sm:px-6 lg:px-10 py-6 pb-24">
           {children}
         </main>
       </div>

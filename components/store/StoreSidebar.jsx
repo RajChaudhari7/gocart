@@ -106,10 +106,11 @@ const StoreSidebar = ({ storeInfo, pendingOrdersCount = 0 }) => {
                   document.dispatchEvent(new Event('breadcrumb:close'))
                 }}
                 className={`
-    relative flex flex-col items-center gap-1 text-xs transition
-    ${active ? 'text-emerald-400' : 'text-white/60'}
-  `}
+                  relative flex flex-col items-center gap-1 text-xs transition
+                  ${active ? 'text-emerald-400' : 'text-white/60'}
+                `}
               >
+
                 <Icon size={18} />
 
                 {/* Mobile Badge */}
