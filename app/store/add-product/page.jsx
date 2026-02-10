@@ -372,16 +372,18 @@ export default function StoreAddProduct() {
                         </button>
                     </div>
 
+                    {/* Add this video element */}
                     {scanning && (
                         <div className="mt-3">
                             <video
                                 id="barcode-video"
                                 className="w-full h-64 border rounded-lg object-cover"
+                                playsInline // Important for mobile devices
                             />
                         </div>
                     )}
-
                 </div>
+
 
 
 
