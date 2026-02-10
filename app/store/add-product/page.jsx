@@ -181,15 +181,18 @@ export default function StoreAddProduct() {
     };
 
     useEffect(() => {
-        let codeReader;
+        let codeReader = null;
 
         const initializeScanner = async () => {
             try {
                 const videoElement = document.getElementById("barcode-video");
                 if (!videoElement) throw new Error("Video element not found");
 
+                // Request camera permissions
                 const devices = await BrowserMultiFormatReader.listVideoInputDevices();
-                if (devices.length === 0) throw new Error("No camera found");
+                if (devices.length === 0) {
+                    throw new Error("No camera found or permission denied");
+                }
 
                 let selectedDeviceId = devices[0].deviceId;
                 const rearCamera = devices.find((device) =>
@@ -219,9 +222,6 @@ export default function StoreAddProduct() {
                             }));
 
                             handleBarcodeLookup(scannedCode);
-                            if (codeReader) {
-                                codeReader.reset();
-                            }
                         }
 
                         if (error) {
@@ -238,7 +238,11 @@ export default function StoreAddProduct() {
                 );
             } catch (err) {
                 console.error("SCAN ERROR:", err);
-                toast.error("Barcode scanning failed: " + err.message);
+                toast.error(
+                    err.message.includes("Permission denied")
+                        ? "Camera permission denied. Please allow camera access."
+                        : "Barcode scanning failed: " + err.message
+                );
                 setScanning(false);
             }
         };
@@ -249,7 +253,11 @@ export default function StoreAddProduct() {
 
         return () => {
             if (codeReader) {
-                codeReader.reset();
+                try {
+                    codeReader.reset();
+                } catch (e) {
+                    console.error("Failed to reset scanner:", e);
+                }
             }
         };
     }, [scanning]);
