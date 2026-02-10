@@ -17,6 +17,8 @@ import { useRouter } from "next/navigation"
 import { useEffect, useState, useMemo } from "react"
 import toast from "react-hot-toast"
 import { motion } from "framer-motion"
+import { Sun, Moon } from "lucide-react"
+
 
 export default function Dashboard() {
   const { getToken } = useAuth()
@@ -42,6 +44,9 @@ export default function Dashboard() {
 
   const [filterYear, setFilterYear] = useState(currentYear)
   const [filterMonth, setFilterMonth] = useState(new Date().getMonth())
+  const [storeActive, setStoreActive] = useState(dashboardData.storeIsActive)
+  const [toggling, setToggling] = useState(false)
+
 
   /* -------------------- FETCH -------------------- */
   const fetchDashboardData = async () => {
@@ -63,6 +68,38 @@ export default function Dashboard() {
   useEffect(() => {
     fetchDashboardData()
   }, [filterYear])
+
+  useEffect(() => {
+    setStoreActive(dashboardData.storeIsActive)
+  }, [dashboardData.storeIsActive])
+
+  /** -------Store Close and Open */
+
+  const toggleStore = async () => {
+    if (toggling) return
+    try {
+      setToggling(true)
+      const token = await getToken()
+
+      const { data } = await axios.patch(
+        "/api/store/toggle",
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      )
+
+      setStoreActive(data.isActive)
+
+      toast.success(
+        data.isActive ? "Shop is now OPEN 🌞" : "Shop is now CLOSED 🌙"
+      )
+    } catch (err) {
+      toast.error("Failed to update store status")
+    } finally {
+      setToggling(false)
+    }
+  }
+
+
 
   /* -------------------- FILTERED ORDERS (KPIs) -------------------- */
   const filteredOrders = useMemo(() => {
@@ -132,6 +169,31 @@ export default function Dashboard() {
 
   return (
     <div className="max-w-7xl mx-auto pb-28 px-4 lg:px-6 space-y-10">
+      <motion.button
+        onClick={toggleStore}
+        whileTap={{ scale: 0.9 }}
+        className={`relative w-20 h-10 rounded-full flex items-center px-1 transition-colors
+    ${storeActive ? "bg-yellow-400" : "bg-slate-800"}
+  `}
+      >
+        <motion.div
+          layout
+          transition={{ type: "spring", stiffness: 700, damping: 30 }}
+          className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md"
+          style={{ x: storeActive ? 40 : 0 }}
+        >
+          {storeActive ? (
+            <Sun className="w-5 h-5 text-yellow-500" />
+          ) : (
+            <Moon className="w-5 h-5 text-slate-700" />
+          )}
+        </motion.div>
+      </motion.button>
+
+      <span className="text-sm font-medium">
+        {storeActive ? "Shop Open" : "Shop Closed"}
+      </span>
+
 
       {/* Header + Year Selector */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">

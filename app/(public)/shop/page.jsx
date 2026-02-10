@@ -127,8 +127,8 @@ function ShopContent() {
                     key={cat}
                     onClick={() => setCategory(cat)}
                     className={`text-left text-sm py-1 transition ${category === cat
-                        ? 'text-cyan-400 font-bold translate-x-2'
-                        : 'text-white/50 hover:text-white'
+                      ? 'text-cyan-400 font-bold translate-x-2'
+                      : 'text-white/50 hover:text-white'
                       }`}
                   >
                     {cat}
@@ -148,8 +148,8 @@ function ShopContent() {
                     key={range.value}
                     onClick={() => setPriceRange(range.value)}
                     className={`text-left text-sm py-1 transition ${priceRange === range.value
-                        ? 'text-cyan-400 font-bold translate-x-2'
-                        : 'text-white/50 hover:text-white'
+                      ? 'text-cyan-400 font-bold translate-x-2'
+                      : 'text-white/50 hover:text-white'
                       }`}
                   >
                     {range.label}
@@ -198,7 +198,7 @@ function ShopContent() {
                 className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6"
               >
                 {filteredProducts.map((product) => (
-                  <ProductCard key={product.id} product={product} />
+                  <ProductCard key={product.id} product={product} storeIsActive={storeIsActive} />
                 ))}
               </motion.div>
             </AnimatePresence>
@@ -247,8 +247,8 @@ function ShopContent() {
                           setShowMobileFilter(false) // auto close (optional)
                         }}
                         className={`px-4 py-2 rounded-full text-xs capitalize transition ${category === cat
-                            ? 'bg-cyan-400 text-black font-bold'
-                            : 'bg-white/5 text-white'
+                          ? 'bg-cyan-400 text-black font-bold'
+                          : 'bg-white/5 text-white'
                           }`}
                       >
                         {cat}
@@ -272,8 +272,8 @@ function ShopContent() {
                           setShowMobileFilter(false) // auto close (optional)
                         }}
                         className={`px-4 py-2 rounded-full text-xs transition ${priceRange === range.value
-                            ? 'bg-white text-black font-bold'
-                            : 'bg-white/5 text-white'
+                          ? 'bg-white text-black font-bold'
+                          : 'bg-white/5 text-white'
                           }`}
                       >
                         {range.label}

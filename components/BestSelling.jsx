@@ -13,11 +13,10 @@ const BestSelling = () => {
 
         <Title
           title="Best Selling"
-          description={`Showing ${
-            products.length < displayQuantity
+          description={`Showing ${products.length < displayQuantity
               ? products.length
               : displayQuantity
-          } of ${products.length} products`}
+            } of ${products.length} products`}
           href="/shop"
           theme="dark"
         />
@@ -32,7 +31,11 @@ const BestSelling = () => {
                 key={index}
                 className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-4 hover:scale-[1.03] transition"
               >
-                <ProductCard product={product} />
+                <ProductCard
+                  product={product}
+                  storeIsActive={storeIsActive}
+                />
+
               </div>
             ))}
         </div>

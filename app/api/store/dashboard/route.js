@@ -119,6 +119,11 @@ export async function GET(request) {
       value: m.canceled
     }));
 
+    const store = await prisma.store.findUnique({
+      where: { id: storeId },
+      select: { isActive: true }
+    })
+
     /* ---------- TOTALS (IST SAFE) ---------- */
     const totalEarnings = orders
       .filter(order => order.status !== "CANCELLED")
@@ -126,6 +131,7 @@ export async function GET(request) {
 
     /* ---------- RESPONSE ---------- */
     const dashboardData = {
+      storeIsActive: store.isActive,
       ratings,
       totalOrders: orders.length,
       totalEarnings: Math.round(totalEarnings),

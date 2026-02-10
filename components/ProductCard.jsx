@@ -14,8 +14,10 @@ import { useState, useRef, useEffect } from 'react'
 
 const LOW_STOCK_LIMIT = 10
 
-const ProductCard = ({ product }) => {
+const ProductCard = ({ product, storeIsActive }) => {
   const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '₹'
+  const isShopClosed = !storeIsActive
+
 
   const images = Array.isArray(product.images)
     ? product.images.filter(Boolean)
@@ -32,9 +34,9 @@ const ProductCard = ({ product }) => {
   const rating =
     product.rating?.length > 0
       ? Math.floor(
-          product.rating.reduce((acc, curr) => acc + curr.rating, 0) /
-            product.rating.length
-        )
+        product.rating.reduce((acc, curr) => acc + curr.rating, 0) /
+        product.rating.length
+      )
       : 0
 
   const hasMultiple = images.length > 1
@@ -56,12 +58,13 @@ const ProductCard = ({ product }) => {
   }
 
   const onTouchStart = (e) => {
-    if (isOutOfStock) return
+    if (isOutOfStock || isShopClosed) return
     touchStartX.current = e.touches[0].clientX
   }
 
   const onTouchEnd = (e) => {
-    if (isOutOfStock) return
+    if (isOutOfStock || isShopClosed) return
+
     const diff = touchStartX.current - e.changedTouches[0].clientX
     if (diff > 40) nextImage()
     if (diff < -40) prevImage()
@@ -134,6 +137,16 @@ const ProductCard = ({ product }) => {
           opacity: isOutOfStock ? 0.6 : 1
         }}
       >
+
+        {isShopClosed && (
+          <div className="absolute inset-0 z-40 bg-black/80 flex flex-col items-center justify-center gap-2">
+            <Ban size={28} className="text-orange-400" />
+            <span className="text-sm font-semibold text-orange-400">
+              SHOP CLOSED
+            </span>
+          </div>
+        )}
+
         {/* OUT OF STOCK OVERLAY */}
         {isOutOfStock && (
           <div className="absolute inset-0 z-30 bg-black/70 flex flex-col items-center justify-center gap-2">
