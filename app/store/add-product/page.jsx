@@ -9,8 +9,8 @@ import { toast } from "react-hot-toast"
 import {
     BrowserMultiFormatReader,
     BarcodeFormat,
-    DecodeHintType
-} from "@zxing/browser"
+    DecodeHintType,
+} from "@zxing/browser";
 
 
 
@@ -193,7 +193,7 @@ export default function StoreAddProduct() {
                     if (devices.length === 0) throw new Error("No camera found");
 
                     let selectedDeviceId = devices[0].deviceId;
-                    const rearCamera = devices.find(device =>
+                    const rearCamera = devices.find((device) =>
                         /back|rear|environment/i.test(device.label)
                     );
                     if (rearCamera) selectedDeviceId = rearCamera.deviceId;
@@ -211,9 +211,12 @@ export default function StoreAddProduct() {
                                 BarcodeFormat.ITF,
                                 BarcodeFormat.EAN_8,
                             ],
-                            hints: new Map([[DecodeHintType.TRY_HARDER, true]]),
+                            hints: new Map(),
                         }
                     );
+
+                    // Set the TRY_HARDER hint
+                    codeReader.hints.set(DecodeHintType.TRY_HARDER, true);
 
                     codeReader.decodeFromVideoDevice(
                         selectedDeviceId,
@@ -224,12 +227,12 @@ export default function StoreAddProduct() {
                                 console.log("BARCODE SCANNED:", scannedCode);
 
                                 if (videoElement.srcObject) {
-                                    videoElement.srcObject.getTracks().forEach(track => track.stop());
+                                    videoElement.srcObject.getTracks().forEach((track) => track.stop());
                                     videoElement.srcObject = null;
                                 }
 
                                 setScanning(false);
-                                setProductInfo(prev => ({
+                                setProductInfo((prev) => ({
                                     ...prev,
                                     barcode: scannedCode,
                                 }));
@@ -266,6 +269,7 @@ export default function StoreAddProduct() {
             }
         };
     }, [scanning]);
+
 
 
 
