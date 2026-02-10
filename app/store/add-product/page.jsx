@@ -188,20 +188,30 @@ export default function StoreAddProduct() {
                 const videoElement = document.getElementById("barcode-video");
                 if (!videoElement) throw new Error("Video element not found");
 
-                // Request camera permissions
                 const devices = await BrowserMultiFormatReader.listVideoInputDevices();
-                if (devices.length === 0) {
-                    throw new Error("No camera found or permission denied");
-                }
+                if (devices.length === 0) throw new Error("No camera found or permission denied");
 
                 let selectedDeviceId = devices[0].deviceId;
-                const rearCamera = devices.find((device) =>
+                const rearCamera = devices.find(device =>
                     /back|rear|environment/i.test(device.label)
                 );
                 if (rearCamera) selectedDeviceId = rearCamera.deviceId;
 
+                // Initialize with supported barcode formats
                 codeReader = new BrowserMultiFormatReader();
 
+                // Explicitly set the formats to detect
+                const formats = [
+                    BarcodeFormat.EAN_13,
+                    BarcodeFormat.UPC_A,
+                    BarcodeFormat.CODE_128,
+                    BarcodeFormat.QR_CODE,
+                    BarcodeFormat.CODE_39,
+                    BarcodeFormat.ITF,
+                    BarcodeFormat.EAN_8,
+                ];
+
+                // Decode from the video device with specified formats
                 await codeReader.decodeFromVideoDevice(
                     selectedDeviceId,
                     videoElement,
@@ -211,12 +221,12 @@ export default function StoreAddProduct() {
                             console.log("BARCODE SCANNED:", scannedCode);
 
                             if (videoElement.srcObject) {
-                                videoElement.srcObject.getTracks().forEach((track) => track.stop());
+                                videoElement.srcObject.getTracks().forEach(track => track.stop());
                                 videoElement.srcObject = null;
                             }
 
                             setScanning(false);
-                            setProductInfo((prev) => ({
+                            setProductInfo(prev => ({
                                 ...prev,
                                 barcode: scannedCode,
                             }));
@@ -228,13 +238,14 @@ export default function StoreAddProduct() {
                             if (
                                 error.name === "NotFoundException" ||
                                 error.message.includes("NotFoundException")
-                            )
-                                return;
+                            ) return; // Ignore if no barcode is found yet
+
                             console.error("Barcode scan error:", error);
                             toast.error("Barcode scanning failed");
                             setScanning(false);
                         }
-                    }
+                    },
+                    { formats } // Pass the formats here
                 );
             } catch (err) {
                 console.error("SCAN ERROR:", err);
@@ -261,6 +272,7 @@ export default function StoreAddProduct() {
             }
         };
     }, [scanning]);
+
 
 
 
