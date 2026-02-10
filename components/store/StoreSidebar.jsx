@@ -95,7 +95,7 @@ const StoreSidebar = ({ storeInfo, pendingOrdersCount = 0 }) => {
       <div className="sm:hidden fixed bottom-0 inset-x-0 z-50 bg-black border-t border-white/10">
         <div className="flex justify-around items-center h-16">
           {sidebarLinks.map((link) => {
-            const active = pathname === link.href
+            const active = pathname.startsWith(link.href)
             const Icon = link.icon
 
             return (

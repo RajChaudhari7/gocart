@@ -91,7 +91,7 @@ const StoreLayout = ({ children }) => {
           flex-1
           px-4 sm:px-6 lg:px-10
           py-6
-          pb-24       /* 👈 SPACE FOR MOBILE BOTTOM SIDEBAR */
+          pb-24 
         "
       >
         {children}
