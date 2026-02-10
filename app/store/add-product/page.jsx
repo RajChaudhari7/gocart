@@ -193,7 +193,7 @@ export default function StoreAddProduct() {
                 if (devices.length === 0) throw new Error("No camera found or permission denied");
 
                 let selectedDeviceId = devices[0].deviceId;
-                const rearCamera = devices.find(device =>
+                const rearCamera = devices.find((device) =>
                     /back|rear|environment/i.test(device.label)
                 );
                 if (rearCamera) selectedDeviceId = rearCamera.deviceId;
@@ -219,12 +219,12 @@ export default function StoreAddProduct() {
                             console.log("Scanned Barcode:", scannedCode);
 
                             if (videoElement.srcObject) {
-                                videoElement.srcObject.getTracks().forEach(track => track.stop());
+                                videoElement.srcObject.getTracks().forEach((track) => track.stop());
                                 videoElement.srcObject = null;
                             }
 
                             setScanning(false);
-                            setProductInfo(prev => ({
+                            setProductInfo((prev) => ({
                                 ...prev,
                                 barcode: scannedCode,
                             }));
@@ -232,7 +232,11 @@ export default function StoreAddProduct() {
                             handleBarcodeLookup(scannedCode);
                         }
 
-                        if (error && !(error instanceof NotFoundException)) {
+                        if (error) {
+                            // Check if the error message indicates that no barcode was found
+                            if (error.message.includes("No MultiFormat Readers were able to detect the code")) {
+                                return;
+                            }
                             console.error("Barcode scan error:", error);
                             toast.error("Barcode scanning failed");
                             setScanning(false);
@@ -267,6 +271,7 @@ export default function StoreAddProduct() {
             }
         };
     }, [scanning]);
+
 
     const onSubmitHandler = async (e) => {
         e.preventDefault()
