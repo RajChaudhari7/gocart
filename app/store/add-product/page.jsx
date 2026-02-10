@@ -186,29 +186,19 @@ export default function StoreAddProduct() {
         const initializeScanner = async () => {
             try {
                 const videoElement = document.getElementById("barcode-video");
-                if (!videoElement) {
-                    throw new Error("Video element not found");
-                }
+                if (!videoElement) throw new Error("Video element not found");
 
-                // Request camera permissions and list video input devices
                 const devices = await BrowserMultiFormatReader.listVideoInputDevices();
-                if (devices.length === 0) {
-                    throw new Error("No camera found or permission denied");
-                }
+                if (devices.length === 0) throw new Error("No camera found or permission denied");
 
-                // Prefer the rear camera if available
                 let selectedDeviceId = devices[0].deviceId;
-                const rearCamera = devices.find((device) =>
+                const rearCamera = devices.find(device =>
                     /back|rear|environment/i.test(device.label)
                 );
-                if (rearCamera) {
-                    selectedDeviceId = rearCamera.deviceId;
-                }
+                if (rearCamera) selectedDeviceId = rearCamera.deviceId;
 
-                // Initialize the barcode reader
                 codeReader = new BrowserMultiFormatReader();
 
-                // Define the barcode formats you want to detect
                 const formats = [
                     BarcodeFormat.EAN_13,
                     BarcodeFormat.UPC_A,
@@ -219,7 +209,6 @@ export default function StoreAddProduct() {
                     BarcodeFormat.EAN_8,
                 ];
 
-                // Start decoding from the video device
                 await codeReader.decodeFromVideoDevice(
                     selectedDeviceId,
                     videoElement,
@@ -228,14 +217,13 @@ export default function StoreAddProduct() {
                             const scannedCode = result.getText();
                             console.log("Scanned Barcode:", scannedCode);
 
-                            // Stop the video stream
                             if (videoElement.srcObject) {
-                                videoElement.srcObject.getTracks().forEach((track) => track.stop());
+                                videoElement.srcObject.getTracks().forEach(track => track.stop());
                                 videoElement.srcObject = null;
                             }
 
                             setScanning(false);
-                            setProductInfo((prev) => ({
+                            setProductInfo(prev => ({
                                 ...prev,
                                 barcode: scannedCode,
                             }));
@@ -251,7 +239,6 @@ export default function StoreAddProduct() {
                     }
                 );
 
-                // Set the formats to detect
                 codeReader.getDecodeHintManager().setFormats(formats);
 
             } catch (err) {
@@ -279,11 +266,6 @@ export default function StoreAddProduct() {
             }
         };
     }, [scanning]);
-
-
-
-
-
 
     const onSubmitHandler = async (e) => {
         e.preventDefault()
@@ -395,7 +377,7 @@ export default function StoreAddProduct() {
                             value={productInfo.barcode}
                             onChange={(e) => {
                                 const value = e.target.value.replace(/\s/g, "");
-                                setProductInfo((prev) => ({
+                                setProductInfo(prev => ({
                                     ...prev,
                                     barcode: value,
                                 }));
@@ -425,10 +407,7 @@ export default function StoreAddProduct() {
                         </div>
                     )}
                 </div>
-
-
-
-
+                
                 {/* Name */}
                 <div>
                     <label className="text-sm">Name</label>
