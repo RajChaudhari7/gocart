@@ -33,7 +33,11 @@ const StoreSidebar = ({ storeInfo, pendingOrdersCount = 0 }) => {
   return (
     <>
       {/* ================= DESKTOP SIDEBAR (UNCHANGED) ================= */}
-      <aside className="hidden sm:flex h-full w-64 flex-col bg-black border-r border-white/10">
+      <aside
+        className="
+    hidden sm:flex fixed top-0 left-0h-screen w-64flex-col bg-black border-r border-white/10 z-40"
+      >
+
         <div className="flex flex-col items-center gap-3 py-8 border-b border-white/10">
           <Image
             src={storeInfo?.logo || "/placeholder.png"}
