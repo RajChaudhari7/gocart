@@ -198,7 +198,22 @@ export default function StoreAddProduct() {
                     );
                     if (rearCamera) selectedDeviceId = rearCamera.deviceId;
 
-                    codeReader = new BrowserMultiFormatReader();
+                    // Initialize with supported formats and hints
+                    codeReader = new BrowserMultiFormatReader(
+                        undefined,
+                        {
+                            formats: [
+                                BarcodeFormat.EAN_13,
+                                BarcodeFormat.UPC_A,
+                                BarcodeFormat.CODE_128,
+                                BarcodeFormat.QR_CODE,
+                                BarcodeFormat.CODE_39,
+                                BarcodeFormat.ITF,
+                                BarcodeFormat.EAN_8,
+                            ],
+                            hints: new Map([[DecodeHintType.TRY_HARDER, true]]),
+                        }
+                    );
 
                     codeReader.decodeFromVideoDevice(
                         selectedDeviceId,
@@ -251,6 +266,7 @@ export default function StoreAddProduct() {
             }
         };
     }, [scanning]);
+
 
 
     const onSubmitHandler = async (e) => {
