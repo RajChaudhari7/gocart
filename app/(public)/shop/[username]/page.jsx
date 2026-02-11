@@ -103,7 +103,7 @@ export default function StoreShop() {
                 key={product.id}
                 product={product}
                 theme="dark"
-                storeIsActive={product.store?.isActive === true}
+                storeIsActive={storeInfo?.isActive === true}
               />
             ))}
           </div>
