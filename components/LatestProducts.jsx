@@ -38,7 +38,7 @@ const LatestProducts = () => {
               >
                 <ProductCard
                   product={product}
-                  storeIsActive={storeIsActive === true}
+                  storeIsActive={product.store?.isActive === true}
                 />
 
 

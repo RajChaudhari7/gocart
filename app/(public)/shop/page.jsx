@@ -40,6 +40,11 @@ function ShopContent() {
   const [priceRange, setPriceRange] = useState('ALL')
   const [showMobileFilter, setShowMobileFilter] = useState(false)
 
+  const storeIsActive = useSelector(
+    state => state.store?.current?.isActive
+  )
+
+
   /* 🔥 FILTER + SORT */
   const filteredProducts = useMemo(() => {
     return products
@@ -198,7 +203,7 @@ function ShopContent() {
                 className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6"
               >
                 {filteredProducts.map((product) => (
-                  <ProductCard key={product.id} product={product} storeIsActive={store?.isActive === true} />
+                  <ProductCard key={product.id} product={product} storeIsActive={product.store?.isActive === true} />
                 ))}
               </motion.div>
             </AnimatePresence>

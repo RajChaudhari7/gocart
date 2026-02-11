@@ -142,8 +142,16 @@ export async function GET(request) {
 
     const products = await prisma.product.findMany({
       where: { storeId },
+      include: {
+        store: {
+          select: {
+            isActive: true
+          }
+        }
+      },
       orderBy: { createdAt: "desc" },
-    });
+    })
+
 
     const formattedProducts = products.map((product) => ({
       ...product,
