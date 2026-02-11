@@ -8,6 +8,7 @@ import Loading from "@/components/Loading"
 import Image from "next/image"
 import axios from "axios"
 import toast from "react-hot-toast"
+import { useSelector } from "react-redux"
 
 export default function StoreShop() {
   const { username } = useParams()
