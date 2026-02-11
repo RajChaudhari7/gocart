@@ -16,8 +16,7 @@ const LOW_STOCK_LIMIT = 10
 
 const ProductCard = ({ product, storeIsActive }) => {
   const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '₹'
-  const isShopClosed = !storeIsActive
-
+  const isShopClosed = storeIsActive === false
 
   const images = Array.isArray(product.images)
     ? product.images.filter(Boolean)

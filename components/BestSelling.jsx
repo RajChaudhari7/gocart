@@ -14,8 +14,8 @@ const BestSelling = () => {
         <Title
           title="Best Selling"
           description={`Showing ${products.length < displayQuantity
-              ? products.length
-              : displayQuantity
+            ? products.length
+            : displayQuantity
             } of ${products.length} products`}
           href="/shop"
           theme="dark"
@@ -33,8 +33,7 @@ const BestSelling = () => {
               >
                 <ProductCard
                   product={product}
-                  storeIsActive={storeIsActive}
-                />
+                  storeIsActive={store?.isActive === true} />
 
               </div>
             ))}

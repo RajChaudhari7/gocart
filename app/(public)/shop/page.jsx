@@ -198,7 +198,7 @@ function ShopContent() {
                 className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6"
               >
                 {filteredProducts.map((product) => (
-                  <ProductCard key={product.id} product={product} storeIsActive={storeIsActive} />
+                  <ProductCard key={product.id} product={product} storeIsActive={store?.isActive === true} />
                 ))}
               </motion.div>
             </AnimatePresence>

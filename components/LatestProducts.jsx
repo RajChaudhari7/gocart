@@ -15,8 +15,8 @@ const LatestProducts = () => {
         <Title
           title="Latest Products"
           description={`Showing ${products.length < displayQuantity
-              ? products.length
-              : displayQuantity
+            ? products.length
+            : displayQuantity
             } of ${products.length} products`}
           href="/shop"
           theme="dark"
@@ -34,7 +34,7 @@ const LatestProducts = () => {
               >
                 <ProductCard
                   product={product}
-                  storeIsActive={storeIsActive}
+                  storeIsActive={store?.isActive === true}
                 />
 
               </div>
