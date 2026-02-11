@@ -7,6 +7,11 @@ const BestSelling = () => {
   const displayQuantity = 8
   const products = useSelector(state => state.product.list)
 
+  const storeIsActive = useSelector(
+    state => state.store?.current?.isActive
+  )
+
+
   return (
     <section className="relative bg-gradient-to-b from-[#020617] to-black">
       <div className="px-6 py-24 max-w-7xl mx-auto">
@@ -33,7 +38,9 @@ const BestSelling = () => {
               >
                 <ProductCard
                   product={product}
-                  storeIsActive={store?.isActive === true} />
+                  storeIsActive={storeIsActive === true}
+                />
+
 
               </div>
             ))}

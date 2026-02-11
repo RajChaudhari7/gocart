@@ -7,6 +7,10 @@ import { useSelector } from 'react-redux'
 const LatestProducts = () => {
   const displayQuantity = 4
   const products = useSelector(state => state.product.list)
+  const storeIsActive = useSelector(
+    state => state.store?.current?.isActive
+  )
+
 
   return (
     <section className="relative bg-gradient-to-b from-black to-[#020617]">
@@ -34,8 +38,9 @@ const LatestProducts = () => {
               >
                 <ProductCard
                   product={product}
-                  storeIsActive={store?.isActive === true}
+                  storeIsActive={storeIsActive === true}
                 />
+
 
               </div>
             ))}
