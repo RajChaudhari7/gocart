@@ -26,6 +26,10 @@ export default function StoreShop() {
     setLoading(false)
   }
 
+  const storeIsActive = useSelector(
+    state => state.store?.current?.isActive
+  )
+
   useEffect(() => {
     fetchStoreData()
   }, [])
