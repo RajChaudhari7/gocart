@@ -16,7 +16,7 @@ const STATUS_FLOW = [
     "SHIPPED",
     "OUT_FOR_DELIVERY",
     "DELIVERY_INITIATED",
-     "DELIVERED",      // ✅ ADD THIS
+    "DELIVERED",      // ✅ ADD THIS
     "CANCELLED"
 ]
 
@@ -39,6 +39,33 @@ export default function StoreOrders() {
     const [loading, setLoading] = useState(true)
     const [selectedOrder, setSelectedOrder] = useState(null)
     const [isModalOpen, setIsModalOpen] = useState(false)
+
+    const currentDate = new Date()
+
+    const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth()) // 0-11
+    const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear())
+
+    const months = [
+        "January", "February", "March", "April",
+        "May", "June", "July", "August",
+        "September", "October", "November", "December"
+    ]
+
+    // Get available years dynamically from orders
+    const availableYears = [
+        ...new Set(
+            orders.map(order => new Date(order.createdAt).getFullYear())
+        )
+    ].sort((a, b) => b - a)
+
+    const filteredOrders = orders.filter(order => {
+        const orderDate = new Date(order.createdAt)
+        return (
+            orderDate.getMonth() === selectedMonth &&
+            orderDate.getFullYear() === selectedYear
+        )
+    })
+
 
     /* ================= FETCH ================= */
     const fetchOrders = async () => {
@@ -350,13 +377,48 @@ export default function StoreOrders() {
 
     return (
         <>
-            <h1 className="text-3xl text-slate-700 mb-6 font-semibold">Store Orders</h1>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
+                <h1 className="text-3xl text-slate-700 font-semibold">
+                    Store Orders
+                </h1>
 
-            {orders.length === 0 ? (
-                <p className="text-gray-500">No orders found</p>
+                <div className="flex gap-3">
+                    {/* Month Dropdown */}
+                    <select
+                        value={selectedMonth}
+                        onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                        className="border rounded-lg px-3 py-2 text-sm"
+                    >
+                        {months.map((month, index) => (
+                            <option key={index} value={index}>
+                                {month}
+                            </option>
+                        ))}
+                    </select>
+
+                    {/* Year Dropdown */}
+                    <select
+                        value={selectedYear}
+                        onChange={(e) => setSelectedYear(Number(e.target.value))}
+                        className="border rounded-lg px-3 py-2 text-sm"
+                    >
+                        {availableYears.map((year) => (
+                            <option key={year} value={year}>
+                                {year}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+            </div>
+
+
+            {filteredOrders.length === 0 ? (
+                <p className="text-gray-500">
+                    No orders in {months[selectedMonth]} {selectedYear}
+                </p>
             ) : (
                 <div className="grid gap-5 max-w-5xl">
-                    {orders.map((order) => (
+                    {filteredOrders.map((order) => (
                         <div
                             key={order.id}
                             onClick={() => openModal(order)}
