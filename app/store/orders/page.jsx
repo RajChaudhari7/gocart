@@ -180,12 +180,12 @@ export default function StoreOrders() {
 
     // 🟢 Revenue (Exclude Cancelled)
     const revenue = filteredOrders
-        .filter(order => order.status !== "Cancelled")
+        .filter(order => order.status !== "CANCELLED")
         .reduce((total, order) => total + order.total, 0)
 
     // 🔴 Cancelled Amount
     const cancelledAmount = filteredOrders
-        .filter(order => order.status === "Cancelled")
+        .filter(order => order.status === "CANCELLED")
         .reduce((total, order) => total + order.total, 0)
 
 
@@ -217,6 +217,10 @@ export default function StoreOrders() {
         invoiceDiv.style.background = '#fff';
         invoiceDiv.style.fontFamily = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
         invoiceDiv.style.color = '#0f172a';
+        const isOnlinePayment = order.paymentMethod !== "COD"
+        const paymentStatusText = isOnlinePayment ? "Paid" : "Unpaid"
+        const paymentStatusColor = isOnlinePayment ? "#10b981" : "#ef4444"
+
 
         invoiceDiv.innerHTML = `
     <div style="display:flex; justify-content:space-between; align-items: flex-start; margin-bottom: 50px;">
@@ -250,7 +254,13 @@ export default function StoreOrders() {
             <h3 style="font-size: 12px; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.05em; margin-bottom: 12px;">Payment Details</h3>
             <p style="margin: 4px 0;"><b>Date:</b> ${new Date(order.createdAt).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
             <p style="margin: 4px 0;"><b>Method:</b> ${order.paymentMethod || "N/A"}</p>
-            <p style="margin: 4px 0;"><b>Status:</b> <span style="color: #10b981; font-weight: 600;">Paid</span></p>
+            <p style="margin: 4px 0;">
+    <b>Status:</b> 
+    <span style="color: ${paymentStatusColor}; font-weight: 600;">
+        ${paymentStatusText}
+    </span>
+</p>
+
         </div>
     </div>
 
