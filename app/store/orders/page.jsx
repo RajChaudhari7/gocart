@@ -178,10 +178,16 @@ export default function StoreOrders() {
         }
     }
 
-    const revenue = filteredOrders.reduce(
-        (total, order) => total + order.total,
-        0
-    )
+    // 🟢 Revenue (Exclude Cancelled)
+    const revenue = filteredOrders
+        .filter(order => order.status !== "Cancelled")
+        .reduce((total, order) => total + order.total, 0)
+
+    // 🔴 Cancelled Amount
+    const cancelledAmount = filteredOrders
+        .filter(order => order.status === "Cancelled")
+        .reduce((total, order) => total + order.total, 0)
+
 
     /* ================= PDF INVOICE (UNCHANGED) ================= */
     const downloadInvoicePDF = async (order) => {
@@ -452,27 +458,39 @@ export default function StoreOrders() {
                 </button>
             )}
 
-            <div className="bg-white shadow rounded-xl p-4 border mb-6">
-                {selectedDate ? (
-                    <>
-                        <p className="text-sm text-gray-500">
-                            Revenue on {new Date(selectedDate).toLocaleDateString()}
+            <div className="bg-white shadow rounded-xl p-5 border mb-6">
+                <p className="text-sm text-gray-500 mb-4">
+                    {selectedDate
+                        ? `Summary on ${new Date(selectedDate).toLocaleDateString()}`
+                        : `Summary in ${months[selectedMonth]} ${selectedYear}`
+                    }
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+
+                    {/* 🟢 Revenue */}
+                    <div className="bg-emerald-50 p-4 rounded-lg">
+                        <p className="text-sm text-emerald-600">
+                            Revenue (Excluding Cancelled)
                         </p>
-                        <p className="text-2xl font-bold text-emerald-600">
+                        <p className="text-2xl font-bold text-emerald-700">
                             ₹{revenue}
                         </p>
-                    </>
-                ) : (
-                    <>
-                        <p className="text-sm text-gray-500">
-                            Revenue in {months[selectedMonth]} {selectedYear}
+                    </div>
+
+                    {/* 🔴 Cancelled Amount */}
+                    <div className="bg-red-50 p-4 rounded-lg">
+                        <p className="text-sm text-red-600">
+                            Cancelled Orders Amount
                         </p>
-                        <p className="text-2xl font-bold text-emerald-600">
-                            ₹{revenue}
+                        <p className="text-2xl font-bold text-red-700">
+                            ₹{cancelledAmount}
                         </p>
-                    </>
-                )}
+                    </div>
+
+                </div>
             </div>
+
 
 
 
