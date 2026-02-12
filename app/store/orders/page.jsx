@@ -44,6 +44,7 @@ export default function StoreOrders() {
 
     const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth()) // 0-11
     const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear())
+    const [selectedDate, setSelectedDate] = useState(null)
 
     const months = [
         "January", "February", "March", "April",
@@ -60,11 +61,25 @@ export default function StoreOrders() {
 
     const filteredOrders = orders.filter(order => {
         const orderDate = new Date(order.createdAt)
+
+        // 🔹 If exact date selected → highest priority
+        if (selectedDate) {
+            const selected = new Date(selectedDate)
+
+            return (
+                orderDate.getDate() === selected.getDate() &&
+                orderDate.getMonth() === selected.getMonth() &&
+                orderDate.getFullYear() === selected.getFullYear()
+            )
+        }
+
+        // 🔹 Otherwise filter by Year + Month
         return (
-            orderDate.getMonth() === selectedMonth &&
-            orderDate.getFullYear() === selectedYear
+            orderDate.getFullYear() === selectedYear &&
+            orderDate.getMonth() === selectedMonth
         )
     })
+
 
 
     /* ================= FETCH ================= */
@@ -163,6 +178,10 @@ export default function StoreOrders() {
         }
     }
 
+    const revenue = filteredOrders.reduce(
+        (total, order) => total + order.total,
+        0
+    )
 
     /* ================= PDF INVOICE (UNCHANGED) ================= */
     const downloadInvoicePDF = async (order) => {
@@ -386,7 +405,10 @@ export default function StoreOrders() {
                     {/* Month Dropdown */}
                     <select
                         value={selectedMonth}
-                        onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                        onChange={(e) => {
+                            setSelectedMonth(Number(e.target.value))
+                            setSelectedDate(null) // reset date
+                        }}
                         className="border rounded-lg px-3 py-2 text-sm"
                     >
                         {months.map((month, index) => (
@@ -399,10 +421,13 @@ export default function StoreOrders() {
                     {/* Year Dropdown */}
                     <select
                         value={selectedYear}
-                        onChange={(e) => setSelectedYear(Number(e.target.value))}
+                        onChange={(e) => {
+                            setSelectedYear(Number(e.target.value))
+                            setSelectedDate(null) // reset date
+                        }}
                         className="border rounded-lg px-3 py-2 text-sm"
                     >
-                        {availableYears.map((year) => (
+                        {[2023, 2024, 2025, 2026].map(year => (
                             <option key={year} value={year}>
                                 {year}
                             </option>
@@ -411,10 +436,53 @@ export default function StoreOrders() {
                 </div>
             </div>
 
+            <input
+                type="date"
+                value={selectedDate || ""}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="border rounded-lg px-3 py-2 text-sm"
+            />
+
+            {selectedDate && (
+                <button
+                    onClick={() => setSelectedDate(null)}
+                    className="text-sm text-red-500 underline"
+                >
+                    Clear
+                </button>
+            )}
+
+            <div className="bg-white shadow rounded-xl p-4 border mb-6">
+                {selectedDate ? (
+                    <>
+                        <p className="text-sm text-gray-500">
+                            Revenue on {new Date(selectedDate).toLocaleDateString()}
+                        </p>
+                        <p className="text-2xl font-bold text-emerald-600">
+                            ₹{revenue}
+                        </p>
+                    </>
+                ) : (
+                    <>
+                        <p className="text-sm text-gray-500">
+                            Revenue in {months[selectedMonth]} {selectedYear}
+                        </p>
+                        <p className="text-2xl font-bold text-emerald-600">
+                            ₹{revenue}
+                        </p>
+                    </>
+                )}
+            </div>
+
+
+
 
             {filteredOrders.length === 0 ? (
-                <p className="text-gray-500">
-                    No orders in {months[selectedMonth]} {selectedYear}
+                <p className="text-gray-500 text-center mt-10">
+                    {selectedDate
+                        ? `No orders on ${new Date(selectedDate).toLocaleDateString()}`
+                        : `No orders in ${months[selectedMonth]} ${selectedYear}`
+                    }
                 </p>
             ) : (
                 <div className="grid gap-5 max-w-5xl">
