@@ -20,10 +20,6 @@ const STATUS_FLOW = [
     "CANCELLED"
 ]
 
-
-
-
-
 export default function StoreOrders() {
     const { getToken } = useAuth()
     const { setOrderCount } = useOrderStore()
