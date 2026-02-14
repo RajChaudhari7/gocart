@@ -374,9 +374,6 @@ export default function StoreOrders() {
         }
     }
 
-
-
-
     useEffect(() => {
         fetchOrders()
     }, [])
