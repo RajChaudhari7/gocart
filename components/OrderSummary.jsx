@@ -31,24 +31,31 @@ const OrderSummary = ({ totalPrice, items }) => {
 
   /* ---------------- COUPON ---------------- */
   const handleCouponCode = async (e) => {
-    e.preventDefault()
+    e.preventDefault();
 
     try {
-      if (!user) return toast.error('Please login to apply coupon')
+      if (!user) return toast.error("Please login to apply coupon");
 
-      const token = await getToken()
+      if (!couponCodeInput.trim()) {
+        return toast.error("Enter coupon code");
+      }
+
+      const token = await getToken();
+
       const { data } = await axios.post(
-        '/api/coupon',
-        { code: couponCodeInput },
+        "/api/coupon",
+        { code: couponCodeInput.trim().toUpperCase() },
         { headers: { Authorization: `Bearer ${token}` } }
-      )
+      );
 
-      setCoupon(data.coupon)
-      toast.success('Coupon applied')
+      setCoupon(data.coupon);
+      setCouponCodeInput("");
+      toast.success("Coupon applied successfully");
+
     } catch (err) {
-      toast.error(err?.response?.data?.error || err.message)
+      toast.error(err?.response?.data?.error || err.message);
     }
-  }
+  };
 
   /* ---------------- PLACE ORDER ---------------- */
   const handlePlaceOrder = async (e) => {
