@@ -1,7 +1,7 @@
 'use client'
 
 import { PlusIcon, SquarePenIcon, XIcon } from 'lucide-react'
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import AddressModal from './AddressModal'
 import { useDispatch, useSelector } from 'react-redux'
 import toast from 'react-hot-toast'
@@ -24,58 +24,27 @@ const OrderSummary = ({ totalPrice, items }) => {
   const [showAddressModal, setShowAddressModal] = useState(false)
   const [couponCodeInput, setCouponCodeInput] = useState('')
   const [coupon, setCoupon] = useState(null)
-  const [availableCoupons, setAvailableCoupons] = useState([])
 
   const shippingCost = 50
-
-  const discount = coupon
-    ? Math.min(
-        (coupon.discount / 100) * totalPrice,
-        coupon.maxDiscount || Infinity
-      )
-    : 0
-
+  const discount = coupon ? (coupon.discount / 100) * totalPrice : 0
   const finalTotal = totalPrice + shippingCost - discount
 
-  /* ---------------- FETCH AVAILABLE COUPONS ---------------- */
-  useEffect(() => {
-    const fetchCoupons = async () => {
-      try {
-        if (!user) return
-        const token = await getToken()
-        const { data } = await axios.get('/api/coupon/available', {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-        setAvailableCoupons(data.coupons || [])
-      } catch (err) {
-        console.log(err)
-      }
-    }
-
-    fetchCoupons()
-  }, [user])
-
-  /* ---------------- COUPON APPLY MANUAL ---------------- */
+  /* ---------------- COUPON ---------------- */
   const handleCouponCode = async (e) => {
     e.preventDefault()
 
     try {
       if (!user) return toast.error('Please login to apply coupon')
-      if (!couponCodeInput.trim()) {
-        return toast.error('Enter coupon code')
-      }
 
       const token = await getToken()
-
       const { data } = await axios.post(
         '/api/coupon',
-        { code: couponCodeInput.trim().toUpperCase() },
+        { code: couponCodeInput },
         { headers: { Authorization: `Bearer ${token}` } }
       )
 
       setCoupon(data.coupon)
-      setCouponCodeInput('')
-      toast.success('Coupon applied successfully')
+      toast.success('Coupon applied')
     } catch (err) {
       toast.error(err?.response?.data?.error || err.message)
     }
@@ -87,8 +56,7 @@ const OrderSummary = ({ totalPrice, items }) => {
 
     try {
       if (!user) return toast.error('Please login to place order')
-      if (!selectedAddress)
-        return toast.error('Please select delivery address')
+      if (!selectedAddress) return toast.error('Please select delivery address')
 
       const token = await getToken()
 
@@ -96,34 +64,50 @@ const OrderSummary = ({ totalPrice, items }) => {
         addressId: selectedAddress.id,
         items,
         paymentMethod,
-        couponCode: coupon?.code,
+        couponCode: coupon?.code, // ✅ KEEP COUPON
       }
 
       const { data } = await axios.post('/api/orders', orderData, {
         headers: { Authorization: `Bearer ${token}` },
       })
 
+      // ================= STRIPE =================
       if (paymentMethod === 'STRIPE') {
         window.location.href = data.session.url
         return
       }
 
+      // ================= COD =================
       toast.success(data.message || 'Order placed successfully')
 
+      // 🔥 CLEAR SERVER CART
       await axios.delete('/api/cart', {
         headers: { Authorization: `Bearer ${token}` },
       })
 
+      // 🔥 CLEAR REDUX CART
       dispatch(clearCart())
+
+      // 🔥 REDIRECT TO ORDERS
       router.push('/orders')
+
     } catch (err) {
       toast.error(err?.response?.data?.error || err.message)
     }
   }
 
   return (
-    <div className="w-full max-w-lg lg:max-w-[360px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-lg text-slate-800 dark:text-slate-200">
-
+    <div
+      className="
+        w-full max-w-lg lg:max-w-[360px]
+        bg-white dark:bg-slate-900
+        border border-slate-200 dark:border-slate-700
+        rounded-2xl p-6
+        shadow-lg
+        text-slate-800 dark:text-slate-200
+      "
+    >
+      {/* TITLE */}
       <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
         Payment Summary
       </h2>
@@ -174,7 +158,7 @@ const OrderSummary = ({ totalPrice, items }) => {
             {addressList.length > 0 && (
               <select
                 className="w-full mt-2 p-2 rounded border"
-                onChange={(e) => {
+                onChange={e => {
                   const index = e.target.value
                   if (index !== '') {
                     setSelectedAddress(addressList[index])
@@ -221,93 +205,29 @@ const OrderSummary = ({ totalPrice, items }) => {
           </div>
         )}
 
-        {/* ================= AMAZON STYLE COUPON SECTION ================= */}
-
-        {!coupon && (
-          <>
-            {/* Manual Entry */}
-            <form onSubmit={handleCouponCode} className="flex gap-2 mt-3">
-              <input
-                value={couponCodeInput}
-                onChange={(e) => setCouponCodeInput(e.target.value)}
-                placeholder="Enter Coupon Code"
-                className="flex-1 p-2 rounded border"
-              />
-              <button className="bg-slate-800 text-white px-4 rounded">
-                Apply
-              </button>
-            </form>
-
-            {/* Available Offers */}
-            {availableCoupons.length > 0 && (
-              <div className="mt-4 space-y-3">
-                <p className="text-sm font-semibold">Available Offers</p>
-
-                {availableCoupons.map((c) => {
-                  const previewDiscount = Math.min(
-                    (c.discount / 100) * totalPrice,
-                    c.maxDiscount || Infinity
-                  )
-
-                  return (
-                    <div
-                      key={c.id}
-                      className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-xl p-3"
-                    >
-                      <div className="flex justify-between items-start gap-3">
-                        <div>
-                          <p className="font-semibold text-green-700 dark:text-green-400 text-sm">
-                            Save {currency}{previewDiscount.toFixed(0)} with {c.code}
-                          </p>
-
-                          <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-                            {c.discount}% OFF
-                            {c.maxDiscount && ` • Max ${currency}${c.maxDiscount}`}
-                          </p>
-
-                          {c.expiresAt && (
-                            <p className="text-xs text-slate-500 mt-1">
-                              Valid till {new Date(c.expiresAt).toLocaleDateString()}
-                            </p>
-                          )}
-                        </div>
-
-                        <button
-                          onClick={() => {
-                            setCoupon(c)
-                            toast.success('Coupon applied')
-                          }}
-                          className="text-sm font-semibold bg-yellow-400 hover:bg-yellow-500 text-black px-3 py-1 rounded-lg"
-                        >
-                          Apply
-                        </button>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-          </>
-        )}
-
-        {/* Applied State */}
-        {coupon && (
-          <div className="mt-4 bg-green-100 dark:bg-green-900/30 border border-green-300 dark:border-green-700 rounded-xl p-3 flex justify-between items-center">
-            <div>
-              <p className="text-green-700 dark:text-green-400 font-semibold text-sm">
-                ✓ {coupon.code} Applied
-              </p>
-              <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-                You saved {currency}{discount.toFixed(2)}
-              </p>
-            </div>
-
-            <button
-              onClick={() => setCoupon(null)}
-              className="text-red-500 text-xs font-medium"
-            >
-              Remove
+        {/* COUPON INPUT */}
+        {!coupon ? (
+          <form onSubmit={handleCouponCode} className="flex gap-2 mt-3">
+            <input
+              value={couponCodeInput}
+              onChange={e => setCouponCodeInput(e.target.value)}
+              placeholder="Coupon Code"
+              className="flex-1 p-2 rounded border"
+            />
+            <button className="bg-slate-800 text-white px-4 rounded">
+              Apply
             </button>
+          </form>
+        ) : (
+          <div className="flex items-center justify-between mt-2 text-xs">
+            <span className="font-medium">
+              {coupon.code.toUpperCase()}
+            </span>
+            <XIcon
+              size={16}
+              className="cursor-pointer hover:text-red-500"
+              onClick={() => setCoupon(null)}
+            />
           </div>
         )}
       </div>
