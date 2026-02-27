@@ -3,198 +3,139 @@
 import { assets } from '@/assets/assets'
 import { ArrowRightIcon, ShoppingBag } from 'lucide-react'
 import Image from 'next/image'
-import React, { useEffect, useState, useCallback } from 'react'
-import CategoriesMarquee from './CategoriesMarquee'
+import React, { useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion'
-
-const heroSlides = [
-  {
-    id: 1,
-    tag: 'NEW ARRIVAL',
-    title: 'Precision.',
-    subtitle: 'Gadgets built for the next generation.',
-    price: 699,
-    image: assets.product_img4,
-    accent: '#10b981',
-    glow: 'bg-emerald-500/30',
-    bgGradient: 'from-emerald-500/10 via-transparent to-transparent'
-  },
-  {
-    id: 2,
-    tag: 'LIMITED EDITION',
-    title: 'Evolution.',
-    subtitle: 'Smart tech that thinks ahead of you.',
-    price: 999,
-    image: assets.hero_product_img1,
-    accent: '#8b5cf6',
-    glow: 'bg-violet-500/30',
-    bgGradient: 'from-violet-500/10 via-transparent to-transparent'
-  },
-  {
-    id: 3,
-    tag: 'PREMIUM TECH',
-    title: 'Innovation.',
-    subtitle: 'Upgrade your daily digital experience.',
-    price: 1299,
-    image: assets.hero_product_img2,
-    accent: '#f97316',
-    glow: 'bg-orange-500/30',
-    bgGradient: 'from-orange-500/10 via-transparent to-transparent'
-  },
-]
+import gsap from 'gsap'
 
 const Hero = () => {
   const router = useRouter()
-  const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '₹'
-  const [index, setIndex] = useState(0)
-
-  const x = useMotionValue(0)
-  const y = useMotionValue(0)
-
-  const rotateX = useTransform(y, [-100, 100], [12, -12])
-  const rotateY = useTransform(x, [-100, 100], [-12, 12])
-
-  const nextSlide = useCallback(() => {
-    setIndex((prev) => (prev + 1) % heroSlides.length)
-  }, [])
+  const heroRef = useRef(null)
+  const imageRef = useRef(null)
+  const textRef = useRef(null)
 
   useEffect(() => {
-    const timer = setInterval(nextSlide, 7000)
-    return () => clearInterval(timer)
-  }, [nextSlide])
+    const tl = gsap.timeline()
 
-  const slide = heroSlides[index]
+    tl.from('.hero-tag', {
+      y: 30,
+      opacity: 0,
+      duration: 0.6,
+    })
+      .from('.hero-title span', {
+        y: 60,
+        opacity: 0,
+        stagger: 0.15,
+        duration: 0.8,
+        ease: 'power3.out',
+      })
+      .from('.hero-subtitle', {
+        y: 30,
+        opacity: 0,
+        duration: 0.6,
+      }, '-=0.5')
+      .from('.hero-price', {
+        y: 20,
+        opacity: 0,
+        duration: 0.5,
+      }, '-=0.4')
+      .from('.hero-btn', {
+        scale: 0.8,
+        opacity: 0,
+        duration: 0.5,
+        ease: 'back.out(1.7)',
+      }, '-=0.4')
+      .from(imageRef.current, {
+        scale: 0.9,
+        opacity: 0,
+        duration: 1,
+        ease: 'power3.out',
+      }, '-=1')
+
+    // Floating animation
+    gsap.to(imageRef.current, {
+      y: -20,
+      repeat: -1,
+      yoyo: true,
+      duration: 4,
+      ease: 'sine.inOut',
+    })
+
+  }, [])
+
+  // Desktop mouse parallax
+  const handleMouseMove = (e) => {
+    const { clientX, clientY } = e
+    const x = (clientX / window.innerWidth - 0.5) * 20
+    const y = (clientY / window.innerHeight - 0.5) * 20
+
+    gsap.to(imageRef.current, {
+      rotationY: x,
+      rotationX: -y,
+      transformPerspective: 800,
+      duration: 0.5,
+    })
+  }
 
   return (
-    <section className="relative min-h-screen w-full overflow-hidden bg-[#020617] text-white perspective-[1200px]">
-      
-      {/* Ambient Background */}
-      <div className="absolute inset-0 z-0">
-        <div className={`absolute inset-0 bg-gradient-to-br ${slide.bgGradient} transition-colors duration-1000`} />
-        <div className={`absolute top-[-10%] right-[-10%] w-[600px] h-[600px] ${slide.glow} blur-[140px] rounded-full`} />
-        <div className="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] bg-blue-500/20 blur-[140px] rounded-full" />
-      </div>
+    <section
+      ref={heroRef}
+      onMouseMove={handleMouseMove}
+      className="relative min-h-screen bg-[#0B1220] text-white overflow-hidden"
+    >
+      {/* Soft Gradient Background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-transparent to-cyan-500/10" />
 
-      <div className="relative z-10 max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-12 min-h-screen items-center pt-20">
-        
-        {/* LEFT */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={slide.id}
-            initial={{ opacity: 0, x: -40 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 40 }}
-            transition={{ duration: 0.6 }}
-            className="space-y-8"
-          >
-            <div className="flex items-center gap-3">
-              <span className="h-[1px] w-10 bg-white/40" />
-              <span style={{ color: slide.accent }} className="text-sm font-bold tracking-[0.3em] uppercase">
-                {slide.tag}
-              </span>
+      <div className="relative max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-12 min-h-screen items-center">
+
+        {/* LEFT CONTENT */}
+        <div ref={textRef} className="space-y-8">
+          <div className="hero-tag text-emerald-400 text-sm tracking-[0.3em] font-bold">
+            NEW ARRIVAL
+          </div>
+
+          <h1 className="hero-title text-5xl md:text-7xl font-black leading-tight">
+            <span className="block">Future.</span>
+            <span className="block text-white/30">Redefined.</span>
+          </h1>
+
+          <p className="hero-subtitle text-lg text-white/60 max-w-md">
+            Experience next-gen gadgets designed for performance and elegance.
+          </p>
+
+          <div className="flex items-center gap-10">
+            <div className="hero-price">
+              <p className="text-sm text-white/40">Starting at</p>
+              <p className="text-4xl font-light text-emerald-400">
+                ₹699
+              </p>
             </div>
 
-            <h1 className="text-6xl md:text-8xl font-black tracking-tighter leading-[0.9]">
-              <span className="block">{slide.title}</span>
-              <span className="block text-white/20 text-5xl md:text-7xl">
-                Experience
-              </span>
-            </h1>
-
-            <p className="text-lg md:text-xl text-white/50 max-w-md">
-              {slide.subtitle}
-            </p>
-
-            <div className="flex items-center gap-10">
-              <div>
-                <p className="text-xs uppercase tracking-widest text-white/40 mb-1">
-                  Starting at
-                </p>
-                <p className="text-4xl font-light italic">
-                  {currency}{slide.price}
-                </p>
-              </div>
-
-              <button
-                onClick={() => router.push('/shop')}
-                className="relative group px-10 py-5 rounded-full font-bold bg-white text-black overflow-hidden"
-              >
-                <span className="relative z-10 flex items-center gap-3">
-                  Explore Now
-                  <ArrowRightIcon size={20} />
-                </span>
-                <div className="absolute inset-0 bg-black/5 scale-x-0 group-hover:scale-x-100 origin-left transition-transform" />
-              </button>
-            </div>
-          </motion.div>
-        </AnimatePresence>
-
-        {/* RIGHT — TRUE 3D TILT PRODUCT */}
-        <div
-          className="relative flex items-center justify-center"
-          onMouseMove={(e) => {
-            const rect = e.currentTarget.getBoundingClientRect()
-            x.set(e.clientX - rect.left - rect.width / 2)
-            y.set(e.clientY - rect.top - rect.height / 2)
-          }}
-          onMouseLeave={() => {
-            x.set(0)
-            y.set(0)
-          }}
-        >
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={slide.id}
-              style={{ rotateX, rotateY }}
-              initial={{ opacity: 0, scale: 0.85 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 1.1 }}
-              transition={{ type: 'spring', stiffness: 80, damping: 15 }}
-              className="relative"
+            <button
+              onClick={() => router.push('/shop')}
+              className="hero-btn px-8 py-4 rounded-full bg-emerald-500 hover:bg-emerald-600 transition text-white font-semibold flex items-center gap-2"
             >
-              {/* Glow Ring */}
-              <div className={`absolute inset-0 ${slide.glow} blur-3xl rounded-full scale-110`} />
-
-              {/* Floating Card */}
-              <motion.div
-                animate={{ y: [0, -20, 0] }}
-                transition={{ repeat: Infinity, duration: 6, ease: 'easeInOut' }}
-                className="relative bg-white/5 backdrop-blur-xl rounded-[2.5rem] p-10 border border-white/10 shadow-2xl"
-                style={{ transformStyle: 'preserve-3d' }}
-              >
-                <Image
-                  src={slide.image}
-                  alt="Product"
-                  priority
-                  className="w-full h-auto max-w-[460px] object-contain drop-shadow-[0_40px_40px_rgba(0,0,0,0.6)]"
-                />
-              </motion.div>
-            </motion.div>
-          </AnimatePresence>
-
-          {/* Floating Shipping Badge */}
-          <motion.div
-            animate={{ y: [0, -15, 0] }}
-            transition={{ repeat: Infinity, duration: 4 }}
-            className="absolute -right-6 top-1/4 hidden lg:block p-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/10"
-          >
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-emerald-500/20 text-emerald-400">
-                <ShoppingBag size={20} />
-              </div>
-              <div className="text-xs">
-                <p className="font-bold">Fast Shipping</p>
-                <p className="opacity-60">Doorstep delivery</p>
-              </div>
-            </div>
-          </motion.div>
+              Explore
+              <ArrowRightIcon size={18} />
+            </button>
+          </div>
         </div>
-      </div>
 
-      {/* Footer Marquee */}
-      <div className="relative z-10 pb-10">
-        <CategoriesMarquee />
+        {/* RIGHT IMAGE */}
+        <div className="relative flex justify-center items-center">
+          <div className="absolute w-[400px] h-[400px] bg-emerald-500/20 blur-[120px] rounded-full" />
+
+          <div
+            ref={imageRef}
+            className="relative bg-white/5 backdrop-blur-xl p-8 rounded-3xl border border-white/10 shadow-2xl"
+          >
+            <Image
+              src={assets.product_img4}
+              alt="Product"
+              priority
+              className="w-full max-w-[400px] object-contain"
+            />
+          </div>
+        </div>
       </div>
     </section>
   )
