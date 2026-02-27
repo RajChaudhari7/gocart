@@ -38,6 +38,9 @@ const Navbar = () => {
   const { openSignIn } = useClerk()
   const router = useRouter()
   const pathname = usePathname()
+  const debounceRef = useRef(null)
+  const [results, setResults] = useState([])
+  const [showDropdown, setShowDropdown] = useState(false)
 
   const cartCount = useSelector(
     (state) => state.cart?.total || state.cart?.items?.length || 0
@@ -65,11 +68,27 @@ const Navbar = () => {
     const value = e.target.value
     setSearch(value)
 
-    if (value.trim() === '') {
-      router.push('/shop') // show all products if empty
-    } else {
-      router.push(`/shop?search=${encodeURIComponent(value.trim())}`)
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current)
     }
+
+    debounceRef.current = setTimeout(async () => {
+      if (!value.trim()) {
+        setResults([])
+        setShowDropdown(false)
+        return
+      }
+
+      try {
+        const res = await fetch(`/api/search?q=${value}`)
+        const data = await res.json()
+
+        setResults(data)
+        setShowDropdown(true)
+      } catch (err) {
+        console.error(err)
+      }
+    }, 400)
   }
 
   const handleSearchSubmit = (e) => e.preventDefault() // prevent page reload
@@ -88,6 +107,15 @@ const Navbar = () => {
     { id: 'orders', href: '/orders', icon: <PackageIcon size={18} />, label: 'Orders' },
     { id: 'cart', href: '/cart', icon: <ShoppingCart size={18} />, label: 'Cart' },
   ]
+
+  useEffect(() => {
+    const handleClickOutside = () => {
+      setShowDropdown(false)
+    }
+
+    document.addEventListener("click", handleClickOutside)
+    return () => document.removeEventListener("click", handleClickOutside)
+  }, [])
 
   return (
     <>
@@ -144,9 +172,8 @@ const Navbar = () => {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`relative px-2 py-1 transition hover:-translate-y-[1px] hover:drop-shadow-[0_0_8px_rgba(34,211,238,0.8)] ${
-                  isActive(link.href) ? 'text-cyan-400' : 'hover:text-cyan-400'
-                }`}
+                className={`relative px-2 py-1 transition hover:-translate-y-[1px] hover:drop-shadow-[0_0_8px_rgba(34,211,238,0.8)] ${isActive(link.href) ? 'text-cyan-400' : 'hover:text-cyan-400'
+                  }`}
               >
                 {link.name}
                 {isActive(link.href) && (
@@ -159,19 +186,45 @@ const Navbar = () => {
             ))}
 
             {/* DESKTOP SEARCH */}
-            <form
-              onSubmit={handleSearchSubmit}
-              className="hidden xl:flex items-center gap-2 bg-white/10 focus-within:bg-white/20 px-4 py-2 rounded-full transition-colors duration-300 shadow-[inset_0_0_10px_rgba(255,255,255,0.05)]"
-            >
-              <Search size={16} className="text-white/70" />
-              <input
-                type="text"
-                placeholder="Search products..."
-                value={search}
-                onChange={handleSearchChange}
-                className="bg-transparent outline-none text-sm text-white placeholder-white/50 focus:w-64 w-40 transition-all duration-300"
-              />
-            </form>
+            <div className="relative hidden xl:block">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  router.push(`/shop?search=${search}`)
+                  setShowDropdown(false)
+                }}
+                className="flex items-center gap-2 bg-white/10 focus-within:bg-white/20 px-4 py-2 rounded-full transition-colors duration-300"
+              >
+                <Search size={16} className="text-white/70" />
+                <input
+                  type="text"
+                  placeholder="Search products..."
+                  value={search}
+                  onChange={handleSearchChange}
+                  onFocus={() => results.length > 0 && setShowDropdown(true)}
+                  className="bg-transparent outline-none text-sm text-white placeholder-white/50 w-40 focus:w-64 transition-all duration-300"
+                />
+              </form>
+
+              {/* 🔥 SEARCH DROPDOWN */}
+              {showDropdown && results.length > 0 && (
+                <div className="absolute top-14 left-0 w-full bg-black/90 backdrop-blur-xl border border-white/10 rounded-xl shadow-xl max-h-80 overflow-y-auto z-50">
+                  {results.map((item) => (
+                    <div
+                      key={item.id}
+                      onClick={() => {
+                        router.push(`/product/${item.id}`)
+                        setShowDropdown(false)
+                      }}
+                      className="px-4 py-3 hover:bg-white/10 cursor-pointer border-b border-white/5"
+                    >
+                      <p className="text-white text-sm">{item.name}</p>
+                      <p className="text-cyan-400 text-xs">₹ {item.price}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
 
             {/* CART */}
             <Link href="/cart" className="relative">
@@ -222,11 +275,10 @@ const Navbar = () => {
               <Link
                 key={link.id}
                 href={link.href}
-                className={`relative flex flex-col items-center gap-1 ${
-                  isActive(link.href)
-                    ? 'text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,1)]'
-                    : 'text-white/70'
-                }`}
+                className={`relative flex flex-col items-center gap-1 ${isActive(link.href)
+                  ? 'text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,1)]'
+                  : 'text-white/70'
+                  }`}
               >
                 {isCart ? (
                   <motion.div variants={cartPulse} animate={pulse ? 'active' : 'idle'} className="flex flex-col items-center gap-1">
