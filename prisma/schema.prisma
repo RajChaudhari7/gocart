@@ -24,6 +24,7 @@ model Product {
   id          String   @id @default(cuid())
   name        String
   description String
+  keywords    String[] // 🔥 ADD THIS
   mrp         Float
   price       Float
   quantity    Int      @default(0)
@@ -42,6 +43,11 @@ model Product {
   @@index([barcode, storeId])
 }
 
+model SearchSynonym {
+  id        String @id @default(cuid())
+  word      String
+  synonyms  String[]
+}
 
 ////////////////////////////////////
 // ✅ UPDATED ORDER STATUS ENUM
