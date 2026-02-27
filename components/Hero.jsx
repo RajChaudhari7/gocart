@@ -1,141 +1,173 @@
 'use client'
 
 import { assets } from '@/assets/assets'
-import { ArrowRightIcon, ShoppingBag } from 'lucide-react'
+import { ArrowRightIcon } from 'lucide-react'
 import Image from 'next/image'
 import React, { useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import gsap from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
+
+gsap.registerPlugin(ScrollTrigger)
+
+const slides = [
+  {
+    title: 'Future.',
+    subtitle: 'Redefined.',
+    desc: 'Next-gen gadgets engineered for precision.',
+    price: 699,
+    image: assets.product_img4,
+    accent: '#10B981',
+  },
+  {
+    title: 'Minimal.',
+    subtitle: 'Powerful.',
+    desc: 'Luxury performance meets clean design.',
+    price: 999,
+    image: assets.hero_product_img1,
+    accent: '#06B6D4',
+  },
+]
 
 const Hero = () => {
   const router = useRouter()
   const heroRef = useRef(null)
   const imageRef = useRef(null)
   const textRef = useRef(null)
+  const btnRef = useRef(null)
 
   useEffect(() => {
-    const tl = gsap.timeline()
+    const mm = gsap.matchMedia()
 
-    tl.from('.hero-tag', {
-      y: 30,
-      opacity: 0,
-      duration: 0.6,
-    })
-      .from('.hero-title span', {
-        y: 60,
+    mm.add("(min-width: 768px)", () => {
+
+      // Apple-style smooth reveal
+      const tl = gsap.timeline()
+
+      tl.from('.hero-line', {
+        y: 100,
         opacity: 0,
         stagger: 0.15,
-        duration: 0.8,
-        ease: 'power3.out',
-      })
-      .from('.hero-subtitle', {
-        y: 30,
-        opacity: 0,
-        duration: 0.6,
-      }, '-=0.5')
-      .from('.hero-price', {
-        y: 20,
-        opacity: 0,
-        duration: 0.5,
-      }, '-=0.4')
-      .from('.hero-btn', {
-        scale: 0.8,
-        opacity: 0,
-        duration: 0.5,
-        ease: 'back.out(1.7)',
-      }, '-=0.4')
-      .from(imageRef.current, {
-        scale: 0.9,
-        opacity: 0,
         duration: 1,
-        ease: 'power3.out',
-      }, '-=1')
+        ease: 'power4.out'
+      })
+      .from('.hero-desc', {
+        opacity: 0,
+        y: 40,
+        duration: 0.8
+      }, "-=0.5")
+      .from(imageRef.current, {
+        opacity: 0,
+        scale: 0.9,
+        duration: 1,
+        ease: 'power3.out'
+      }, "-=1")
 
-    // Floating animation
-    gsap.to(imageRef.current, {
-      y: -20,
-      repeat: -1,
-      yoyo: true,
-      duration: 4,
-      ease: 'sine.inOut',
+      // Scroll-triggered hero exit
+      gsap.to(heroRef.current, {
+        scrollTrigger: {
+          trigger: heroRef.current,
+          start: "top top",
+          end: "bottom top",
+          scrub: true,
+        },
+        opacity: 0,
+        y: -150,
+        scale: 0.95
+      })
+
+      // Floating image
+      gsap.to(imageRef.current, {
+        y: -20,
+        repeat: -1,
+        yoyo: true,
+        duration: 4,
+        ease: 'sine.inOut'
+      })
+
     })
+
+    // Auto slide change
+    let current = 0
+    const slideTimeline = gsap.timeline({ repeat: -1 })
+
+    slideTimeline.to({}, { duration: 5 })
+      .call(() => {
+        current = (current + 1) % slides.length
+      })
 
   }, [])
 
-  // Desktop mouse parallax
-  const handleMouseMove = (e) => {
-    const { clientX, clientY } = e
-    const x = (clientX / window.innerWidth - 0.5) * 20
-    const y = (clientY / window.innerHeight - 0.5) * 20
+  // Magnetic Button
+  const handleMagnet = (e) => {
+    const bounds = btnRef.current.getBoundingClientRect()
+    const x = e.clientX - bounds.left - bounds.width / 2
+    const y = e.clientY - bounds.top - bounds.height / 2
 
-    gsap.to(imageRef.current, {
-      rotationY: x,
-      rotationX: -y,
-      transformPerspective: 800,
-      duration: 0.5,
+    gsap.to(btnRef.current, {
+      x: x * 0.3,
+      y: y * 0.3,
+      duration: 0.3,
+    })
+  }
+
+  const resetMagnet = () => {
+    gsap.to(btnRef.current, {
+      x: 0,
+      y: 0,
+      duration: 0.3,
     })
   }
 
   return (
     <section
       ref={heroRef}
-      onMouseMove={handleMouseMove}
-      className="relative min-h-screen bg-[#0B1220] text-white overflow-hidden"
+      className="relative min-h-screen bg-[#0A0F1C] text-white overflow-hidden flex items-center"
     >
-      {/* Soft Gradient Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-transparent to-cyan-500/10" />
+      {/* Animated Gradient Border */}
+      <div className="absolute inset-0 p-[1px] bg-gradient-to-r from-emerald-500 via-cyan-500 to-orange-500 animate-spin-slow opacity-20 blur-2xl" />
 
-      <div className="relative max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-12 min-h-screen items-center">
+      <div className="relative max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-12 items-center">
 
-        {/* LEFT CONTENT */}
-        <div ref={textRef} className="space-y-8">
-          <div className="hero-tag text-emerald-400 text-sm tracking-[0.3em] font-bold">
-            NEW ARRIVAL
-          </div>
-
-          <h1 className="hero-title text-5xl md:text-7xl font-black leading-tight">
-            <span className="block">Future.</span>
-            <span className="block text-white/30">Redefined.</span>
+        {/* LEFT */}
+        <div ref={textRef} className="space-y-6">
+          <h1 className="text-6xl md:text-8xl font-black leading-tight overflow-hidden">
+            <span className="hero-line block">Future.</span>
+            <span className="hero-line block text-white/30">Redefined.</span>
           </h1>
 
-          <p className="hero-subtitle text-lg text-white/60 max-w-md">
-            Experience next-gen gadgets designed for performance and elegance.
+          <p className="hero-desc text-lg text-white/60 max-w-md">
+            Experience innovation without distraction.
           </p>
 
-          <div className="flex items-center gap-10">
-            <div className="hero-price">
-              <p className="text-sm text-white/40">Starting at</p>
-              <p className="text-4xl font-light text-emerald-400">
-                ₹699
-              </p>
-            </div>
-
-            <button
-              onClick={() => router.push('/shop')}
-              className="hero-btn px-8 py-4 rounded-full bg-emerald-500 hover:bg-emerald-600 transition text-white font-semibold flex items-center gap-2"
-            >
-              Explore
-              <ArrowRightIcon size={18} />
-            </button>
-          </div>
+          <button
+            ref={btnRef}
+            onMouseMove={handleMagnet}
+            onMouseLeave={resetMagnet}
+            onClick={() => router.push('/shop')}
+            className="relative px-10 py-5 rounded-full bg-white text-black font-semibold transition"
+          >
+            <span className="flex items-center gap-2">
+              Explore <ArrowRightIcon size={18} />
+            </span>
+          </button>
         </div>
 
-        {/* RIGHT IMAGE */}
-        <div className="relative flex justify-center items-center">
-          <div className="absolute w-[400px] h-[400px] bg-emerald-500/20 blur-[120px] rounded-full" />
-
+        {/* RIGHT */}
+        <div className="relative flex justify-center">
           <div
             ref={imageRef}
-            className="relative bg-white/5 backdrop-blur-xl p-8 rounded-3xl border border-white/10 shadow-2xl"
+            className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-10 shadow-2xl"
           >
             <Image
               src={assets.product_img4}
               alt="Product"
               priority
-              className="w-full max-w-[400px] object-contain"
+              className="max-w-[420px] object-contain"
             />
           </div>
         </div>
+
       </div>
     </section>
   )
