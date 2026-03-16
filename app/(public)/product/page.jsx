@@ -3,6 +3,7 @@
 import { Suspense, useMemo, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
+import Link from "next/link"
 
 function ShopContent() {
 
@@ -69,30 +70,31 @@ function ShopContent() {
           className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6"
         >
           {filteredStores.map((store) => (
-            <div
-              key={store.id}
-              className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 hover:scale-[1.04] transition cursor-pointer"
-            >
+            <Link key={store.id} href={`/shop/${store.username}`}>
 
-              <div className="flex flex-col items-center text-center">
+              <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 hover:scale-[1.04] transition cursor-pointer">
 
-                <img
-                  src={store.logo || '/store.png'}
-                  alt={store.name}
-                  className="w-16 h-16 object-cover rounded-full mb-4"
-                />
+                <div className="flex flex-col items-center text-center">
 
-                <h2 className="text-lg font-semibold text-white">
-                  {store.name}
-                </h2>
+                  <img
+                    src={store.logo || '/store.png'}
+                    alt={store.name}
+                    className="w-16 h-16 object-cover rounded-full mb-4"
+                  />
 
-                <p className="text-xs text-white/40 mt-1">
-                  {store.category || 'Local Store'}
-                </p>
+                  <h2 className="text-lg font-semibold text-white">
+                    {store.name}
+                  </h2>
+
+                  <p className="text-xs text-white/40 mt-1">
+                    {store.category || 'Local Store'}
+                  </p>
+
+                </div>
 
               </div>
 
-            </div>
+            </Link>
           ))}
         </motion.div>
 
