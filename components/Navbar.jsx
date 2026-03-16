@@ -76,7 +76,8 @@ const Navbar = () => {
 
   const desktopLinks = [
     { name: 'Home', href: '/' },
-    { name: 'Shop', href: '/shop' },
+    { name: 'Product', href: '/shop' },
+    { name: 'Shop', href: '/product' },
     { name: 'About', href: '/about' },
     { name: 'Contact', href: '/contact' },
     { name: 'Orders', href: '/orders' },
@@ -84,7 +85,8 @@ const Navbar = () => {
 
   const mobileLinks = [
     { id: 'home', href: '/', icon: <HomeIcon size={18} />, label: 'Home' },
-    { id: 'shop', href: '/shop', icon: <Search size={18} />, label: 'Shop' },
+    { id: 'product', href: '/shop', icon: <Search size={18} />, label: 'Product' },
+    { id: 'shop', href: '/product', icon: <Search size={18} />, label: 'Shop' },
     { id: 'orders', href: '/orders', icon: <PackageIcon size={18} />, label: 'Orders' },
     { id: 'cart', href: '/cart', icon: <ShoppingCart size={18} />, label: 'Cart' },
   ]
