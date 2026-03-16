@@ -1,15 +1,32 @@
 'use client'
 
-import { Suspense, useMemo } from 'react'
+import { Suspense, useMemo, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { useSelector } from 'react-redux'
 import { motion } from 'framer-motion'
+import axios from 'axios'
 
 function ShopContent() {
+
   const searchParams = useSearchParams()
   const search = searchParams.get('search')
 
-  const stores = useSelector((state) => state.store.list || [])
+  const [stores, setStores] = useState([])
+
+  /* FETCH STORES */
+  useEffect(() => {
+
+    const fetchStores = async () => {
+      try {
+        const { data } = await axios.get('/api/store/all')
+        setStores(data.stores || [])
+      } catch (error) {
+        console.error("Error fetching stores:", error)
+      }
+    }
+
+    fetchStores()
+
+  }, [])
 
   /* FILTER STORES */
   const filteredStores = useMemo(() => {
@@ -57,6 +74,7 @@ function ShopContent() {
           layout
           className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6"
         >
+
           {filteredStores.map((store) => (
             <div
               key={store.id}
@@ -66,7 +84,7 @@ function ShopContent() {
               <div className="flex flex-col items-center text-center">
 
                 <img
-                  src={store.logo || '/store.png'}
+                  src={store.image || '/store.png'}
                   alt={store.name}
                   className="w-16 h-16 object-cover rounded-full mb-4"
                 />
@@ -76,13 +94,14 @@ function ShopContent() {
                 </h2>
 
                 <p className="text-xs text-white/40 mt-1">
-                  {store.category || 'Local Store'}
+                  @{store.username}
                 </p>
 
               </div>
 
             </div>
           ))}
+
         </motion.div>
 
       </div>
