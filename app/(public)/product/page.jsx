@@ -3,7 +3,6 @@
 import { Suspense, useMemo, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
-import axios from 'axios'
 
 function ShopContent() {
 
@@ -12,20 +11,15 @@ function ShopContent() {
 
   const [stores, setStores] = useState([])
 
-  /* FETCH STORES */
+  // FETCH STORES FROM API
   useEffect(() => {
-
     const fetchStores = async () => {
-      try {
-        const { data } = await axios.get('/api/store/all')
-        setStores(data.stores || [])
-      } catch (error) {
-        console.error("Error fetching stores:", error)
-      }
+      const res = await fetch('/api/stores')
+      const data = await res.json()
+      setStores(data)
     }
 
     fetchStores()
-
   }, [])
 
   /* FILTER STORES */
@@ -74,7 +68,6 @@ function ShopContent() {
           layout
           className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6"
         >
-
           {filteredStores.map((store) => (
             <div
               key={store.id}
@@ -84,7 +77,7 @@ function ShopContent() {
               <div className="flex flex-col items-center text-center">
 
                 <img
-                  src={store.image || '/store.png'}
+                  src={store.logo || '/store.png'}
                   alt={store.name}
                   className="w-16 h-16 object-cover rounded-full mb-4"
                 />
@@ -94,14 +87,13 @@ function ShopContent() {
                 </h2>
 
                 <p className="text-xs text-white/40 mt-1">
-                  @{store.username}
+                  {store.category || 'Local Store'}
                 </p>
 
               </div>
 
             </div>
           ))}
-
         </motion.div>
 
       </div>
