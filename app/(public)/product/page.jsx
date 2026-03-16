@@ -14,9 +14,9 @@ function ShopContent() {
   // FETCH STORES FROM API
   useEffect(() => {
     const fetchStores = async () => {
-      const res = await fetch('/api/stores')
+      const res = await fetch('/api/store/all')
       const data = await res.json()
-      setStores(data)
+      setStores(data.stores)
     }
 
     fetchStores()
