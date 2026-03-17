@@ -8,13 +8,8 @@ import { useEffect, useState } from "react"
 import { toast } from "react-hot-toast"
 import {
     BrowserMultiFormatReader,
-    BarcodeFormat,
-    NotFoundException,
-
+    BarcodeFormat
 } from "@zxing/browser";
-
-
-
 
 export default function StoreAddProduct() {
 
@@ -27,6 +22,7 @@ export default function StoreAddProduct() {
     ]
 
     const [images, setImages] = useState({ 1: null, 2: null, 3: null, 4: null })
+
     const [productInfo, setProductInfo] = useState({
         name: "",
         description: "",
@@ -43,23 +39,15 @@ export default function StoreAddProduct() {
     const [discount, setDiscount] = useState(0)
     const [barcodeExists, setBarcodeExists] = useState(false)
     const [scanning, setScanning] = useState(false)
-    const [videoStream, setVideoStream] = useState(null)
-
-
-
 
     const onChangeHandler = (e) => {
         const { name, value } = e.target
 
-        // Block editing fields if barcode exists
         if (
             barcodeExists &&
             ["name", "description", "mrp", "price", "category"].includes(name)
-        ) {
-            return
-        }
+        ) return
 
-        // Price validation
         if (name === "price" && Number(value) > Number(productInfo.mrp)) {
             toast.error("Offer price cannot exceed MRP")
             return
@@ -70,7 +58,6 @@ export default function StoreAddProduct() {
             [name]: value,
         }))
     }
-
 
     useEffect(() => {
         if (productInfo.mrp > 0 && productInfo.price > 0) {
@@ -141,8 +128,9 @@ export default function StoreAddProduct() {
             }
         }
     }
+
     const handleBarcodeLookup = async (barcodeValue) => {
-        if (!barcodeValue) return
+        if (!barcodeValue || barcodeValue.trim() === "") return
 
         const cleanBarcode = barcodeValue.trim()
 
@@ -166,7 +154,7 @@ export default function StoreAddProduct() {
                     category: data.product.category,
                     mrp: data.product.mrp,
                     price: data.product.price,
-                    quantity: "", // 🔥 seller adds new stock
+                    quantity: "",
                 }))
             } else {
                 setBarcodeExists(false)
@@ -188,26 +176,16 @@ export default function StoreAddProduct() {
         const initializeScanner = async () => {
             try {
                 const videoElement = document.getElementById("barcode-video");
-                if (!videoElement) {
-                    throw new Error("Video element not found");
-                }
-
                 const devices = await BrowserMultiFormatReader.listVideoInputDevices();
-                if (devices.length === 0) {
-                    throw new Error("No camera found or permission denied");
-                }
 
                 let selectedDeviceId = devices[0].deviceId;
                 const rearCamera = devices.find((device) =>
                     /back|rear|environment/i.test(device.label)
                 );
-                if (rearCamera) {
-                    selectedDeviceId = rearCamera.deviceId;
-                }
+                if (rearCamera) selectedDeviceId = rearCamera.deviceId;
 
                 codeReader = new BrowserMultiFormatReader();
 
-                // Define a wide range of barcode formats to support multi-vendor products
                 const formats = [
                     BarcodeFormat.EAN_13,
                     BarcodeFormat.UPC_A,
@@ -226,7 +204,6 @@ export default function StoreAddProduct() {
                     (result, error) => {
                         if (result) {
                             const scannedCode = result.getText();
-                            console.log("Scanned Barcode:", scannedCode);
 
                             if (videoElement.srcObject) {
                                 videoElement.srcObject.getTracks().forEach((track) => track.stop());
@@ -234,6 +211,7 @@ export default function StoreAddProduct() {
                             }
 
                             setScanning(false);
+
                             setProductInfo((prev) => ({
                                 ...prev,
                                 barcode: scannedCode,
@@ -243,40 +221,26 @@ export default function StoreAddProduct() {
                         }
 
                         if (error && !error.message.includes("No MultiFormat Readers were able to detect the code")) {
-                            console.error("Barcode scan error:", error);
                             toast.error("Barcode scanning failed");
                             setScanning(false);
                         }
                     },
-                    { formats } // Pass the formats here
+                    { formats }
                 );
 
             } catch (err) {
-                console.error("SCAN ERROR:", err);
-                toast.error(
-                    err.message.includes("Permission denied")
-                        ? "Camera permission denied. Please allow camera access."
-                        : "Barcode scanning failed: " + err.message
-                );
+                toast.error("Camera permission denied or scanning failed");
                 setScanning(false);
             }
         };
 
-        if (scanning) {
-            initializeScanner();
-        }
+        if (scanning) initializeScanner()
 
         return () => {
-            if (codeReader) {
-                try {
-                    codeReader.reset();
-                } catch (e) {
-                    console.error("Failed to reset scanner:", e);
-                }
-            }
+            if (codeReader) codeReader.reset()
         };
-    }, [scanning]);
 
+    }, [scanning]);
 
     const onSubmitHandler = async (e) => {
         e.preventDefault()
@@ -288,6 +252,7 @@ export default function StoreAddProduct() {
 
         if (!finalCategory) return toast.error("Please enter a category")
         if (productInfo.quantity === 0) return toast.error("Product is out of stock")
+
         if (
             !barcodeExists &&
             !images[1] &&
@@ -298,25 +263,29 @@ export default function StoreAddProduct() {
             return toast.error("Please upload at least one image")
         }
 
-
         try {
             setLoading(true)
 
             const formData = new FormData()
+
             formData.append('name', productInfo.name)
             formData.append('description', productInfo.description)
             formData.append('mrp', productInfo.mrp)
             formData.append('price', productInfo.price)
             formData.append('quantity', productInfo.quantity)
             formData.append('category', finalCategory)
-            formData.append("barcode", productInfo.barcode)
 
+            // ✅ barcode optional
+            if (productInfo.barcode) {
+                formData.append("barcode", productInfo.barcode)
+            }
 
             Object.keys(images).forEach(key => {
                 images[key] && formData.append('images', images[key])
             })
 
             const token = await getToken()
+
             const { data } = await axios.post('/api/store/product', formData, {
                 headers: { Authorization: `Bearer ${token}` }
             })
@@ -330,11 +299,13 @@ export default function StoreAddProduct() {
                 price: 0,
                 quantity: 0,
                 category: "",
+                barcode: ""
             })
 
             setImages({ 1: null, 2: null, 3: null, 4: null })
             setDiscount(0)
             setCustomCategory("")
+            setBarcodeExists(false)
 
         } catch (error) {
             toast.error(error?.response?.data?.error || error.message)
@@ -348,22 +319,23 @@ export default function StoreAddProduct() {
             onSubmit={e => toast.promise(onSubmitHandler(e), { loading: "Adding Product..." })}
             className="mb-28"
         >
-            <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow-lg p-4 sm:p-6 md:p-10 space-y-8">
+            <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow-lg p-6 space-y-8">
 
-                <h1 className="text-xl sm:text-2xl font-semibold text-slate-800">
+                <h1 className="text-xl font-semibold text-slate-800">
                     Add New Product
                 </h1>
 
                 {/* Images */}
                 <div>
                     <p className="mb-3 text-sm text-slate-600">Product Images</p>
-                    <div className="grid grid-cols-4 gap-3 sm:gap-4">
+
+                    <div className="grid grid-cols-4 gap-4">
                         {Object.keys(images).map(key => (
-                            <label key={key} className="border rounded-xl p-2 cursor-pointer hover:shadow transition">
+                            <label key={key} className="border rounded-xl p-2 cursor-pointer">
                                 <Image
                                     width={300}
                                     height={300}
-                                    className="w-full h-20 sm:h-24 object-contain"
+                                    className="w-full h-24 object-contain"
                                     src={images[key] ? URL.createObjectURL(images[key]) : assets.upload_area}
                                     alt=""
                                 />
@@ -394,8 +366,12 @@ export default function StoreAddProduct() {
                                 }));
                                 setBarcodeExists(false);
                             }}
-                            onBlur={() => handleBarcodeLookup(productInfo.barcode)}
-                            placeholder="Scan or enter barcode"
+                            onBlur={() => {
+                                if (productInfo.barcode) {
+                                    handleBarcodeLookup(productInfo.barcode)
+                                }
+                            }}
+                            placeholder="Scan or enter barcode (optional)"
                             className="flex-1 mt-1 p-3 border rounded-lg"
                         />
 
@@ -420,100 +396,45 @@ export default function StoreAddProduct() {
                 </div>
 
                 {/* Name */}
-                <div>
-                    <label className="text-sm">Name</label>
-                    <input
-                        type="text"
-                        name="name"
-                        value={productInfo.name}
-                        onChange={onChangeHandler}
-                        className="w-full mt-1 p-3 border rounded-lg"
-                        required
-                    />
-                </div>
+                <input type="text" name="name" value={productInfo.name} onChange={onChangeHandler} placeholder="Product Name" className="w-full p-3 border rounded-lg" required />
 
                 {/* Description */}
-                <div>
-                    <label className="text-sm">Description</label>
-                    <textarea
-                        name="description"
-                        rows={4}
-                        value={productInfo.description}
-                        onChange={onChangeHandler}
-                        className="w-full mt-1 p-3 border rounded-lg resize-none"
-                        required
-                    />
-                </div>
+                <textarea name="description" rows={4} value={productInfo.description} onChange={onChangeHandler} placeholder="Description" className="w-full p-3 border rounded-lg" required />
 
                 {/* Prices */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div>
-                        <label className="text-sm">Actual Price (₹)</label>
-                        <input type="number" name="mrp" value={productInfo.mrp} onChange={onChangeHandler} className="w-full mt-1 p-3 border rounded-lg" required />
-                    </div>
-
-                    <div>
-                        <label className="text-sm">Offer Price (₹)</label>
-                        <input type="number" name="price" value={productInfo.price} onChange={onChangeHandler} className="w-full mt-1 p-3 border rounded-lg" required />
-                    </div>
-
-                    <div>
-                        <label className="text-sm">Quantity</label>
-                        <input type="number" name="quantity" min={0} value={productInfo.quantity} onChange={onChangeHandler} className="w-full mt-1 p-3 border rounded-lg" required />
-                    </div>
+                <div className="grid grid-cols-3 gap-4">
+                    <input type="number" name="mrp" value={productInfo.mrp} onChange={onChangeHandler} placeholder="MRP ₹" className="p-3 border rounded-lg" required />
+                    <input type="number" name="price" value={productInfo.price} onChange={onChangeHandler} placeholder="Offer Price ₹" className="p-3 border rounded-lg" required />
+                    <input type="number" name="quantity" min={0} value={productInfo.quantity} onChange={onChangeHandler} placeholder="Quantity" className="p-3 border rounded-lg" required />
                 </div>
-
-                {/* Discount */}
-                {productInfo.mrp > 0 && (
-                    <div>
-                        <div className="flex justify-between text-sm mb-2">
-                            <span>Discount: {discount}%</span>
-                            <span className="text-green-600">
-                                You save ₹{productInfo.mrp - productInfo.price}
-                            </span>
-                        </div>
-
-                        <input
-                            type="range"
-                            min={0}
-                            max={90}
-                            value={discount}
-                            onChange={(e) => handleDiscountChange(Number(e.target.value))}
-                            className="w-full"
-                        />
-                    </div>
-                )}
 
                 {/* Category */}
-                <div>
-                    <select
+                <select
+                    className="w-full p-3 border rounded-lg"
+                    value={productInfo.category}
+                    onChange={e => setProductInfo({ ...productInfo, category: e.target.value })}
+                    required
+                >
+                    <option value="">Select category</option>
+                    {categories.map(cat => (
+                        <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                </select>
+
+                {productInfo.category === "Others" && (
+                    <input
+                        type="text"
+                        placeholder="Enter custom category"
+                        value={customCategory}
+                        onChange={(e) => setCustomCategory(e.target.value)}
                         className="w-full p-3 border rounded-lg"
-                        value={productInfo.category}
-                        onChange={e => setProductInfo({ ...productInfo, category: e.target.value })}
                         required
-                    >
-                        <option value="">Select category</option>
-                        {categories.map(cat => (
-                            <option key={cat} value={cat}>{cat}</option>
-                        ))}
-                    </select>
+                    />
+                )}
 
-                    {productInfo.category === "Others" && (
-                        <input
-                            type="text"
-                            placeholder="Enter custom category"
-                            value={customCategory}
-                            onChange={(e) => setCustomCategory(e.target.value)}
-                            className="w-full mt-3 p-3 border rounded-lg"
-                            required
-                        />
-                    )}
-                </div>
-
-                {/* Button */}
                 <button
                     disabled={loading}
-                    className="w-full bg-slate-900 text-white py-3 rounded-xl text-sm font-medium hover:bg-slate-800 transition"
+                    className="w-full bg-slate-900 text-white py-3 rounded-xl"
                 >
                     Add Product
                 </button>
