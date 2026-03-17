@@ -24,7 +24,7 @@ model Product {
   id          String   @id @default(cuid())
   name        String
   description String
-  keywords    String[] // 🔥 ADD THIS
+  keywords    String[]
   mrp         Float
   price       Float
   quantity    Int      @default(0)
@@ -39,7 +39,6 @@ model Product {
   orderItems OrderItem[]
   rating     Rating[]
 
-  @@unique([barcode, storeId])
   @@index([barcode, storeId])
 }
 
