@@ -3,10 +3,19 @@
 import Image from "next/image"
 import { CreditCard } from "lucide-react"
 import { useSelector } from "react-redux"
-import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 
-const OrderItem = ({ order, mobile, onCancel, onTrack, onVerifyOtp, onRate }) => {
+const OrderItem = ({
+  order,
+  mobile,
+  onCancel,
+  onTrack,
+  onVerifyOtp,
+  onRate,
+  canReturn,
+  onReturn
+}) => {
+
   const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '₹'
 
   const { ratings } = useSelector(state => state.rating)
@@ -23,6 +32,7 @@ const OrderItem = ({ order, mobile, onCancel, onTrack, onVerifyOtp, onRate }) =>
   const isCanceled = order.status === 'CANCELLED'
 
   /* ---------------- DESKTOP ROW ---------------- */
+
   const DesktopRow = (
     <motion.tr
       layout
@@ -31,10 +41,14 @@ const OrderItem = ({ order, mobile, onCancel, onTrack, onVerifyOtp, onRate }) =>
       transition={{ duration: 0.4 }}
       className={`hidden md:table-row bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl ${isCanceled ? 'opacity-50' : ''}`}
     >
+
       {/* PRODUCT */}
       <td className="py-6 pl-6 align-top">
+
         {order.orderItems.map((item, idx) => (
+
           <div key={idx} className="flex items-center gap-4 mb-4 last:mb-0">
+
             <div className="w-20 aspect-square bg-white/10 rounded-xl flex items-center justify-center">
               <Image
                 src={item.product.images[0]}
@@ -44,17 +58,27 @@ const OrderItem = ({ order, mobile, onCancel, onTrack, onVerifyOtp, onRate }) =>
                 className="object-contain"
               />
             </div>
+
             <div>
               <p className="font-medium text-white">{item.product.name}</p>
-              <p className="text-sm text-white/60">{currency}{item.price} × {item.quantity}</p>
-              <p className="text-xs text-white/40">{new Date(order.createdAt).toDateString()}</p>
+              <p className="text-sm text-white/60">
+                {currency}{item.price} × {item.quantity}
+              </p>
+              <p className="text-xs text-white/40">
+                {new Date(order.createdAt).toDateString()}
+              </p>
             </div>
+
           </div>
+
         ))}
+
       </td>
 
       {/* TOTAL */}
-      <td className="text-center font-semibold align-top">{currency}{order.total}</td>
+      <td className="text-center font-semibold align-top">
+        {currency}{order.total}
+      </td>
 
       {/* PAYMENT */}
       <td className="text-center align-top">
@@ -74,6 +98,8 @@ const OrderItem = ({ order, mobile, onCancel, onTrack, onVerifyOtp, onRate }) =>
 
         {!isCanceled && (
           <>
+
+            {/* TRACK */}
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -83,6 +109,7 @@ const OrderItem = ({ order, mobile, onCancel, onTrack, onVerifyOtp, onRate }) =>
               Track
             </motion.button>
 
+            {/* VERIFY OTP */}
             {isDeliveryInitiated && (
               <motion.button
                 whileHover={{ scale: 1.05 }}
@@ -94,6 +121,7 @@ const OrderItem = ({ order, mobile, onCancel, onTrack, onVerifyOtp, onRate }) =>
               </motion.button>
             )}
 
+            {/* RATE */}
             {isDelivered && onRate && (
               <motion.button
                 whileHover={{ scale: 1.05 }}
@@ -105,8 +133,19 @@ const OrderItem = ({ order, mobile, onCancel, onTrack, onVerifyOtp, onRate }) =>
               </motion.button>
             )}
 
+            {/* RETURN BUTTON */}
+            {canReturn && (
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={onReturn}
+                className="px-4 py-1.5 rounded-full bg-orange-500/15 text-orange-400 border border-orange-500/30 hover:bg-orange-500/25 text-sm"
+              >
+                Return
+              </motion.button>
+            )}
 
-
+            {/* CANCEL */}
             {!isDelivered && onCancel && (
               <motion.button
                 whileHover={{ scale: 1.05 }}
@@ -117,16 +156,20 @@ const OrderItem = ({ order, mobile, onCancel, onTrack, onVerifyOtp, onRate }) =>
                 Cancel
               </motion.button>
             )}
+
           </>
         )}
 
         {isCanceled && <span className="text-red-400 text-sm">Cancelled</span>}
         {isDelivered && <span className="text-emerald-400 text-sm">Completed</span>}
+
       </td>
+
     </motion.tr>
   )
 
   /* ---------------- MOBILE CARD ---------------- */
+
   const MobileCard = (
     <motion.div
       layout
@@ -135,8 +178,11 @@ const OrderItem = ({ order, mobile, onCancel, onTrack, onVerifyOtp, onRate }) =>
       transition={{ duration: 0.4 }}
       className={`rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 p-6 space-y-4 ${isCanceled ? 'opacity-50' : ''}`}
     >
+
       {order.orderItems.map((item, idx) => (
+
         <div key={idx} className="flex gap-4">
+
           <div className="w-20 aspect-square bg-white/10 rounded-xl flex items-center justify-center">
             <Image
               src={item.product.images[0]}
@@ -146,12 +192,19 @@ const OrderItem = ({ order, mobile, onCancel, onTrack, onVerifyOtp, onRate }) =>
               className="object-contain"
             />
           </div>
+
           <div className="flex-1">
             <p className="font-medium text-white">{item.product.name}</p>
-            <p className="text-sm text-white/60">{currency}{item.price} × {item.quantity}</p>
-            <p className="text-xs text-white/40">{new Date(order.createdAt).toDateString()}</p>
+            <p className="text-sm text-white/60">
+              {currency}{item.price} × {item.quantity}
+            </p>
+            <p className="text-xs text-white/40">
+              {new Date(order.createdAt).toDateString()}
+            </p>
           </div>
+
         </div>
+
       ))}
 
       <div className="flex justify-between items-center">
@@ -161,11 +214,15 @@ const OrderItem = ({ order, mobile, onCancel, onTrack, onVerifyOtp, onRate }) =>
         </span>
       </div>
 
-      <p className="text-sm text-white/60">{order.address.name}, {order.address.city}, {order.address.state}</p>
+      <p className="text-sm text-white/60">
+        {order.address.name}, {order.address.city}, {order.address.state}
+      </p>
 
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
+
         {!isCanceled && (
           <>
+
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -197,7 +254,17 @@ const OrderItem = ({ order, mobile, onCancel, onTrack, onVerifyOtp, onRate }) =>
               </motion.button>
             )}
 
-
+            {/* RETURN */}
+            {canReturn && (
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={onReturn}
+                className="flex-1 px-4 py-2 rounded-full bg-orange-500/15 text-orange-400 border border-orange-500/30 text-sm"
+              >
+                Return
+              </motion.button>
+            )}
 
             {!isDelivered && onCancel && (
               <motion.button
@@ -209,12 +276,12 @@ const OrderItem = ({ order, mobile, onCancel, onTrack, onVerifyOtp, onRate }) =>
                 Cancel
               </motion.button>
             )}
+
           </>
         )}
 
-        {isCanceled && <span className="text-red-400 text-sm">Cancelled</span>}
-        {isDelivered && <span className="text-emerald-400 text-sm">Completed</span>}
       </div>
+
     </motion.div>
   )
 
@@ -227,8 +294,6 @@ const OrderItem = ({ order, mobile, onCancel, onTrack, onVerifyOtp, onRate }) =>
           </tr>
         )}
       </AnimatePresence>
-
-      
     </>
   )
 }

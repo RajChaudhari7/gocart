@@ -11,8 +11,8 @@ import Loading from "@/components/Loading"
 import TrackingModal from "@/components/TrackingModal"
 import RatingModal from "@/components/RatingModal"
 
-
 export default function Orders() {
+
   const { getToken } = useAuth()
   const { user, isLoaded } = useUser()
   const router = useRouter()
@@ -22,15 +22,19 @@ export default function Orders() {
   const [loading, setLoading] = useState(true)
   const [ratingOrder, setRatingOrder] = useState(null)
 
-
+  // ================= FETCH ORDERS =================
   const fetchOrders = async () => {
     try {
       setLoading(true)
+
       const token = await getToken()
+
       const { data } = await axios.get('/api/orders', {
         headers: { Authorization: `Bearer ${token}` },
       })
+
       setOrders(data.orders)
+
     } catch (error) {
       toast.error(error?.response?.data?.error || error.message)
     } finally {
@@ -38,129 +42,234 @@ export default function Orders() {
     }
   }
 
+  // ================= AUTH CHECK =================
   useEffect(() => {
     if (isLoaded) {
       user ? fetchOrders() : router.push('/')
     }
   }, [isLoaded, user])
 
-  // 🔥 REFRESH ORDERS WHEN USER RETURNS FROM STRIPE / TAB FOCUS
+  // ================= REFRESH WHEN TAB FOCUS =================
   useEffect(() => {
+
     const onFocus = () => {
       if (user) fetchOrders()
     }
 
     window.addEventListener('focus', onFocus)
+
     return () => window.removeEventListener('focus', onFocus)
+
   }, [user])
 
+
+  // ================= CANCEL ORDER =================
   const cancelOrder = async (order) => {
+
     if (order.status === 'DELIVERED') return
 
     if (!confirm("Are you sure you want to cancel this order?")) return
+
     try {
+
       const token = await getToken()
-      await axios.post(`/api/orders/cancel`, { orderId: order.id }, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+
+      await axios.post(`/api/orders/cancel`,
+        { orderId: order.id },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      )
+
       toast.success("Order canceled successfully")
+
       fetchOrders()
+
     } catch (error) {
+
       toast.error(error?.response?.data?.error || error.message)
+
     }
   }
 
+
+  // ================= CHECK RETURN ELIGIBILITY =================
+  const canReturn = (order) => {
+
+    if (order.status !== "DELIVERED") return false
+
+    if (!order.deliveredAt) return false
+
+    const deliveredDate = new Date(order.deliveredAt)
+
+    const now = new Date()
+
+    const diffDays =
+      (now - deliveredDate) / (1000 * 60 * 60 * 24)
+
+    return diffDays <= 7
+
+  }
+
+
+  // ================= HANDLE RETURN CLICK =================
+  const handleReturn = (order) => {
+
+    router.push(`/return/${order.id}`)
+
+  }
+
+
   if (!isLoaded || loading) return <Loading />
 
+
   return (
+
     <section className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#020617] to-black text-white px-6">
+
       <div className="max-w-7xl mx-auto py-24">
 
-        {/* Page Title */}
+        {/* PAGE TITLE */}
         <div className="mb-12">
+
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-2">
             Your Orders
           </h1>
+
           <p className="text-white/60 text-lg">
-            You have placed <span className="text-indigo-400 font-semibold">{orders.length}</span> {orders.length === 1 ? 'order' : 'orders'}.
+            You have placed{" "}
+            <span className="text-indigo-400 font-semibold">
+              {orders.length}
+            </span>{" "}
+            {orders.length === 1 ? "order" : "orders"}.
           </p>
+
         </div>
 
+
         {orders.length > 0 ? (
+
           <div className="mt-16 overflow-x-auto">
+
+            {/* DESKTOP TABLE */}
             <table className="w-full border-separate border-spacing-y-6 hidden md:table">
+
               <thead>
+
                 <tr className="text-sm text-white/60">
+
                   <th className="text-left pl-6">Product</th>
                   <th className="text-center">Total</th>
                   <th className="text-center">Payment</th>
                   <th className="text-left">Address</th>
                   <th className="text-center">Action</th>
+
                 </tr>
+
               </thead>
+
+
               <tbody>
+
                 {orders.map(order => (
+
                   <OrderItem
                     key={order.id}
                     order={order}
+                    canReturn={canReturn(order)}
+                    onReturn={() => handleReturn(order)}
                     onCancel={() => cancelOrder(order)}
                     onTrack={() => setTrackingOrder(order)}
                     onRate={() => setRatingOrder(order)}
                   />
+
                 ))}
+
               </tbody>
+
             </table>
 
-            {/* Mobile */}
+
+            {/* MOBILE VIEW */}
+
             <div className="space-y-6 md:hidden">
+
               {orders.map(order => (
+
                 <OrderItem
                   key={order.id}
                   order={order}
                   mobile
+                  canReturn={canReturn(order)}
+                  onReturn={() => handleReturn(order)}
                   onCancel={() => cancelOrder(order)}
                   onTrack={() => setTrackingOrder(order)}
                   onRate={() => setRatingOrder(order)}
                 />
+
               ))}
+
             </div>
+
           </div>
+
         ) : (
+
           <div className="flex items-center justify-center min-h-[60vh] text-center">
+
             <div>
-              <h1 className="text-3xl font-semibold mb-2">No Orders Yet</h1>
+
+              <h1 className="text-3xl font-semibold mb-2">
+                No Orders Yet
+              </h1>
+
               <p className="text-white/60 mb-6">
                 Looks like you haven’t placed any orders.
               </p>
+
               <button
                 onClick={() => router.push('/')}
                 className="px-6 py-3 bg-indigo-600 rounded-lg hover:bg-indigo-500 transition"
               >
                 Shop Now
               </button>
+
             </div>
+
           </div>
+
         )}
+
       </div>
 
+
+      {/* TRACKING MODAL */}
       {trackingOrder && (
+
         <TrackingModal
           order={trackingOrder}
           onClose={() => setTrackingOrder(null)}
         />
+
       )}
 
+
+      {/* RATING MODAL */}
       {ratingOrder && (
+
         <RatingModal
           order={ratingOrder}
           onClose={() => setRatingOrder(null)}
           onSuccess={() => {
             setRatingOrder(null)
-            fetchOrders() // refresh after rating
+            fetchOrders()
           }}
         />
+
       )}
 
     </section>
+
   )
+
 }
