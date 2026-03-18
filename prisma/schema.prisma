@@ -18,6 +18,8 @@ model User {
   Address     Address[]
   store       Store?
   buyerOrders Order[]   @relation("BuyerRelation")
+
+  returnRequests ReturnRequest[]
 }
 
 model Product {
@@ -38,6 +40,8 @@ model Product {
   store      Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
   orderItems OrderItem[]
   rating     Rating[]
+
+  returnItems ReturnItem[]
 
   @@index([barcode, storeId])
 }
@@ -97,6 +101,9 @@ model Order {
   coupon            Json          @default("{}")
 
   orderItems OrderItem[]
+
+  returnRequests ReturnRequest[]
+
 
   user    User    @relation("BuyerRelation", fields: [userId], references: [id])
   store   Store   @relation(fields: [storeId], references: [id])
