@@ -14,7 +14,8 @@ const STATUS_FLOW = [
   "SHIPPED",
   "OUT_FOR_DELIVERY",
   "DELIVERY_INITIATED",
-  "DELIVERED"
+  "DELIVERED",
+  "RETURNED",
 ]
 
 // ================= UPDATE SELLER ORDER STATUS =================
@@ -310,7 +311,12 @@ export async function GET(request) {
         user: true,
         address: true,
         store: true,
-        orderItems: { include: { product: true } }
+        orderItems: { include: { product: true } },
+        returnRequests: {
+          include: {
+            items: true
+          }
+        }
       },
       orderBy: { createdAt: "desc" }
     })
