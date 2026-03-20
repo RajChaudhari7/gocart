@@ -10,12 +10,9 @@ export async function POST(req) {
         const { userId } = getAuth(req)
         const { orderId, otp } = await req.json()
 
-        const hashedOtp = hashOtp(otp)
-
         const returnRequest = await prisma.returnRequest.findFirst({
             where: {
                 orderId,
-                otp: hashedOtp,
                 verified: false
             },
             include: {
@@ -24,6 +21,15 @@ export async function POST(req) {
         })
 
         if (!returnRequest) {
+            return NextResponse.json(
+                { error: "Return request not found" },
+                { status: 400 }
+            )
+        }
+
+        const hashedOtp = hashOtp(otp)
+
+        if (returnRequest.otp !== hashedOtp) {
             return NextResponse.json(
                 { error: "Invalid OTP" },
                 { status: 400 }
