@@ -9,25 +9,25 @@ export async function POST(req) {
 
         const { userId } = getAuth(req)
         const { orderId, otp } = await req.json()
+        const cleanOtp = otp.trim()
 
         const returnRequest = await prisma.returnRequest.findFirst({
             where: {
                 orderId,
                 verified: false
             },
+            orderBy: {
+                createdAt: "desc"
+            },
             include: {
                 items: true
             }
         })
 
-        if (!returnRequest) {
-            return NextResponse.json(
-                { error: "Return request not found" },
-                { status: 400 }
-            )
-        }
+        console.log("Entered OTP:", cleanOtp)
+        console.log("DB OTP:", returnRequest?.otp)
 
-        if (returnRequest.otp !== otp) {
+        if (returnRequest.otp !== cleanOtp) {
             return NextResponse.json(
                 { error: "Invalid OTP" },
                 { status: 400 }
