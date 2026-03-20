@@ -39,7 +39,6 @@ export async function POST(req) {
 
         await prisma.$transaction(async (tx) => {
 
-            // 🔥 RESTOCK PRODUCTS
             for (const item of returnRequest.items) {
 
                 await tx.product.update({
@@ -53,7 +52,6 @@ export async function POST(req) {
 
             }
 
-            // mark return completed
             await tx.returnRequest.update({
                 where: { id: returnRequest.id },
                 data: {
@@ -62,7 +60,6 @@ export async function POST(req) {
                 }
             })
 
-            // update order status
             await tx.order.update({
                 where: { id: orderId },
                 data: {

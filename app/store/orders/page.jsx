@@ -16,8 +16,10 @@ const STATUS_FLOW = [
     "SHIPPED",
     "OUT_FOR_DELIVERY",
     "DELIVERY_INITIATED",
-    "DELIVERED",      // ✅ ADD THIS
-    "CANCELLED"
+    "DELIVERED", 
+    "RETURNED",     // ✅ ADD THIS
+    "CANCELLED",
+    
 ]
 
 export default function StoreOrders() {
@@ -35,6 +37,10 @@ export default function StoreOrders() {
     const [loading, setLoading] = useState(true)
     const [selectedOrder, setSelectedOrder] = useState(null)
     const [isModalOpen, setIsModalOpen] = useState(false)
+    const [showReturnOtpModal, setShowReturnOtpModal] = useState(false)
+    const [returnOtpOrder, setReturnOtpOrder] = useState(null)
+    const [enteredReturnOtp, setEnteredReturnOtp] = useState("")
+    const [verifyingReturnOtp, setVerifyingReturnOtp] = useState(false)
 
     const currentDate = new Date()
 
@@ -75,6 +81,54 @@ export default function StoreOrders() {
             orderDate.getMonth() === selectedMonth
         )
     })
+
+    const verifyReturnOtp = async () => {
+
+        if (!enteredReturnOtp || enteredReturnOtp.length < 6) {
+            toast.error("Please enter valid 6 digit OTP")
+            return
+        }
+
+        try {
+
+            setVerifyingReturnOtp(true)
+
+            const token = await getToken()
+
+            await axios.post(
+                "/api/store/orders/verify-return-otp",
+                {
+                    orderId: returnOtpOrder.id,
+                    otp: enteredReturnOtp
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                }
+            )
+
+            toast.success("Return verified successfully")
+
+            setShowReturnOtpModal(false)
+            setEnteredReturnOtp("")
+            setReturnOtpOrder(null)
+
+            fetchOrders()
+
+        } catch (error) {
+
+            toast.error(
+                error?.response?.data?.error || "Return verification failed"
+            )
+
+        } finally {
+
+            setVerifyingReturnOtp(false)
+
+        }
+
+    }
 
 
 
@@ -534,7 +588,7 @@ export default function StoreOrders() {
                                 {order.status !== "CANCELLED" && (
                                     <select
                                         value={order.status}
-                                        disabled={order.status === "DELIVERED"}
+                                        disabled={order.status === "DELIVERED" || order.status === "RETURNED"}
                                         onClick={(e) => e.stopPropagation()}
                                         onChange={(e) => updateOrderStatus(order, e.target.value)}
                                         className="border rounded px-3 py-1 text-sm"
@@ -578,6 +632,8 @@ export default function StoreOrders() {
                                     </button>
                                 )}
 
+
+
                                 {/* Download PDF outside modal */}
                                 <button
                                     onClick={(e) => { e.stopPropagation(); downloadInvoicePDF(order) }}
@@ -585,11 +641,30 @@ export default function StoreOrders() {
                                 >
                                     Download Invoice
                                 </button>
+
+                                {order.returnRequests?.length > 0 &&
+                                    !order.returnRequests[0].verified && (
+
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation()
+                                                setReturnOtpOrder(order)
+                                                setShowReturnOtpModal(true)
+                                            }}
+                                            className="px-3 py-1 bg-purple-600 text-white rounded text-sm"
+                                        >
+                                            Verify Return OTP
+                                        </button>
+
+                                    )}
+
                             </div>
                         </div>
                     ))}
                 </div>
             )}
+
+
 
             {/* ================= MODAL ================= */}
             {isModalOpen && selectedOrder && (
@@ -665,6 +740,57 @@ export default function StoreOrders() {
                     </div>
                 </div>
             )}
+
+            {showReturnOtpModal && returnOtpOrder && (
+
+                <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+
+                    <div className="bg-white rounded-xl p-6 w-full max-w-md">
+
+                        <h2 className="text-lg font-semibold mb-4 text-center">
+                            Verify Return OTP
+                        </h2>
+
+                        <input
+                            type="text"
+                            maxLength={6}
+                            value={enteredReturnOtp}
+                            onChange={(e) =>
+                                setEnteredReturnOtp(e.target.value.replace(/\D/g, ""))
+                            }
+                            className="w-full border rounded px-4 py-2 text-center text-xl tracking-widest"
+                            placeholder="••••••"
+                        />
+
+                        <div className="flex gap-3 mt-4">
+
+                            <button
+                                onClick={() => {
+                                    setShowReturnOtpModal(false)
+                                    setEnteredReturnOtp("")
+                                    setReturnOtpOrder(null)
+                                }}
+                                className="flex-1 bg-gray-200 py-2 rounded"
+                            >
+                                Cancel
+                            </button>
+
+                            <button
+                                onClick={verifyReturnOtp}
+                                disabled={verifyingReturnOtp}
+                                className="flex-1 bg-purple-600 text-white py-2 rounded"
+                            >
+                                {verifyingReturnOtp ? "Verifying..." : "Verify"}
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            )}
+
             {/* ================= OTP VERIFY MODAL ================= */}
             {showOtpModal && otpOrder && (
                 <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">

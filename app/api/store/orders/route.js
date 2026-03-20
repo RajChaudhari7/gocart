@@ -5,7 +5,6 @@ import { NextResponse } from "next/server"
 import { sendEmail } from "@/lib/sendEmail"
 import { generateOtp, hashOtp } from "@/lib/otp"
 
-
 // ✅ Must match Prisma + frontend
 const STATUS_FLOW = [
   "ORDER_PLACED",
@@ -21,6 +20,7 @@ const STATUS_FLOW = [
 // ================= UPDATE SELLER ORDER STATUS =================
 export async function POST(request) {
   try {
+
     const { userId } = getAuth(request)
     const storeId = await authSeller(userId)
 
@@ -64,7 +64,6 @@ export async function POST(request) {
       )
     }
 
-    // ❌ BLOCK DELIVERY WITHOUT OTP VERIFICATION
     if (status === "DELIVERED") {
       if (order.status !== "DELIVERY_INITIATED") {
         return NextResponse.json(
@@ -88,14 +87,12 @@ export async function POST(request) {
       }
     }
 
-
-    // ================= TRANSACTION =================
     let plainOtp = null
 
     await prisma.$transaction(async (tx) => {
 
-      // 🔥 GENERATE OTP SAFELY INSIDE TRANSACTION
       if (status === "DELIVERY_INITIATED") {
+
         plainOtp = generateOtp()
         const hashedOtp = hashOtp(plainOtp)
 
@@ -105,15 +102,17 @@ export async function POST(request) {
             deliveryOtp: hashedOtp,
             deliveryOtpExpiry: new Date(Date.now() + 10 * 60 * 1000),
             otpVerified: false,
-            otpVerifyAttempts: 0,   // ✅ RESET
-            otpResendCount: 0      // ✅ RESET
+            otpVerifyAttempts: 0,
+            otpResendCount: 0
           }
         })
+
       }
 
-      // RESTOCK ON CANCEL
       if (status === "CANCELLED") {
+
         for (const item of order.orderItems) {
+
           await tx.product.update({
             where: { id: item.productId },
             data: {
@@ -121,10 +120,11 @@ export async function POST(request) {
               inStock: true
             }
           })
+
         }
+
       }
 
-      // UPDATE STATUS + HISTORY
       await tx.order.update({
         where: { id: orderId },
         data: {
@@ -135,8 +135,8 @@ export async function POST(request) {
           }
         }
       })
-    })
 
+    })
     // ================= SEND DELIVERY OTP EMAIL =================
     if (status === "DELIVERY_INITIATED" && plainOtp) {
       try {
@@ -162,6 +162,8 @@ export async function POST(request) {
         console.error("OTP email failed:", err.message)
       }
     }
+
+
 
 
     // ================= SEND INVOICE EMAIL =================
@@ -295,9 +297,11 @@ export async function POST(request) {
   }
 }
 
-// ================= GET ALL SELLER ORDERS =================
+// ================= GET SELLER ORDERS =================
 export async function GET(request) {
+
   try {
+
     const { userId } = getAuth(request)
     const storeId = await authSeller(userId)
 
@@ -311,20 +315,28 @@ export async function GET(request) {
         user: true,
         address: true,
         store: true,
-        orderItems: { include: { product: true } },
+        orderItems: {
+          include: { product: true }
+        },
         returnRequests: {
           include: {
             items: true
           }
         }
       },
-      orderBy: { createdAt: "desc" }
+      orderBy: {
+        createdAt: "desc"
+      }
     })
 
     const activeOrdersCount = await prisma.order.count({
       where: {
         storeId,
-        NOT: { status: { in: ["DELIVERED", "CANCELLED"] } }
+        NOT: {
+          status: {
+            in: ["DELIVERED", "CANCELLED"]
+          }
+        }
       }
     })
 
@@ -334,7 +346,14 @@ export async function GET(request) {
     })
 
   } catch (error) {
+
     console.error(error)
-    return NextResponse.json({ error: error.message }, { status: 400 })
+
+    return NextResponse.json(
+      { error: error.message },
+      { status: 400 }
+    )
+
   }
+
 }
