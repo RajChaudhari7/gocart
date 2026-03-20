@@ -27,9 +27,7 @@ export async function POST(req) {
             )
         }
 
-        const hashedOtp = hashOtp(otp)
-
-        if (returnRequest.otp !== hashedOtp) {
+        if (returnRequest.otp !== otp) {
             return NextResponse.json(
                 { error: "Invalid OTP" },
                 { status: 400 }
