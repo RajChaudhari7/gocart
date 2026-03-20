@@ -27,9 +27,19 @@ const OrderItem = ({
     UPI: 'UPI',
   }[order.paymentMethod] || order.paymentMethod
 
+
   const isDelivered = order.status === 'DELIVERED'
   const isDeliveryInitiated = order.status === "DELIVERY_INITIATED"
   const isCanceled = order.status === 'CANCELLED'
+  const isReturned = order.status === 'RETURNED'
+
+  const isFinalState = isCanceled || isReturned || isDelivered
+
+  const canCancel =
+    order.status !== "DELIVERED" &&
+    order.status !== "RETURNED" &&
+    order.status !== "CANCELLED"
+
 
   /* ---------------- DESKTOP ROW ---------------- */
 
@@ -39,7 +49,7 @@ const OrderItem = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className={`hidden md:table-row bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl ${isCanceled ? 'opacity-50' : ''}`}
+      className={`hidden md:table-row bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl ${isFinalState ? 'opacity-60' : ''}`}
     >
 
       {/* PRODUCT */}
@@ -75,10 +85,12 @@ const OrderItem = ({
 
       </td>
 
+
       {/* TOTAL */}
       <td className="text-center font-semibold align-top">
         {currency}{order.total}
       </td>
+
 
       {/* PAYMENT */}
       <td className="text-center align-top">
@@ -87,16 +99,19 @@ const OrderItem = ({
         </div>
       </td>
 
+
       {/* ADDRESS */}
       <td className="text-white/60 max-w-xs align-top">
         <p className="font-medium text-white">{order.address.name}</p>
         <p>{order.address.city}, {order.address.state}</p>
       </td>
 
+
       {/* ACTION */}
       <td className="text-center align-top space-x-2">
 
-        {!isCanceled && (
+        {!isCanceled && !isReturned && (
+
           <>
 
             {/* TRACK */}
@@ -108,6 +123,7 @@ const OrderItem = ({
             >
               Track
             </motion.button>
+
 
             {/* VERIFY OTP */}
             {isDeliveryInitiated && (
@@ -121,6 +137,7 @@ const OrderItem = ({
               </motion.button>
             )}
 
+
             {/* RATE */}
             {isDelivered && onRate && (
               <motion.button
@@ -133,7 +150,8 @@ const OrderItem = ({
               </motion.button>
             )}
 
-            {/* RETURN BUTTON */}
+
+            {/* RETURN */}
             {canReturn && (
               <motion.button
                 whileHover={{ scale: 1.05 }}
@@ -145,8 +163,9 @@ const OrderItem = ({
               </motion.button>
             )}
 
+
             {/* CANCEL */}
-            {!isDelivered && onCancel && (
+            {canCancel && onCancel && (
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -158,15 +177,20 @@ const OrderItem = ({
             )}
 
           </>
+
         )}
 
         {isCanceled && <span className="text-red-400 text-sm">Cancelled</span>}
-        {isDelivered && <span className="text-emerald-400 text-sm">Completed</span>}
+        {isReturned && <span className="text-orange-400 text-sm">Returned</span>}
+        {isDelivered && !isReturned && (
+          <span className="text-emerald-400 text-sm">Completed</span>
+        )}
 
       </td>
 
     </motion.tr>
   )
+
 
   /* ---------------- MOBILE CARD ---------------- */
 
@@ -176,7 +200,7 @@ const OrderItem = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className={`rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 p-6 space-y-4 ${isCanceled ? 'opacity-50' : ''}`}
+      className={`rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 p-6 space-y-4 ${isFinalState ? 'opacity-60' : ''}`}
     >
 
       {order.orderItems.map((item, idx) => (
@@ -207,20 +231,10 @@ const OrderItem = ({
 
       ))}
 
-      <div className="flex justify-between items-center">
-        <span className="text-sm text-white/60">Payment</span>
-        <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/15 text-xs">
-          <CreditCard size={12} /> {paymentLabel}
-        </span>
-      </div>
-
-      <p className="text-sm text-white/60">
-        {order.address.name}, {order.address.city}, {order.address.state}
-      </p>
-
       <div className="flex flex-wrap gap-2">
 
-        {!isCanceled && (
+        {!isCanceled && !isReturned && (
+
           <>
 
             <motion.button
@@ -232,29 +246,7 @@ const OrderItem = ({
               Track
             </motion.button>
 
-            {isDeliveryInitiated && (
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={onVerifyOtp}
-                className="flex-1 px-4 py-2 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-sm"
-              >
-                Verify OTP
-              </motion.button>
-            )}
 
-            {isDelivered && onRate && (
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={onRate}
-                className="flex-1 px-4 py-2 rounded-full bg-yellow-500/15 text-yellow-400 border border-yellow-500/30 text-sm"
-              >
-                ⭐ Rate
-              </motion.button>
-            )}
-
-            {/* RETURN */}
             {canReturn && (
               <motion.button
                 whileHover={{ scale: 1.05 }}
@@ -266,7 +258,8 @@ const OrderItem = ({
               </motion.button>
             )}
 
-            {!isDelivered && onCancel && (
+
+            {canCancel && onCancel && (
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -278,12 +271,20 @@ const OrderItem = ({
             )}
 
           </>
+
+        )}
+
+        {isCanceled && <span className="text-red-400 text-sm">Cancelled</span>}
+        {isReturned && <span className="text-orange-400 text-sm">Returned</span>}
+        {isDelivered && !isReturned && (
+          <span className="text-emerald-400 text-sm">Completed</span>
         )}
 
       </div>
 
     </motion.div>
   )
+
 
   return (
     <>
