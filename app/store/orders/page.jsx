@@ -16,10 +16,10 @@ const STATUS_FLOW = [
     "SHIPPED",
     "OUT_FOR_DELIVERY",
     "DELIVERY_INITIATED",
-    "DELIVERED", 
+    "DELIVERED",
     "RETURNED",     // ✅ ADD THIS
     "CANCELLED",
-    
+
 ]
 
 export default function StoreOrders() {
@@ -84,7 +84,9 @@ export default function StoreOrders() {
 
     const verifyReturnOtp = async () => {
 
-        if (!enteredReturnOtp || enteredReturnOtp.length < 6) {
+        const otp = enteredReturnOtp.trim()
+
+        if (!otp || otp.length !== 6) {
             toast.error("Please enter valid 6 digit OTP")
             return
         }
@@ -99,7 +101,7 @@ export default function StoreOrders() {
                 "/api/store/orders/verify-return-otp",
                 {
                     orderId: returnOtpOrder.id,
-                    otp: enteredReturnOtp
+                    otp: otp
                 },
                 {
                     headers: {
@@ -129,7 +131,6 @@ export default function StoreOrders() {
         }
 
     }
-
 
 
     /* ================= FETCH ================= */
@@ -777,7 +778,7 @@ export default function StoreOrders() {
 
                             <button
                                 onClick={verifyReturnOtp}
-                                disabled={verifyingReturnOtp}
+                                disabled={verifyingReturnOtp || enteredReturnOtp.length !== 6}
                                 className="flex-1 bg-purple-600 text-white py-2 rounded"
                             >
                                 {verifyingReturnOtp ? "Verifying..." : "Verify"}
