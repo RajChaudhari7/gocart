@@ -28,7 +28,8 @@ export default function CreateStore() {
         email: "",
         contact: "",
         address: "",
-        image: ""
+        image: "",
+        isWhatsapp: false
     })
 
     const onChangeHandler = (e) => {
@@ -81,12 +82,31 @@ export default function CreateStore() {
         setLoading(false)
     }
 
+    const testWhatsappNumber = () => {
+        if (storeInfo.contact.length !== 10) {
+            toast.error("Enter a valid 10-digit number first")
+            return
+        }
+
+        const phone = `91${storeInfo.contact}`
+        window.open(`https://wa.me/${phone}`, "_blank")
+    }
+
     const onSubmitHandler = async (e) => {
         e.preventDefault()
+
         if (!user) return toast("Please login to continue")
-        if (storeInfo.contact.length !== 10) return toast.error("Contact number must be 10 digits")
+
+        if (storeInfo.contact.length !== 10)
+            return toast.error("Contact number must be 10 digits")
+
+        // ✅ WhatsApp confirmation check
+        if (!storeInfo.isWhatsapp)
+            return toast.error("Please confirm that this number is active on WhatsApp")
+
         try {
             const token = await getToken()
+
             const formData = new FormData()
             formData.append("name", storeInfo.name)
             formData.append("username", storeInfo.username)
@@ -96,12 +116,16 @@ export default function CreateStore() {
             formData.append("address", storeInfo.address)
             formData.append("image", storeInfo.image)
 
+            // ✅ send whatsapp confirmation
+            formData.append("isWhatsapp", storeInfo.isWhatsapp)
+
             const { data } = await axios.post('/api/store/create', formData, {
                 headers: { Authorization: `Bearer ${token}` }
             })
 
             toast.success(data.message)
             await fetchSellerStatus()
+
         } catch (error) {
             toast.error(error?.response?.data?.error || error.message)
         }
@@ -229,6 +253,7 @@ export default function CreateStore() {
                             </div>
                             <div>
                                 <label className="text-gray-700 dark:text-gray-200">Contact Number</label>
+
                                 <input
                                     name="contact"
                                     onChange={onChangeHandler}
@@ -238,6 +263,27 @@ export default function CreateStore() {
                                     maxLength={10}
                                     className="mt-1 w-full p-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800 focus:ring-2 focus:ring-indigo-500 outline-none"
                                 />
+
+                                {/* WhatsApp Test Button */}
+                                <button
+                                    type="button"
+                                    onClick={testWhatsappNumber}
+                                    className="mt-2 text-sm text-green-600 hover:underline"
+                                >
+                                    Test if this number works on WhatsApp
+                                </button>
+
+                                {/* WhatsApp Confirmation */}
+                                <label className="flex items-center gap-2 mt-3 text-sm text-gray-600 dark:text-gray-300">
+                                    <input
+                                        type="checkbox"
+                                        checked={storeInfo.isWhatsapp}
+                                        onChange={(e) =>
+                                            setStoreInfo({ ...storeInfo, isWhatsapp: e.target.checked })
+                                        }
+                                    />
+                                    This number is active on WhatsApp
+                                </label>
                             </div>
                         </div>
 

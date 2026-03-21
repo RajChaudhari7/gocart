@@ -9,6 +9,7 @@ export async function POST(request) {
     try {
 
         const { userId } = getAuth(request)
+
         // get the data from the form
         const formData = await request.formData()
 
@@ -19,6 +20,10 @@ export async function POST(request) {
         const contact = formData.get("contact")
         const address = formData.get("address")
         const image = formData.get("image")
+        const isWhatsapp = formData.get("isWhatsapp")
+
+        // convert to boolean
+        const whatsappActive = isWhatsapp === "true"
 
         if (!name || !description || !username || !email || !contact || !address || !image) {
             return NextResponse.json({ error: "Missing Store info" }, { status: 400 })
@@ -29,12 +34,11 @@ export async function POST(request) {
             where: { userId: userId }
         });
 
-        // if store is already
         if (store) {
             return NextResponse.json({ status: store.status });
         }
 
-        // check is username ois already taken
+        // check is username is already taken
         const isUsernameTaken = await prisma.store.findFirst({
             where: { username: username.toLowerCase() }
         })
@@ -45,6 +49,7 @@ export async function POST(request) {
 
         // image upload to imageKit
         const buffer = Buffer.from(await image.arrayBuffer());
+
         const response = await imagekit.upload({
             file: buffer,
             fileName: image.name,
@@ -60,6 +65,7 @@ export async function POST(request) {
             ]
         })
 
+        // create store
         const newStore = await prisma.store.create({
             data: {
                 userId,
@@ -69,7 +75,10 @@ export async function POST(request) {
                 email,
                 contact,
                 address,
-                logo: optimizedImage
+                logo: optimizedImage,
+
+                // ✅ store whatsapp status
+                isWhatsapp: whatsappActive
             }
         })
 
@@ -94,12 +103,10 @@ export async function GET(request) {
 
         const { userId } = getAuth(request)
 
-        // check is user have already regsitered a store
         const store = await prisma.store.findFirst({
             where: { userId: userId }
         });
 
-        // if store is already
         if (store) {
             return NextResponse.json({ status: store.status });
         }
