@@ -122,6 +122,15 @@ model OrderItem {
   @@id([orderId, productId])
 }
 
+model WhatsappOtp {
+  id        String   @id @default(cuid())
+  phone     String
+  otp       String
+  expiresAt DateTime
+  verified  Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
 model ReturnRequest {
   id        String   @id @default(cuid())
   orderId   String

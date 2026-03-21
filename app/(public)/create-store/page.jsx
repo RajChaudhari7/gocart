@@ -19,6 +19,10 @@ export default function CreateStore() {
     const [loading, setLoading] = useState(true)
     const [message, setMessage] = useState("")
     const [countdown, setCountdown] = useState(5)
+    // WhatsApp Verification States
+    const [verificationCode, setVerificationCode] = useState("")
+    const [enteredCode, setEnteredCode] = useState("")
+    const [whatsappVerified, setWhatsappVerified] = useState(false)
 
 
     const [storeInfo, setStoreInfo] = useState({
@@ -32,14 +36,53 @@ export default function CreateStore() {
         isWhatsapp: false
     })
 
+    const sendWhatsappVerification = async () => {
+
+        if (storeInfo.contact.length !== 10) {
+            toast.error("Enter valid number")
+            return
+        }
+
+        const { data } = await axios.post("/api/whatsapp/send-otp", {
+            phone: storeInfo.contact
+        })
+
+        window.open(data.url, "_blank")
+
+        toast.success("OTP sent to WhatsApp")
+    }
+
+    const verifyWhatsappCode = async () => {
+
+        try {
+
+            const { data } = await axios.post("/api/whatsapp/verify-otp", {
+                phone: storeInfo.contact,
+                otp: enteredCode
+            })
+
+            if (data.success) {
+                setWhatsappVerified(true)
+                toast.success("WhatsApp verified")
+            }
+
+        } catch (err) {
+            toast.error(err.response.data.error)
+        }
+
+    }
+
     const onChangeHandler = (e) => {
         // For contact, limit to 10 digits only
         if (e.target.name === "contact") {
-            const val = e.target.value.replace(/\D/g, "") // remove non-digits
+            const val = e.target.value.replace(/\D/g, "")
             if (val.length > 10) return
+
             setStoreInfo({ ...storeInfo, contact: val })
-        } else {
-            setStoreInfo({ ...storeInfo, [e.target.name]: e.target.value })
+
+            // reset verification if phone changes
+            setWhatsappVerified(false)
+            setEnteredCode("")
         }
     }
 
@@ -82,15 +125,6 @@ export default function CreateStore() {
         setLoading(false)
     }
 
-    const testWhatsappNumber = () => {
-        if (storeInfo.contact.length !== 10) {
-            toast.error("Enter a valid 10-digit number first")
-            return
-        }
-
-        const phone = `91${storeInfo.contact}`
-        window.open(`https://wa.me/${phone}`, "_blank")
-    }
 
     const onSubmitHandler = async (e) => {
         e.preventDefault()
@@ -100,9 +134,10 @@ export default function CreateStore() {
         if (storeInfo.contact.length !== 10)
             return toast.error("Contact number must be 10 digits")
 
-        // ✅ WhatsApp confirmation check
-        if (!storeInfo.isWhatsapp)
-            return toast.error("Please confirm that this number is active on WhatsApp")
+
+        if (!whatsappVerified) {
+            return toast.error("Please verify your WhatsApp number before submitting")
+        }
 
         try {
             const token = await getToken()
@@ -264,26 +299,40 @@ export default function CreateStore() {
                                     className="mt-1 w-full p-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800 focus:ring-2 focus:ring-indigo-500 outline-none"
                                 />
 
-                                {/* WhatsApp Test Button */}
+                                {/* WhatsApp Verify Button */}
                                 <button
                                     type="button"
-                                    onClick={testWhatsappNumber}
-                                    className="mt-2 text-sm text-green-600 hover:underline"
+                                    onClick={sendWhatsappVerification}
+                                    disabled={whatsappVerified}
+                                    className="mt-2 text-sm text-green-600 hover:underline disabled:opacity-50"
                                 >
-                                    Test if this number works on WhatsApp
+                                    Verify on WhatsApp
                                 </button>
 
-                                {/* WhatsApp Confirmation */}
-                                <label className="flex items-center gap-2 mt-3 text-sm text-gray-600 dark:text-gray-300">
-                                    <input
-                                        type="checkbox"
-                                        checked={storeInfo.isWhatsapp}
-                                        onChange={(e) =>
-                                            setStoreInfo({ ...storeInfo, isWhatsapp: e.target.checked })
-                                        }
-                                    />
-                                    This number is active on WhatsApp
-                                </label>
+                                {!whatsappVerified && (
+                                    <div className="mt-3 flex gap-2">
+                                        <input
+                                            type="text"
+                                            placeholder="Enter verification code"
+                                            value={enteredCode}
+                                            onChange={(e) => setEnteredCode(e.target.value)}
+                                            className="p-2 border rounded"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={verifyWhatsappCode}
+                                            className="bg-blue-500 text-white px-3 py-1 rounded"
+                                        >
+                                            Verify Code
+                                        </button>
+                                    </div>
+                                )}
+
+                                {whatsappVerified && (
+                                    <p className="text-green-600 mt-2 text-sm">
+                                        WhatsApp number verified
+                                    </p>
+                                )}
                             </div>
                         </div>
 
