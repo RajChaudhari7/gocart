@@ -34,6 +34,9 @@ export default function Dashboard() {
     earningsChart: [],
     ordersChart: [],
     canceledChart: [],
+    returnedChart: [],
+    returnedProducts: 0,
+    returnedAmount: 0,
     orders: [],
     topProducts: []
   })
@@ -143,10 +146,23 @@ export default function Dashboard() {
 
   const stats = [
     { title: "Products", value: dashboardData.totalProducts, icon: ShoppingBasketIcon },
-    { title: "Earnings", value: currency + dashboardData.totalEarnings + ` (${earningsPercent}%)`, icon: CircleDollarSignIcon },
+    {
+      title: "Earnings",
+      value:
+        currency +
+        (dashboardData.totalEarnings - (dashboardData.returnedAmount || 0)) +
+        ` (${earningsPercent}%)`,
+      icon: CircleDollarSignIcon
+    },
     { title: "Orders", value: dashboardData.totalOrders + ` (${productsSoldPercent}%)`, icon: TagsIcon },
+    {
+      title: "Returns",
+      value: dashboardData.returnedProducts || 0,
+      icon: TrendingUpIcon
+    },
     { title: "Avg Rating", value: avgRating + " ⭐", icon: StarIcon },
     { title: "Canceled", value: totalCanceledOrders + ` (${canceledPercent}%)`, icon: XCircleIcon },
+
   ]
 
   /* -------------------- CHART DATA -------------------- */
@@ -163,6 +179,11 @@ export default function Dashboard() {
   const canceledOrdersData = useMemo(
     () => dashboardData.canceledChart.map(i => ({ name: i.name, value: i.value || 0 })),
     [dashboardData.canceledChart]
+  )
+
+  const returnedOrdersData = useMemo(
+    () => dashboardData.returnedChart.map(i => ({ name: i.name, value: i.value || 0 })),
+    [dashboardData.returnedChart]
   )
 
   if (loading) return <Loading />
@@ -253,6 +274,7 @@ export default function Dashboard() {
         earningsData={earningsData}
         ordersData={ordersData}
         canceledOrdersData={canceledOrdersData}
+        returnedOrdersData={returnedOrdersData}
         topProducts={dashboardData.topProducts}
       />
 

@@ -21,23 +21,24 @@ export default function DashboardCharts({
   earningsData = [],
   ordersData = [],
   canceledOrdersData = [],
+  returnedOrdersData = [],
   topProducts = []
 }) {
 
   /* ---------------- TOP PRODUCTS SAFE MAP ---------------- */
   const topProducts3D = Array.isArray(topProducts)
     ? topProducts.map(p => ({
-        name: p.name?.length > 14 ? p.name.slice(0, 14) + "…" : p.name || "Unknown",
-        sold: Number(
-          p.totalSold ??
-          p.sold ??
-          p.quantitySold ??
-          p.totalOrders ??
-          p.count ??
-          p._count?.orders ??
-          0
-        )
-      }))
+      name: p.name?.length > 14 ? p.name.slice(0, 14) + "…" : p.name || "Unknown",
+      sold: Number(
+        p.totalSold ??
+        p.sold ??
+        p.quantitySold ??
+        p.totalOrders ??
+        p.count ??
+        p._count?.orders ??
+        0
+      )
+    }))
     : []
 
   const earningsFull = earningsData
@@ -48,7 +49,7 @@ export default function DashboardCharts({
     <div className="space-y-10 mb-12">
 
       {/* ---------------- PREMIUM CHART GRID ---------------- */}
-      <div className="grid lg:grid-cols-3 gap-8">
+      <div className="grid lg:grid-cols-4 gap-8">
 
         {/* ================= EARNINGS ================= */}
         <motion.div
@@ -224,6 +225,46 @@ export default function DashboardCharts({
               <Bar
                 dataKey="value"
                 fill="url(#cancelGrad)"
+                radius={[12, 12, 0, 0]}
+                animationDuration={1200}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        </motion.div>
+
+        {/* ================= RETURNS ================= */}
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className={`${premiumCard} p-6`}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold tracking-wide text-slate-700">
+              Returned Products
+            </h3>
+            <span className="text-xs px-3 py-1 rounded-full bg-yellow-100 text-yellow-700 font-medium">
+              Returns
+            </span>
+          </div>
+
+          <ResponsiveContainer width="100%" height={260}>
+            <BarChart data={returnedOrdersData}>
+              <CartesianGrid strokeDasharray="3 6" stroke="#e5e7eb" />
+              <XAxis
+                dataKey="name"
+                interval={0}
+                angle={-35}
+                textAnchor="end"
+                height={60}
+                tick={{ fill: "#64748b", fontSize: 12 }}
+              />
+              <YAxis tick={{ fill: "#64748b", fontSize: 12 }} />
+              <Tooltip />
+
+              <Bar
+                dataKey="value"
+                fill="#f59e0b"
                 radius={[12, 12, 0, 0]}
                 animationDuration={1200}
               />
