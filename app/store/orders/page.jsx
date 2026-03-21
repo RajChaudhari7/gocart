@@ -229,14 +229,19 @@ export default function StoreOrders() {
         }
     }
 
-    // 🟢 Revenue (Exclude Cancelled)
+    // 🟢 Revenue (Exclude Cancelled + Returned)
     const revenue = filteredOrders
-        .filter(order => order.status !== "CANCELLED")
+        .filter(order => order.status !== "CANCELLED" && order.status !== "RETURNED")
         .reduce((total, order) => total + order.total, 0)
 
     // 🔴 Cancelled Amount
     const cancelledAmount = filteredOrders
         .filter(order => order.status === "CANCELLED")
+        .reduce((total, order) => total + order.total, 0)
+
+    // 🟠 Returned Amount
+    const returnedAmount = filteredOrders
+        .filter(order => order.status === "RETURNED")
         .reduce((total, order) => total + order.total, 0)
 
 
@@ -524,7 +529,7 @@ export default function StoreOrders() {
                     }
                 </p>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
 
                     {/* 🟢 Revenue */}
                     <div className="bg-emerald-50 p-4 rounded-lg">
@@ -543,6 +548,16 @@ export default function StoreOrders() {
                         </p>
                         <p className="text-2xl font-bold text-red-700">
                             ₹{cancelledAmount}
+                        </p>
+                    </div>
+
+                    {/* 🟠 Returned Amount */}
+                    <div className="bg-orange-50 p-4 rounded-lg">
+                        <p className="text-sm text-orange-600">
+                            Returned Orders Amount
+                        </p>
+                        <p className="text-2xl font-bold text-orange-700">
+                            ₹{returnedAmount}
                         </p>
                     </div>
 
