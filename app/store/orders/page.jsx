@@ -47,6 +47,7 @@ export default function StoreOrders() {
     const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth()) // 0-11
     const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear())
     const [selectedDate, setSelectedDate] = useState(null)
+    const [statusFilter, setStatusFilter] = useState("ALL")
 
     const months = [
         "January", "February", "March", "April",
@@ -62,24 +63,36 @@ export default function StoreOrders() {
     ].sort((a, b) => b - a)
 
     const filteredOrders = orders.filter(order => {
+
         const orderDate = new Date(order.createdAt)
 
-        // 🔹 If exact date selected → highest priority
+        // Date filter (highest priority)
         if (selectedDate) {
             const selected = new Date(selectedDate)
 
-            return (
-                orderDate.getDate() === selected.getDate() &&
-                orderDate.getMonth() === selected.getMonth() &&
-                orderDate.getFullYear() === selected.getFullYear()
-            )
+            if (
+                orderDate.getDate() !== selected.getDate() ||
+                orderDate.getMonth() !== selected.getMonth() ||
+                orderDate.getFullYear() !== selected.getFullYear()
+            ) {
+                return false
+            }
+        } else {
+            // Month + Year filter
+            if (
+                orderDate.getFullYear() !== selectedYear ||
+                orderDate.getMonth() !== selectedMonth
+            ) {
+                return false
+            }
         }
 
-        // 🔹 Otherwise filter by Year + Month
-        return (
-            orderDate.getFullYear() === selectedYear &&
-            orderDate.getMonth() === selectedMonth
-        )
+        // Status filter
+        if (statusFilter !== "ALL" && order.status !== statusFilter) {
+            return false
+        }
+
+        return true
     })
 
     const verifyReturnOtp = async () => {
@@ -471,14 +484,15 @@ export default function StoreOrders() {
                 </h1>
 
                 <div className="flex gap-3">
+
                     {/* Month Dropdown */}
                     <select
                         value={selectedMonth}
                         onChange={(e) => {
                             setSelectedMonth(Number(e.target.value))
-                            setSelectedDate(null) // reset date
+                            setSelectedDate(null)
                         }}
-                        className="border rounded-lg px-3 py-2 text-sm"
+                        className="border-gray-300 focus:ring-2 focus:ring-indigo-500"
                     >
                         {months.map((month, index) => (
                             <option key={index} value={index}>
@@ -492,9 +506,9 @@ export default function StoreOrders() {
                         value={selectedYear}
                         onChange={(e) => {
                             setSelectedYear(Number(e.target.value))
-                            setSelectedDate(null) // reset date
+                            setSelectedDate(null)
                         }}
-                        className="border rounded-lg px-3 py-2 text-sm"
+                        className="border-gray-300 focus:ring-2 focus:ring-indigo-500"
                     >
                         {[2023, 2024, 2025, 2026].map(year => (
                             <option key={year} value={year}>
@@ -502,6 +516,19 @@ export default function StoreOrders() {
                             </option>
                         ))}
                     </select>
+
+                    {/* NEW STATUS FILTER */}
+                    <select
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                        className="border-gray-300 focus:ring-2 focus:ring-indigo-500"
+                    >
+                        <option value="ALL">All Orders</option>
+                        <option value="DELIVERED">Delivered</option>
+                        <option value="RETURNED">Returned</option>
+                        <option value="CANCELLED">Cancelled</option>
+                    </select>
+
                 </div>
             </div>
 
