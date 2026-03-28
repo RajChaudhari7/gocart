@@ -41,6 +41,8 @@ export default function StoreOrders() {
     const [returnOtpOrder, setReturnOtpOrder] = useState(null)
     const [enteredReturnOtp, setEnteredReturnOtp] = useState("")
     const [verifyingReturnOtp, setVerifyingReturnOtp] = useState(false)
+    const [drivers, setDrivers] = useState([])
+    const [assigningDriverId, setAssigningDriverId] = useState(null)
 
     const currentDate = new Date()
 
@@ -54,6 +56,51 @@ export default function StoreOrders() {
         "May", "June", "July", "August",
         "September", "October", "November", "December"
     ]
+
+
+    // to fetch drivers
+    const fetchDrivers = async () => {
+        try {
+            const token = await getToken()
+
+            const { data } = await axios.get('/api/store/drivers', {
+                headers: { Authorization: `Bearer ${token}` }
+            })
+
+            setDrivers(data.drivers)
+
+        } catch (error) {
+            toast.error("Failed to load drivers")
+        }
+    }
+
+    useEffect(() => {
+        fetchOrders()
+        fetchDrivers()   // ✅ ADD THIS
+    }, [])
+
+    const assignDriver = async (orderId, driverId) => {
+        try {
+            setAssigningDriverId(orderId)
+
+            const token = await getToken()
+
+            await axios.post(
+                "/api/store/orders/assign-driver",
+                { orderId, driverId },
+                { headers: { Authorization: `Bearer ${token}` } }
+            )
+
+            toast.success("Driver assigned 🚚")
+
+            fetchOrders()
+
+        } catch (error) {
+            toast.error(error?.response?.data?.error || "Failed to assign driver")
+        } finally {
+            setAssigningDriverId(null)
+        }
+    }
 
     // Get available years dynamically from orders
     const availableYears = [
@@ -675,6 +722,25 @@ export default function StoreOrders() {
                                     </button>
                                 )}
 
+                                {["OUT_FOR_DELIVERY", "DELIVERY_INITIATED"].includes(order.status) && (
+                                    <select
+                                        disabled={assigningDriverId === order.id}
+                                        value={order.driverId || ""}
+                                        onClick={(e) => e.stopPropagation()}
+                                        onChange={(e) => assignDriver(order.id, e.target.value)}
+                                        className="border rounded px-2 py-1 text-sm"
+                                    >
+                                        <option value="">
+                                            {order.driver ? `Assigned: ${order.driver.name}` : "Assign Driver"}
+                                        </option>
+
+                                        {drivers.map(driver => (
+                                            <option key={driver.id} value={driver.id}>
+                                                {driver.name} ({driver.phone})
+                                            </option>
+                                        ))}
+                                    </select>
+                                )}
 
 
                                 {/* Download PDF outside modal */}

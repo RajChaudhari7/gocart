@@ -47,9 +47,9 @@ model Product {
 }
 
 model SearchSynonym {
-  id        String @id @default(cuid())
-  word      String
-  synonyms  String[]
+  id       String   @id @default(cuid())
+  word     String
+  synonyms String[]
 }
 
 ////////////////////////////////////
@@ -104,10 +104,11 @@ model Order {
 
   returnRequests ReturnRequest[]
 
-
-  user    User    @relation("BuyerRelation", fields: [userId], references: [id])
-  store   Store   @relation(fields: [storeId], references: [id])
-  address Address @relation(fields: [addressId], references: [id])
+  user     User    @relation("BuyerRelation", fields: [userId], references: [id])
+  store    Store   @relation(fields: [storeId], references: [id])
+  address  Address @relation(fields: [addressId], references: [id])
+  driver   Driver? @relation(fields: [driverId], references: [id])
+  driverId String?
 }
 
 model OrderItem {
@@ -132,25 +133,25 @@ model WhatsappOtp {
 }
 
 model ReturnRequest {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   orderId   String
   userId    String
-  status    String   @default("PENDING")
+  status    String    @default("PENDING")
   otp       String?
   otpExpiry DateTime?
-  verified  Boolean  @default(false)
-  createdAt DateTime @default(now())
+  verified  Boolean   @default(false)
+  createdAt DateTime  @default(now())
 
-  order  Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  user   User   @relation(fields: [userId], references: [id])
-  items  ReturnItem[]
+  order Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user  User         @relation(fields: [userId], references: [id])
+  items ReturnItem[]
 }
 
 model ReturnItem {
-  id         String @id @default(cuid())
-  returnId   String
-  productId  String
-  quantity   Int
+  id        String @id @default(cuid())
+  returnId  String
+  productId String
+  quantity  Int
 
   returnRequest ReturnRequest @relation(fields: [returnId], references: [id])
   product       Product       @relation(fields: [productId], references: [id])
@@ -219,4 +220,20 @@ model Store {
   Product Product[]
   Order   Order[]
   user    User      @relation(fields: [userId], references: [id])
+  drivers Driver[]
+}
+
+model Driver {
+  id       String  @id @default(cuid())
+  name     String
+  phone    String
+  vehicle  String?
+  isActive Boolean @default(true)
+
+  storeId String
+  store   Store  @relation(fields: [storeId], references: [id])
+
+  orders Order[]
+
+  createdAt DateTime @default(now())
 }
