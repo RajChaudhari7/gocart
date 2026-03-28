@@ -193,7 +193,7 @@ export async function GET(request) {
       returnedProducts,   // ✅ added
       returnedAmount,     // ✅ added
 
-      orders,
+      orders: filteredOrders,
       topProducts
     };
 
