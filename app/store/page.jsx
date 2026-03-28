@@ -438,7 +438,7 @@ export default function Dashboard() {
           background: "linear-gradient(to right, transparent, #cbd5f5, transparent)",
           margin: "20px 0"
         }}
-      >
+      />
 
       {/* HEADER */}
       <div style={{ display: "flex", alignItems: "center", marginBottom: "20px" }}>
@@ -534,7 +534,6 @@ export default function Dashboard() {
       </p>
 
     </div>
-    </div >
 
 
   )
