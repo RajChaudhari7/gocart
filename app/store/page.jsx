@@ -87,40 +87,28 @@ export default function Dashboard() {
     const element = document.getElementById("pdf-report")
     if (!element) return
 
-    // ✅ WAIT for UI to render
-    await new Promise(resolve => setTimeout(resolve, 500))
-    document.body.classList.add("light") // Force light mode for PDF
+    // FORCE LIGHT MODE + REMOVE TAILWIND EFFECTS
+    document.body.style.background = "#ffffff"
+
+    await new Promise((resolve) => setTimeout(resolve, 500))
 
     const canvas = await html2canvas(element, {
       scale: 2,
-      useCORS: true,
       backgroundColor: "#ffffff",
-      logging: false
+      useCORS: true
     })
+
     const imgData = canvas.toDataURL("image/png")
 
     const pdf = new jsPDF("p", "mm", "a4")
 
     const imgWidth = 210
-    const pageHeight = 295
     const imgHeight = (canvas.height * imgWidth) / canvas.width
 
-    let heightLeft = imgHeight
-    let position = 0
+    pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight)
 
-    pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight)
-    heightLeft -= pageHeight
-
-    while (heightLeft > 0) {
-      position = heightLeft - imgHeight
-      pdf.addPage()
-      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight)
-      heightLeft -= pageHeight
-    }
-
-    pdf.save(`Premium-Report-${filterYear}-${filterMonth + 1}.pdf`)
+    pdf.save(`Report-${filterYear}-${filterMonth + 1}.pdf`)
   }
-
 
   /** -------Store Close and Open */
 
@@ -448,107 +436,62 @@ export default function Dashboard() {
           position: "fixed",
           left: "-9999px",
           top: 0,
-          backgroundColor: "#ffffff",
+          width: "800px",
+          background: "#ffffff",
           color: "#000000",
-          padding: "40px",
-          width: "900px"
+          padding: "30px",
+          fontFamily: "Arial, sans-serif"
         }}
       >
-        {/* HEADER */}
-        <h1 className="text-3xl font-bold mb-2">📊 Store Analytics Report</h1>
-        <p className="text-sm mb-4">
+        <h1 style={{ fontSize: "24px", marginBottom: "10px" }}>
+          Store Analytics Report
+        </h1>
+
+        <p style={{ marginBottom: "20px" }}>
           {monthOptions[filterMonth]} {filterYear}
         </p>
 
-        <hr className="my-4" />
+        <hr />
 
         {/* SUMMARY */}
-        <h2 className="text-xl font-semibold mb-2">Summary</h2>
-        <div className="grid grid-cols-2 gap-4 text-sm">
-          <p>Total Earnings: {currency}{dashboardData.totalEarnings}</p>
-          <p>Total Orders: {dashboardData.totalOrders}</p>
-          <p>Returned Products: {dashboardData.returnedProducts}</p>
-          <p>
-            Cancelled Orders: {dashboardData.monthlyReport?.cancelledOrders || 0}
-          </p>
-        </div>
+        <h2 style={{ marginTop: "20px" }}>Summary</h2>
+        <p>Total Earnings: {currency}{dashboardData.totalEarnings}</p>
+        <p>Total Orders: {dashboardData.totalOrders}</p>
+        <p>Returned Products: {dashboardData.returnedProducts}</p>
+        <p>Cancelled Orders: {dashboardData.monthlyReport?.cancelledOrders || 0}</p>
 
-        <hr className="my-6" />
+        <hr />
 
         {/* TOP PRODUCTS */}
-        <h2 className="text-xl font-semibold mb-2">Top Products</h2>
-        <table className="w-full text-sm border">
-          <thead>
-            <tr className="bg-gray-200">
-              <th className="p-2 border">Product</th>
-              <th className="p-2 border">Sold</th>
-            </tr>
-          </thead>
-          <tbody>
-            {dashboardData.monthlyReport?.topProducts?.map((p, i) => (
-              <tr key={i}>
-                <td className="p-2 border">{p.name}</td>
-                <td className="p-2 border">{p.sold}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <h2 style={{ marginTop: "20px" }}>Top Products</h2>
+        <ul>
+          {dashboardData.monthlyReport?.topProducts?.map((p, i) => (
+            <li key={i}>
+              {p.name} - {p.sold}
+            </li>
+          ))}
+        </ul>
 
-        <hr className="my-6" />
+        <hr />
 
         {/* CANCELLED */}
-        <h2 className="text-xl font-semibold mb-2">Cancelled Orders</h2>
-        <table className="w-full text-sm border">
-          <thead>
-            <tr className="bg-gray-200">
-              <th className="p-2 border">Product</th>
-              <th className="p-2 border">Qty</th>
-              <th className="p-2 border">Price</th>
-            </tr>
-          </thead>
-          <tbody>
-            {dashboardData.monthlyReport?.cancelledDetails?.map((c, i) => (
-              <tr key={i}>
-                <td className="p-2 border">{c.productName}</td>
-                <td className="p-2 border">{c.quantity}</td>
-                <td className="p-2 border">{currency}{c.price}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <h2 style={{ marginTop: "20px" }}>Cancelled Orders</h2>
+        <ul>
+          {dashboardData.monthlyReport?.cancelledDetails?.map((c, i) => (
+            <li key={i}>
+              {c.productName} | Qty: {c.quantity} | Price: {currency}{c.price}
+            </li>
+          ))}
+        </ul>
 
-        <hr className="my-6" />
+        <hr />
 
         {/* RETURNED */}
-        <h2 className="text-xl font-semibold mb-2">Returned Orders</h2>
-        <table className="w-full text-sm border">
-          <thead>
-            <tr className="bg-gray-200">
-              <th className="p-2 border">Product</th>
-              <th className="p-2 border">Qty</th>
-              <th className="p-2 border">Price</th>
-            </tr>
-          </thead>
-          <tbody>
-            {dashboardData.monthlyReport?.returnedDetails?.map((r, i) => (
-              <tr key={i}>
-                <td className="p-2 border">{r.productName}</td>
-                <td className="p-2 border">{r.quantity}</td>
-                <td className="p-2 border">{currency}{r.price}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        <hr className="my-6" />
-
-        {/* CHART SUMMARY */}
-        <h2 className="text-xl font-semibold mb-2">Performance Summary</h2>
-
-        <ul className="text-sm space-y-1">
-          {dashboardData.earningsChart.map((m, i) => (
+        <h2 style={{ marginTop: "20px" }}>Returned Orders</h2>
+        <ul>
+          {dashboardData.monthlyReport?.returnedDetails?.map((r, i) => (
             <li key={i}>
-              {m.name}: ₹{m.value} earnings | Orders: {dashboardData.ordersChart[i]?.value || 0}
+              {r.productName} | Qty: {r.quantity} | Price: {currency}{r.price}
             </li>
           ))}
         </ul>
