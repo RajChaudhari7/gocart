@@ -63,7 +63,7 @@ export default function StoreOrders() {
         try {
             const token = await getToken()
 
-            const { data } = await axios.get('/api/store/driver/add', {
+            const { data } = await axios.get('/api/store/driver', {
                 headers: { Authorization: `Bearer ${token}` }
             })
 
