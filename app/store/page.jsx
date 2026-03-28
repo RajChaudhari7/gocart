@@ -61,7 +61,7 @@ export default function Dashboard() {
     try {
       const token = await getToken()
       const { data } = await axios.get(
-        `/api/store/dashboard?year=${filterYear}`,
+        `/api/store/dashboard?year=${filterYear}&month=${filterMonth}`,
         { headers: { Authorization: `Bearer ${token}` } }
       )
       setDashboardData(data.dashboardData)
@@ -75,7 +75,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchDashboardData()
-  }, [filterYear])
+  }, [filterYear,filterMonth])
 
   useEffect(() => {
     setStoreActive(dashboardData.storeIsActive)
