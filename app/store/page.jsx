@@ -502,7 +502,7 @@ export default function Dashboard() {
         />
 
         {/* FINANCIAL BREAKDOWN */}
-        <h2 style={{ marginTop: "20px" }}>💸 Financial Breakdown</h2>
+        <h2 className="text-xl font-semibold mb-2">💰 Financial Breakdown</h2>
 
         <p>💰 Total Earnings: {currency}{dashboardData.totalEarnings}</p>
         <p>❌ Cancelled Amount: {currency}{dashboardData.monthlyReport?.cancelledDetails?.reduce((a, c) => a + (c.price * c.quantity), 0)}</p>

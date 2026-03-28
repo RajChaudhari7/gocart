@@ -161,9 +161,12 @@ export async function GET(request) {
       name: m.name,
       value: m.returned
     }));
+
+
     /* ---------- KPI CALCULATIONS (FILTERED) ---------- */
     let filteredReturnedProducts = 0;
     let filteredReturnedAmount = 0;
+    let cancelledAmount = 0;
 
     filteredOrders.forEach((order) => {
       if (order.status === "RETURNED") {
@@ -174,10 +177,19 @@ export async function GET(request) {
 
         filteredReturnedAmount += order.total;
       }
+
+      if (order.status === "CANCELLED") {
+        cancelledAmount += order.total;
+      }
     });
 
+    /* ✅ FIXED EARNINGS */
     const totalEarnings = filteredOrders
-      .filter((order) => order.status !== "CANCELLED")
+      .filter(
+        (order) =>
+          order.status !== "CANCELLED" &&
+          order.status !== "RETURNED"
+      )
       .reduce((acc, order) => acc + order.total, 0);
 
     /* ---------- MONTHLY REPORT ---------- */
@@ -241,6 +253,8 @@ export async function GET(request) {
       }
     });
 
+
+
     /* ---------- RESPONSE ---------- */
     const dashboardData = {
       storeIsActive: store.isActive,
@@ -259,6 +273,7 @@ export async function GET(request) {
 
       returnedProducts: filteredReturnedProducts,
       returnedAmount: filteredReturnedAmount,
+      cancelledAmount,
 
       orders: filteredOrders,
       topProducts,
@@ -267,8 +282,10 @@ export async function GET(request) {
         totalSales: Math.round(totalEarnings),
         deliveredOrders,
         cancelledOrders: cancelledOrdersDetails.length,
-        cancelledDetails: cancelledOrdersDetails,
-        returnedDetails: returnedOrdersDetails
+        cancelledAmount,
+        returnedAmount,
+        cancelledDetails,
+        returnedDetails
       }
     };
 
