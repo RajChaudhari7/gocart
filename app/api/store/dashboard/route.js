@@ -176,6 +176,67 @@ export async function GET(request) {
       .filter((order) => order.status !== "CANCELLED")
       .reduce((acc, order) => acc + order.total, 0);
 
+    /* ---------- MONTHLY REPORT ---------- */
+
+    // ONLY for selected month (IMPORTANT)
+    const monthlyOrders = filteredOrders;
+
+    /* ---------- TOP PRODUCTS (MONTH) ---------- */
+    const monthlyTopProducts = products
+      .map((p) => ({
+        ...p,
+        sold: monthlyOrders.reduce((acc, order) => {
+          if (order.status === "CANCELLED") return acc;
+
+          const item = order.orderItems.find(
+            (oi) => oi.productId === p.id
+          );
+
+          return acc + (item ? item.quantity : 0);
+        }, 0)
+      }))
+      .sort((a, b) => b.sold - a.sold)
+      .slice(0, 5);
+
+    /* ---------- DELIVERED ORDERS ---------- */
+    const deliveredOrders = monthlyOrders.filter(
+      (order) => order.status === "DELIVERED"
+    ).length;
+
+    /* ---------- CANCELLED DETAILS ---------- */
+    const cancelledOrdersDetails = [];
+
+    monthlyOrders.forEach((order) => {
+      if (order.status === "CANCELLED") {
+        order.orderItems.forEach((item) => {
+          const product = products.find((p) => p.id === item.productId);
+
+          cancelledOrdersDetails.push({
+            productName: product?.name || "Unknown",
+            quantity: item.quantity,
+            price: item.price
+          });
+        });
+      }
+    });
+
+    /* ---------- RETURNED DETAILS ---------- */
+    const returnedOrdersDetails = [];
+
+    monthlyOrders.forEach((order) => {
+      if (order.status === "RETURNED") {
+        order.orderItems.forEach((item) => {
+          const product = products.find((p) => p.id === item.productId);
+
+          returnedOrdersDetails.push({
+            productName: product?.name || "Unknown",
+            quantity: item.quantity,
+            price: item.price
+          });
+        });
+      }
+    });
+
     /* ---------- RESPONSE ---------- */
     const dashboardData = {
       storeIsActive: store.isActive,
@@ -194,7 +255,15 @@ export async function GET(request) {
       returnedAmount: filteredReturnedAmount,
 
       orders: filteredOrders,
-      topProducts
+      topProducts,
+      monthlyReport: {
+        topProducts: monthlyTopProducts,
+        totalSales: Math.round(totalEarnings),
+        deliveredOrders,
+        cancelledOrders: cancelledOrdersDetails.length,
+        cancelledDetails: cancelledOrdersDetails,
+        returnedDetails: returnedOrdersDetails
+      }
     };
 
     return NextResponse.json({ dashboardData });

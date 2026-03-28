@@ -18,6 +18,8 @@ import { useEffect, useState, useMemo } from "react"
 import toast from "react-hot-toast"
 import { motion } from "framer-motion"
 import { Sun, Moon } from "lucide-react"
+import jsPDF from "jspdf"
+import html2canvas from "html2canvas"
 
 
 export default function Dashboard() {
@@ -80,6 +82,39 @@ export default function Dashboard() {
   useEffect(() => {
     setStoreActive(dashboardData.storeIsActive)
   }, [dashboardData.storeIsActive])
+
+  const handleDownloadPDF = async () => {
+    const element = document.getElementById("pdf-report")
+    if (!element) return
+
+    const canvas = await html2canvas(element, {
+      scale: 2,
+      useCORS: true
+    })
+
+    const imgData = canvas.toDataURL("image/png")
+
+    const pdf = new jsPDF("p", "mm", "a4")
+
+    const imgWidth = 210
+    const pageHeight = 295
+    const imgHeight = (canvas.height * imgWidth) / canvas.width
+
+    let heightLeft = imgHeight
+    let position = 0
+
+    pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight)
+    heightLeft -= pageHeight
+
+    while (heightLeft > 0) {
+      position = heightLeft - imgHeight
+      pdf.addPage()
+      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight)
+      heightLeft -= pageHeight
+    }
+
+    pdf.save(`Premium-Report-${filterYear}-${filterMonth + 1}.pdf`)
+  }
 
   /** -------Store Close and Open */
 
@@ -194,12 +229,21 @@ export default function Dashboard() {
 
   return (
     <div className="max-w-7xl mx-auto pb-28 px-4 lg:px-6 space-y-10">
+
+      <button
+        onClick={handleDownloadPDF}
+        className="px-4 py-2 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700 transition text-sm"
+      >
+        Download Premium Report
+      </button>
+
+
       <motion.button
         onClick={toggleStore}
         whileTap={{ scale: 0.9 }}
         className={`relative w-20 h-10 rounded-full flex items-center px-1 transition-colors
-    ${storeActive ? "bg-yellow-400" : "bg-slate-800"}
-  `}
+      ${storeActive ? "bg-yellow-400" : "bg-slate-800"}
+      `}
       >
         <motion.div
           layout
@@ -218,6 +262,7 @@ export default function Dashboard() {
       <span className="text-sm font-medium">
         {storeActive ? "Shop Open" : "Shop Closed"}
       </span>
+
 
 
       {/* Header + Year Selector */}
@@ -390,6 +435,117 @@ export default function Dashboard() {
         ))}
       </motion.div>
 
+      {/* ---------------- PDF REPORT UI (HIDDEN) ---------------- */}
+      <div
+        id="pdf-report"
+        className="fixed left-[-9999px] top-0 bg-white text-black p-10 w-[900px]"
+      >
+        {/* HEADER */}
+        <h1 className="text-3xl font-bold mb-2">📊 Store Analytics Report</h1>
+        <p className="text-sm mb-4">
+          {monthOptions[filterMonth]} {filterYear}
+        </p>
+
+        <hr className="my-4" />
+
+        {/* SUMMARY */}
+        <h2 className="text-xl font-semibold mb-2">Summary</h2>
+        <div className="grid grid-cols-2 gap-4 text-sm">
+          <p>Total Earnings: {currency}{dashboardData.totalEarnings}</p>
+          <p>Total Orders: {dashboardData.totalOrders}</p>
+          <p>Returned Products: {dashboardData.returnedProducts}</p>
+          <p>
+            Cancelled Orders: {
+              dashboardData.canceledChart?.reduce((a, b) => a + b.value, 0)
+            }
+          </p>
+        </div>
+
+        <hr className="my-6" />
+
+        {/* TOP PRODUCTS */}
+        <h2 className="text-xl font-semibold mb-2">Top Products</h2>
+        <table className="w-full text-sm border">
+          <thead>
+            <tr className="bg-gray-200">
+              <th className="p-2 border">Product</th>
+              <th className="p-2 border">Sold</th>
+            </tr>
+          </thead>
+          <tbody>
+            {dashboardData.monthlyReport?.topProducts?.map((p, i) => (
+              <tr key={i}>
+                <td className="p-2 border">{p.name}</td>
+                <td className="p-2 border">{p.sold}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        <hr className="my-6" />
+
+        {/* CANCELLED */}
+        <h2 className="text-xl font-semibold mb-2">Cancelled Orders</h2>
+        <table className="w-full text-sm border">
+          <thead>
+            <tr className="bg-gray-200">
+              <th className="p-2 border">Product</th>
+              <th className="p-2 border">Qty</th>
+              <th className="p-2 border">Price</th>
+            </tr>
+          </thead>
+          <tbody>
+            {dashboardData.monthlyReport?.cancelledDetails?.map((c, i) => (
+              <tr key={i}>
+                <td className="p-2 border">{c.productName}</td>
+                <td className="p-2 border">{c.quantity}</td>
+                <td className="p-2 border">{currency}{c.price}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        <hr className="my-6" />
+
+        {/* RETURNED */}
+        <h2 className="text-xl font-semibold mb-2">Returned Orders</h2>
+        <table className="w-full text-sm border">
+          <thead>
+            <tr className="bg-gray-200">
+              <th className="p-2 border">Product</th>
+              <th className="p-2 border">Qty</th>
+              <th className="p-2 border">Price</th>
+            </tr>
+          </thead>
+          <tbody>
+            {dashboardData.monthlyReport?.returnedDetails?.map((r, i) => (
+              <tr key={i}>
+                <td className="p-2 border">{r.productName}</td>
+                <td className="p-2 border">{r.quantity}</td>
+                <td className="p-2 border">{currency}{r.price}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        <hr className="my-6" />
+
+        {/* CHARTS */}
+        <h2 className="text-xl font-semibold mb-2">Charts</h2>
+
+        <div className="space-y-6">
+          <DashboardCharts
+            earningsData={dashboardData.earningsChart}
+            ordersData={dashboardData.ordersChart}
+            canceledOrdersData={dashboardData.canceledChart}
+            returnedOrdersData={dashboardData.returnedChart}
+            topProducts={dashboardData.topProducts}
+          />
+        </div>
+      </div>
+
     </div>
+
+
   )
 }
