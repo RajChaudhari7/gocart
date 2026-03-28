@@ -181,11 +181,7 @@ export async function GET(request) {
     });
 
     const totalEarnings = filteredOrders
-      .filter(
-        (o) =>
-          o.status !== "CANCELLED" &&
-          o.status !== "RETURNED"
-      )
+      .filter((o) => o.status === "DELIVERED")
       .reduce((acc, o) => acc + o.total, 0);
 
     /* ---------- MONTHLY REPORT ---------- */
