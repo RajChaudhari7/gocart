@@ -89,11 +89,13 @@ export default function Dashboard() {
 
     // ✅ WAIT for UI to render
     await new Promise(resolve => setTimeout(resolve, 500))
+    document.body.classList.add("light") // Force light mode for PDF
 
     const canvas = await html2canvas(element, {
-      scale: 3, // 🔥 better quality
+      scale: 2,
       useCORS: true,
-      backgroundColor: "#ffffff"
+      backgroundColor: "#ffffff",
+      logging: false
     })
     const imgData = canvas.toDataURL("image/png")
 
@@ -442,7 +444,15 @@ export default function Dashboard() {
       {/* ---------------- PDF REPORT UI (HIDDEN) ---------------- */}
       <div
         id="pdf-report"
-        className="fixed left-[-9999px] top-0 bg-white text-black p-10 w-[900px]"
+        style={{
+          position: "fixed",
+          left: "-9999px",
+          top: 0,
+          backgroundColor: "#ffffff",
+          color: "#000000",
+          padding: "40px",
+          width: "900px"
+        }}
       >
         {/* HEADER */}
         <h1 className="text-3xl font-bold mb-2">📊 Store Analytics Report</h1>
@@ -532,18 +542,16 @@ export default function Dashboard() {
 
         <hr className="my-6" />
 
-        {/* CHARTS */}
-        <h2 className="text-xl font-semibold mb-2">Charts</h2>
+        {/* CHART SUMMARY */}
+        <h2 className="text-xl font-semibold mb-2">Performance Summary</h2>
 
-        <div id="pdf-charts" className="space-y-6 bg-white p-4">
-          <DashboardCharts
-            earningsData={dashboardData.earningsChart}
-            ordersData={dashboardData.ordersChart}
-            canceledOrdersData={dashboardData.canceledChart}
-            returnedOrdersData={dashboardData.returnedChart}
-            topProducts={dashboardData.topProducts}
-          />
-        </div>
+        <ul className="text-sm space-y-1">
+          {dashboardData.earningsChart.map((m, i) => (
+            <li key={i}>
+              {m.name}: ₹{m.value} earnings | Orders: {dashboardData.ordersChart[i]?.value || 0}
+            </li>
+          ))}
+        </ul>
       </div>
     </div>
 
