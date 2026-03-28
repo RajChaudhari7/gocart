@@ -464,7 +464,13 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <hr />
+        <div
+          style={{
+            height: "1px",
+            background: "linear-gradient(to right, transparent, #cbd5f5, transparent)",
+            margin: "20px 0"
+          }}
+        />
 
         {/* SUMMARY CARDS */}
         <h2 style={{ marginTop: "20px" }}>📊 Business Summary</h2>
@@ -487,7 +493,13 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <hr />
+        <div
+          style={{
+            height: "1px",
+            background: "linear-gradient(to right, transparent, #cbd5f5, transparent)",
+            margin: "20px 0"
+          }}
+        />
 
         {/* FINANCIAL BREAKDOWN */}
         <h2 style={{ marginTop: "20px" }}>💸 Financial Breakdown</h2>
@@ -496,7 +508,13 @@ export default function Dashboard() {
         <p>❌ Cancelled Amount: {currency}{dashboardData.monthlyReport?.cancelledDetails?.reduce((a, c) => a + (c.price * c.quantity), 0)}</p>
         <p>🔁 Returned Amount: {currency}{dashboardData.returnedAmount}</p>
 
-        <hr />
+        <div
+          style={{
+            height: "1px",
+            background: "linear-gradient(to right, transparent, #cbd5f5, transparent)",
+            margin: "20px 0"
+          }}
+        />
 
         {/* TOP PRODUCTS */}
         <h2 style={{ marginTop: "20px" }}>🔥 Top Products</h2>
@@ -508,7 +526,13 @@ export default function Dashboard() {
           ))}
         </ul>
 
-        <hr />
+        <div
+          style={{
+            height: "1px",
+            background: "linear-gradient(to right, transparent, #cbd5f5, transparent)",
+            margin: "20px 0"
+          }}
+        />
 
         {/* CANCELLED */}
         <h2 style={{ marginTop: "20px" }}>❌ Cancelled Orders</h2>
@@ -520,7 +544,13 @@ export default function Dashboard() {
           ))}
         </ul>
 
-        <hr />
+        <div
+          style={{
+            height: "1px",
+            background: "linear-gradient(to right, transparent, #cbd5f5, transparent)",
+            margin: "20px 0"
+          }}
+        />
 
         {/* RETURNED */}
         <h2 style={{ marginTop: "20px" }}>🔁 Returned Orders</h2>
@@ -532,7 +562,13 @@ export default function Dashboard() {
           ))}
         </ul>
 
-        <hr />
+        <div
+          style={{
+            height: "1px",
+            background: "linear-gradient(to right, transparent, #cbd5f5, transparent)",
+            margin: "20px 0"
+          }}
+        />
 
         {/* FOOTER */}
         <p style={{ marginTop: "20px", fontSize: "12px", color: "#777" }}>
