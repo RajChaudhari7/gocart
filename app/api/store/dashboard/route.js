@@ -88,6 +88,16 @@ export async function GET(request) {
       include: { user: true, product: true }
     });
 
+    /* ---------- STORE INFO (UPDATED) ---------- */
+    const store = await prisma.store.findUnique({
+      where: { id: storeId },
+      select: {
+        isActive: true,
+        name: true,
+        logo: true
+      }
+    });
+
     /* ---------- TOP PRODUCTS ---------- */
     const topProducts = products
       .map((p) => ({
@@ -151,13 +161,6 @@ export async function GET(request) {
       name: m.name,
       value: m.returned
     }));
-
-    /* ---------- STORE STATUS ---------- */
-    const store = await prisma.store.findUnique({
-      where: { id: storeId },
-      select: { isActive: true }
-    });
-
     /* ---------- KPI CALCULATIONS (FILTERED) ---------- */
     let filteredReturnedProducts = 0;
     let filteredReturnedAmount = 0;
@@ -241,6 +244,8 @@ export async function GET(request) {
     /* ---------- RESPONSE ---------- */
     const dashboardData = {
       storeIsActive: store.isActive,
+      storeName: store.name,
+      storeLogo: store.logo,
       ratings,
 
       totalOrders: filteredOrders.length,
