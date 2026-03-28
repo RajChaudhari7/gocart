@@ -145,7 +145,7 @@ export default function Dashboard() {
 
   const filteredEarnings = useMemo(() => {
     return filteredOrders
-      .filter(o => o.status !== "CANCELLED")
+      .filter(o => o.status !== "CANCELLED" && o.status !== "RETURNED")
       .reduce((sum, o) => sum + o.total, 0)
   }, [filteredOrders])
 
@@ -182,402 +182,399 @@ export default function Dashboard() {
       title: "Earnings",
       value:
         currency +
-        Math.max(
-          dashboardData.totalEarnings - (dashboardData.returnedAmount || 0),
-          0
-        ) +
+        dashboardData.totalEarnings +
         ` (${earningsPercent}%)`,
-      icon: CircleDollarSignIcon
+    icon: CircleDollarSignIcon
     },
-    { title: "Orders", value: dashboardData.totalOrders + ` (${productsSoldPercent}%)`, icon: TagsIcon },
-    {
-      title: "Returns",
-      value: dashboardData.returnedProducts || 0,
+{ title: "Orders", value: dashboardData.totalOrders + ` (${productsSoldPercent}%)`, icon: TagsIcon },
+{
+  title: "Returns",
+    value: dashboardData.returnedProducts || 0,
       icon: TrendingUpIcon
-    },
-    { title: "Avg Rating", value: avgRating + " ⭐", icon: StarIcon },
-    { title: "Canceled", value: totalCanceledOrders + ` (${canceledPercent}%)`, icon: XCircleIcon },
+},
+{ title: "Avg Rating", value: avgRating + " ⭐", icon: StarIcon },
+{ title: "Canceled", value: totalCanceledOrders + ` (${canceledPercent}%)`, icon: XCircleIcon },
 
   ]
 
-  /* -------------------- CHART DATA -------------------- */
-  const earningsData = useMemo(
-    () => dashboardData.earningsChart.map(i => ({ name: i.name, value: i.value || 0 })),
-    [dashboardData.earningsChart]
-  )
+/* -------------------- CHART DATA -------------------- */
+const earningsData = useMemo(
+  () => dashboardData.earningsChart.map(i => ({ name: i.name, value: i.value || 0 })),
+  [dashboardData.earningsChart]
+)
 
-  const ordersData = useMemo(
-    () => dashboardData.ordersChart.map(i => ({ name: i.name, value: i.value || 0 })),
-    [dashboardData.ordersChart]
-  )
+const ordersData = useMemo(
+  () => dashboardData.ordersChart.map(i => ({ name: i.name, value: i.value || 0 })),
+  [dashboardData.ordersChart]
+)
 
-  const canceledOrdersData = useMemo(
-    () => dashboardData.canceledChart.map(i => ({ name: i.name, value: i.value || 0 })),
-    [dashboardData.canceledChart]
-  )
+const canceledOrdersData = useMemo(
+  () => dashboardData.canceledChart.map(i => ({ name: i.name, value: i.value || 0 })),
+  [dashboardData.canceledChart]
+)
 
-  const returnedOrdersData = useMemo(
-    () => dashboardData.returnedChart.map(i => ({ name: i.name, value: i.value || 0 })),
-    [dashboardData.returnedChart]
-  )
+const returnedOrdersData = useMemo(
+  () => dashboardData.returnedChart.map(i => ({ name: i.name, value: i.value || 0 })),
+  [dashboardData.returnedChart]
+)
 
-  if (loading) return <Loading />
+if (loading) return <Loading />
 
-  return (
-    <div className="max-w-7xl mx-auto pb-28 px-4 lg:px-6 space-y-10">
+return (
+  <div className="max-w-7xl mx-auto pb-28 px-4 lg:px-6 space-y-10">
 
-      <button
-        onClick={handleDownloadPDF}
-        className="px-4 py-2 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700 transition text-sm"
-      >
-        Download Premium Report
-      </button>
+    <button
+      onClick={handleDownloadPDF}
+      className="px-4 py-2 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700 transition text-sm"
+    >
+      Download Premium Report
+    </button>
 
 
-      <motion.button
-        onClick={toggleStore}
-        whileTap={{ scale: 0.9 }}
-        className={`relative w-20 h-10 rounded-full flex items-center px-1 transition-colors
+    <motion.button
+      onClick={toggleStore}
+      whileTap={{ scale: 0.9 }}
+      className={`relative w-20 h-10 rounded-full flex items-center px-1 transition-colors
       ${storeActive ? "bg-yellow-400" : "bg-slate-800"}
       `}
-      >
-        <motion.div
-          layout
-          transition={{ type: "spring", stiffness: 700, damping: 30 }}
-          className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md"
-          style={{ x: storeActive ? 40 : 0 }}
-        >
-          {storeActive ? (
-            <Sun className="w-5 h-5 text-yellow-500" />
-          ) : (
-            <Moon className="w-5 h-5 text-slate-700" />
-          )}
-        </motion.div>
-      </motion.button>
-
-      <span className="text-sm font-medium">
-        {storeActive ? "Shop Open" : "Shop Closed"}
-      </span>
-
-
-
-      {/* Header + Year Selector */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <h1 className="text-3xl font-bold text-slate-900">Dashboard</h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Monitor your business performance with analytics and insights
-          </p>
-        </motion.div>
-
-        <div className="flex items-center gap-4">
-          {/* YEAR */}
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-slate-500">Year:</span>
-            <select
-              value={filterYear}
-              onChange={(e) => setFilterYear(Number(e.target.value))}
-              className="border rounded-lg px-3 py-2 text-sm bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            >
-              {yearOptions.map(y => (
-                <option key={y} value={y}>{y}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* MONTH */}
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-slate-500">Month:</span>
-            <select
-              value={filterMonth}
-              onChange={(e) => setFilterMonth(Number(e.target.value))}
-              className="border rounded-lg px-3 py-2 text-sm bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            >
-              {monthOptions.map((m, i) => (
-                <option key={i} value={i}>{m}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-      </div>
-
-      {/* Stats */}
+    >
       <motion.div
-        className="grid grid-cols-2 lg:grid-cols-5 gap-6"
-        initial="hidden"
-        animate="visible"
-        variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.1 } } }}
+        layout
+        transition={{ type: "spring", stiffness: 700, damping: 30 }}
+        className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md"
+        style={{ x: storeActive ? 40 : 0 }}
       >
-        {stats.map((item, i) => (
-          <motion.div
-            key={i}
-            className="bg-white border rounded-2xl p-5 shadow-md hover:shadow-xl transition-shadow cursor-pointer"
-            variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
-            whileHover={{ scale: 1.03 }}
-          >
-            <div className="flex justify-between items-center">
-              <div>
-                <p className="text-xs text-slate-500">{item.title}</p>
-                <p className="text-xl font-semibold mt-1">{item.value}</p>
-              </div>
-              <item.icon className="w-6 h-6 text-indigo-500" />
-            </div>
-          </motion.div>
-        ))}
+        {storeActive ? (
+          <Sun className="w-5 h-5 text-yellow-500" />
+        ) : (
+          <Moon className="w-5 h-5 text-slate-700" />
+        )}
       </motion.div>
+    </motion.button>
 
-      {/* Charts */}
-      <DashboardCharts
-        earningsData={earningsData}
-        ordersData={ordersData}
-        canceledOrdersData={canceledOrdersData}
-        returnedOrdersData={returnedOrdersData}
-        topProducts={dashboardData.topProducts}
-      />
+    <span className="text-sm font-medium">
+      {storeActive ? "Shop Open" : "Shop Closed"}
+    </span>
 
-      {/* Insights */}
+
+
+    {/* Header + Year Selector */}
+    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
       <motion.div
-        className="bg-white border rounded-2xl p-6 shadow-md hover:shadow-lg transition-shadow"
-        initial={{ opacity: 0, x: -30 }}
-        animate={{ opacity: 1, x: 0 }}
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <div className="flex items-center gap-2 mb-2">
-          <TrendingUpIcon className="w-5 h-5 text-green-600" />
-          <h3 className="text-sm font-semibold">Insights</h3>
-        </div>
-        <ul className="text-sm text-slate-600 space-y-1">
-          <li>📈 Earnings for {filterYear}: {currency}{dashboardData.totalEarnings}</li>
-          <li>⭐ Average rating: {avgRating}</li>
-          <li>❌ {totalCanceledOrders} total canceled orders</li>
-        </ul>
-      </motion.div>
-
-      {/* Reviews */}
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold">Recent Reviews</h2>
-        <span className="text-sm text-slate-500">{dashboardData.ratings.length} total</span>
-      </div>
-
-      <motion.div
-        className="space-y-5 max-w-4xl"
-        initial="hidden"
-        animate="visible"
-        variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.1 } } }}
-      >
-        {dashboardData.ratings.map((review, index) => (
-          <motion.div
-            key={index}
-            className="bg-white border rounded-2xl p-5 shadow-md hover:shadow-lg transition-shadow"
-            variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
-          >
-            <div className="flex justify-between gap-6">
-              {/* LEFT */}
-              <div className="flex gap-4">
-                {review.user?.image ? (
-                  <Image
-                    src={review.user.image}
-                    alt={review.user.name}
-                    width={50}
-                    height={50}
-                    className="rounded-full object-cover ring-2 ring-indigo-500"
-                  />
-                ) : (
-                  <div className="w-12 h-12 rounded-full bg-indigo-500 text-white flex items-center justify-center font-bold text-lg ring-2 ring-indigo-500">
-                    {review.user?.name?.[0]}
-                  </div>
-                )}
-                <div>
-                  <p className="text-sm font-semibold">{review.user.name}</p>
-                  <p className="text-xs text-slate-400">
-                    {new Date(review.createdAt).toDateString()}
-                  </p>
-                  <p className="text-sm text-slate-600 mt-2">{review.review}</p>
-                  {review.reply && (
-                    <p className="text-xs text-green-600 mt-1">
-                      Reply: {review.reply}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {/* RIGHT */}
-              <div className="text-right">
-                <p className="text-xs text-slate-500">{review.product?.category}</p>
-                <p className="text-sm font-semibold">{review.product?.name}</p>
-                <div className="flex justify-end mt-1 space-x-1">
-                  {[1, 2, 3, 4, 5].map(i => (
-                    <StarIcon
-                      key={i}
-                      size={16}
-                      fill={review.rating >= i ? "#16A34A" : "#E5E7EB"}
-                      className="text-transparent"
-                    />
-                  ))}
-                </div>
-                <button
-                  onClick={() => router.push(`/product/${review.product.id}`)}
-                  className="mt-3 text-xs px-4 py-2 border rounded-md bg-indigo-50 hover:bg-indigo-100 text-indigo-600 font-medium transition"
-                >
-                  View product
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        ))}
-      </motion.div>
-
-      {/* ---------------- PDF REPORT UI (HIDDEN) ---------------- */}
-      <div
-        id="pdf-report"
-        style={{
-          position: "fixed",
-          left: "-9999px",
-          top: 0,
-          width: "800px",
-          background: "#ffffff",
-          color: "#111",
-          padding: "30px",
-          fontFamily: "Arial"
-        }}
-      >
-
-        {/* HEADER */}
-        <div style={{ display: "flex", alignItems: "center", marginBottom: "20px" }}>
-          {dashboardData.storeLogo && (
-            <img
-              src={dashboardData.storeLogo}
-              style={{ width: "60px", height: "60px", borderRadius: "10px", marginRight: "15px" }}
-            />
-          )}
-          <div>
-            <h1 style={{ fontSize: "24px", margin: 0 }}>
-              🏪 {dashboardData.storeName || "My Store"}
-            </h1>
-            <p style={{ margin: 0, color: "#555" }}>
-              📅 {monthOptions[filterMonth]} {filterYear}
-            </p>
-          </div>
-        </div>
-
-        <div
-          style={{
-            height: "1px",
-            background: "linear-gradient(to right, transparent, #cbd5f5, transparent)",
-            margin: "20px 0"
-          }}
-        />
-
-        {/* SUMMARY CARDS */}
-        <h2 style={{ marginTop: "20px" }}>📊 Business Summary</h2>
-
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-          <div style={{ background: "#E0F2FE", padding: "10px", borderRadius: "8px" }}>
-            💰 Earnings: {currency}{dashboardData.totalEarnings}
-          </div>
-
-          <div style={{ background: "#DCFCE7", padding: "10px", borderRadius: "8px" }}>
-            📦 Orders: {dashboardData.totalOrders}
-          </div>
-
-          <div style={{ background: "#FEE2E2", padding: "10px", borderRadius: "8px" }}>
-            ❌ Cancelled: {dashboardData.monthlyReport?.cancelledOrders || 0}
-          </div>
-
-          <div style={{ background: "#FEF3C7", padding: "10px", borderRadius: "8px" }}>
-            🔁 Returned: {dashboardData.returnedProducts}
-          </div>
-        </div>
-
-        <div
-          style={{
-            height: "1px",
-            background: "linear-gradient(to right, transparent, #cbd5f5, transparent)",
-            margin: "20px 0"
-          }}
-        />
-
-        {/* FINANCIAL BREAKDOWN */}
-        <h2 className="text-xl font-semibold mb-2">💰 Financial Breakdown</h2>
-
-        <p>💰 Total Earnings: {currency}{dashboardData.totalEarnings}</p>
-        <p>❌ Cancelled Amount: {currency}{dashboardData.monthlyReport?.cancelledDetails?.reduce((a, c) => a + (c.price * c.quantity), 0)}</p>
-        <p>🔁 Returned Amount: {currency}{dashboardData.returnedAmount}</p>
-
-        <div
-          style={{
-            height: "1px",
-            background: "linear-gradient(to right, transparent, #cbd5f5, transparent)",
-            margin: "20px 0"
-          }}
-        />
-
-        {/* TOP PRODUCTS */}
-        <h2 style={{ marginTop: "20px" }}>🔥 Top Products</h2>
-        <ul>
-          {dashboardData.monthlyReport?.topProducts?.map((p, i) => (
-            <li key={i}>
-              🛒 {p.name} — {p.sold} sold
-            </li>
-          ))}
-        </ul>
-
-        <div
-          style={{
-            height: "1px",
-            background: "linear-gradient(to right, transparent, #cbd5f5, transparent)",
-            margin: "20px 0"
-          }}
-        />
-
-        {/* CANCELLED */}
-        <h2 style={{ marginTop: "20px" }}>❌ Cancelled Orders</h2>
-        <ul>
-          {dashboardData.monthlyReport?.cancelledDetails?.map((c, i) => (
-            <li key={i}>
-              {c.productName} | Qty: {c.quantity} | ₹{c.price}
-            </li>
-          ))}
-        </ul>
-
-        <div
-          style={{
-            height: "1px",
-            background: "linear-gradient(to right, transparent, #cbd5f5, transparent)",
-            margin: "20px 0"
-          }}
-        />
-
-        {/* RETURNED */}
-        <h2 style={{ marginTop: "20px" }}>🔁 Returned Orders</h2>
-        <ul>
-          {dashboardData.monthlyReport?.returnedDetails?.map((r, i) => (
-            <li key={i}>
-              {r.productName} | Qty: {r.quantity} | ₹{r.price}
-            </li>
-          ))}
-        </ul>
-
-        <div
-          style={{
-            height: "1px",
-            background: "linear-gradient(to right, transparent, #cbd5f5, transparent)",
-            margin: "20px 0"
-          }}
-        />
-
-        {/* FOOTER */}
-        <p style={{ marginTop: "20px", fontSize: "12px", color: "#777" }}>
-          Generated automatically • 📊 Smart Analytics Report
+        <h1 className="text-3xl font-bold text-slate-900">Dashboard</h1>
+        <p className="text-sm text-slate-500 mt-1">
+          Monitor your business performance with analytics and insights
         </p>
+      </motion.div>
 
+      <div className="flex items-center gap-4">
+        {/* YEAR */}
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-slate-500">Year:</span>
+          <select
+            value={filterYear}
+            onChange={(e) => setFilterYear(Number(e.target.value))}
+            className="border rounded-lg px-3 py-2 text-sm bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          >
+            {yearOptions.map(y => (
+              <option key={y} value={y}>{y}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* MONTH */}
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-slate-500">Month:</span>
+          <select
+            value={filterMonth}
+            onChange={(e) => setFilterMonth(Number(e.target.value))}
+            className="border rounded-lg px-3 py-2 text-sm bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          >
+            {monthOptions.map((m, i) => (
+              <option key={i} value={i}>{m}</option>
+            ))}
+          </select>
+        </div>
       </div>
     </div>
 
+    {/* Stats */}
+    <motion.div
+      className="grid grid-cols-2 lg:grid-cols-5 gap-6"
+      initial="hidden"
+      animate="visible"
+      variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.1 } } }}
+    >
+      {stats.map((item, i) => (
+        <motion.div
+          key={i}
+          className="bg-white border rounded-2xl p-5 shadow-md hover:shadow-xl transition-shadow cursor-pointer"
+          variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
+          whileHover={{ scale: 1.03 }}
+        >
+          <div className="flex justify-between items-center">
+            <div>
+              <p className="text-xs text-slate-500">{item.title}</p>
+              <p className="text-xl font-semibold mt-1">{item.value}</p>
+            </div>
+            <item.icon className="w-6 h-6 text-indigo-500" />
+          </div>
+        </motion.div>
+      ))}
+    </motion.div>
 
-  )
+    {/* Charts */}
+    <DashboardCharts
+      earningsData={earningsData}
+      ordersData={ordersData}
+      canceledOrdersData={canceledOrdersData}
+      returnedOrdersData={returnedOrdersData}
+      topProducts={dashboardData.topProducts}
+    />
+
+    {/* Insights */}
+    <motion.div
+      className="bg-white border rounded-2xl p-6 shadow-md hover:shadow-lg transition-shadow"
+      initial={{ opacity: 0, x: -30 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      <div className="flex items-center gap-2 mb-2">
+        <TrendingUpIcon className="w-5 h-5 text-green-600" />
+        <h3 className="text-sm font-semibold">Insights</h3>
+      </div>
+      <ul className="text-sm text-slate-600 space-y-1">
+        <li>📈 Earnings for {filterYear}: {currency}{dashboardData.totalEarnings}</li>
+        <li>⭐ Average rating: {avgRating}</li>
+        <li>❌ {totalCanceledOrders} total canceled orders</li>
+      </ul>
+    </motion.div>
+
+    {/* Reviews */}
+    <div className="flex justify-between items-center mb-4">
+      <h2 className="text-xl font-semibold">Recent Reviews</h2>
+      <span className="text-sm text-slate-500">{dashboardData.ratings.length} total</span>
+    </div>
+
+    <motion.div
+      className="space-y-5 max-w-4xl"
+      initial="hidden"
+      animate="visible"
+      variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.1 } } }}
+    >
+      {dashboardData.ratings.map((review, index) => (
+        <motion.div
+          key={index}
+          className="bg-white border rounded-2xl p-5 shadow-md hover:shadow-lg transition-shadow"
+          variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
+        >
+          <div className="flex justify-between gap-6">
+            {/* LEFT */}
+            <div className="flex gap-4">
+              {review.user?.image ? (
+                <Image
+                  src={review.user.image}
+                  alt={review.user.name}
+                  width={50}
+                  height={50}
+                  className="rounded-full object-cover ring-2 ring-indigo-500"
+                />
+              ) : (
+                <div className="w-12 h-12 rounded-full bg-indigo-500 text-white flex items-center justify-center font-bold text-lg ring-2 ring-indigo-500">
+                  {review.user?.name?.[0]}
+                </div>
+              )}
+              <div>
+                <p className="text-sm font-semibold">{review.user.name}</p>
+                <p className="text-xs text-slate-400">
+                  {new Date(review.createdAt).toDateString()}
+                </p>
+                <p className="text-sm text-slate-600 mt-2">{review.review}</p>
+                {review.reply && (
+                  <p className="text-xs text-green-600 mt-1">
+                    Reply: {review.reply}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* RIGHT */}
+            <div className="text-right">
+              <p className="text-xs text-slate-500">{review.product?.category}</p>
+              <p className="text-sm font-semibold">{review.product?.name}</p>
+              <div className="flex justify-end mt-1 space-x-1">
+                {[1, 2, 3, 4, 5].map(i => (
+                  <StarIcon
+                    key={i}
+                    size={16}
+                    fill={review.rating >= i ? "#16A34A" : "#E5E7EB"}
+                    className="text-transparent"
+                  />
+                ))}
+              </div>
+              <button
+                onClick={() => router.push(`/product/${review.product.id}`)}
+                className="mt-3 text-xs px-4 py-2 border rounded-md bg-indigo-50 hover:bg-indigo-100 text-indigo-600 font-medium transition"
+              >
+                View product
+              </button>
+            </div>
+          </div>
+        </motion.div>
+      ))}
+    </motion.div>
+
+    {/* ---------------- PDF REPORT UI (HIDDEN) ---------------- */}
+    <div
+      id="pdf-report"
+      style={{
+        position: "fixed",
+        left: "-9999px",
+        top: 0,
+        width: "800px",
+        background: "#ffffff",
+        color: "#111",
+        padding: "30px",
+        fontFamily: "Arial"
+      }}
+    >
+
+      {/* HEADER */}
+      <div style={{ display: "flex", alignItems: "center", marginBottom: "20px" }}>
+        {dashboardData.storeLogo && (
+          <img
+            src={dashboardData.storeLogo}
+            style={{ width: "60px", height: "60px", borderRadius: "10px", marginRight: "15px" }}
+          />
+        )}
+        <div>
+          <h1 style={{ fontSize: "24px", margin: 0 }}>
+            🏪 {dashboardData.storeName || "My Store"}
+          </h1>
+          <p style={{ margin: 0, color: "#555" }}>
+            📅 {monthOptions[filterMonth]} {filterYear}
+          </p>
+        </div>
+      </div>
+
+      <div
+        style={{
+          height: "1px",
+          background: "linear-gradient(to right, transparent, #cbd5f5, transparent)",
+          margin: "20px 0"
+        }}
+      />
+
+      {/* SUMMARY CARDS */}
+      <h2 style={{ marginTop: "20px" }}>📊 Business Summary</h2>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+        <div style={{ background: "#E0F2FE", padding: "10px", borderRadius: "8px" }}>
+          💰 Earnings: {currency}{dashboardData.totalEarnings}
+        </div>
+
+        <div style={{ background: "#DCFCE7", padding: "10px", borderRadius: "8px" }}>
+          📦 Orders: {dashboardData.totalOrders}
+        </div>
+
+        <div style={{ background: "#FEE2E2", padding: "10px", borderRadius: "8px" }}>
+          ❌ Cancelled: {dashboardData.monthlyReport?.cancelledOrders || 0}
+        </div>
+
+        <div style={{ background: "#FEF3C7", padding: "10px", borderRadius: "8px" }}>
+          🔁 Returned: {dashboardData.returnedProducts}
+        </div>
+      </div>
+
+      <div
+        style={{
+          height: "1px",
+          background: "linear-gradient(to right, transparent, #cbd5f5, transparent)",
+          margin: "20px 0"
+        }}
+      />
+
+      {/* FINANCIAL BREAKDOWN */}
+      <h2 className="text-xl font-semibold mb-2">💰 Financial Breakdown</h2>
+
+      <p>💰 Total Earnings: {currency}{dashboardData.totalEarnings}</p>
+      <p>❌ Cancelled Amount: {currency}{dashboardData.monthlyReport?.cancelledDetails?.reduce((a, c) => a + (c.price * c.quantity), 0)}</p>
+      <p>🔁 Returned Amount: {currency}{dashboardData.returnedAmount}</p>
+
+      <div
+        style={{
+          height: "1px",
+          background: "linear-gradient(to right, transparent, #cbd5f5, transparent)",
+          margin: "20px 0"
+        }}
+      />
+
+      {/* TOP PRODUCTS */}
+      <h2 style={{ marginTop: "20px" }}>🔥 Top Products</h2>
+      <ul>
+        {dashboardData.monthlyReport?.topProducts?.map((p, i) => (
+          <li key={i}>
+            🛒 {p.name} — {p.sold} sold
+          </li>
+        ))}
+      </ul>
+
+      <div
+        style={{
+          height: "1px",
+          background: "linear-gradient(to right, transparent, #cbd5f5, transparent)",
+          margin: "20px 0"
+        }}
+      />
+
+      {/* CANCELLED */}
+      <h2 style={{ marginTop: "20px" }}>❌ Cancelled Orders</h2>
+      <ul>
+        {dashboardData.monthlyReport?.cancelledDetails?.map((c, i) => (
+          <li key={i}>
+            {c.productName} | Qty: {c.quantity} | ₹{c.price}
+          </li>
+        ))}
+      </ul>
+
+      <div
+        style={{
+          height: "1px",
+          background: "linear-gradient(to right, transparent, #cbd5f5, transparent)",
+          margin: "20px 0"
+        }}
+      />
+
+      {/* RETURNED */}
+      <h2 style={{ marginTop: "20px" }}>🔁 Returned Orders</h2>
+      <ul>
+        {dashboardData.monthlyReport?.returnedDetails?.map((r, i) => (
+          <li key={i}>
+            {r.productName} | Qty: {r.quantity} | ₹{r.price}
+          </li>
+        ))}
+      </ul>
+
+      <div
+        style={{
+          height: "1px",
+          background: "linear-gradient(to right, transparent, #cbd5f5, transparent)",
+          margin: "20px 0"
+        }}
+      />
+
+      {/* FOOTER */}
+      <p style={{ marginTop: "20px", fontSize: "12px", color: "#777" }}>
+        Generated automatically • 📊 Smart Analytics Report
+      </p>
+
+    </div>
+  </div>
+
+
+)
 }
