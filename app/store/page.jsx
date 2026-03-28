@@ -433,106 +433,113 @@ export default function Dashboard() {
 
       {/* ---------------- PDF REPORT UI (HIDDEN) ---------------- */}
       <div
+        id="pdf-report"
         style={{
-          height: "1px",
-          background: "linear-gradient(to right, transparent, #cbd5f5, transparent)",
-          margin: "20px 0"
+          position: "fixed",
+          left: "-9999px",
+          top: 0,
+          width: "800px",
+          background: "#ffffff",
+          color: "#111",
+          padding: "30px",
+          fontFamily: "Arial"
         }}
-      />
+      >
 
-      {/* HEADER */}
-      <div style={{ display: "flex", alignItems: "center", marginBottom: "20px" }}>
-        {dashboardData.storeLogo && (
-          <img
-            src={dashboardData.storeLogo}
-            style={{ width: "60px", height: "60px", borderRadius: "10px", marginRight: "15px" }}
-          />
-        )}
-        <div>
-          <h1 style={{ fontSize: "24px", margin: 0 }}>
-            🏪 {dashboardData.storeName || "My Store"}
-          </h1>
-          <p style={{ margin: 0, color: "#555" }}>
-            📅 {monthOptions[filterMonth]} {filterYear}
-          </p>
+        {/* HEADER */}
+        <div style={{ display: "flex", alignItems: "center", marginBottom: "20px" }}>
+          {dashboardData.storeLogo && (
+            <img
+              src={dashboardData.storeLogo}
+              style={{ width: "60px", height: "60px", borderRadius: "10px", marginRight: "15px" }}
+            />
+          )}
+          <div>
+            <h1 style={{ fontSize: "24px", margin: 0 }}>
+              🏪 {dashboardData.storeName || "My Store"}
+            </h1>
+            <p style={{ margin: 0, color: "#555" }}>
+              📅 {monthOptions[filterMonth]} {filterYear}
+            </p>
+          </div>
         </div>
+
+        <hr />
+
+        {/* SUMMARY CARDS */}
+        <h2 style={{ marginTop: "20px" }}>📊 Business Summary</h2>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+          <div style={{ background: "#E0F2FE", padding: "10px", borderRadius: "8px" }}>
+            💰 Earnings: {currency}{dashboardData.totalEarnings}
+          </div>
+
+          <div style={{ background: "#DCFCE7", padding: "10px", borderRadius: "8px" }}>
+            📦 Orders: {dashboardData.totalOrders}
+          </div>
+
+          <div style={{ background: "#FEE2E2", padding: "10px", borderRadius: "8px" }}>
+            ❌ Cancelled: {dashboardData.monthlyReport?.cancelledOrders || 0}
+          </div>
+
+          <div style={{ background: "#FEF3C7", padding: "10px", borderRadius: "8px" }}>
+            🔁 Returned: {dashboardData.returnedProducts}
+          </div>
+        </div>
+
+        <hr />
+
+        {/* FINANCIAL BREAKDOWN */}
+        <h2 style={{ marginTop: "20px" }}>💸 Financial Breakdown</h2>
+
+        <p>💰 Total Earnings: {currency}{dashboardData.totalEarnings}</p>
+        <p>❌ Cancelled Amount: {currency}{dashboardData.monthlyReport?.cancelledDetails?.reduce((a, c) => a + (c.price * c.quantity), 0)}</p>
+        <p>🔁 Returned Amount: {currency}{dashboardData.returnedAmount}</p>
+
+        <hr />
+
+        {/* TOP PRODUCTS */}
+        <h2 style={{ marginTop: "20px" }}>🔥 Top Products</h2>
+        <ul>
+          {dashboardData.monthlyReport?.topProducts?.map((p, i) => (
+            <li key={i}>
+              🛒 {p.name} — {p.sold} sold
+            </li>
+          ))}
+        </ul>
+
+        <hr />
+
+        {/* CANCELLED */}
+        <h2 style={{ marginTop: "20px" }}>❌ Cancelled Orders</h2>
+        <ul>
+          {dashboardData.monthlyReport?.cancelledDetails?.map((c, i) => (
+            <li key={i}>
+              {c.productName} | Qty: {c.quantity} | ₹{c.price}
+            </li>
+          ))}
+        </ul>
+
+        <hr />
+
+        {/* RETURNED */}
+        <h2 style={{ marginTop: "20px" }}>🔁 Returned Orders</h2>
+        <ul>
+          {dashboardData.monthlyReport?.returnedDetails?.map((r, i) => (
+            <li key={i}>
+              {r.productName} | Qty: {r.quantity} | ₹{r.price}
+            </li>
+          ))}
+        </ul>
+
+        <hr />
+
+        {/* FOOTER */}
+        <p style={{ marginTop: "20px", fontSize: "12px", color: "#777" }}>
+          Generated automatically • 📊 Smart Analytics Report
+        </p>
+
       </div>
-
-      <hr />
-
-      {/* SUMMARY CARDS */}
-      <h2 style={{ marginTop: "20px" }}>📊 Business Summary</h2>
-
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-        <div style={{ background: "#E0F2FE", padding: "10px", borderRadius: "8px" }}>
-          💰 Earnings: {currency}{dashboardData.totalEarnings}
-        </div>
-
-        <div style={{ background: "#DCFCE7", padding: "10px", borderRadius: "8px" }}>
-          📦 Orders: {dashboardData.totalOrders}
-        </div>
-
-        <div style={{ background: "#FEE2E2", padding: "10px", borderRadius: "8px" }}>
-          ❌ Cancelled: {dashboardData.monthlyReport?.cancelledOrders || 0}
-        </div>
-
-        <div style={{ background: "#FEF3C7", padding: "10px", borderRadius: "8px" }}>
-          🔁 Returned: {dashboardData.returnedProducts}
-        </div>
-      </div>
-
-      <hr />
-
-      {/* FINANCIAL BREAKDOWN */}
-      <h2 style={{ marginTop: "20px" }}>💸 Financial Breakdown</h2>
-
-      <p>💰 Total Earnings: {currency}{dashboardData.totalEarnings}</p>
-      <p>❌ Cancelled Amount: {currency}{dashboardData.monthlyReport?.cancelledDetails?.reduce((a, c) => a + (c.price * c.quantity), 0)}</p>
-      <p>🔁 Returned Amount: {currency}{dashboardData.returnedAmount}</p>
-
-      <hr />
-
-      {/* TOP PRODUCTS */}
-      <h2 style={{ marginTop: "20px" }}>🔥 Top Products</h2>
-      <ul>
-        {dashboardData.monthlyReport?.topProducts?.map((p, i) => (
-          <li key={i}>
-            🛒 {p.name} — {p.sold} sold
-          </li>
-        ))}
-      </ul>
-
-      <hr />
-
-      {/* CANCELLED */}
-      <h2 style={{ marginTop: "20px" }}>❌ Cancelled Orders</h2>
-      <ul>
-        {dashboardData.monthlyReport?.cancelledDetails?.map((c, i) => (
-          <li key={i}>
-            {c.productName} | Qty: {c.quantity} | ₹{c.price}
-          </li>
-        ))}
-      </ul>
-
-      <hr />
-
-      {/* RETURNED */}
-      <h2 style={{ marginTop: "20px" }}>🔁 Returned Orders</h2>
-      <ul>
-        {dashboardData.monthlyReport?.returnedDetails?.map((r, i) => (
-          <li key={i}>
-            {r.productName} | Qty: {r.quantity} | ₹{r.price}
-          </li>
-        ))}
-      </ul>
-
-      <hr />
-
-      {/* FOOTER */}
-      <p style={{ marginTop: "20px", fontSize: "12px", color: "#777" }}>
-        Generated automatically • 📊 Smart Analytics Report
-      </p>
-
     </div>
 
 
