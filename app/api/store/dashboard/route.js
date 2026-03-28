@@ -34,6 +34,10 @@ export async function GET(request) {
     const selectedYear =
       Number(searchParams.get("year")) || new Date().getFullYear();
 
+    const selectedMonth = searchParams.get("month") !== null
+      ? Number(searchParams.get("month"))
+      : null
+
     /* ---------- ORDERS ---------- */
     const orders = await prisma.order.findMany({
       where: { storeId },
@@ -51,6 +55,23 @@ export async function GET(request) {
         }
       }
     });
+
+    const filteredOrders = orders.filter(order => {
+      const istDate = new Date(
+        new Date(order.createdAt).toLocaleString("en-US", {
+          timeZone: "Asia/Kolkata"
+        })
+      )
+
+      const orderYear = istDate.getFullYear()
+      const orderMonth = istDate.getMonth()
+
+      if (selectedMonth !== null) {
+        return orderYear === selectedYear && orderMonth === selectedMonth
+      }
+
+      return orderYear === selectedYear
+    })
 
     /* ---------- PRODUCTS ---------- */
     const products = await prisma.product.findMany({
@@ -151,7 +172,7 @@ export async function GET(request) {
 
     /* ---------- TOTALS ---------- */
 
-    const totalEarnings = orders
+    const totalEarnings = filteredOrders
       .filter((order) => order.status !== "CANCELLED")
       .reduce((acc, order) => acc + order.total, 0);
 
@@ -160,7 +181,7 @@ export async function GET(request) {
     const dashboardData = {
       storeIsActive: store.isActive,
       ratings,
-      totalOrders: orders.length,
+      totalOrders: filteredOrders.length,
       totalEarnings: Math.round(totalEarnings),
       totalProducts: products.length,
 

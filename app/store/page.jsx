@@ -50,6 +50,11 @@ export default function Dashboard() {
   const [storeActive, setStoreActive] = useState(dashboardData.storeIsActive)
   const [toggling, setToggling] = useState(false)
 
+  const monthOptions = [
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+  ]
+
 
   /* -------------------- FETCH -------------------- */
   const fetchDashboardData = async () => {
@@ -229,18 +234,34 @@ export default function Dashboard() {
           </p>
         </motion.div>
 
-        {/* Year Selector */}
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-slate-500">Year:</span>
-          <select
-            value={filterYear}
-            onChange={(e) => setFilterYear(Number(e.target.value))}
-            className="border rounded-lg px-3 py-2 text-sm bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          >
-            {yearOptions.map(y => (
-              <option key={y} value={y}>{y}</option>
-            ))}
-          </select>
+        <div className="flex items-center gap-4">
+          {/* YEAR */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-slate-500">Year:</span>
+            <select
+              value={filterYear}
+              onChange={(e) => setFilterYear(Number(e.target.value))}
+              className="border rounded-lg px-3 py-2 text-sm bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            >
+              {yearOptions.map(y => (
+                <option key={y} value={y}>{y}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* MONTH */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-slate-500">Month:</span>
+            <select
+              value={filterMonth}
+              onChange={(e) => setFilterMonth(Number(e.target.value))}
+              className="border rounded-lg px-3 py-2 text-sm bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            >
+              {monthOptions.map((m, i) => (
+                <option key={i} value={i}>{m}</option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
