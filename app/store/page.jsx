@@ -110,13 +110,7 @@ export default function Dashboard() {
 
 
   /* -------------------- FILTERED ORDERS (KPIs) -------------------- */
-  const filteredOrders = useMemo(() => {
-    return dashboardData.orders.filter(o => {
-      const d = new Date(o.createdAt)
-      return d.getFullYear() === filterYear &&
-        d.getMonth() === filterMonth
-    })
-  }, [dashboardData.orders, filterYear, filterMonth])
+  const filteredOrders = dashboardData.orders
 
   const filteredEarnings = useMemo(() => {
     return filteredOrders
