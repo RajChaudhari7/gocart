@@ -93,10 +93,11 @@ export async function GET(request) {
       .map((p) => ({
         ...p,
         sold: orders.reduce((acc, order) => {
-          const item = order.orderItems.find(
-            (oi) => oi.productId === p.id && order.status !== "CANCELLED"
+          const items = order.orderItems.filter(
+            (oi) => oi.productId === p.id
           );
-          return acc + (item ? item.quantity : 0);
+
+          return acc + items.reduce((sum, i) => sum + i.quantity, 0);
         }, 0)
       }))
       .sort((a, b) => b.sold - a.sold)

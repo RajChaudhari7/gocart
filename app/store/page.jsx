@@ -87,11 +87,14 @@ export default function Dashboard() {
     const element = document.getElementById("pdf-report")
     if (!element) return
 
-    const canvas = await html2canvas(element, {
-      scale: 2,
-      useCORS: true
-    })
+    // ✅ WAIT for UI to render
+    await new Promise(resolve => setTimeout(resolve, 500))
 
+    const canvas = await html2canvas(element, {
+      scale: 3, // 🔥 better quality
+      useCORS: true,
+      backgroundColor: "#ffffff"
+    })
     const imgData = canvas.toDataURL("image/png")
 
     const pdf = new jsPDF("p", "mm", "a4")
@@ -115,6 +118,7 @@ export default function Dashboard() {
 
     pdf.save(`Premium-Report-${filterYear}-${filterMonth + 1}.pdf`)
   }
+
 
   /** -------Store Close and Open */
 
@@ -455,9 +459,7 @@ export default function Dashboard() {
           <p>Total Orders: {dashboardData.totalOrders}</p>
           <p>Returned Products: {dashboardData.returnedProducts}</p>
           <p>
-            Cancelled Orders: {
-              dashboardData.canceledChart?.reduce((a, b) => a + b.value, 0)
-            }
+            Cancelled Orders: {dashboardData.monthlyReport?.cancelledOrders || 0}
           </p>
         </div>
 
@@ -533,7 +535,7 @@ export default function Dashboard() {
         {/* CHARTS */}
         <h2 className="text-xl font-semibold mb-2">Charts</h2>
 
-        <div className="space-y-6">
+        <div id="pdf-charts" className="space-y-6 bg-white p-4">
           <DashboardCharts
             earningsData={dashboardData.earningsChart}
             ordersData={dashboardData.ordersChart}
@@ -543,7 +545,6 @@ export default function Dashboard() {
           />
         </div>
       </div>
-
     </div>
 
 
