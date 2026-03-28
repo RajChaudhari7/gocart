@@ -112,6 +112,20 @@ export async function GET(request) {
         })
       );
 
+      let filteredReturnedProducts = 0;
+      let filteredReturnedAmount = 0;
+
+      filteredOrders.forEach((order) => {
+        if (order.status === "RETURNED") {
+          filteredReturnedProducts += order.orderItems.reduce(
+            (acc, item) => acc + item.quantity,
+            0
+          );
+
+          filteredReturnedAmount += order.total;
+        }
+      });
+
       const orderYear = istDate.getFullYear();
       const orderMonth = istDate.getMonth();
 
@@ -190,8 +204,8 @@ export async function GET(request) {
       canceledChart,
 
       returnedChart,      // ✅ added
-      returnedProducts,   // ✅ added
-      returnedAmount,     // ✅ added
+      returnedProducts: filteredReturnedProducts,
+      returnedAmount: filteredReturnedAmount,
 
       orders: filteredOrders,
       topProducts
