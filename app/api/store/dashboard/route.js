@@ -58,7 +58,7 @@ export async function GET(request) {
       }
     });
 
-    /* ---------- FILTERED ORDERS ---------- */
+    /* ---------- FILTERED ORDERS (YEAR + MONTH) ---------- */
     const filteredOrders = orders.filter((order) => {
       const istDate = new Date(
         new Date(order.createdAt).toLocaleString("en-US", {
@@ -88,31 +88,22 @@ export async function GET(request) {
       include: { user: true, product: true }
     });
 
-    /* ---------- STORE INFO (UPDATED) ---------- */
-    const store = await prisma.store.findUnique({
-      where: { id: storeId },
-      select: {
-        isActive: true,
-        name: true,
-        logo: true
-      }
-    });
-
-    /* ---------- TOP PRODUCTS (ALL TIME) ---------- */
+    /* ---------- TOP PRODUCTS ---------- */
     const topProducts = products
       .map((p) => ({
         ...p,
         sold: orders.reduce((acc, order) => {
           const items = order.orderItems.filter(
-            (oi) => oi.productId === p.id && order.status !== "CANCELLED"
+            (oi) => oi.productId === p.id
           );
+
           return acc + items.reduce((sum, i) => sum + i.quantity, 0);
         }, 0)
       }))
       .sort((a, b) => b.sold - a.sold)
       .slice(0, 5);
 
-    /* ---------- CHART DATA ---------- */
+    /* ---------- CHART DATA (FULL YEAR) ---------- */
     const months = getAll12Months(selectedYear);
 
     orders.forEach((order) => {
@@ -161,32 +152,37 @@ export async function GET(request) {
       value: m.returned
     }));
 
-    /* ---------- KPI CALCULATIONS ---------- */
-    let returnedAmount = 0;
-    let cancelledAmount = 0;
-    let returnedProducts = 0;
+    /* ---------- STORE STATUS ---------- */
+    const store = await prisma.store.findUnique({
+      where: { id: storeId },
+      select: { isActive: true }
+    });
+
+    /* ---------- KPI CALCULATIONS (FILTERED) ---------- */
+    let filteredReturnedProducts = 0;
+    let filteredReturnedAmount = 0;
 
     filteredOrders.forEach((order) => {
       if (order.status === "RETURNED") {
-        returnedAmount += order.total;
-        returnedProducts += order.orderItems.reduce(
+        filteredReturnedProducts += order.orderItems.reduce(
           (acc, item) => acc + item.quantity,
           0
         );
-      }
 
-      if (order.status === "CANCELLED") {
-        cancelledAmount += order.total;
+        filteredReturnedAmount += order.total;
       }
     });
 
     const totalEarnings = filteredOrders
-      .filter((o) => o.status === "DELIVERED")
-      .reduce((acc, o) => acc + o.total, 0);
+      .filter((order) => order.status !== "CANCELLED")
+      .reduce((acc, order) => acc + order.total, 0);
 
     /* ---------- MONTHLY REPORT ---------- */
+
+    // ONLY for selected month (IMPORTANT)
     const monthlyOrders = filteredOrders;
 
+    /* ---------- TOP PRODUCTS (MONTH) ---------- */
     const monthlyTopProducts = products
       .map((p) => ({
         ...p,
@@ -203,42 +199,48 @@ export async function GET(request) {
       .sort((a, b) => b.sold - a.sold)
       .slice(0, 5);
 
+    /* ---------- DELIVERED ORDERS ---------- */
     const deliveredOrders = monthlyOrders.filter(
-      (o) => o.status === "DELIVERED"
+      (order) => order.status === "DELIVERED"
     ).length;
 
-    /* ---------- DETAILS ---------- */
-    const cancelledDetails = [];
-    const returnedDetails = [];
+    /* ---------- CANCELLED DETAILS ---------- */
+    const cancelledOrdersDetails = [];
 
     monthlyOrders.forEach((order) => {
-      order.orderItems.forEach((item) => {
-        const product = products.find((p) => p.id === item.productId);
+      if (order.status === "CANCELLED") {
+        order.orderItems.forEach((item) => {
+          const product = products.find((p) => p.id === item.productId);
 
-        if (order.status === "CANCELLED") {
-          cancelledDetails.push({
+          cancelledOrdersDetails.push({
             productName: product?.name || "Unknown",
             quantity: item.quantity,
             price: item.price
           });
-        }
+        });
+      }
+    });
 
-        if (order.status === "RETURNED") {
-          returnedDetails.push({
+    /* ---------- RETURNED DETAILS ---------- */
+    const returnedOrdersDetails = [];
+
+    monthlyOrders.forEach((order) => {
+      if (order.status === "RETURNED") {
+        order.orderItems.forEach((item) => {
+          const product = products.find((p) => p.id === item.productId);
+
+          returnedOrdersDetails.push({
             productName: product?.name || "Unknown",
             quantity: item.quantity,
             price: item.price
           });
-        }
-      });
+        });
+      }
     });
 
     /* ---------- RESPONSE ---------- */
     const dashboardData = {
       storeIsActive: store.isActive,
-      storeName: store.name,
-      storeLogo: store.logo,
-
       ratings,
 
       totalOrders: filteredOrders.length,
@@ -250,22 +252,18 @@ export async function GET(request) {
       canceledChart,
       returnedChart,
 
-      returnedProducts,
-      returnedAmount,
-      cancelledAmount,
+      returnedProducts: filteredReturnedProducts,
+      returnedAmount: filteredReturnedAmount,
 
       orders: filteredOrders,
       topProducts,
-
       monthlyReport: {
         topProducts: monthlyTopProducts,
         totalSales: Math.round(totalEarnings),
         deliveredOrders,
-        cancelledOrders: cancelledDetails.length,
-        cancelledAmount,
-        returnedAmount,
-        cancelledDetails,
-        returnedDetails
+        cancelledOrders: cancelledOrdersDetails.length,
+        cancelledDetails: cancelledOrdersDetails,
+        returnedDetails: returnedOrdersDetails
       }
     };
 
