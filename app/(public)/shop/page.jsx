@@ -30,7 +30,8 @@ const PRICE_RANGES = [
 ]
 
 function ShopContent() {
-  const [search, setSearch] = useState('')
+  const searchParams = useSearchParams()
+  const search = searchParams.get('search')
 
   const products = useSelector((state) => state.product.list || [])
 
