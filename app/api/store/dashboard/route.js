@@ -283,9 +283,9 @@ export async function GET(request) {
         deliveredOrders,
         cancelledOrders: cancelledOrdersDetails.length,
         cancelledAmount,
-        returnedAmount,
-        cancelledDetails,
-        returnedDetails
+        returnedAmount: filteredReturnedAmount, 
+        cancelledDetails: cancelledOrdersDetails,
+        returnedDetails: returnedOrdersDetails
       }
     };
 
