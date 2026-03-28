@@ -17,7 +17,7 @@ const getAll12Months = (year) => {
       earnings: 0,
       orders: 0,
       canceled: 0,
-      returned: 0   // ✅ added
+      returned: 0
     });
   }
 
@@ -31,12 +31,14 @@ export async function GET(request) {
     const storeId = await authSeller(userId);
 
     const { searchParams } = new URL(request.url);
+
     const selectedYear =
       Number(searchParams.get("year")) || new Date().getFullYear();
 
-    const selectedMonth = searchParams.get("month") !== null
-      ? Number(searchParams.get("month"))
-      : null
+    const selectedMonth =
+      searchParams.get("month") !== null
+        ? Number(searchParams.get("month"))
+        : null;
 
     /* ---------- ORDERS ---------- */
     const orders = await prisma.order.findMany({
@@ -56,22 +58,23 @@ export async function GET(request) {
       }
     });
 
-    const filteredOrders = orders.filter(order => {
+    /* ---------- FILTERED ORDERS (YEAR + MONTH) ---------- */
+    const filteredOrders = orders.filter((order) => {
       const istDate = new Date(
         new Date(order.createdAt).toLocaleString("en-US", {
           timeZone: "Asia/Kolkata"
         })
-      )
+      );
 
-      const orderYear = istDate.getFullYear()
-      const orderMonth = istDate.getMonth()
+      const orderYear = istDate.getFullYear();
+      const orderMonth = istDate.getMonth();
 
       if (selectedMonth !== null) {
-        return orderYear === selectedYear && orderMonth === selectedMonth
+        return orderYear === selectedYear && orderMonth === selectedMonth;
       }
 
-      return orderYear === selectedYear
-    })
+      return orderYear === selectedYear;
+    });
 
     /* ---------- PRODUCTS ---------- */
     const products = await prisma.product.findMany({
@@ -99,11 +102,8 @@ export async function GET(request) {
       .sort((a, b) => b.sold - a.sold)
       .slice(0, 5);
 
-    /* ---------- CHART DATA ---------- */
+    /* ---------- CHART DATA (FULL YEAR) ---------- */
     const months = getAll12Months(selectedYear);
-
-    let returnedProducts = 0;
-    let returnedAmount = 0;
 
     orders.forEach((order) => {
       const istDate = new Date(
@@ -111,20 +111,6 @@ export async function GET(request) {
           timeZone: "Asia/Kolkata"
         })
       );
-
-      let filteredReturnedProducts = 0;
-      let filteredReturnedAmount = 0;
-
-      filteredOrders.forEach((order) => {
-        if (order.status === "RETURNED") {
-          filteredReturnedProducts += order.orderItems.reduce(
-            (acc, item) => acc + item.quantity,
-            0
-          );
-
-          filteredReturnedAmount += order.total;
-        }
-      });
 
       const orderYear = istDate.getFullYear();
       const orderMonth = istDate.getMonth();
@@ -134,24 +120,11 @@ export async function GET(request) {
       );
 
       if (monthIndex !== -1) {
-
         if (order.status === "CANCELLED") {
           months[monthIndex].canceled += 1;
-        }
-
-        /* -------- RETURNS -------- */
-        else if (order.status === "RETURNED") {
+        } else if (order.status === "RETURNED") {
           months[monthIndex].returned += 1;
-
-          returnedProducts += order.orderItems.reduce(
-            (acc, i) => acc + i.quantity,
-            0
-          );
-
-          returnedAmount += order.total;
-        }
-
-        else {
+        } else {
           months[monthIndex].earnings += order.total;
           months[monthIndex].orders += 1;
         }
@@ -173,28 +146,41 @@ export async function GET(request) {
       value: m.canceled
     }));
 
-    /* ✅ NEW RETURN GRAPH */
     const returnedChart = months.map((m) => ({
       name: m.name,
       value: m.returned
     }));
 
+    /* ---------- STORE STATUS ---------- */
     const store = await prisma.store.findUnique({
       where: { id: storeId },
       select: { isActive: true }
     });
 
-    /* ---------- TOTALS ---------- */
+    /* ---------- KPI CALCULATIONS (FILTERED) ---------- */
+    let filteredReturnedProducts = 0;
+    let filteredReturnedAmount = 0;
+
+    filteredOrders.forEach((order) => {
+      if (order.status === "RETURNED") {
+        filteredReturnedProducts += order.orderItems.reduce(
+          (acc, item) => acc + item.quantity,
+          0
+        );
+
+        filteredReturnedAmount += order.total;
+      }
+    });
 
     const totalEarnings = filteredOrders
       .filter((order) => order.status !== "CANCELLED")
       .reduce((acc, order) => acc + order.total, 0);
 
     /* ---------- RESPONSE ---------- */
-
     const dashboardData = {
       storeIsActive: store.isActive,
       ratings,
+
       totalOrders: filteredOrders.length,
       totalEarnings: Math.round(totalEarnings),
       totalProducts: products.length,
@@ -202,8 +188,8 @@ export async function GET(request) {
       earningsChart,
       ordersChart,
       canceledChart,
+      returnedChart,
 
-      returnedChart,      // ✅ added
       returnedProducts: filteredReturnedProducts,
       returnedAmount: filteredReturnedAmount,
 
