@@ -1,14 +1,32 @@
 import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
-// ================= GET USER PRODUCTS =================
 export async function GET(request) {
     try {
+        const { searchParams } = new URL(request.url)
+        const search = searchParams.get("search")
+
         let products = await prisma.product.findMany({
             where: {
                 quantity: {
-                    gt: 0, // ✅ only show in-stock products
+                    gt: 0,
                 },
+                ...(search && {
+                    OR: [
+                        {
+                            name: {
+                                contains: search,
+                                mode: "insensitive",
+                            },
+                        },
+                        {
+                            description: {
+                                contains: search,
+                                mode: "insensitive",
+                            },
+                        },
+                    ],
+                }),
             },
             include: {
                 rating: {
@@ -24,7 +42,7 @@ export async function GET(request) {
             orderBy: { createdAt: "desc" },
         });
 
-        // remove products with inactive store
+        // remove inactive stores
         products = products.filter((product) => product.store.isActive);
 
         return NextResponse.json({ products });
