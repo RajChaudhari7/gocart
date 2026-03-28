@@ -45,6 +45,20 @@ export default function Dashboard() {
     storeLogo: ""
   })
 
+  const card = (bg) => ({
+    background: bg,
+    padding: "12px",
+    borderRadius: "10px",
+    fontSize: "14px"
+  })
+
+  const box = {
+    background: "white",
+    padding: "15px",
+    borderRadius: "10px",
+    boxShadow: "0 4px 10px rgba(0,0,0,0.05)"
+  }
+
   /* ---------------- YEAR + MONTH FILTER ---------------- */
   const currentYear = new Date().getFullYear()
   const yearOptions = [currentYear, currentYear - 1, currentYear - 2]
