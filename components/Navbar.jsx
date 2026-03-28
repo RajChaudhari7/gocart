@@ -66,46 +66,11 @@ const Navbar = () => {
     setSearch(value)
 
     if (value.trim() === '') {
-      router.push('/shop')
+      router.push('/shop') // show all products if empty
+    } else {
+      router.push(`/shop?search=${encodeURIComponent(value.trim())}`)
     }
   }
-
-  const handleSmartSearch = async (query) => {
-    try {
-      const [productRes, storeRes] = await Promise.all([
-        fetch(`/api/products?search=${query}`),
-        fetch(`/api/stores?search=${query}`)
-      ])
-
-      const productData = await productRes.json()
-      const storeData = await storeRes.json()
-
-      const products = productData.products
-      const stores = storeData.stores
-
-      if (products?.length > 0) {
-        router.push(`/shop?search=${encodeURIComponent(query)}`)
-      } else if (stores?.length > 0) {
-        router.push(`/product?search=${encodeURIComponent(query)}`)
-      } else {
-        router.push(`/shop?search=${encodeURIComponent(query)}`)
-      }
-
-    } catch (err) {
-      console.error(err)
-      router.push(`/shop?search=${encodeURIComponent(query)}`)
-    }
-  }
-
-  useEffect(() => {
-    const delay = setTimeout(() => {
-      if (search.trim()) {
-        handleSmartSearch(search.trim())
-      }
-    }, 500)
-
-    return () => clearTimeout(delay)
-  }, [search])
 
   const handleSearchSubmit = (e) => e.preventDefault() // prevent page reload
 
@@ -181,8 +146,9 @@ const Navbar = () => {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`relative px-2 py-1 transition hover:-translate-y-[1px] hover:drop-shadow-[0_0_8px_rgba(34,211,238,0.8)] ${isActive(link.href) ? 'text-cyan-400' : 'hover:text-cyan-400'
-                  }`}
+                className={`relative px-2 py-1 transition hover:-translate-y-[1px] hover:drop-shadow-[0_0_8px_rgba(34,211,238,0.8)] ${
+                  isActive(link.href) ? 'text-cyan-400' : 'hover:text-cyan-400'
+                }`}
               >
                 {link.name}
                 {isActive(link.href) && (
@@ -258,10 +224,11 @@ const Navbar = () => {
               <Link
                 key={link.id}
                 href={link.href}
-                className={`relative flex flex-col items-center gap-1 ${isActive(link.href)
-                  ? 'text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,1)]'
-                  : 'text-white/70'
-                  }`}
+                className={`relative flex flex-col items-center gap-1 ${
+                  isActive(link.href)
+                    ? 'text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,1)]'
+                    : 'text-white/70'
+                }`}
               >
                 {isCart ? (
                   <motion.div variants={cartPulse} animate={pulse ? 'active' : 'idle'} className="flex flex-col items-center gap-1">
