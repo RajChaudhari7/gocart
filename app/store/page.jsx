@@ -75,7 +75,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchDashboardData()
-  }, [filterYear,filterMonth])
+  }, [filterYear, filterMonth])
 
   useEffect(() => {
     setStoreActive(dashboardData.storeIsActive)
@@ -122,13 +122,15 @@ export default function Dashboard() {
     return filteredOrders.filter(o => o.status === "CANCELLED").length
   }, [filteredOrders])
 
-  const totalCanceledOrders = dashboardData.orders.filter(o => o.status === "CANCELLED").length
+  const totalCanceledOrders = filteredOrders.filter(
+    o => o.status === "CANCELLED"
+  ).length
 
-  const productsSoldPercent = dashboardData.totalOrders
+  const productsSoldPercent = filteredOrders.length
     ? ((filteredOrders.length / dashboardData.totalOrders) * 100).toFixed(1)
     : 0
 
-  const earningsPercent = dashboardData.totalEarnings
+  const earningsPercent = filteredEarnings
     ? ((filteredEarnings / dashboardData.totalEarnings) * 100).toFixed(1)
     : 0
 
@@ -149,7 +151,10 @@ export default function Dashboard() {
       title: "Earnings",
       value:
         currency +
-        (dashboardData.totalEarnings - (dashboardData.returnedAmount || 0)) +
+        Math.max(
+          dashboardData.totalEarnings - (dashboardData.returnedAmount || 0),
+          0
+        ) +
         ` (${earningsPercent}%)`,
       icon: CircleDollarSignIcon
     },
