@@ -14,9 +14,6 @@ const ManageDriverPage = () => {
         try {
             const res = await fetch('/api/store/driver')
             const data = await res.json()
-
-            console.log("API DATA:", data)
-
             setDrivers(Array.isArray(data) ? data : data.drivers || [])
         } catch (error) {
             console.error(error)
@@ -50,53 +47,79 @@ const ManageDriverPage = () => {
     }
 
     if (loading) {
-        return <p className="text-white p-6">Loading drivers...</p>
+        return <p className="p-6 text-gray-500">Loading drivers...</p>
     }
 
     return (
-        <div className="p-6 text-white">
-            <h1 className="text-xl font-semibold mb-6">Manage Drivers</h1>
+        <div className="p-6 max-w-5xl mx-auto">
+            {/* HEADER */}
+            <div className="mb-8">
+                <h1 className="text-2xl font-bold text-gray-800">
+                    Manage Drivers
+                </h1>
+                <p className="text-sm text-gray-500">
+                    View, activate, or remove delivery partners
+                </p>
+            </div>
 
-            <div className="space-y-4">
-                {drivers.length === 0 && (
-                    <p className="text-white/60">No drivers found.</p>
-                )}
+            {/* EMPTY STATE */}
+            {drivers.length === 0 && (
+                <div className="text-center py-12 bg-gray-50 border rounded-xl">
+                    <p className="text-gray-500">No drivers found</p>
+                </div>
+            )}
 
+            {/* DRIVER LIST */}
+            <div className="grid gap-5">
                 {drivers.map((driver) => (
                     <div
                         key={driver.id}
-                        className="flex items-center justify-between p-4 rounded-lg bg-white/5 border border-white/10"
+                        className="bg-white border rounded-xl p-5 shadow-sm hover:shadow-md transition-all"
                     >
-                        {/* Driver Info */}
-                        <div>
-                            <p className="font-medium">{driver.name}</p>
-                            <p className="text-sm text-white/60">{driver.phone}</p>
-                            <p className="text-xs text-white/40">
-                                {driver.vehicle || 'No vehicle info'}
-                            </p>
-                        </div>
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
 
-                        {/* Actions */}
-                        <div className="flex items-center gap-3">
+                            {/* DRIVER INFO */}
+                            <div>
+                                <p className="font-semibold text-gray-800 text-lg">
+                                    {driver.name}
+                                </p>
 
-                            {/* Status Toggle */}
-                            <button
-                                onClick={() => toggleDriverStatus(driver.id, driver.isActive)}
-                                className={`px-3 py-1 text-xs rounded-full ${driver.isActive
-                                        ? 'bg-emerald-500 text-black'
-                                        : 'bg-red-500 text-white'
-                                    }`}
-                            >
-                                {driver.isActive ? 'Active' : 'Inactive'}
-                            </button>
+                                <a
+                                    href={`tel:${driver.phone}`}
+                                    className="text-sm text-indigo-600 hover:underline"
+                                >
+                                    📞 {driver.phone}
+                                </a>
 
-                            {/* Delete */}
-                            <button
-                                onClick={() => deleteDriver(driver.id)}
-                                className="px-3 py-1 text-xs rounded bg-white/10 hover:bg-white/20"
-                            >
-                                Delete
-                            </button>
+                                <p className="text-xs text-gray-500 mt-1">
+                                    {driver.vehicle || "No vehicle info"}
+                                </p>
+                            </div>
+
+                            {/* ACTIONS */}
+                            <div className="flex items-center gap-3">
+
+                                {/* STATUS TOGGLE */}
+                                <button
+                                    onClick={() => toggleDriverStatus(driver.id, driver.isActive)}
+                                    className={`px-4 py-1.5 text-xs font-semibold rounded-full transition
+                                        ${driver.isActive
+                                            ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
+                                            : 'bg-red-100 text-red-600 hover:bg-red-200'
+                                        }`}
+                                >
+                                    {driver.isActive ? "Active" : "Inactive"}
+                                </button>
+
+                                {/* DELETE BUTTON */}
+                                <button
+                                    onClick={() => deleteDriver(driver.id)}
+                                    className="px-4 py-1.5 text-xs font-semibold rounded-full bg-gray-100 text-gray-700 hover:bg-red-100 hover:text-red-600 transition"
+                                >
+                                    Delete
+                                </button>
+
+                            </div>
                         </div>
                     </div>
                 ))}
