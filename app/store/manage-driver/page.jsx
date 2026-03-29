@@ -12,7 +12,7 @@ const ManageDriverPage = () => {
 
     const fetchDrivers = async () => {
         try {
-            const res = await fetch('/api/store/drivers')
+            const res = await fetch('/api/store/driver')
             const data = await res.json()
 
             console.log("API DATA:", data)
