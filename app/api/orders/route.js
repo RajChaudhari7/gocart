@@ -170,6 +170,7 @@ export async function GET(request) {
           include: { product: true },
         },
         address: true,
+        driver: true,
       },
       orderBy: { createdAt: "desc" },
     });

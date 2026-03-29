@@ -122,6 +122,31 @@ export default function TrackingModal({ order, onClose }) {
             </span>
           </div>
 
+          {/* DRIVER DETAILS */}
+          {order.driver && (
+            <div className="mb-8 p-4 rounded-xl bg-white/5 border border-white/10">
+              <p className="text-sm text-white/60 mb-2">Delivery Partner</p>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium">{order.driver.name}</p>
+
+                  {/* CLICK TO CALL */}
+                  <a
+                    href={`tel:${order.driver.phone}`}
+                    className="text-sm text-emerald-400 hover:underline"
+                  >
+                    📞 {order.driver.phone}
+                  </a>
+                </div>
+
+                <div className="text-xs text-white/50">
+                  Assigned
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* TRACKING TIMELINE */}
           <div className="relative pl-5">
             <div className="absolute left-4 top-0 bottom-0 w-1 bg-white/30 rounded-full"></div>
@@ -165,9 +190,8 @@ export default function TrackingModal({ order, onClose }) {
 
                   <div className="flex-1">
                     <p
-                      className={`text-sm font-medium ${
-                        isCompleted || isActive ? "text-white" : "text-white/70"
-                      }`}
+                      className={`text-sm font-medium ${isCompleted || isActive ? "text-white" : "text-white/70"
+                        }`}
                     >
                       {step.label}
                     </p>
