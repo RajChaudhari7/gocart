@@ -6,7 +6,8 @@ import {
   LayoutListIcon,
   SquarePenIcon,
   SquarePlusIcon,
-  TruckIcon
+  TruckIcon,
+
 } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
@@ -19,6 +20,7 @@ const StoreSidebar = ({ storeInfo, pendingOrdersCount = 0 }) => {
     { name: 'Add Product', href: '/store/add-product', icon: SquarePlusIcon },
     { name: 'Manage Products', href: '/store/manage-product', icon: SquarePenIcon },
     { name: 'Add Driver', href: '/store/add-driver', icon: TruckIcon },
+    { name: 'Manage Drivers', href: '/store/manage-driver', icon: TruckIcon },
     {
       name: 'Orders',
       href: '/store/orders',
