@@ -343,64 +343,115 @@ export default function StoreOrders() {
         reportDiv.style.color = '#000000'
 
         reportDiv.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:30px;">
+<div style="font-family: 'Segoe UI', sans-serif; color:#0f172a;">
+
+    <!-- HEADER -->
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:30px;">
+        
+        <div style="display:flex; align-items:center; gap:15px;">
+            ${logoBase64 ? `<img src="${logoBase64}" style="height:50px; border-radius:10px;" />` : ''}
             <div>
-                ${logoBase64 ? `<img src="${logoBase64}" style="height:60px;margin-bottom:10px;" />` : ''}
-                <h1 style="margin:0; font-size:26px; color:#4f46e5;">Sales Report</h1>
-                <p style="margin:5px 0; color:#555;">
-                    ${selectedDate
+                <h1 style="margin:0; font-size:24px; font-weight:700;">${store?.name || "Store"}</h1>
+                <p style="margin:0; font-size:13px; color:#64748b;">Premium Sales Report</p>
+            </div>
+        </div>
+
+        <div style="text-align:right;">
+            <p style="margin:0; font-size:12px; color:#94a3b8;">Generated On</p>
+            <p style="margin:0; font-size:14px; font-weight:600;">
+                ${new Date().toLocaleString()}
+            </p>
+        </div>
+    </div>
+
+    <!-- TITLE -->
+    <div style="margin-bottom:25px;">
+        <h2 style="margin:0; font-size:20px; font-weight:700; color:#4f46e5;">
+            Sales Analytics Report
+        </h2>
+        <p style="margin-top:5px; color:#64748b; font-size:13px;">
+            ${selectedDate
                 ? `Date: ${new Date(selectedDate).toLocaleDateString()}`
                 : `Month: ${months[selectedMonth]} ${selectedYear}`
             }
-                </p>
-            </div>
-            <div style="text-align:right;">
-                <h2 style="margin:0;">${store?.name || "Store"}</h2>
-            </div>
+        </p>
+    </div>
+
+    <!-- SUMMARY CARDS -->
+    <div style="display:flex; gap:20px; margin-bottom:30px;">
+        
+        <div style="flex:1; background:#ecfdf5; padding:20px; border-radius:12px;">
+            <p style="margin:0; font-size:12px; color:#059669;">Revenue</p>
+            <h2 style="margin:5px 0 0 0; font-size:22px;">₹${revenue}</h2>
         </div>
 
-        <div style="display:flex; gap:20px; margin-bottom:30px;">
-            <div style="flex:1; background:#ecfdf5; padding:15px; border-radius:10px;">
-                <p>Revenue</p>
-                <h2>₹${revenue}</h2>
-            </div>
-            <div style="flex:1; background:#fee2e2; padding:15px; border-radius:10px;">
-                <p>Cancelled</p>
-                <h2>₹${cancelledAmount}</h2>
-            </div>
-            <div style="flex:1; background:#ffedd5; padding:15px; border-radius:10px;">
-                <p>Returned</p>
-                <h2>₹${returnedAmount}</h2>
-            </div>
+        <div style="flex:1; background:#fee2e2; padding:20px; border-radius:12px;">
+            <p style="margin:0; font-size:12px; color:#dc2626;">Cancelled</p>
+            <h2 style="margin:5px 0 0 0; font-size:22px;">₹${cancelledAmount}</h2>
         </div>
 
-        <table style="width:100%; border-collapse:collapse;">
-            <thead>
-                <tr style="background:#f1f5f9;">
-                    <th style="padding:10px; border:1px solid #ddd;">Customer</th>
-                    <th style="padding:10px; border:1px solid #ddd;">Date</th>
-                    <th style="padding:10px; border:1px solid #ddd;">Status</th>
-                    <th style="padding:10px; border:1px solid #ddd;">Total</th>
+        <div style="flex:1; background:#fff7ed; padding:20px; border-radius:12px;">
+            <p style="margin:0; font-size:12px; color:#ea580c;">Returned</p>
+            <h2 style="margin:5px 0 0 0; font-size:22px;">₹${returnedAmount}</h2>
+        </div>
+
+    </div>
+
+    <!-- TABLE -->
+    <div style="border-radius:12px; overflow:hidden; border:1px solid #e2e8f0;">
+        <table style="width:100%; border-collapse:collapse; font-size:13px;">
+            
+            <thead style="background:#f8fafc;">
+                <tr>
+                    <th style="padding:12px; text-align:left;">Customer</th>
+                    <th style="padding:12px; text-align:left;">Date</th>
+                    <th style="padding:12px; text-align:left;">Status</th>
+                    <th style="padding:12px; text-align:right;">Total</th>
                 </tr>
             </thead>
+
             <tbody>
-                ${filteredOrders.map(order => `
-                    <tr>
-                        <td style="padding:10px; border:1px solid #ddd;">${order.user?.name}</td>
-                        <td style="padding:10px; border:1px solid #ddd;">
+                ${filteredOrders.map((order, index) => `
+                    <tr style="background:${index % 2 === 0 ? "#ffffff" : "#f9fafb"};">
+                        <td style="padding:12px;">${order.user?.name}</td>
+                        <td style="padding:12px;">
                             ${new Date(order.createdAt).toLocaleDateString()}
                         </td>
-                        <td style="padding:10px; border:1px solid #ddd;">${order.status}</td>
-                        <td style="padding:10px; border:1px solid #ddd;">₹${order.total}</td>
+                        <td style="padding:12px;">
+                            <span style="
+                                padding:4px 10px;
+                                border-radius:20px;
+                                font-size:11px;
+                                font-weight:600;
+                                color:white;
+                                background:${order.status === "DELIVERED" ? "#16a34a" :
+                    order.status === "CANCELLED" ? "#dc2626" :
+                        order.status === "RETURNED" ? "#ea580c" :
+                            "#6366f1"
+                };
+                            ">
+                                ${order.status}
+                            </span>
+                        </td>
+                        <td style="padding:12px; text-align:right; font-weight:600;">
+                            ₹${order.total}
+                        </td>
                     </tr>
                 `).join('')}
             </tbody>
-        </table>
 
-        <div style="margin-top:40px; text-align:center; color:#888;">
-            Generated on ${new Date().toLocaleString()}
-        </div>
-    `
+        </table>
+    </div>
+
+    <!-- FOOTER -->
+    <div style="margin-top:40px; text-align:center;">
+        <p style="font-size:12px; color:#94a3b8;">
+            This is a system-generated report • Confidential
+        </p>
+    </div>
+
+</div>
+`
 
         document.body.appendChild(reportDiv)
 
