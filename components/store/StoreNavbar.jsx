@@ -3,10 +3,21 @@ import { UserButton, useUser } from "@clerk/nextjs"
 import Link from "next/link"
 import { BellDot } from "lucide-react"
 import { useOrderStore } from "@/hooks/use-order-store"
+import { useEffect } from "react"
 
 const StoreNavbar = () => {
     const { user } = useUser()
-    const { orderCount } = useOrderStore()
+    const { orderCount, fetchOrderCount } = useOrderStore()
+
+    useEffect(() => {
+        fetchOrderCount()
+
+        const interval = setInterval(() => {
+            fetchOrderCount()
+        }, 5000) // every 5 sec
+
+        return () => clearInterval(interval)
+    }, [])
 
     return (
         <nav className="sticky top-0 z-50 w-full bg-[#0a0a0a]/80 backdrop-blur-xl border-b border-white/5">
@@ -28,16 +39,16 @@ const StoreNavbar = () => {
                 <div className="flex items-center gap-6">
 
                     {/* 🔔 Order Notification */}
-                    <Link 
+                    <Link
                         href="/store/orders"
                         className="relative group flex items-center"
                     >
-                        <BellDot 
-                            size={24} 
-                            className={orderCount > 0 
-                                ? "text-cyan-400 animate-pulse" 
+                        <BellDot
+                            size={24}
+                            className={orderCount > 0
+                                ? "text-cyan-400 animate-pulse"
                                 : "text-white/60"
-                            } 
+                            }
                         />
 
                         {orderCount > 0 && (
@@ -71,9 +82,9 @@ const StoreNavbar = () => {
 
                         <div className="relative group">
                             <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full opacity-40 group-hover:opacity-100 blur transition duration-300"></div>
-                            
+
                             <div className="relative">
-                                <UserButton 
+                                <UserButton
                                     appearance={{
                                         elements: {
                                             avatarBox: "h-9 w-9 border border-white/20 hover:border-cyan-500 transition-colors"
