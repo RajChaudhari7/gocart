@@ -6,11 +6,13 @@ export async function POST(req) {
         const { productName, quantity, sellerEmail } = await req.json()
 
         const transporter = nodemailer.createTransport({
-            service: "gmail",
+            host: "smtp.gmail.com",
+            port: 465,
+            secure: true,
             auth: {
                 user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS
-            }
+                pass: process.env.EMAIL_PASS,
+            },
         })
 
         await transporter.sendMail({
@@ -24,11 +26,10 @@ export async function POST(req) {
                     <p><b>Product:</b> ${productName}</p>
                     <p><b>Current Stock:</b> ${quantity}</p>
 
-                    ${
-                        quantity === 0
-                        ? `<p style="color:red; font-weight:bold;">❌ Out of Stock</p>`
-                        : `<p style="color:orange; font-weight:bold;">⚠️ Low Stock</p>`
-                    }
+                    ${quantity === 0
+                    ? `<p style="color:red; font-weight:bold;">❌ Out of Stock</p>`
+                    : `<p style="color:orange; font-weight:bold;">⚠️ Low Stock</p>`
+                }
 
                     <p style="margin-top:15px;">
                         👉 Please <b>restock this product</b> immediately.
