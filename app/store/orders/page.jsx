@@ -211,6 +211,8 @@ export default function StoreOrders() {
         }
     };
 
+
+
     /* ================= UPDATE STATUS (FIXED) ================= */
     const updateOrderStatus = async (order, newStatus) => {
         const currentIndex = STATUS_FLOW.indexOf(order.status)
@@ -326,14 +328,19 @@ export default function StoreOrders() {
             });
         };
 
+
         const store = filteredOrders[0]?.store || {}
         const logoBase64 = await getBase64Image(store?.logo)
 
         const reportDiv = document.createElement('div')
+
+        // ✅ FIX HERE
+        reportDiv.style.all = "initial"
         reportDiv.style.width = '900px'
         reportDiv.style.padding = '40px'
-        reportDiv.style.background = '#fff'
+        reportDiv.style.background = '#ffffff'
         reportDiv.style.fontFamily = 'Arial'
+        reportDiv.style.color = '#000000'
 
         reportDiv.innerHTML = `
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:30px;">
@@ -396,6 +403,18 @@ export default function StoreOrders() {
     `
 
         document.body.appendChild(reportDiv)
+
+        reportDiv.querySelectorAll("*").forEach(el => {
+            const style = window.getComputedStyle(el)
+
+            if (style.color.includes("oklch")) {
+                el.style.color = "#000"
+            }
+
+            if (style.backgroundColor.includes("oklch")) {
+                el.style.backgroundColor = "#fff"
+            }
+        })
 
         const canvas = await html2canvas(reportDiv, { scale: 2 })
         const imgData = canvas.toDataURL('image/png')
