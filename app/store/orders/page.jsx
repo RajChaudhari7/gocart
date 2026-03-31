@@ -308,178 +308,179 @@ export default function StoreOrders() {
 
 
     // Report download pdf 
-    const downloadReportPDF = async () => {
+const downloadReportPDF = async () => {
 
-        const getBase64Image = (url) => {
-            return new Promise((resolve) => {
-                if (!url) return resolve('');
-                const img = new Image();
-                img.crossOrigin = 'anonymous';
-                img.src = url;
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    canvas.width = img.width;
-                    canvas.height = img.height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0);
-                    resolve(canvas.toDataURL('image/png'));
-                };
-                img.onerror = () => resolve('');
-            });
-        };
+    const getBase64Image = (url) => {
+        return new Promise((resolve) => {
+            if (!url) return resolve('');
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.src = url;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                resolve(canvas.toDataURL('image/png'));
+            };
+            img.onerror = () => resolve('');
+        });
+    };
 
+    const store = filteredOrders[0]?.store || {}
+    const logoBase64 = await getBase64Image(store?.logo)
 
-        const store = filteredOrders[0]?.store || {}
-        const logoBase64 = await getBase64Image(store?.logo)
+    const reportDiv = document.createElement('div')
 
-        const reportDiv = document.createElement('div')
+    reportDiv.style.width = '1000px'
+    reportDiv.style.padding = '50px'
+    reportDiv.style.background = '#ffffff'
+    reportDiv.style.fontFamily = 'Inter, system-ui, sans-serif'
+    reportDiv.style.color = '#0f172a'
 
-        // ✅ FIX HERE
-        reportDiv.style.all = "initial"
-        reportDiv.style.width = '900px'
-        reportDiv.style.padding = '40px'
-        reportDiv.style.background = '#ffffff'
-        reportDiv.style.fontFamily = 'Arial'
-        reportDiv.style.color = '#000000'
+    reportDiv.innerHTML = `
+    <div style="border:1px solid #e5e7eb; border-radius:16px; padding:40px; box-shadow:0 10px 30px rgba(0,0,0,0.08);">
 
-        reportDiv.innerHTML = `
-<div style="font-family: 'Segoe UI', sans-serif; color:#0f172a;">
+        <!-- HEADER -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:30px;">
+            <div style="display:flex; align-items:center; gap:15px;">
+                ${logoBase64 ? `<img src="${logoBase64}" style="height:50px; border-radius:10px;" />` : ''}
+                <div>
+                    <h1 style="margin:0; font-size:24px; font-weight:700;">${store?.name || "Store"}</h1>
+                    <p style="margin:2px 0; font-size:13px; color:#64748b;">
+                        Premium Sales Report
+                    </p>
+                </div>
+            </div>
 
-    <!-- HEADER -->
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:30px;">
-        
-        <div style="display:flex; align-items:center; gap:15px;">
-            ${logoBase64 ? `<img src="${logoBase64}" style="height:50px; border-radius:10px;" />` : ''}
-            <div>
-                <h1 style="margin:0; font-size:24px; font-weight:700;">${store?.name || "Store"}</h1>
-                <p style="margin:0; font-size:13px; color:#64748b;">Premium Sales Report</p>
+            <div style="text-align:right;">
+                <p style="font-size:12px; color:#94a3b8; margin:0;">Generated On</p>
+                <p style="font-size:13px; font-weight:600;">
+                    ${new Date().toLocaleString()}
+                </p>
             </div>
         </div>
 
-        <div style="text-align:right;">
-            <p style="margin:0; font-size:12px; color:#94a3b8;">Generated On</p>
-            <p style="margin:0; font-size:14px; font-weight:600;">
-                ${new Date().toLocaleString()}
+        <!-- TITLE -->
+        <div style="margin-bottom:25px;">
+            <h2 style="margin:0; font-size:20px; font-weight:600; color:#4f46e5;">
+                Sales Analytics Report
+            </h2>
+            <p style="margin:5px 0; color:#64748b;">
+                ${selectedDate
+                    ? `Date: ${new Date(selectedDate).toLocaleDateString()}`
+                    : `Month: ${months[selectedMonth]} ${selectedYear}`
+                }
             </p>
         </div>
-    </div>
 
-    <!-- TITLE -->
-    <div style="margin-bottom:25px;">
-        <h2 style="margin:0; font-size:20px; font-weight:700; color:#4f46e5;">
-            Sales Analytics Report
-        </h2>
-        <p style="margin-top:5px; color:#64748b; font-size:13px;">
-            ${selectedDate
-                ? `Date: ${new Date(selectedDate).toLocaleDateString()}`
-                : `Month: ${months[selectedMonth]} ${selectedYear}`
-            }
-        </p>
-    </div>
+        <!-- STATS -->
+        <div style="display:flex; gap:20px; margin-bottom:30px;">
+            <div style="flex:1; background:#ecfdf5; padding:20px; border-radius:12px;">
+                <p style="margin:0; font-size:13px; color:#059669;">Revenue</p>
+                <h2 style="margin-top:5px;">₹${revenue}</h2>
+            </div>
 
-    <!-- SUMMARY CARDS -->
-    <div style="display:flex; gap:20px; margin-bottom:30px;">
-        
-        <div style="flex:1; background:#ecfdf5; padding:20px; border-radius:12px;">
-            <p style="margin:0; font-size:12px; color:#059669;">Revenue</p>
-            <h2 style="margin:5px 0 0 0; font-size:22px;">₹${revenue}</h2>
+            <div style="flex:1; background:#fee2e2; padding:20px; border-radius:12px;">
+                <p style="margin:0; font-size:13px; color:#dc2626;">Cancelled</p>
+                <h2 style="margin-top:5px;">₹${cancelledAmount}</h2>
+            </div>
+
+            <div style="flex:1; background:#fff7ed; padding:20px; border-radius:12px;">
+                <p style="margin:0; font-size:13px; color:#ea580c;">Returned</p>
+                <h2 style="margin-top:5px;">₹${returnedAmount}</h2>
+            </div>
         </div>
 
-        <div style="flex:1; background:#fee2e2; padding:20px; border-radius:12px;">
-            <p style="margin:0; font-size:12px; color:#dc2626;">Cancelled</p>
-            <h2 style="margin:5px 0 0 0; font-size:22px;">₹${cancelledAmount}</h2>
-        </div>
-
-        <div style="flex:1; background:#fff7ed; padding:20px; border-radius:12px;">
-            <p style="margin:0; font-size:12px; color:#ea580c;">Returned</p>
-            <h2 style="margin:5px 0 0 0; font-size:22px;">₹${returnedAmount}</h2>
-        </div>
-
-    </div>
-
-    <!-- TABLE -->
-    <div style="border-radius:12px; overflow:hidden; border:1px solid #e2e8f0;">
-        <table style="width:100%; border-collapse:collapse; font-size:13px;">
-            
-            <thead style="background:#f8fafc;">
-                <tr>
-                    <th style="padding:12px; text-align:left;">Customer</th>
-                    <th style="padding:12px; text-align:left;">Date</th>
-                    <th style="padding:12px; text-align:left;">Status</th>
-                    <th style="padding:12px; text-align:right;">Total</th>
+        <!-- TABLE -->
+        <table style="width:100%; border-collapse:separate; border-spacing:0 10px;">
+            <thead>
+                <tr style="text-align:left; font-size:13px; color:#64748b;">
+                    <th style="padding:10px;">Customer</th>
+                    <th style="padding:10px;">Date</th>
+                    <th style="padding:10px;">Status</th>
+                    <th style="padding:10px; text-align:right;">Total</th>
                 </tr>
             </thead>
 
             <tbody>
-                ${filteredOrders.map((order, index) => `
-                    <tr style="background:${index % 2 === 0 ? "#ffffff" : "#f9fafb"};">
-                        <td style="padding:12px;">${order.user?.name}</td>
+                ${filteredOrders.map(order => {
+
+                    let statusColor = "#eab308"
+                    let bgColor = "#fef9c3"
+
+                    if (order.status === "DELIVERED") {
+                        statusColor = "#16a34a"
+                        bgColor = "#dcfce7"
+                    }
+                    if (order.status === "CANCELLED") {
+                        statusColor = "#dc2626"
+                        bgColor = "#fee2e2"
+                    }
+                    if (order.status === "RETURNED") {
+                        statusColor = "#ea580c"
+                        bgColor = "#ffedd5"
+                    }
+
+                    return `
+                    <tr style="background:#f9fafb;">
+                        <td style="padding:12px; border-top-left-radius:10px; border-bottom-left-radius:10px;">
+                            ${order.user?.name}
+                        </td>
+
                         <td style="padding:12px;">
                             ${new Date(order.createdAt).toLocaleDateString()}
                         </td>
+
                         <td style="padding:12px;">
                             <span style="
-                                padding:4px 10px;
-                                border-radius:20px;
-                                font-size:11px;
+                                padding:6px 12px;
+                                border-radius:999px;
+                                font-size:12px;
                                 font-weight:600;
-                                color:white;
-                                background:${order.status === "DELIVERED" ? "#16a34a" :
-                    order.status === "CANCELLED" ? "#dc2626" :
-                        order.status === "RETURNED" ? "#ea580c" :
-                            "#6366f1"
-                };
+                                color:${statusColor};
+                                background:${bgColor};
+                                display:inline-block;
                             ">
                                 ${order.status}
                             </span>
                         </td>
-                        <td style="padding:12px; text-align:right; font-weight:600;">
+
+                        <td style="padding:12px; text-align:right; font-weight:600;
+                            border-top-right-radius:10px;
+                            border-bottom-right-radius:10px;">
                             ₹${order.total}
                         </td>
                     </tr>
-                `).join('')}
+                    `
+                }).join('')}
             </tbody>
-
         </table>
-    </div>
 
-    <!-- FOOTER -->
-    <div style="margin-top:40px; text-align:center;">
-        <p style="font-size:12px; color:#94a3b8;">
+        <!-- FOOTER -->
+        <div style="margin-top:40px; text-align:center; font-size:12px; color:#94a3b8;">
             This is a system-generated report • Confidential
-        </p>
+        </div>
+
     </div>
+    `
 
-</div>
-`
+    document.body.appendChild(reportDiv)
 
-        document.body.appendChild(reportDiv)
+    const canvas = await html2canvas(reportDiv, { scale: 2 })
+    const imgData = canvas.toDataURL('image/png')
 
-        reportDiv.querySelectorAll("*").forEach(el => {
-            const style = window.getComputedStyle(el)
+    const pdf = new jsPDF('p', 'pt', 'a4')
 
-            if (style.color.includes("oklch")) {
-                el.style.color = "#000"
-            }
+    const pdfWidth = pdf.internal.pageSize.getWidth()
+    const pdfHeight = (canvas.height * pdfWidth) / canvas.width
 
-            if (style.backgroundColor.includes("oklch")) {
-                el.style.backgroundColor = "#fff"
-            }
-        })
+    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight)
+    pdf.save(`Premium-Report-${Date.now()}.pdf`)
 
-        const canvas = await html2canvas(reportDiv, { scale: 2 })
-        const imgData = canvas.toDataURL('image/png')
-
-        const pdf = new jsPDF('p', 'pt', 'a4')
-        const pdfWidth = pdf.internal.pageSize.getWidth()
-        const pdfHeight = (canvas.height * pdfWidth) / canvas.width
-
-        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight)
-
-        pdf.save(`Report-${Date.now()}.pdf`)
-
-        document.body.removeChild(reportDiv)
-    }
+    document.body.removeChild(reportDiv)
+}
 
 
     /* ================= PDF INVOICE (UNCHANGED) ================= */
