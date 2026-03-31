@@ -305,6 +305,113 @@ export default function StoreOrders() {
         .reduce((total, order) => total + order.total, 0)
 
 
+    // Report download pdf 
+    const downloadReportPDF = async () => {
+
+        const getBase64Image = (url) => {
+            return new Promise((resolve) => {
+                if (!url) return resolve('');
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                img.src = url;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+                    resolve(canvas.toDataURL('image/png'));
+                };
+                img.onerror = () => resolve('');
+            });
+        };
+
+        const store = filteredOrders[0]?.store || {}
+        const logoBase64 = await getBase64Image(store?.logo)
+
+        const reportDiv = document.createElement('div')
+        reportDiv.style.width = '900px'
+        reportDiv.style.padding = '40px'
+        reportDiv.style.background = '#fff'
+        reportDiv.style.fontFamily = 'Arial'
+
+        reportDiv.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:30px;">
+            <div>
+                ${logoBase64 ? `<img src="${logoBase64}" style="height:60px;margin-bottom:10px;" />` : ''}
+                <h1 style="margin:0; font-size:26px; color:#4f46e5;">Sales Report</h1>
+                <p style="margin:5px 0; color:#555;">
+                    ${selectedDate
+                ? `Date: ${new Date(selectedDate).toLocaleDateString()}`
+                : `Month: ${months[selectedMonth]} ${selectedYear}`
+            }
+                </p>
+            </div>
+            <div style="text-align:right;">
+                <h2 style="margin:0;">${store?.name || "Store"}</h2>
+            </div>
+        </div>
+
+        <div style="display:flex; gap:20px; margin-bottom:30px;">
+            <div style="flex:1; background:#ecfdf5; padding:15px; border-radius:10px;">
+                <p>Revenue</p>
+                <h2>₹${revenue}</h2>
+            </div>
+            <div style="flex:1; background:#fee2e2; padding:15px; border-radius:10px;">
+                <p>Cancelled</p>
+                <h2>₹${cancelledAmount}</h2>
+            </div>
+            <div style="flex:1; background:#ffedd5; padding:15px; border-radius:10px;">
+                <p>Returned</p>
+                <h2>₹${returnedAmount}</h2>
+            </div>
+        </div>
+
+        <table style="width:100%; border-collapse:collapse;">
+            <thead>
+                <tr style="background:#f1f5f9;">
+                    <th style="padding:10px; border:1px solid #ddd;">Customer</th>
+                    <th style="padding:10px; border:1px solid #ddd;">Date</th>
+                    <th style="padding:10px; border:1px solid #ddd;">Status</th>
+                    <th style="padding:10px; border:1px solid #ddd;">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${filteredOrders.map(order => `
+                    <tr>
+                        <td style="padding:10px; border:1px solid #ddd;">${order.user?.name}</td>
+                        <td style="padding:10px; border:1px solid #ddd;">
+                            ${new Date(order.createdAt).toLocaleDateString()}
+                        </td>
+                        <td style="padding:10px; border:1px solid #ddd;">${order.status}</td>
+                        <td style="padding:10px; border:1px solid #ddd;">₹${order.total}</td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+
+        <div style="margin-top:40px; text-align:center; color:#888;">
+            Generated on ${new Date().toLocaleString()}
+        </div>
+    `
+
+        document.body.appendChild(reportDiv)
+
+        const canvas = await html2canvas(reportDiv, { scale: 2 })
+        const imgData = canvas.toDataURL('image/png')
+
+        const pdf = new jsPDF('p', 'pt', 'a4')
+        const pdfWidth = pdf.internal.pageSize.getWidth()
+        const pdfHeight = (canvas.height * pdfWidth) / canvas.width
+
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight)
+
+        pdf.save(`Report-${Date.now()}.pdf`)
+
+        document.body.removeChild(reportDiv)
+    }
+
+
     /* ================= PDF INVOICE (UNCHANGED) ================= */
     const downloadInvoicePDF = async (order) => {
         const getBase64Image = (url) => {
@@ -531,6 +638,13 @@ export default function StoreOrders() {
                 </h1>
 
                 <div className="flex gap-3">
+
+                    <button
+                        onClick={downloadReportPDF}
+                        className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow hover:bg-indigo-700"
+                    >
+                        Download Report
+                    </button>
 
                     {/* Month Dropdown */}
                     <select
