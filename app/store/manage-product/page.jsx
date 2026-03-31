@@ -82,6 +82,14 @@ export default function StoreManageProducts() {
                 )
             )
 
+            if (Number(product.editQuantity) <= LOW_STOCK_LIMIT) {
+                await axios.post('/api/store/product/low-stock-alert', {
+                    productName: product.name,
+                    quantity: Number(product.editQuantity),
+                    sellerEmail: user?.primaryEmailAddress?.emailAddress
+                })
+            }
+
             toast.success(data.message)
 
         } catch (error) {
@@ -147,11 +155,10 @@ export default function StoreManageProducts() {
                     {products.map(product => (
                         <tr
                             key={product.id}
-                            className={`border-t ${
-                                product.quantity === 0
+                            className={`border-t ${product.quantity === 0
                                     ? 'bg-red-50 opacity-90'
                                     : 'hover:bg-gray-50'
-                            }`}
+                                }`}
                         >
                             <td className="px-4 py-3 flex gap-2 items-center">
                                 <Image
