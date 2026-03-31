@@ -308,38 +308,38 @@ export default function StoreOrders() {
 
 
     // Report download pdf 
-const downloadReportPDF = async () => {
+    const downloadReportPDF = async () => {
 
-    const getBase64Image = (url) => {
-        return new Promise((resolve) => {
-            if (!url) return resolve('');
-            const img = new Image();
-            img.crossOrigin = 'anonymous';
-            img.src = url;
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                canvas.width = img.width;
-                canvas.height = img.height;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0);
-                resolve(canvas.toDataURL('image/png'));
-            };
-            img.onerror = () => resolve('');
-        });
-    };
+        const getBase64Image = (url) => {
+            return new Promise((resolve) => {
+                if (!url) return resolve('');
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                img.src = url;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+                    resolve(canvas.toDataURL('image/png'));
+                };
+                img.onerror = () => resolve('');
+            });
+        };
 
-    const store = filteredOrders[0]?.store || {}
-    const logoBase64 = await getBase64Image(store?.logo)
+        const store = filteredOrders[0]?.store || {}
+        const logoBase64 = await getBase64Image(store?.logo)
 
-    const reportDiv = document.createElement('div')
+        const reportDiv = document.createElement('div')
 
-    reportDiv.style.width = '1000px'
-    reportDiv.style.padding = '50px'
-    reportDiv.style.background = '#ffffff'
-    reportDiv.style.fontFamily = 'Inter, system-ui, sans-serif'
-    reportDiv.style.color = '#0f172a'
+        reportDiv.style.width = '1000px'
+        reportDiv.style.padding = '50px'
+        reportDiv.style.background = '#ffffff'
+        reportDiv.style.fontFamily = 'Inter, system-ui, sans-serif'
+        reportDiv.style.color = '#0f172a'
 
-    reportDiv.innerHTML = `
+        reportDiv.innerHTML = `
     <div style="border:1px solid #e5e7eb; border-radius:16px; padding:40px; box-shadow:0 10px 30px rgba(0,0,0,0.08);">
 
         <!-- HEADER -->
@@ -369,9 +369,9 @@ const downloadReportPDF = async () => {
             </h2>
             <p style="margin:5px 0; color:#64748b;">
                 ${selectedDate
-                    ? `Date: ${new Date(selectedDate).toLocaleDateString()}`
-                    : `Month: ${months[selectedMonth]} ${selectedYear}`
-                }
+                ? `Date: ${new Date(selectedDate).toLocaleDateString()}`
+                : `Month: ${months[selectedMonth]} ${selectedYear}`
+            }
             </p>
         </div>
 
@@ -407,23 +407,23 @@ const downloadReportPDF = async () => {
             <tbody>
                 ${filteredOrders.map(order => {
 
-                    let statusColor = "#eab308"
-                    let bgColor = "#fef9c3"
+                let statusColor = "#eab308"
+                let bgColor = "#fef9c3"
 
-                    if (order.status === "DELIVERED") {
-                        statusColor = "#16a34a"
-                        bgColor = "#dcfce7"
-                    }
-                    if (order.status === "CANCELLED") {
-                        statusColor = "#dc2626"
-                        bgColor = "#fee2e2"
-                    }
-                    if (order.status === "RETURNED") {
-                        statusColor = "#ea580c"
-                        bgColor = "#ffedd5"
-                    }
+                if (order.status === "DELIVERED") {
+                    statusColor = "#16a34a"
+                    bgColor = "#dcfce7"
+                }
+                if (order.status === "CANCELLED") {
+                    statusColor = "#dc2626"
+                    bgColor = "#fee2e2"
+                }
+                if (order.status === "RETURNED") {
+                    statusColor = "#ea580c"
+                    bgColor = "#ffedd5"
+                }
 
-                    return `
+                return `
                     <tr style="background:#f9fafb;">
                         <td style="padding:12px; border-top-left-radius:10px; border-bottom-left-radius:10px;">
                             ${order.user?.name}
@@ -454,7 +454,7 @@ const downloadReportPDF = async () => {
                         </td>
                     </tr>
                     `
-                }).join('')}
+            }).join('')}
             </tbody>
         </table>
 
@@ -466,21 +466,21 @@ const downloadReportPDF = async () => {
     </div>
     `
 
-    document.body.appendChild(reportDiv)
+        document.body.appendChild(reportDiv)
 
-    const canvas = await html2canvas(reportDiv, { scale: 2 })
-    const imgData = canvas.toDataURL('image/png')
+        const canvas = await html2canvas(reportDiv, { scale: 2 })
+        const imgData = canvas.toDataURL('image/png')
 
-    const pdf = new jsPDF('p', 'pt', 'a4')
+        const pdf = new jsPDF('p', 'pt', 'a4')
 
-    const pdfWidth = pdf.internal.pageSize.getWidth()
-    const pdfHeight = (canvas.height * pdfWidth) / canvas.width
+        const pdfWidth = pdf.internal.pageSize.getWidth()
+        const pdfHeight = (canvas.height * pdfWidth) / canvas.width
 
-    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight)
-    pdf.save(`Premium-Report-${Date.now()}.pdf`)
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight)
+        pdf.save(`Premium-Report-${Date.now()}.pdf`)
 
-    document.body.removeChild(reportDiv)
-}
+        document.body.removeChild(reportDiv)
+    }
 
 
     /* ================= PDF INVOICE (UNCHANGED) ================= */
