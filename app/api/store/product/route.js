@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { authSeller } from "@/middlewares/authSeller";
 import { getAuth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
+import { sendEmail } from "@/lib/sendEmail"
 
 const LOW_STOCK_LIMIT = 10;
 
@@ -197,9 +198,7 @@ export async function GET(request) {
 
 // ================= UPDATE PRODUCT =================
 export async function PUT(request) {
-
   try {
-
     const { userId } = getAuth(request)
     const storeId = await authSeller(userId)
 
@@ -216,14 +215,68 @@ export async function PUT(request) {
       )
     }
 
-    await prisma.product.update({
+    // ✅ Get product + store + email
+    const product = await prisma.product.findUnique({
       where: { id: productId },
-      data: {
-        price,
-        quantity
+      include: {
+        store: {
+          include: {
+            user: true
+          }
+        }
       }
     })
 
+    if (!product) {
+      return NextResponse.json({ error: "Product not found" }, { status: 404 })
+    }
+
+    const oldQty = product.quantity
+
+    // ✅ Update product
+    await prisma.product.update({
+      where: { id: productId },
+      data: { price, quantity }
+    })
+
+    // ================= EMAIL LOGIC =================
+    const isLowStock =
+      quantity > 0 && quantity <= LOW_STOCK_LIMIT && oldQty > LOW_STOCK_LIMIT
+
+    const isOutOfStock =
+      quantity === 0 && oldQty !== 0
+
+    const STOCK_EMAIL = (productName, quantity) => `
+  <div style="font-family: Arial; padding:20px;">
+    <h2 style="color:#dc2626;">Stock Alert 🚨</h2>
+
+    <p><b>Product:</b> ${productName}</p>
+    <p><b>Current Stock:</b> ${quantity}</p>
+
+    ${quantity === 0
+        ? `<p style="color:red; font-weight:bold;">❌ Out of Stock</p>`
+        : `<p style="color:orange; font-weight:bold;">⚠️ Low Stock</p>`
+      }
+
+    <p style="margin-top:15px;">
+      👉 Please <b>restock this product</b> immediately.
+    </p>
+
+    <hr/>
+    <p style="font-size:12px; color:gray;">
+      This is an automated notification from your store.
+    </p>
+  </div>
+`
+
+    if (isLowStock || isOutOfStock) {
+      await sendEmail({
+        to: product.store.user.email,
+        type: "stock",
+        subject: `⚠️ Stock Alert - ${product.name}`,
+        html: STOCK_EMAIL(product.name, quantity)
+      })
+    }
 
     return NextResponse.json({
       message: "Product updated successfully",
@@ -232,16 +285,12 @@ export async function PUT(request) {
     })
 
   } catch (error) {
-
     console.error(error)
-
     return NextResponse.json(
       { error: error.message },
       { status: 400 }
     )
-
   }
-
 }
 
 

@@ -81,31 +81,7 @@ export default function StoreManageProducts() {
                         : p
                 )
             )
-
-            const newQty = Number(product.editQuantity)
-            const oldQty = Number(product.originalQuantity)
-
-            // LOW STOCK ALERT
-            if (newQty <= LOW_STOCK_LIMIT && oldQty > LOW_STOCK_LIMIT) {
-                console.log("Low stock email trigger")
-
-                await axios.post('/api/store/product/low-stock-alert', {
-                    productName: product.name,
-                    quantity: newQty,
-                    sellerEmail: user?.primaryEmailAddress?.emailAddress
-                })
-            }
-
-            // OUT OF STOCK ALERT
-            if (newQty === 0 && oldQty !== 0) {
-                console.log("Out of stock email trigger")
-
-                await axios.post('/api/store/product/low-stock-alert', {
-                    productName: product.name,
-                    quantity: 0,
-                    sellerEmail: user?.primaryEmailAddress?.emailAddress
-                })
-            }
+            
             toast.success(data.message)
 
         } catch (error) {
