@@ -82,14 +82,30 @@ export default function StoreManageProducts() {
                 )
             )
 
-            if (Number(product.editQuantity) <= LOW_STOCK_LIMIT) {
+            const newQty = Number(product.editQuantity)
+            const oldQty = Number(product.originalQuantity)
+
+            // LOW STOCK ALERT
+            if (newQty <= LOW_STOCK_LIMIT && oldQty > LOW_STOCK_LIMIT) {
+                console.log("Low stock email trigger")
+
                 await axios.post('/api/store/product/low-stock-alert', {
                     productName: product.name,
-                    quantity: Number(product.editQuantity),
+                    quantity: newQty,
                     sellerEmail: user?.primaryEmailAddress?.emailAddress
                 })
             }
 
+            // OUT OF STOCK ALERT
+            if (newQty === 0 && oldQty !== 0) {
+                console.log("Out of stock email trigger")
+
+                await axios.post('/api/store/product/low-stock-alert', {
+                    productName: product.name,
+                    quantity: 0,
+                    sellerEmail: user?.primaryEmailAddress?.emailAddress
+                })
+            }
             toast.success(data.message)
 
         } catch (error) {
@@ -156,8 +172,8 @@ export default function StoreManageProducts() {
                         <tr
                             key={product.id}
                             className={`border-t ${product.quantity === 0
-                                    ? 'bg-red-50 opacity-90'
-                                    : 'hover:bg-gray-50'
+                                ? 'bg-red-50 opacity-90'
+                                : 'hover:bg-gray-50'
                                 }`}
                         >
                             <td className="px-4 py-3 flex gap-2 items-center">
