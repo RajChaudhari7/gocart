@@ -15,28 +15,40 @@ export async function GET(request) {
             return NextResponse.json({ error: "not authorized" }, { status: 401 })
         }
 
-        // get total orders
-        const orders = await prisma.order.count()
+        // ✅ ONLY Delivered Orders Count (optional but better)
+        const orders = await prisma.order.count({
+            where: {
+                status: "DELIVERED" // adjust if needed
+            }
+        })
 
-        // get total stores on app
-        const stores = await prisma.store.count()
+        // ✅ ONLY Approved Stores
+        const stores = await prisma.store.count({
+            where: {
+                isApproved: true
+            }
+        })
 
-        // get all orders include only createdAt and total & calculate total revenue
+        // ✅ ONLY Delivered Orders for Revenue + Chart
         const allOrders = await prisma.order.findMany({
+            where: {
+                status: "DELIVERED"
+            },
             select: {
                 createdAt: true,
                 total: true,
             }
         })
 
-        let totaRevenue = 0
+        // ✅ Revenue Calculation (Delivered Only)
+        let totalRevenue = 0
         allOrders.forEach(order => {
-            totaRevenue += order.total
+            totalRevenue += order.total
         })
 
-        const revenue = totaRevenue.toFixed(2)
+        const revenue = totalRevenue.toFixed(2)
 
-        // total products on app
+        // ✅ Total Products (same)
         const products = await prisma.product.count()
 
         const dashboardData = {
@@ -51,7 +63,9 @@ export async function GET(request) {
 
     } catch (error) {
         console.error(error);
-        return NextResponse.json({ error: error.code || error.message }, { status: 400 })
+        return NextResponse.json(
+            { error: error.code || error.message },
+            { status: 400 }
+        )
     }
-
 }
