@@ -106,12 +106,10 @@ const StoreLayout = ({ children }) => {
       <div className="flex flex-1 overflow-hidden">
 
         {/* Sidebar */}
-        <aside className="hidden lg:block w-64 bg-black">
-          <SellerSidebar
-            storeInfo={storeInfo}
-            pendingOrdersCount={pendingOrdersCount}
-          />
-        </aside>
+        <SellerSidebar
+          storeInfo={storeInfo}
+          pendingOrdersCount={pendingOrdersCount}
+        />
 
         {/* Main Content */}
         <main className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-10 py-6">
