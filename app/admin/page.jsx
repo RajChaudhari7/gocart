@@ -5,11 +5,11 @@ import OrdersAreaChart from "@/components/OrdersAreaChart"
 import { useAuth } from "@clerk/nextjs"
 import axios from "axios"
 import {
-  CircleDollarSignIcon,
-  ShoppingBasketIcon,
-  StoreIcon,
-  TagsIcon,
-  XCircleIcon
+    CircleDollarSignIcon,
+    ShoppingBasketIcon,
+    StoreIcon,
+    TagsIcon,
+    XCircleIcon
 } from "lucide-react"
 import { useEffect, useState, useRef } from "react"
 import toast from "react-hot-toast"
@@ -21,6 +21,9 @@ export default function AdminDashboard() {
     const { getToken } = useAuth()
 
     const [loading, setLoading] = useState(true)
+    const [month, setMonth] = useState(new Date().getMonth() + 1)
+    const [year, setYear] = useState(new Date().getFullYear())
+
     const [dashboardData, setDashboardData] = useState({
         products: 0,
         revenue: 0,
@@ -37,12 +40,17 @@ export default function AdminDashboard() {
         { title: 'Total Stores', value: dashboardData.stores, icon: StoreIcon, color: 'bg-orange-100 text-orange-600' },
     ]
 
+
+
     const fetchDashboardData = async () => {
         try {
             const token = await getToken()
+
             const { data } = await axios.get('/api/admin/dashboard', {
-                headers: { Authorization: `Bearer ${token}` }
+                headers: { Authorization: `Bearer ${token}` },
+                params: { month, year } // ✅ send filters
             })
+
             setDashboardData(data.dashboardData)
         } catch (error) {
             toast.error(error?.response?.data?.error || error.message)
@@ -52,9 +60,11 @@ export default function AdminDashboard() {
 
     useEffect(() => {
         fetchDashboardData()
-    }, [])
+    }, [month, year]) // ✅ refetch on change
 
     if (loading) return <Loading />
+
+
 
 
     // 3D Tilt Card Component
@@ -79,6 +89,7 @@ export default function AdminDashboard() {
         }
 
         return (
+
             <motion.div
                 ref={cardRef}
                 className={`flex items-center justify-between p-6 rounded-xl shadow-2xl ${card.color} cursor-pointer perspective`}
@@ -101,6 +112,39 @@ export default function AdminDashboard() {
             <h1 className="text-3xl font-bold mb-6 text-slate-800">
                 Admin <span className="text-indigo-600">Dashboard</span>
             </h1>
+
+            <div className="flex gap-4 mb-6">
+
+                {/* Month Filter */}
+                <select
+                    value={month}
+                    onChange={(e) => setMonth(Number(e.target.value))}
+                    className="p-2 border rounded-lg"
+                >
+                    {[
+                        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+                    ].map((m, i) => (
+                        <option key={i} value={i + 1}>
+                            {m}
+                        </option>
+                    ))}
+                </select>
+
+                {/* Year Filter */}
+                <select
+                    value={year}
+                    onChange={(e) => setYear(Number(e.target.value))}
+                    className="p-2 border rounded-lg"
+                >
+                    {[2023, 2024, 2025, 2026].map((y) => (
+                        <option key={y} value={y}>
+                            {y}
+                        </option>
+                    ))}
+                </select>
+
+            </div>
 
             {/* 3D Cards Grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-6 mb-10">

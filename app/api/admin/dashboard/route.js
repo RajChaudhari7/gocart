@@ -13,24 +13,47 @@ export async function GET(request) {
             return NextResponse.json({ error: "not authorized" }, { status: 401 })
         }
 
-        // ✅ ONLY Delivered Orders Count
+        // ✅ GET MONTH & YEAR FROM QUERY
+        const { searchParams } = new URL(request.url)
+
+        const month = Number(searchParams.get("month"))
+        const year = Number(searchParams.get("year"))
+
+        // ✅ DATE FILTER LOGIC
+        let dateFilter = {}
+
+        if (month && year) {
+            const startDate = new Date(year, month - 1, 1)
+            const endDate = new Date(year, month, 1)
+
+            dateFilter = {
+                createdAt: {
+                    gte: startDate,
+                    lt: endDate
+                }
+            }
+        }
+
+        // ✅ ONLY Delivered Orders Count (FILTERED)
         const orders = await prisma.order.count({
             where: {
-                status: "DELIVERED"
+                status: "DELIVERED",
+                ...dateFilter
             }
         })
 
-        // ✅ ONLY Approved Stores
+        // ✅ ONLY Approved Stores (NO DATE FILTER)
         const stores = await prisma.store.count({
             where: {
-                status: "approved" // 🔥 important
+                status: "approved"
             }
         })
 
-        // ✅ ONLY Delivered Orders for Chart + Revenue
+        // ✅ FILTERED Orders for Chart
         const allOrders = await prisma.order.findMany({
             where: {
-                status: "DELIVERED"
+                status: "DELIVERED",
+                ...dateFilter
             },
             select: {
                 createdAt: true,
@@ -38,17 +61,18 @@ export async function GET(request) {
             }
         })
 
-        // ✅ Revenue using aggregate (BEST PRACTICE)
+        // ✅ FILTERED Revenue
         const revenueData = await prisma.order.aggregate({
             _sum: { total: true },
             where: {
-                status: "DELIVERED"
+                status: "DELIVERED",
+                ...dateFilter
             }
         })
 
         const revenue = (revenueData._sum.total || 0).toFixed(2)
 
-        // ✅ Total Products (unchanged)
+        // ✅ Products (no filter)
         const products = await prisma.product.count()
 
         const dashboardData = {
