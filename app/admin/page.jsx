@@ -121,6 +121,9 @@ export default function AdminDashboard() {
                     onChange={(e) => setMonth(Number(e.target.value))}
                     className="p-2 border rounded-lg"
                 >
+                    {/* ✅ All Months Option */}
+                    <option value={0}>All Months</option>
+
                     {[
                         "Jan", "Feb", "Mar", "Apr", "May", "Jun",
                         "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"

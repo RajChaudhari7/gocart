@@ -22,7 +22,7 @@ export async function GET(request) {
         // ✅ DATE FILTER LOGIC
         let dateFilter = {}
 
-        if (month && year) {
+        if (month !== 0 && month && year) {
             const startDate = new Date(year, month - 1, 1)
             const endDate = new Date(year, month, 1)
 
