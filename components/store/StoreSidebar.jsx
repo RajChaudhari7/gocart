@@ -95,6 +95,65 @@ const StoreSidebar = ({ storeInfo, pendingOrdersCount = 0 }) => {
         </nav>
       </aside>
 
+      {/* ================= MOBILE BOTTOM NAV ================= */}
+      <div className="sm:hidden fixed bottom-0 inset-x-0 z-50 bg-black border-t border-white/10">
+        <div className="flex justify-around py-2">
+
+          {sidebarLinks.map((link) => {
+            const active = pathname === link.href
+            const Icon = link.icon
+
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="flex flex-col items-center justify-center gap-1 px-2 relative"
+              >
+
+                {/* ICON */}
+                <div
+                  className={`
+              relative flex items-center justify-center w-10 h-10 rounded-full transition
+              ${active
+                      ? 'bg-emerald-500 text-black'
+                      : 'text-white/60'}
+            `}
+                >
+                  <Icon size={20} />
+
+                  {/* BADGE */}
+                  {link.badge > 0 && (
+                    <span className="
+                absolute -top-1 -right-1
+                min-w-[18px] px-1 text-[10px] font-bold
+                rounded-full bg-red-500 text-white text-center
+              ">
+                      {link.badge}
+                    </span>
+                  )}
+                </div>
+
+                {/* LABEL */}
+                <span
+                  className={`
+              text-[10px] font-medium
+              ${active ? 'text-emerald-400' : 'text-white/60'}
+            `}
+                >
+                  {link.name}
+                </span>
+
+                {/* ACTIVE DOT */}
+                {active && (
+                  <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full mt-0.5" />
+                )}
+              </Link>
+            )
+          })}
+
+        </div>
+      </div>
+
 
     </>
   )
