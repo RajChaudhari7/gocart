@@ -3,7 +3,7 @@
 import { assets } from '@/assets/assets'
 import { ArrowRightIcon, ChevronRight, ChevronLeft } from 'lucide-react'
 import Image from 'next/image'
-import React, { useEffect, useRef, useState, useCallback } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import gsap from 'gsap'
 
@@ -49,10 +49,11 @@ const slides = [
 const Hero = () => {
   const router = useRouter()
   const [index, setIndex] = useState(0)
-  const [isAnimating, setIsAnimating] = useState(false)
+  
+  // Using useRef instead of useState prevents React from re-rendering and killing the GSAP timeline
+  const isAnimating = useRef(false) 
   
   const containerRef = useRef(null)
-  const textRef = useRef(null)
   const cardRef = useRef(null)
   const imageRef = useRef(null)
   const progressRef = useRef(null)
@@ -60,15 +61,15 @@ const Hero = () => {
   const slide = slides[index]
   const SLIDE_DURATION = 6 // seconds
 
-  const changeSlide = useCallback((newIndex) => {
-    if (isAnimating) return
-    setIsAnimating(true)
+  const changeSlide = (newIndex) => {
+    if (isAnimating.current) return
+    isAnimating.current = true
 
     const ctx = gsap.context(() => {
       const tl = gsap.timeline({
         onComplete: () => {
           setIndex(newIndex)
-          setIsAnimating(false)
+          isAnimating.current = false
         }
       })
 
@@ -87,13 +88,7 @@ const Hero = () => {
         ease: 'power2.in'
       }, '<')
     }, containerRef)
-
-    return () => ctx.revert()
-  }, [isAnimating])
-
-  const nextSlide = useCallback(() => {
-    changeSlide((index + 1) % slides.length)
-  }, [index, changeSlide])
+  }
 
   // Entry Animation & Progress Bar
   useEffect(() => {
@@ -119,20 +114,21 @@ const Hero = () => {
         ease: 'sine.inOut'
       })
 
-      // Progress bar animation
+      // Progress bar animation triggers the next slide automatically
       gsap.fromTo(progressRef.current,
         { scaleX: 0 },
         { 
           scaleX: 1, 
           duration: SLIDE_DURATION, 
           ease: 'none',
-          onComplete: nextSlide
+          onComplete: () => changeSlide((index + 1) % slides.length)
         }
       )
     }, containerRef)
 
+    // Cleanup ensures old animations are killed cleanly before new ones start
     return () => ctx.revert()
-  }, [index, nextSlide])
+  }, [index]) // Only re-run this effect when the index changes
 
   // 3D Mouse Tilt Parallax Effect
   const handleMouseMove = (e) => {
@@ -191,7 +187,7 @@ const Hero = () => {
       <div className="relative z-10 w-full max-w-7xl mx-auto px-6 lg:px-12 grid lg:grid-cols-2 gap-12 lg:gap-8 items-center flex-1">
         
         {/* LEFT: Content */}
-        <div ref={textRef} className="space-y-8 z-20 mt-10 lg:mt-0 order-2 lg:order-1">
+        <div className="space-y-8 z-20 mt-10 lg:mt-0 order-2 lg:order-1">
           <div className={`anim-elem inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-xs tracking-[0.2em] font-bold ${slide.accent} backdrop-blur-md shadow-2xl`}>
             <span className={`w-2 h-2 rounded-full ${slide.bgAccent} animate-pulse`} />
             {slide.tag}
@@ -239,7 +235,7 @@ const Hero = () => {
             style={{ transformStyle: 'preserve-3d' }}
           >
             {/* Inner Ring */}
-            <div className="absolute inset-4 rounded-[2rem] border border-white/5 rounded-full" />
+            <div className="absolute inset-4 rounded-[2rem] border border-white/5" />
             
             {/* The Image (Floats off the card via JS parallax) */}
             <Image
@@ -286,7 +282,7 @@ const Hero = () => {
               <ChevronLeft size={20} />
             </button>
             <button 
-              onClick={() => nextSlide()}
+              onClick={() => changeSlide((index + 1) % slides.length)}
               className="p-3 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 backdrop-blur-md transition-colors"
             >
               <ChevronRight size={20} />
