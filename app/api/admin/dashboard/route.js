@@ -3,9 +3,7 @@ import { authAdmin } from "@/middlewares/authAdmin";
 import { getAuth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
-// get dashboard data for admin
 export async function GET(request) {
-
     try {
 
         const { userId } = getAuth(request)
@@ -15,21 +13,21 @@ export async function GET(request) {
             return NextResponse.json({ error: "not authorized" }, { status: 401 })
         }
 
-        // ✅ ONLY Delivered Orders Count (optional but better)
+        // ✅ ONLY Delivered Orders Count
         const orders = await prisma.order.count({
             where: {
-                status: "DELIVERED" // adjust if needed
+                status: "DELIVERED"
             }
         })
 
         // ✅ ONLY Approved Stores
         const stores = await prisma.store.count({
             where: {
-                isApproved: true
+                status: "approved" // 🔥 important
             }
         })
 
-        // ✅ ONLY Delivered Orders for Revenue + Chart
+        // ✅ ONLY Delivered Orders for Chart + Revenue
         const allOrders = await prisma.order.findMany({
             where: {
                 status: "DELIVERED"
@@ -40,15 +38,17 @@ export async function GET(request) {
             }
         })
 
-        // ✅ Revenue Calculation (Delivered Only)
-        let totalRevenue = 0
-        allOrders.forEach(order => {
-            totalRevenue += order.total
+        // ✅ Revenue using aggregate (BEST PRACTICE)
+        const revenueData = await prisma.order.aggregate({
+            _sum: { total: true },
+            where: {
+                status: "DELIVERED"
+            }
         })
 
-        const revenue = totalRevenue.toFixed(2)
+        const revenue = (revenueData._sum.total || 0).toFixed(2)
 
-        // ✅ Total Products (same)
+        // ✅ Total Products (unchanged)
         const products = await prisma.product.count()
 
         const dashboardData = {
