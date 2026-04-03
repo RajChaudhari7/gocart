@@ -163,7 +163,7 @@ export default function CreateStore() {
     const onSubmitHandler = async (e) => {
         e.preventDefault()
 
-        formData.append("gst", storeInfo.gst)
+
 
         if (!user) return toast("Please login to continue")
 
@@ -186,6 +186,7 @@ export default function CreateStore() {
             formData.append("contact", storeInfo.contact)
             formData.append("address", storeInfo.address)
             formData.append("image", storeInfo.image)
+            formData.append("gst", storeInfo.gst)
 
             // ✅ send whatsapp confirmation
             formData.append("isWhatsapp", storeInfo.isWhatsapp)
