@@ -23,6 +23,8 @@ export default function CreateStore() {
     const [verificationCode, setVerificationCode] = useState("")
     const [enteredCode, setEnteredCode] = useState("")
     const [whatsappVerified, setWhatsappVerified] = useState(false)
+    const [gstValid, setGstValid] = useState(false)
+    const [gstError, setGstError] = useState("")
 
 
     const [storeInfo, setStoreInfo] = useState({
@@ -387,7 +389,11 @@ export default function CreateStore() {
                             {/* GST Status */}
                             {storeInfo.gst.length > 0 && (
                                 <p className={`mt-2 text-sm ${gstValid ? "text-green-600" : "text-red-500"}`}>
-                                    {gstValid ? "Valid GST ✅" : gstError}
+                                    {gstValid
+                                        ? "Valid GST ✅"
+                                        : storeInfo.gst.length < 15
+                                            ? "GST must be 15 characters"
+                                            : "Invalid GST number ❌"}
                                 </p>
                             )}
                         </div>
@@ -406,9 +412,9 @@ export default function CreateStore() {
                         </div>
 
                         <button
-                            disabled={!gstValid}
+                            disabled={!gstValid || storeInfo.gst.length !== 15}
                             className={`w-full py-3 font-semibold rounded-lg transition-all mt-4
-                                ${gstValid
+                    ${gstValid
                                     ? "bg-indigo-600 text-white hover:bg-indigo-700 active:scale-95"
                                     : "bg-gray-400 text-gray-200 cursor-not-allowed"
                                 }`}
