@@ -7,7 +7,7 @@ import Loading from "@/components/Loading"
 import { useAuth, useUser } from "@clerk/nextjs"
 import { useRouter } from "next/navigation"
 import axios from "axios"
-import { CheckCircle, XCircle, Clock, ShieldCheck, UploadCloud } from "lucide-react"
+import { CheckCircle2, XCircle, Clock, ShieldCheck, ImagePlus } from "lucide-react"
 
 export default function CreateStore() {
     const { user } = useUser()
@@ -41,7 +41,6 @@ export default function CreateStore() {
             toast.error("Enter a valid 10-digit number")
             return
         }
-
         try {
             const { data } = await axios.post("/api/sms/send-otp", {
                 phone: storeInfo.contact
@@ -53,12 +52,12 @@ export default function CreateStore() {
     }
 
     const verifyOtp = async () => {
+        if (!enteredCode) return toast.error("Please enter the OTP")
         try {
             const { data } = await axios.post("/api/sms/verify-otp", {
                 phone: storeInfo.contact,
                 otp: enteredCode
             })
-
             if (data.success) {
                 setWhatsappVerified(true)
                 toast.success("Number verified successfully")
@@ -70,19 +69,16 @@ export default function CreateStore() {
 
     const validateGST = (gst) => {
         const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
-
         if (!gst) {
             setGstError("GST is required")
             setGstValid(false)
             return
         }
-
         if (!gstRegex.test(gst)) {
-            setGstError("Invalid GST number format")
+            setGstError("Invalid GST format")
             setGstValid(false)
             return
         }
-
         setGstError("")
         setGstValid(true)
     }
@@ -178,16 +174,13 @@ export default function CreateStore() {
 
     useEffect(() => {
         if (status !== "approved") return
-
         if (countdown === 0) {
             router.push("/store")
             return
         }
-
         const timer = setTimeout(() => {
             setCountdown(prev => prev - 1)
         }, 1000)
-
         return () => clearTimeout(timer)
     }, [status, countdown, router])
 
@@ -195,284 +188,221 @@ export default function CreateStore() {
         if (user) fetchSellerStatus()
     }, [user])
 
-    // Common input styling class
-    const inputClass = "mt-2 w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-zinc-900 focus:border-transparent transition-all duration-200 outline-none dark:bg-zinc-800/50 dark:border-zinc-700 dark:text-white dark:focus:ring-white dark:focus:bg-zinc-800 text-gray-900"
-    const labelClass = "text-sm font-medium text-gray-700 dark:text-gray-300"
+    // Reusable styling classes for ultra-clean UI
+    const inputClass = "block w-full rounded-xl border-0 py-3 px-4 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 transition-all duration-200 bg-gray-50/50 hover:bg-gray-50 focus:bg-white outline-none dark:bg-white/5 dark:text-white dark:ring-white/10 dark:focus:ring-indigo-500 dark:hover:bg-white/10"
+    const labelClass = "block text-sm font-medium leading-6 text-gray-900 dark:text-gray-100 mb-2"
 
     if (!user) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-zinc-950 px-6">
-                <div className="bg-white dark:bg-zinc-900 p-10 rounded-3xl shadow-xl border border-gray-100 dark:border-zinc-800 text-center max-w-md w-full">
-                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                        Welcome Back
-                    </h1>
-                    <p className="text-gray-500 dark:text-gray-400 mb-6">Please login to create your GlobalMart store.</p>
+            <div className="min-h-[80vh] flex items-center justify-center px-6">
+                <div className="bg-white dark:bg-zinc-900 p-10 rounded-3xl shadow-xl ring-1 ring-gray-200 dark:ring-zinc-800 text-center max-w-md w-full">
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Login Required</h1>
+                    <p className="text-gray-500 dark:text-gray-400">Please login to create your GlobalMart store.</p>
                 </div>
             </div>
         )
     }
 
     return !loading ? (
-        <div className="min-h-screen bg-[#fafafa] dark:bg-zinc-950 py-12 px-4 sm:px-6 lg:px-8 selection:bg-zinc-900 selection:text-white dark:selection:bg-white dark:selection:text-zinc-900">
+        <div className="min-h-screen py-10 px-4 sm:px-6 lg:px-8 selection:bg-indigo-100 selection:text-indigo-900">
             {!alreadySubmitted ? (
-                <div className="max-w-4xl mx-auto">
-                    {/* Header Section */}
-                    <div className="text-center mb-12">
-                        <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white mb-4">
+                <div className="max-w-3xl mx-auto">
+                    {/* Header */}
+                    <div className="text-center mb-10">
+                        <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-gray-900 dark:text-white">
                             Launch Your Store
                         </h1>
-                        <p className="text-lg text-gray-500 dark:text-gray-400 max-w-2xl mx-auto">
-                            Join <span className="font-semibold text-black dark:text-white">GlobalMart</span> and showcase your products to millions. Fill out the details below to get verified and start selling.
+                        <p className="mt-3 text-sm sm:text-base text-gray-600 dark:text-gray-400">
+                            Join <span className="font-semibold text-gray-900 dark:text-white">GlobalMart</span> and showcase your products to millions.
                         </p>
                     </div>
 
-                    {/* Form Section */}
-                    <form
+                    {/* Form Card */}
+                    <form 
                         onSubmit={e => toast.promise(onSubmitHandler(e), { loading: "Setting up your store..." })}
-                        className="bg-white dark:bg-zinc-900 rounded-[2rem] shadow-sm border border-gray-200/60 dark:border-zinc-800 p-6 sm:p-10 lg:p-12"
+                        className="bg-white dark:bg-zinc-900 shadow-[0_8px_30px_rgb(0,0,0,0.04)] ring-1 ring-gray-200 dark:ring-zinc-800 rounded-2xl sm:rounded-3xl overflow-hidden"
                     >
-                        {/* Section 1: Store Profile */}
-                        <div className="mb-10">
-                            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
-                                <span className="bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white w-8 h-8 rounded-full flex items-center justify-center text-sm">1</span>
-                                Store Profile
-                            </h2>
+                        <div className="p-6 sm:p-10 space-y-12">
                             
-                            <div className="flex flex-col sm:flex-row gap-8 items-start mb-8">
-                                <label className="group relative flex flex-col items-center justify-center w-32 h-32 rounded-2xl border-2 border-dashed border-gray-300 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800/50 hover:bg-gray-100 dark:hover:bg-zinc-800 cursor-pointer transition-all overflow-hidden shrink-0">
-                                    {storeInfo.image ? (
-                                        <Image
-                                            src={URL.createObjectURL(storeInfo.image)}
-                                            alt="Store Logo"
-                                            fill
-                                            className="object-cover"
-                                        />
-                                    ) : (
-                                        <div className="flex flex-col items-center gap-2 text-gray-400 group-hover:text-zinc-900 dark:group-hover:text-white transition-colors">
-                                            <UploadCloud size={28} />
-                                            <span className="text-xs font-medium">Upload Logo</span>
-                                        </div>
-                                    )}
-                                    <input
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={(e) => setStoreInfo({ ...storeInfo, image: e.target.files[0] })}
-                                        hidden
-                                    />
-                                </label>
-                                
-                                <div className="flex-1 w-full grid grid-cols-1 sm:grid-cols-2 gap-6">
-                                    <div>
-                                        <label className={labelClass}>Username</label>
-                                        <input
-                                            name="username"
-                                            onChange={onChangeHandler}
-                                            value={storeInfo.username}
-                                            type="text"
-                                            placeholder="@yourstore"
-                                            className={inputClass}
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className={labelClass}>Store Name</label>
-                                        <input
-                                            name="name"
-                                            onChange={onChangeHandler}
-                                            value={storeInfo.name}
-                                            type="text"
-                                            placeholder="e.g. Acme Corp"
-                                            className={inputClass}
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-
+                            {/* Section 1: Store Profile */}
                             <div>
-                                <label className={labelClass}>Description</label>
-                                <textarea
-                                    name="description"
-                                    onChange={onChangeHandler}
-                                    value={storeInfo.description}
-                                    rows={3}
-                                    placeholder="Tell customers what your store is about..."
-                                    className={`${inputClass} resize-none`}
-                                />
-                            </div>
-                        </div>
+                                <h2 className="text-lg font-semibold leading-7 text-gray-900 dark:text-white">Store Profile</h2>
+                                <p className="mt-1 text-sm leading-6 text-gray-500 dark:text-gray-400">This information will be displayed publicly on your store page.</p>
 
-                        <hr className="border-gray-100 dark:border-zinc-800 my-10" />
+                                <div className="mt-6 grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-6">
+                                    {/* Logo Upload - Clean unified component */}
+                                    <div className="col-span-full">
+                                        <label className={labelClass}>Store Logo</label>
+                                        <div className="mt-2 flex items-center gap-x-5">
+                                            <div className="h-24 w-24 sm:h-20 sm:w-20 rounded-2xl bg-gray-50 dark:bg-zinc-800 ring-1 ring-inset ring-gray-200 dark:ring-zinc-700 flex items-center justify-center overflow-hidden shrink-0">
+                                                {storeInfo.image ? (
+                                                    <Image
+                                                        src={URL.createObjectURL(storeInfo.image)}
+                                                        alt="Logo Preview"
+                                                        width={96}
+                                                        height={96}
+                                                        className="h-full w-full object-cover"
+                                                    />
+                                                ) : (
+                                                    <ImagePlus className="h-8 w-8 text-gray-400" strokeWidth={1.5} />
+                                                )}
+                                            </div>
+                                            <label className="rounded-xl bg-white dark:bg-zinc-800 px-4 py-2.5 text-sm font-semibold text-gray-900 dark:text-white shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-zinc-600 hover:bg-gray-50 dark:hover:bg-zinc-700 cursor-pointer transition-colors">
+                                                Change Logo
+                                                <input type="file" accept="image/*" onChange={(e) => setStoreInfo({ ...storeInfo, image: e.target.files[0] })} hidden />
+                                            </label>
+                                        </div>
+                                    </div>
 
-                        {/* Section 2: Contact Details */}
-                        <div className="mb-10">
-                            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
-                                <span className="bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white w-8 h-8 rounded-full flex items-center justify-center text-sm">2</span>
-                                Contact Details
-                            </h2>
-                            
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                <div>
-                                    <label className={labelClass}>Support Email</label>
-                                    <input
-                                        name="email"
-                                        onChange={onChangeHandler}
-                                        value={storeInfo.email}
-                                        type="email"
-                                        placeholder="support@yourstore.com"
-                                        className={inputClass}
-                                    />
+                                    <div className="sm:col-span-3">
+                                        <label className={labelClass}>Username</label>
+                                        <input name="username" onChange={onChangeHandler} value={storeInfo.username} type="text" placeholder="@yourstore" className={inputClass} />
+                                    </div>
+
+                                    <div className="sm:col-span-3">
+                                        <label className={labelClass}>Store Name</label>
+                                        <input name="name" onChange={onChangeHandler} value={storeInfo.name} type="text" placeholder="e.g. Acme Corp" className={inputClass} />
+                                    </div>
+
+                                    <div className="col-span-full">
+                                        <label className={labelClass}>Description</label>
+                                        <textarea name="description" onChange={onChangeHandler} value={storeInfo.description} rows={3} placeholder="Tell customers what your store is about..." className={`${inputClass} resize-none`} />
+                                    </div>
                                 </div>
-                                
-                                <div className="bg-gray-50 dark:bg-zinc-800/30 p-4 rounded-2xl border border-gray-100 dark:border-zinc-700/50">
-                                    <label className={labelClass}>Business Phone</label>
-                                    <div className="relative">
-                                        <input
-                                            name="contact"
-                                            onChange={onChangeHandler}
-                                            value={storeInfo.contact}
-                                            type="text"
-                                            placeholder="10-digit number"
-                                            maxLength={10}
-                                            className={`${inputClass} pr-24`}
-                                            disabled={whatsappVerified}
-                                        />
+                            </div>
+
+                            <hr className="border-gray-200 dark:border-zinc-800" />
+
+                            {/* Section 2: Contact Details */}
+                            <div>
+                                <h2 className="text-lg font-semibold leading-7 text-gray-900 dark:text-white">Contact Details</h2>
+                                <p className="mt-1 text-sm leading-6 text-gray-500 dark:text-gray-400">Where customers and support can reach you.</p>
+
+                                <div className="mt-6 grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-6">
+                                    <div className="sm:col-span-3">
+                                        <label className={labelClass}>Support Email</label>
+                                        <input name="email" onChange={onChangeHandler} value={storeInfo.email} type="email" placeholder="support@yourstore.com" className={inputClass} />
+                                    </div>
+
+                                    <div className="sm:col-span-3">
+                                        <label className={labelClass}>Business Phone</label>
+                                        <div className="mt-2 flex gap-2">
+                                            <input 
+                                                name="contact" 
+                                                onChange={onChangeHandler} 
+                                                value={storeInfo.contact} 
+                                                type="text" 
+                                                placeholder="10-digit number" 
+                                                maxLength={10} 
+                                                className={inputClass} 
+                                                disabled={whatsappVerified} 
+                                            />
+                                            {!whatsappVerified && (
+                                                <button type="button" onClick={sendOtp} className="shrink-0 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 px-4 py-3 text-sm font-semibold hover:opacity-90 transition-opacity">
+                                                    Send OTP
+                                                </button>
+                                            )}
+                                        </div>
+
+                                        {/* OTP Input Field */}
                                         {!whatsappVerified && storeInfo.contact.length === 10 && (
-                                            <button
-                                                type="button"
-                                                onClick={sendOtp}
-                                                className="absolute right-2 top-1/2 -translate-y-1/2 mt-1 px-3 py-1.5 text-sm font-medium bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 rounded-lg hover:opacity-90 transition-opacity"
-                                            >
-                                                Send OTP
-                                            </button>
+                                            <div className="mt-3 flex gap-2 animate-in slide-in-from-top-2 fade-in duration-300">
+                                                <input 
+                                                    type="text" 
+                                                    placeholder="Enter 6-digit code" 
+                                                    value={enteredCode} 
+                                                    onChange={(e) => setEnteredCode(e.target.value)} 
+                                                    className={inputClass} 
+                                                />
+                                                <button type="button" onClick={verifyOtp} className="shrink-0 rounded-xl bg-indigo-600 text-white px-6 py-3 text-sm font-semibold hover:bg-indigo-500 transition-colors">
+                                                    Verify
+                                                </button>
+                                            </div>
+                                        )}
+
+                                        {whatsappVerified && (
+                                            <div className="mt-2.5 flex items-center gap-1.5 text-sm font-medium text-emerald-600 dark:text-emerald-400">
+                                                <ShieldCheck size={18} /> Verified Successfully
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <hr className="border-gray-200 dark:border-zinc-800" />
+
+                            {/* Section 3: Legal & Location */}
+                            <div>
+                                <h2 className="text-lg font-semibold leading-7 text-gray-900 dark:text-white">Legal & Location</h2>
+                                <p className="mt-1 text-sm leading-6 text-gray-500 dark:text-gray-400">Required for taxation and shipping purposes.</p>
+
+                                <div className="mt-6 grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-6">
+                                    <div className="sm:col-span-full">
+                                        <label className={labelClass}>Registered GST Number</label>
+                                        <input name="gst" onChange={onChangeHandler} value={storeInfo.gst} type="text" placeholder="15-character GSTIN" maxLength={15} className={inputClass} />
+                                        {storeInfo.gst.length > 0 && (
+                                            <p className={`mt-2 text-sm font-medium flex items-center gap-1.5 ${gstValid ? "text-emerald-600 dark:text-emerald-400" : "text-rose-500"}`}>
+                                                {gstValid ? (
+                                                    <><CheckCircle2 size={16} /> Valid GST format</>
+                                                ) : storeInfo.gst.length < 15 ? (
+                                                    "GST must be exactly 15 characters"
+                                                ) : (
+                                                    <><XCircle size={16} /> Invalid GST format</>
+                                                )}
+                                            </p>
                                         )}
                                     </div>
 
-                                    {!whatsappVerified && enteredCode !== undefined && (
-                                        <div className="mt-4 flex gap-3 animate-in fade-in slide-in-from-top-2">
-                                            <input
-                                                type="text"
-                                                placeholder="Enter OTP"
-                                                value={enteredCode}
-                                                onChange={(e) => setEnteredCode(e.target.value)}
-                                                className="flex-1 px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-zinc-900 outline-none dark:bg-zinc-800 dark:border-zinc-600 dark:text-white dark:focus:ring-white transition-all"
-                                            />
-                                            <button
-                                                type="button"
-                                                onClick={verifyOtp}
-                                                className="px-6 py-2.5 bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 font-medium rounded-xl hover:opacity-90 transition-opacity"
-                                            >
-                                                Verify
-                                            </button>
-                                        </div>
-                                    )}
-
-                                    {whatsappVerified && (
-                                        <div className="mt-3 flex items-center gap-2 text-sm font-medium text-emerald-600 dark:text-emerald-400">
-                                            <ShieldCheck size={18} />
-                                            Number securely verified
-                                        </div>
-                                    )}
+                                    <div className="col-span-full">
+                                        <label className={labelClass}>Business Address</label>
+                                        <textarea name="address" onChange={onChangeHandler} value={storeInfo.address} rows={3} placeholder="Complete registered business address..." className={`${inputClass} resize-none`} />
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        <hr className="border-gray-100 dark:border-zinc-800 my-10" />
-
-                        {/* Section 3: Legal & Location */}
-                        <div className="mb-10">
-                            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
-                                <span className="bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white w-8 h-8 rounded-full flex items-center justify-center text-sm">3</span>
-                                Legal & Location
-                            </h2>
-                            
-                            <div className="grid grid-cols-1 gap-8">
-                                <div>
-                                    <label className={labelClass}>Registered GST Number</label>
-                                    <input
-                                        name="gst"
-                                        onChange={onChangeHandler}
-                                        value={storeInfo.gst}
-                                        type="text"
-                                        placeholder="15-character GSTIN"
-                                        maxLength={15}
-                                        className={inputClass}
-                                    />
-                                    {storeInfo.gst.length > 0 && (
-                                        <p className={`mt-2 text-sm font-medium flex items-center gap-1 ${gstValid ? "text-emerald-600 dark:text-emerald-400" : "text-rose-500"}`}>
-                                            {gstValid ? (
-                                                <><CheckCircle size={16} /> Valid GST format</>
-                                            ) : storeInfo.gst.length < 15 ? (
-                                                "GST must be exactly 15 characters"
-                                            ) : (
-                                                <><XCircle size={16} /> Invalid GST format</>
-                                            )}
-                                        </p>
-                                    )}
-                                </div>
-
-                                <div>
-                                    <label className={labelClass}>Business Address</label>
-                                    <textarea
-                                        name="address"
-                                        onChange={onChangeHandler}
-                                        value={storeInfo.address}
-                                        rows={3}
-                                        placeholder="Complete registered business address..."
-                                        className={`${inputClass} resize-none`}
-                                    />
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Submit Action */}
-                        <div className="pt-6 mt-6 border-t border-gray-100 dark:border-zinc-800">
+                        {/* Submit Action Footer */}
+                        <div className="bg-gray-50 dark:bg-zinc-800/50 px-6 py-5 sm:px-10 border-t border-gray-200 dark:border-zinc-800 flex items-center justify-end gap-x-4">
+                            {(!gstValid || !whatsappVerified) && (
+                                <span className="text-sm text-gray-500 hidden sm:block">
+                                    Please verify number & GST to submit
+                                </span>
+                            )}
                             <button
                                 disabled={!gstValid || !whatsappVerified}
-                                className={`w-full py-4 text-lg font-semibold rounded-xl transition-all duration-300
+                                className={`w-full sm:w-auto px-8 py-3.5 text-sm font-semibold rounded-xl transition-all duration-300
                                     ${gstValid && whatsappVerified
-                                        ? "bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-white dark:text-zinc-900 dark:hover:bg-gray-100 shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0"
-                                        : "bg-gray-100 text-gray-400 dark:bg-zinc-800 dark:text-zinc-500 cursor-not-allowed"
+                                        ? "bg-indigo-600 text-white hover:bg-indigo-500 shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-0"
+                                        : "bg-gray-200 text-gray-400 dark:bg-zinc-700 dark:text-zinc-500 cursor-not-allowed"
                                     }`}
                             >
-                                Submit Store Request
+                                Submit Application
                             </button>
-                            {(!gstValid || !whatsappVerified) && (
-                                <p className="text-center text-sm text-gray-500 mt-4">
-                                    Please complete GST validation and number verification to continue.
-                                </p>
-                            )}
                         </div>
                     </form>
                 </div>
             ) : (
-                <div className="min-h-[70vh] flex flex-col items-center justify-center">
-                    <div className="bg-white dark:bg-zinc-900 p-10 sm:p-14 rounded-[2rem] shadow-2xl border border-gray-100 dark:border-zinc-800 max-w-lg w-full text-center relative overflow-hidden">
-                        
-                        {/* Background subtle glow */}
-                        <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-full h-32 opacity-20 blur-3xl rounded-full
-                            ${status === "approved" ? "bg-emerald-500" : ""}
-                            ${status === "pending" ? "bg-amber-500" : ""}
-                            ${status === "rejected" ? "bg-rose-500" : ""}
-                        `} />
-
+                <div className="min-h-[60vh] flex flex-col items-center justify-center">
+                    <div className="bg-white dark:bg-zinc-900 p-10 sm:p-14 rounded-3xl shadow-xl ring-1 ring-gray-200 dark:ring-zinc-800 max-w-lg w-full text-center relative overflow-hidden">
                         <div className="relative z-10">
-                            <div className="mb-8 flex justify-center transform transition-transform hover:scale-110 duration-300">
-                                {status === "approved" && <CheckCircle className="text-emerald-500" size={72} strokeWidth={1.5} />}
-                                {status === "pending" && <Clock className="text-amber-500" size={72} strokeWidth={1.5} />}
-                                {status === "rejected" && <XCircle className="text-rose-500" size={72} strokeWidth={1.5} />}
+                            <div className="mb-8 flex justify-center">
+                                {status === "approved" && <CheckCircle2 className="text-emerald-500" size={64} strokeWidth={1.5} />}
+                                {status === "pending" && <Clock className="text-amber-500" size={64} strokeWidth={1.5} />}
+                                {status === "rejected" && <XCircle className="text-rose-500" size={64} strokeWidth={1.5} />}
                             </div>
                             
-                            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+                            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
                                 {status === "approved" && "Application Approved!"}
                                 {status === "pending" && "Application Under Review"}
                                 {status === "rejected" && "Application Rejected"}
                             </h2>
                             
-                            <p className="text-gray-600 dark:text-gray-300 leading-relaxed mb-6">
+                            <p className="text-gray-500 dark:text-gray-400 leading-relaxed mb-8">
                                 {message}
                             </p>
 
                             {status === "approved" && (
-                                <div className="inline-flex items-center gap-2 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 px-6 py-3 rounded-full font-medium text-sm">
+                                <div className="inline-flex items-center gap-2 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 px-6 py-3 rounded-full font-medium text-sm border border-emerald-100 dark:border-emerald-500/20">
                                     <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                                     Redirecting to dashboard in {countdown}s
                                 </div>
