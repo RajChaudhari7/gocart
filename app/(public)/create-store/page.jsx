@@ -19,8 +19,6 @@ export default function CreateStore() {
     const [loading, setLoading] = useState(true)
     const [message, setMessage] = useState("")
     const [countdown, setCountdown] = useState(5)
-    // WhatsApp Verification States
-    const [verificationCode, setVerificationCode] = useState("")
     const [enteredCode, setEnteredCode] = useState("")
     const [whatsappVerified, setWhatsappVerified] = useState(false)
     const [gstValid, setGstValid] = useState(false)
@@ -164,6 +162,8 @@ export default function CreateStore() {
 
     const onSubmitHandler = async (e) => {
         e.preventDefault()
+
+        formData.append("gst", storeInfo.gst)
 
         if (!user) return toast("Please login to continue")
 
@@ -412,7 +412,7 @@ export default function CreateStore() {
                         </div>
 
                         <button
-                            disabled={!gstValid || storeInfo.gst.length !== 15}
+                            disabled={!gstValid || !whatsappVerified}
                             className={`w-full py-3 font-semibold rounded-lg transition-all mt-4
                     ${gstValid
                                     ? "bg-indigo-600 text-white hover:bg-indigo-700 active:scale-95"

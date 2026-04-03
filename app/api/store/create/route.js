@@ -21,20 +21,47 @@ export async function POST(request) {
         const image = formData.get("image")
         const gst = formData.get("gst")
 
-        // whatsapp verification
-        const enteredCode = formData.get("verifyCode")
-        const originalCode = formData.get("originalCode")
+        const verifiedOtp = await prisma.whatsappOtp.findFirst({
+            where: {
+                phone: contact,
+                verified: true
+            },
+            orderBy: { createdAt: "desc" }
+        })
 
-        if (enteredCode !== originalCode) {
-            return NextResponse.json({ error: "WhatsApp verification failed" }, { status: 400 })
+        if (!verifiedOtp) {
+            return NextResponse.json(
+                { error: "WhatsApp not verified" },
+                { status: 400 }
+            )
         }
 
-        if (!name || !description || !username || !email || !contact || !address || !image) {
+        if (!name || !description || !username || !email || !contact || !address || !image || !gst) {
             return NextResponse.json({ error: "Missing Store info" }, { status: 400 })
         }
 
         if (!gst) {
             return NextResponse.json({ error: "GST is required" }, { status: 400 })
+        }
+
+        const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
+
+        if (!gstRegex.test(gst)) {
+            return NextResponse.json(
+                { error: "Invalid GST number" },
+                { status: 400 }
+            )
+        }
+
+        const existingGST = await prisma.store.findFirst({
+            where: { gst }
+        })
+
+        if (existingGST) {
+            return NextResponse.json(
+                { error: "GST already registered" },
+                { status: 400 }
+            )
         }
 
         const store = await prisma.store.findFirst({
@@ -79,6 +106,7 @@ export async function POST(request) {
                 email,
                 contact,
                 address,
+                gst,
                 logo: optimizedImage
             }
         })
