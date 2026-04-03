@@ -155,7 +155,7 @@ export default function CreateStore() {
         try {
             const token = await getToken()
             const formData = new FormData()
-            
+
             Object.keys(storeInfo).forEach(key => {
                 formData.append(key, storeInfo[key])
             })
@@ -204,7 +204,7 @@ export default function CreateStore() {
     }
 
     return !loading ? (
-        <div className="min-h-screen py-10 px-4 sm:px-6 lg:px-8 selection:bg-indigo-100 selection:text-indigo-900">
+        <div className="min-h-screen pt-28 pb-10 px-4 sm:px-6 lg:px-8 selection:bg-indigo-100 selection:text-indigo-900">
             {!alreadySubmitted ? (
                 <div className="max-w-3xl mx-auto">
                     {/* Header */}
@@ -218,12 +218,12 @@ export default function CreateStore() {
                     </div>
 
                     {/* Form Card */}
-                    <form 
+                    <form
                         onSubmit={e => toast.promise(onSubmitHandler(e), { loading: "Setting up your store..." })}
                         className="bg-white dark:bg-zinc-900 shadow-[0_8px_30px_rgb(0,0,0,0.04)] ring-1 ring-gray-200 dark:ring-zinc-800 rounded-2xl sm:rounded-3xl overflow-hidden"
                     >
                         <div className="p-6 sm:p-10 space-y-12">
-                            
+
                             {/* Section 1: Store Profile */}
                             <div>
                                 <h2 className="text-lg font-semibold leading-7 text-gray-900 dark:text-white">Store Profile</h2>
@@ -287,15 +287,15 @@ export default function CreateStore() {
                                     <div className="sm:col-span-3">
                                         <label className={labelClass}>Business Phone</label>
                                         <div className="mt-2 flex gap-2">
-                                            <input 
-                                                name="contact" 
-                                                onChange={onChangeHandler} 
-                                                value={storeInfo.contact} 
-                                                type="text" 
-                                                placeholder="10-digit number" 
-                                                maxLength={10} 
-                                                className={inputClass} 
-                                                disabled={whatsappVerified} 
+                                            <input
+                                                name="contact"
+                                                onChange={onChangeHandler}
+                                                value={storeInfo.contact}
+                                                type="text"
+                                                placeholder="10-digit number"
+                                                maxLength={10}
+                                                className={inputClass}
+                                                disabled={whatsappVerified}
                                             />
                                             {!whatsappVerified && (
                                                 <button type="button" onClick={sendOtp} className="shrink-0 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 px-4 py-3 text-sm font-semibold hover:opacity-90 transition-opacity">
@@ -307,12 +307,12 @@ export default function CreateStore() {
                                         {/* OTP Input Field */}
                                         {!whatsappVerified && storeInfo.contact.length === 10 && (
                                             <div className="mt-3 flex gap-2 animate-in slide-in-from-top-2 fade-in duration-300">
-                                                <input 
-                                                    type="text" 
-                                                    placeholder="Enter 6-digit code" 
-                                                    value={enteredCode} 
-                                                    onChange={(e) => setEnteredCode(e.target.value)} 
-                                                    className={inputClass} 
+                                                <input
+                                                    type="text"
+                                                    placeholder="Enter 6-digit code"
+                                                    value={enteredCode}
+                                                    onChange={(e) => setEnteredCode(e.target.value)}
+                                                    className={inputClass}
                                                 />
                                                 <button type="button" onClick={verifyOtp} className="shrink-0 rounded-xl bg-indigo-600 text-white px-6 py-3 text-sm font-semibold hover:bg-indigo-500 transition-colors">
                                                     Verify
@@ -390,13 +390,13 @@ export default function CreateStore() {
                                 {status === "pending" && <Clock className="text-amber-500" size={64} strokeWidth={1.5} />}
                                 {status === "rejected" && <XCircle className="text-rose-500" size={64} strokeWidth={1.5} />}
                             </div>
-                            
+
                             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
                                 {status === "approved" && "Application Approved!"}
                                 {status === "pending" && "Application Under Review"}
                                 {status === "rejected" && "Application Rejected"}
                             </h2>
-                            
+
                             <p className="text-gray-500 dark:text-gray-400 leading-relaxed mb-8">
                                 {message}
                             </p>
