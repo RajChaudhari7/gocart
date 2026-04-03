@@ -33,6 +33,7 @@ export default function CreateStore() {
         contact: "",
         address: "",
         image: "",
+        gst: "",
         isWhatsapp: false
     })
 
@@ -72,20 +73,53 @@ export default function CreateStore() {
 
     }
 
+    const validateGST = (gst) => {
+        const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
+
+        if (!gst) {
+            setGstError("GST is required")
+            setGstValid(false)
+            return
+        }
+
+        if (!gstRegex.test(gst)) {
+            setGstError("Invalid GST number")
+            setGstValid(false)
+            return
+        }
+
+        setGstError("")
+        setGstValid(true)
+    }
+
     const onChangeHandler = (e) => {
-        // For contact, limit to 10 digits only
-        if (e.target.name === "contact") {
-            const val = e.target.value.replace(/\D/g, "")
+        const { name, value } = e.target
+
+        if (name === "contact") {
+            const val = value.replace(/\D/g, "")
             if (val.length > 10) return
 
             setStoreInfo({ ...storeInfo, contact: val })
-
-            // reset verification if phone changes
             setWhatsappVerified(false)
             setEnteredCode("")
+            return
         }
-    }
 
+        if (name === "gst") {
+            const val = value.toUpperCase() // ✅ AUTO UPPERCASE
+            setStoreInfo({ ...storeInfo, gst: val })
+
+            if (val.length === 15) {
+                validateGST(val)
+            } else {
+                setGstValid(false)
+                setGstError("GST must be 15 characters")
+            }
+            return
+        }
+
+        setStoreInfo({ ...storeInfo, [name]: value })
+    }
     const fetchSellerStatus = async () => {
         const token = await getToken()
         try {
@@ -336,6 +370,28 @@ export default function CreateStore() {
                             </div>
                         </div>
 
+                        {/* GST Number */}
+                        <div>
+                            <label className="text-gray-700 dark:text-gray-200">GST Number</label>
+
+                            <input
+                                name="gst"
+                                onChange={onChangeHandler}
+                                value={storeInfo.gst}
+                                type="text"
+                                placeholder="Enter GST number"
+                                maxLength={15}
+                                className="mt-1 w-full p-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800 focus:ring-2 focus:ring-indigo-500 outline-none"
+                            />
+
+                            {/* GST Status */}
+                            {storeInfo.gst.length > 0 && (
+                                <p className={`mt-2 text-sm ${gstValid ? "text-green-600" : "text-red-500"}`}>
+                                    {gstValid ? "Valid GST ✅" : gstError}
+                                </p>
+                            )}
+                        </div>
+
                         {/* Address */}
                         <div>
                             <label className="text-gray-700 dark:text-gray-200">Address</label>
@@ -349,7 +405,14 @@ export default function CreateStore() {
                             />
                         </div>
 
-                        <button className="w-full py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 active:scale-95 transition-all mt-4">
+                        <button
+                            disabled={!gstValid}
+                            className={`w-full py-3 font-semibold rounded-lg transition-all mt-4
+                                ${gstValid
+                                    ? "bg-indigo-600 text-white hover:bg-indigo-700 active:scale-95"
+                                    : "bg-gray-400 text-gray-200 cursor-not-allowed"
+                                }`}
+                        >
                             Submit
                         </button>
                     </form>

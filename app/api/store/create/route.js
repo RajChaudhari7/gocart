@@ -19,6 +19,7 @@ export async function POST(request) {
         const contact = formData.get("contact")
         const address = formData.get("address")
         const image = formData.get("image")
+        const gst = formData.get("gst")
 
         // whatsapp verification
         const enteredCode = formData.get("verifyCode")
@@ -30,6 +31,10 @@ export async function POST(request) {
 
         if (!name || !description || !username || !email || !contact || !address || !image) {
             return NextResponse.json({ error: "Missing Store info" }, { status: 400 })
+        }
+
+        if (!gst) {
+            return NextResponse.json({ error: "GST is required" }, { status: 400 })
         }
 
         const store = await prisma.store.findFirst({
