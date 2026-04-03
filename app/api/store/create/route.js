@@ -64,6 +64,17 @@ export async function POST(request) {
             )
         }
 
+        const existingContact = await prisma.store.findFirst({
+            where: { contact }
+        })
+
+        if (existingContact) {
+            return NextResponse.json(
+                { error: "Contact number already registered" },
+                { status: 400 }
+            )
+        }
+
         const store = await prisma.store.findFirst({
             where: { userId: userId }
         });
