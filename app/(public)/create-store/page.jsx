@@ -37,40 +37,39 @@ export default function CreateStore() {
         isWhatsapp: false
     })
 
-    const sendWhatsappVerification = async () => {
-
+    const sendOtp = async () => {
         if (storeInfo.contact.length !== 10) {
             toast.error("Enter valid number")
             return
         }
 
-        const { data } = await axios.post("/api/whatsapp/send-otp", {
-            phone: storeInfo.contact
-        })
+        try {
+            const { data } = await axios.post("/api/sms/send-otp", {
+                phone: storeInfo.contact
+            })
 
-        window.open(data.url, "_blank")
+            toast.success("OTP sent via SMS")
 
-        toast.success("OTP sent to WhatsApp")
+        } catch (err) {
+            toast.error("Failed to send OTP")
+        }
     }
 
-    const verifyWhatsappCode = async () => {
-
+    const verifyOtp = async () => {
         try {
-
-            const { data } = await axios.post("/api/whatsapp/verify-otp", {
+            const { data } = await axios.post("/api/sms/verify-otp", {
                 phone: storeInfo.contact,
                 otp: enteredCode
             })
 
             if (data.success) {
                 setWhatsappVerified(true)
-                toast.success("WhatsApp verified")
+                toast.success("Number verified successfully")
             }
 
         } catch (err) {
             toast.error(err.response.data.error)
         }
-
     }
 
     const validateGST = (gst) => {
@@ -336,14 +335,14 @@ export default function CreateStore() {
                                     className="mt-1 w-full p-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800 focus:ring-2 focus:ring-indigo-500 outline-none"
                                 />
 
-                                {/* WhatsApp Verify Button */}
+                                {/* sms Verify Button */}
                                 <button
                                     type="button"
-                                    onClick={sendWhatsappVerification}
+                                    onClick={sendOtp}
                                     disabled={whatsappVerified}
-                                    className="mt-2 text-sm text-green-600 hover:underline disabled:opacity-50"
+                                    className="mt-2 text-sm text-blue-600 hover:underline disabled:opacity-50"
                                 >
-                                    Verify on WhatsApp
+                                    Send OTP
                                 </button>
 
                                 {!whatsappVerified && (
@@ -357,10 +356,10 @@ export default function CreateStore() {
                                         />
                                         <button
                                             type="button"
-                                            onClick={verifyWhatsappCode}
+                                            onClick={verifyOtp}
                                             className="bg-blue-500 text-white px-3 py-1 rounded"
                                         >
-                                            Verify Code
+                                            Verify OTP
                                         </button>
                                     </div>
                                 )}
