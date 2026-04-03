@@ -1,4 +1,5 @@
 'use client'
+
 import { assets } from "@/assets/assets"
 import { useEffect, useState } from "react"
 import Image from "next/image"
@@ -9,442 +10,294 @@ import { useRouter } from "next/navigation"
 import axios from "axios"
 import { CheckCircle, XCircle, Clock } from "lucide-react"
 
+/* ------------------ REUSABLE COMPONENTS ------------------ */
+
+const Input = ({ label, ...props }) => (
+  <div>
+    <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
+      {label}
+    </label>
+    <input
+      {...props}
+      className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-indigo-500 outline-none"
+    />
+  </div>
+)
+
+const Textarea = ({ label, ...props }) => (
+  <div>
+    <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
+      {label}
+    </label>
+    <textarea
+      {...props}
+      rows={4}
+      className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-indigo-500 outline-none resize-none"
+    />
+  </div>
+)
+
+/* ------------------ MAIN COMPONENT ------------------ */
+
 export default function CreateStore() {
-    const { user } = useUser()
-    const router = useRouter()
-    const { getToken } = useAuth()
+  const { user } = useUser()
+  const { getToken } = useAuth()
+  const router = useRouter()
 
-    const [alreadySubmitted, setAlreadySubmitted] = useState(false)
-    const [status, setStatus] = useState("")
-    const [loading, setLoading] = useState(true)
-    const [message, setMessage] = useState("")
-    const [countdown, setCountdown] = useState(5)
-    const [enteredCode, setEnteredCode] = useState("")
-    const [whatsappVerified, setWhatsappVerified] = useState(false)
-    const [gstValid, setGstValid] = useState(false)
-    const [gstError, setGstError] = useState("")
+  const [loading, setLoading] = useState(true)
+  const [alreadySubmitted, setAlreadySubmitted] = useState(false)
+  const [status, setStatus] = useState("")
+  const [message, setMessage] = useState("")
+  const [countdown, setCountdown] = useState(5)
 
+  const [enteredCode, setEnteredCode] = useState("")
+  const [whatsappVerified, setWhatsappVerified] = useState(false)
 
-    const [storeInfo, setStoreInfo] = useState({
-        name: "",
-        username: "",
-        description: "",
-        email: "",
-        contact: "",
-        address: "",
-        image: "",
-        gst: "",
-        isWhatsapp: false
-    })
+  const [gstValid, setGstValid] = useState(false)
+  const [gstError, setGstError] = useState("")
 
-    const sendOtp = async () => {
-        if (storeInfo.contact.length !== 10) {
-            toast.error("Enter valid number")
-            return
-        }
+  const [storeInfo, setStoreInfo] = useState({
+    name: "",
+    username: "",
+    description: "",
+    email: "",
+    contact: "",
+    address: "",
+    image: null,
+    gst: ""
+  })
 
-        try {
-            const { data } = await axios.post("/api/sms/send-otp", {
-                phone: storeInfo.contact
-            })
+  /* ------------------ OTP ------------------ */
 
-            toast.success("OTP sent via SMS")
-
-        } catch (err) {
-            toast.error("Failed to send OTP")
-        }
+  const sendOtp = async () => {
+    if (storeInfo.contact.length !== 10) {
+      return toast.error("Enter valid number")
     }
 
-    const verifyOtp = async () => {
-        try {
-            const { data } = await axios.post("/api/sms/verify-otp", {
-                phone: storeInfo.contact,
-                otp: enteredCode
-            })
+    try {
+      await axios.post("/api/sms/send-otp", {
+        phone: storeInfo.contact
+      })
 
-            if (data.success) {
-                setWhatsappVerified(true)
-                toast.success("Number verified successfully")
-            }
+      toast.success("OTP sent")
+    } catch {
+      toast.error("Failed to send OTP")
+    }
+  }
 
-        } catch (err) {
-            toast.error(err.response.data.error)
-        }
+  const verifyOtp = async () => {
+    try {
+      const { data } = await axios.post("/api/sms/verify-otp", {
+        phone: storeInfo.contact,
+        otp: enteredCode
+      })
+
+      if (data.success) {
+        setWhatsappVerified(true)
+        toast.success("Verified successfully")
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.error || "Invalid OTP")
+    }
+  }
+
+  /* ------------------ GST ------------------ */
+
+  const validateGST = (gst) => {
+    const regex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/
+
+    if (!regex.test(gst)) {
+      setGstValid(false)
+      setGstError("Invalid GST number")
+    } else {
+      setGstValid(true)
+      setGstError("")
+    }
+  }
+
+  /* ------------------ INPUT ------------------ */
+
+  const onChangeHandler = (e) => {
+    const { name, value } = e.target
+
+    if (name === "contact") {
+      const val = value.replace(/\D/g, "")
+      if (val.length > 10) return
+
+      setStoreInfo({ ...storeInfo, contact: val })
+      setWhatsappVerified(false)
+      return
     }
 
-    const validateGST = (gst) => {
-        const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
+    if (name === "gst") {
+      const val = value.toUpperCase()
+      setStoreInfo({ ...storeInfo, gst: val })
 
-        if (!gst) {
-            setGstError("GST is required")
-            setGstValid(false)
-            return
-        }
-
-        if (!gstRegex.test(gst)) {
-            setGstError("Invalid GST number")
-            setGstValid(false)
-            return
-        }
-
-        setGstError("")
-        setGstValid(true)
+      if (val.length === 15) validateGST(val)
+      return
     }
 
-    const onChangeHandler = (e) => {
-        const { name, value } = e.target
+    setStoreInfo({ ...storeInfo, [name]: value })
+  }
 
-        if (name === "contact") {
-            const val = value.replace(/\D/g, "")
-            if (val.length > 10) return
+  /* ------------------ FETCH STATUS ------------------ */
 
-            setStoreInfo({ ...storeInfo, contact: val })
-            setWhatsappVerified(false)
-            setEnteredCode("")
-            return
+  const fetchStatus = async () => {
+    const token = await getToken()
+
+    try {
+      const { data } = await axios.get("/api/store/create", {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+
+      if (["approved", "pending", "rejected"].includes(data.status)) {
+        setAlreadySubmitted(true)
+        setStatus(data.status)
+
+        if (data.status === "approved") {
+          setMessage("Store approved 🎉")
+        } else if (data.status === "pending") {
+          setMessage("Waiting for approval...")
+        } else {
+          setMessage("Store rejected")
         }
-
-        if (name === "gst") {
-            const val = value.toUpperCase() // ✅ AUTO UPPERCASE
-            setStoreInfo({ ...storeInfo, gst: val })
-
-            if (val.length === 15) {
-                validateGST(val)
-            } else {
-                setGstValid(false)
-                setGstError("GST must be 15 characters")
-            }
-            return
-        }
-
-        setStoreInfo({ ...storeInfo, [name]: value })
-    }
-    const fetchSellerStatus = async () => {
-        const token = await getToken()
-        try {
-            const { data } = await axios.get('/api/store/create', {
-                headers: { Authorization: `Bearer ${token}` }
-            })
-
-            if (['approved', 'rejected', 'pending'].includes(data.status)) {
-                setStatus(data.status)
-                setAlreadySubmitted(true)
-                switch (data.status) {
-                    case 'approved':
-                        setMessage("Your store has been approved! You can now add products from the dashboard.")
-                        setCountdown(5)
-                        break;
-
-
-
-                    case 'rejected':
-                        setMessage("Your store request has been rejected. Contact admin for more details.")
-                        break;
-
-                    case 'pending':
-                        setMessage("Your store request is pending. Please wait for admin approval.")
-                        break;
-
-                    default:
-                        break;
-                }
-            } else {
-                setAlreadySubmitted(false)
-            }
-
-        } catch (error) {
-            toast.error(error?.response?.data?.error || error.message)
-        }
-        setLoading(false)
+      }
+    } catch (err) {
+      toast.error(err.message)
     }
 
+    setLoading(false)
+  }
 
-    const onSubmitHandler = async (e) => {
-        e.preventDefault()
+  /* ------------------ SUBMIT ------------------ */
 
+  const onSubmitHandler = async (e) => {
+    e.preventDefault()
 
+    if (!user) return toast.error("Login required")
 
-        if (!user) return toast("Please login to continue")
+    if (!whatsappVerified)
+      return toast.error("Verify number first")
 
-        if (storeInfo.contact.length !== 10)
-            return toast.error("Contact number must be 10 digits")
+    try {
+      const token = await getToken()
 
+      const formData = new FormData()
+      Object.entries(storeInfo).forEach(([key, val]) => {
+        formData.append(key, val)
+      })
 
-        if (!whatsappVerified) {
-            return toast.error("Please verify your WhatsApp number before submitting")
-        }
+      const { data } = await axios.post("/api/store/create", formData, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
 
-        try {
-            const token = await getToken()
+      toast.success(data.message)
+      fetchStatus()
 
-            const formData = new FormData()
-            formData.append("name", storeInfo.name)
-            formData.append("username", storeInfo.username)
-            formData.append("description", storeInfo.description)
-            formData.append("email", storeInfo.email)
-            formData.append("contact", storeInfo.contact)
-            formData.append("address", storeInfo.address)
-            formData.append("image", storeInfo.image)
-            formData.append("gst", storeInfo.gst)
-
-            // ✅ send whatsapp confirmation
-            formData.append("isWhatsapp", storeInfo.isWhatsapp)
-
-            const { data } = await axios.post('/api/store/create', formData, {
-                headers: { Authorization: `Bearer ${token}` }
-            })
-
-            toast.success(data.message)
-            await fetchSellerStatus()
-
-        } catch (error) {
-            toast.error(error?.response?.data?.error || error.message)
-        }
+    } catch (err) {
+      toast.error(err.response?.data?.error || err.message)
     }
+  }
 
-    useEffect(() => {
-        if (status !== "approved") return
+  /* ------------------ EFFECTS ------------------ */
 
-        if (countdown === 0) {
-            router.push("/store")
-            return
-        }
+  useEffect(() => {
+    if (user) fetchStatus()
+  }, [user])
 
-        const timer = setTimeout(() => {
-            setCountdown(prev => prev - 1)
-        }, 1000)
+  useEffect(() => {
+    if (status === "approved") {
+      if (countdown === 0) return router.push("/store")
+      setTimeout(() => setCountdown(prev => prev - 1), 1000)
+    }
+  }, [countdown, status])
 
-        return () => clearTimeout(timer)
-    }, [status, countdown])
+  /* ------------------ UI ------------------ */
 
+  if (!user) return <div className="text-center mt-20">Login required</div>
+  if (loading) return <Loading />
 
-    useEffect(() => {
-        if (user) fetchSellerStatus()
-    }, [user])
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-200 dark:from-gray-900 dark:to-black p-4">
 
-    if (!user) {
-        return (
-            <div className="min-h-[80vh] flex items-center justify-center px-6">
-                <h1 className="text-2xl sm:text-4xl font-semibold text-center">
-                    Please <span className="text-indigo-500">Login</span> to continue
-                </h1>
+      {!alreadySubmitted ? (
+        <div className="w-full max-w-4xl bg-white dark:bg-gray-900 p-8 rounded-3xl shadow-2xl">
+
+          <h1 className="text-3xl font-bold text-center mb-8">
+            Create Store 🚀
+          </h1>
+
+          <form onSubmit={onSubmitHandler} className="space-y-6">
+
+            {/* Image */}
+            <div className="flex justify-center">
+              <label className="cursor-pointer">
+                <Image
+                  src={storeInfo.image ? URL.createObjectURL(storeInfo.image) : assets.upload_area}
+                  width={120}
+                  height={120}
+                  alt=""
+                  className="rounded-xl border"
+                />
+                <input
+                  type="file"
+                  hidden
+                  onChange={(e) =>
+                    setStoreInfo({ ...storeInfo, image: e.target.files[0] })
+                  }
+                />
+              </label>
             </div>
-        )
-    }
 
-    return !loading ? (
-        <>
-            {!alreadySubmitted ? (
-                <div className="mx-6 min-h-[70vh] my-16 flex flex-col items-center">
-                    {/* Header Section */}
-                    <div className="text-center mb-10 max-w-2xl">
-                        <h1 className="text-4xl font-bold text-gray-900 dark:text-white">Join Us by Creating Your Store</h1>
-                        <p className="mt-3 text-lg text-gray-600 dark:text-gray-300">
-                            Become a seller on <span className="font-semibold text-indigo-600">GlobalMart</span> and reach thousands of customers worldwide. Submit your store details below and get verified by our team to start selling!
-                        </p>
-                    </div>
+            <div className="grid sm:grid-cols-2 gap-4">
+              <Input name="username" label="Username" onChange={onChangeHandler} />
+              <Input name="name" label="Store Name" onChange={onChangeHandler} />
+              <Input name="email" label="Email" onChange={onChangeHandler} />
+              <Input name="contact" label="Contact" onChange={onChangeHandler} />
+            </div>
 
-                    {/* Form Section */}
-                    <form
-                        onSubmit={e => toast.promise(onSubmitHandler(e), { loading: "Submitting data..." })}
-                        className="w-full max-w-3xl bg-white dark:bg-gray-900 rounded-2xl shadow-xl p-8 space-y-6"
-                    >
-                        {/* Store Logo */}
-                        <label className="block cursor-pointer">
-                            <span className="font-medium text-gray-700 dark:text-gray-200">Store Logo</span>
-                            <div className="mt-2 flex items-center gap-4">
-                                <Image
-                                    src={storeInfo.image ? URL.createObjectURL(storeInfo.image) : assets.upload_area}
-                                    alt="Store Logo"
-                                    width={100}
-                                    height={100}
-                                    className="rounded-lg border border-gray-300 dark:border-gray-700 object-contain h-24 w-24"
-                                />
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={(e) => setStoreInfo({ ...storeInfo, image: e.target.files[0] })}
-                                    hidden
-                                />
-                                <span className="text-sm text-gray-500 dark:text-gray-400">Click the image to upload</span>
-                            </div>
-                        </label>
+            <Textarea name="description" label="Description" onChange={onChangeHandler} />
 
-                        {/* Username & Name */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                            <div>
-                                <label className="text-gray-700 dark:text-gray-200">Username</label>
-                                <input
-                                    name="username"
-                                    onChange={onChangeHandler}
-                                    value={storeInfo.username}
-                                    type="text"
-                                    placeholder="Enter your store username"
-                                    className="mt-1 w-full p-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800 focus:ring-2 focus:ring-indigo-500 outline-none"
-                                />
-                            </div>
-                            <div>
-                                <label className="text-gray-700 dark:text-gray-200">Store Name</label>
-                                <input
-                                    name="name"
-                                    onChange={onChangeHandler}
-                                    value={storeInfo.name}
-                                    type="text"
-                                    placeholder="Enter your store name"
-                                    className="mt-1 w-full p-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800 focus:ring-2 focus:ring-indigo-500 outline-none"
-                                />
-                            </div>
-                        </div>
+            {/* OTP */}
+            <div className="flex gap-2">
+              <button type="button" onClick={sendOtp} className="btn">
+                Send OTP
+              </button>
+              <input
+                value={enteredCode}
+                onChange={(e) => setEnteredCode(e.target.value)}
+                className="flex-1 border p-2 rounded"
+              />
+              <button type="button" onClick={verifyOtp} className="btn bg-green-500">
+                Verify
+              </button>
+            </div>
 
-                        {/* Description */}
-                        <div>
-                            <label className="text-gray-700 dark:text-gray-200">Description</label>
-                            <textarea
-                                name="description"
-                                onChange={onChangeHandler}
-                                value={storeInfo.description}
-                                rows={4}
-                                placeholder="Enter your store description"
-                                className="mt-1 w-full p-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800 resize-none focus:ring-2 focus:ring-indigo-500 outline-none"
-                            />
-                        </div>
-
-                        {/* Email & Contact */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                            <div>
-                                <label className="text-gray-700 dark:text-gray-200">Email</label>
-                                <input
-                                    name="email"
-                                    onChange={onChangeHandler}
-                                    value={storeInfo.email}
-                                    type="email"
-                                    placeholder="Enter your store email"
-                                    className="mt-1 w-full p-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800 focus:ring-2 focus:ring-indigo-500 outline-none"
-                                />
-                            </div>
-                            <div>
-                                <label className="text-gray-700 dark:text-gray-200">Contact Number</label>
-
-                                <input
-                                    name="contact"
-                                    onChange={onChangeHandler}
-                                    value={storeInfo.contact}
-                                    type="text"
-                                    placeholder="Enter 10-digit contact number"
-                                    maxLength={10}
-                                    className="mt-1 w-full p-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800 focus:ring-2 focus:ring-indigo-500 outline-none"
-                                />
-
-                                {/* sms Verify Button */}
-                                <button
-                                    type="button"
-                                    onClick={sendOtp}
-                                    disabled={whatsappVerified}
-                                    className="mt-2 text-sm text-blue-600 hover:underline disabled:opacity-50"
-                                >
-                                    Send OTP
-                                </button>
-
-                                {!whatsappVerified && (
-                                    <div className="mt-3 flex gap-2">
-                                        <input
-                                            type="text"
-                                            placeholder="Enter verification code"
-                                            value={enteredCode}
-                                            onChange={(e) => setEnteredCode(e.target.value)}
-                                            className="p-2 border rounded"
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={verifyOtp}
-                                            className="bg-blue-500 text-white px-3 py-1 rounded"
-                                        >
-                                            Verify OTP
-                                        </button>
-                                    </div>
-                                )}
-
-                                {whatsappVerified && (
-                                    <p className="text-green-600 mt-2 text-sm">
-                                        WhatsApp number verified
-                                    </p>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* GST Number */}
-                        <div>
-                            <label className="text-gray-700 dark:text-gray-200">GST Number</label>
-
-                            <input
-                                name="gst"
-                                onChange={onChangeHandler}
-                                value={storeInfo.gst}
-                                type="text"
-                                placeholder="Enter GST number"
-                                maxLength={15}
-                                className="mt-1 w-full p-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800 focus:ring-2 focus:ring-indigo-500 outline-none"
-                            />
-
-                            {/* GST Status */}
-                            {storeInfo.gst.length > 0 && (
-                                <p className={`mt-2 text-sm ${gstValid ? "text-green-600" : "text-red-500"}`}>
-                                    {gstValid
-                                        ? "Valid GST ✅"
-                                        : storeInfo.gst.length < 15
-                                            ? "GST must be 15 characters"
-                                            : "Invalid GST number ❌"}
-                                </p>
-                            )}
-                        </div>
-
-                        {/* Address */}
-                        <div>
-                            <label className="text-gray-700 dark:text-gray-200">Address</label>
-                            <textarea
-                                name="address"
-                                onChange={onChangeHandler}
-                                value={storeInfo.address}
-                                rows={4}
-                                placeholder="Enter your store address"
-                                className="mt-1 w-full p-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800 resize-none focus:ring-2 focus:ring-indigo-500 outline-none"
-                            />
-                        </div>
-
-                        <button
-                            disabled={!gstValid || !whatsappVerified}
-                            className={`w-full py-3 font-semibold rounded-lg transition-all mt-4
-                    ${gstValid
-                                    ? "bg-indigo-600 text-white hover:bg-indigo-700 active:scale-95"
-                                    : "bg-gray-400 text-gray-200 cursor-not-allowed"
-                                }`}
-                        >
-                            Submit
-                        </button>
-                    </form>
-                </div>
-            ) : (
-                <div className="min-h-[80vh] flex flex-col items-center justify-center px-6 space-y-6 text-center">
-                    <div className={`p-8 rounded-2xl shadow-lg max-w-xl w-full
-                        ${status === "approved" ? "bg-green-50 dark:bg-green-900" : ""}
-                        ${status === "pending" ? "bg-yellow-50 dark:bg-yellow-900" : ""}
-                        ${status === "rejected" ? "bg-red-50 dark:bg-red-900" : ""}`}>
-                        {/* Icon */}
-                        <div className="mb-4 flex justify-center">
-                            {status === "approved" && <CheckCircle className="text-green-600 dark:text-green-400" size={48} />}
-                            {status === "pending" && <Clock className="text-yellow-600 dark:text-yellow-400" size={48} />}
-                            {status === "rejected" && <XCircle className="text-red-600 dark:text-red-400" size={48} />}
-                        </div>
-                        <p className="text-lg font-semibold text-gray-700 dark:text-gray-200">{message}</p>
-                        {status === "approved" && (
-                            <p className="mt-3 text-gray-500 dark:text-gray-400">
-                                Redirecting to dashboard in{" "}
-                                <span className="font-semibold">{countdown} seconds</span>
-                            </p>
-                        )}
-                    </div>
-                </div>
+            {/* GST */}
+            <Input name="gst" label="GST" onChange={onChangeHandler} />
+            {storeInfo.gst && (
+              <p className={gstValid ? "text-green-500" : "text-red-500"}>
+                {gstValid ? "Valid GST" : gstError}
+              </p>
             )}
-        </>
-    ) : (<Loading />)
+
+            <Textarea name="address" label="Address" onChange={onChangeHandler} />
+
+            <button
+              disabled={!gstValid || !whatsappVerified}
+              className="w-full bg-indigo-600 text-white py-3 rounded-xl"
+            >
+              Submit
+            </button>
+
+          </form>
+        </div>
+
+      ) : (
+        <div className="text-center">
+          <p className="text-xl">{message}</p>
+        </div>
+      )}
+    </div>
+  )
 }
