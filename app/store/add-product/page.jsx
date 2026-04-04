@@ -327,7 +327,9 @@ export default function StoreAddProduct() {
 
                 {/* Images */}
                 <div>
-                    <p className="mb-3 text-sm text-slate-600">Product Images</p>
+                    <label className="block mb-2 text-sm font-medium text-slate-700">
+                        Product Images
+                    </label>
 
                     <div className="grid grid-cols-4 gap-4">
                         {Object.keys(images).map(key => (
@@ -352,9 +354,11 @@ export default function StoreAddProduct() {
 
                 {/* Barcode */}
                 <div>
-                    <label className="text-sm">Barcode</label>
+                    <label className="block text-sm font-medium text-slate-700">
+                        Barcode (Optional)
+                    </label>
 
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 mt-1">
                         <input
                             type="text"
                             value={productInfo.barcode}
@@ -371,14 +375,14 @@ export default function StoreAddProduct() {
                                     handleBarcodeLookup(productInfo.barcode)
                                 }
                             }}
-                            placeholder="Scan or enter barcode (optional)"
-                            className="flex-1 mt-1 p-3 border rounded-lg"
+                            placeholder="Enter or scan barcode"
+                            className="flex-1 p-3 border rounded-lg"
                         />
 
                         <button
                             type="button"
                             onClick={startBarcodeScan}
-                            className="mt-1 px-4 rounded-lg bg-slate-900 text-white text-sm"
+                            className="px-4 rounded-lg bg-slate-900 text-white text-sm"
                         >
                             📷 Scan
                         </button>
@@ -395,48 +399,129 @@ export default function StoreAddProduct() {
                     )}
                 </div>
 
-                {/* Name */}
-                <input type="text" name="name" value={productInfo.name} onChange={onChangeHandler} placeholder="Product Name" className="w-full p-3 border rounded-lg" required />
+                {/* Product Name */}
+                <div>
+                    <label className="block text-sm font-medium text-slate-700">
+                        Product Name
+                    </label>
+                    <input
+                        type="text"
+                        name="name"
+                        value={productInfo.name}
+                        onChange={onChangeHandler}
+                        placeholder="Enter product name"
+                        className="w-full mt-1 p-3 border rounded-lg"
+                        required
+                    />
+                </div>
 
                 {/* Description */}
-                <textarea name="description" rows={4} value={productInfo.description} onChange={onChangeHandler} placeholder="Description" className="w-full p-3 border rounded-lg" required />
+                <div>
+                    <label className="block text-sm font-medium text-slate-700">
+                        Description
+                    </label>
+                    <textarea
+                        name="description"
+                        rows={4}
+                        value={productInfo.description}
+                        onChange={onChangeHandler}
+                        placeholder="Enter product description"
+                        className="w-full mt-1 p-3 border rounded-lg"
+                        required
+                    />
+                </div>
 
                 {/* Prices */}
                 <div className="grid grid-cols-3 gap-4">
-                    <input type="number" name="mrp" value={productInfo.mrp} onChange={onChangeHandler} placeholder="MRP ₹" className="p-3 border rounded-lg" required />
-                    <input type="number" name="price" value={productInfo.price} onChange={onChangeHandler} placeholder="Offer Price ₹" className="p-3 border rounded-lg" required />
-                    <input type="number" name="quantity" min={0} value={productInfo.quantity} onChange={onChangeHandler} placeholder="Quantity" className="p-3 border rounded-lg" required />
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700">
+                            MRP (₹)
+                        </label>
+                        <input
+                            type="number"
+                            name="mrp"
+                            value={productInfo.mrp}
+                            onChange={onChangeHandler}
+                            placeholder="Enter MRP"
+                            className="w-full mt-1 p-3 border rounded-lg"
+                            required
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700">
+                            Offer Price (₹)
+                        </label>
+                        <input
+                            type="number"
+                            name="price"
+                            value={productInfo.price}
+                            onChange={onChangeHandler}
+                            placeholder="Enter offer price"
+                            className="w-full mt-1 p-3 border rounded-lg"
+                            required
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700">
+                            Quantity
+                        </label>
+                        <input
+                            type="number"
+                            name="quantity"
+                            min={0}
+                            value={productInfo.quantity}
+                            onChange={onChangeHandler}
+                            placeholder="Enter quantity"
+                            className="w-full mt-1 p-3 border rounded-lg"
+                            required
+                        />
+                    </div>
                 </div>
 
                 {/* Category */}
-                <select
-                    className="w-full p-3 border rounded-lg"
-                    value={productInfo.category}
-                    onChange={e => setProductInfo({ ...productInfo, category: e.target.value })}
-                    required
-                >
-                    <option value="">Select category</option>
-                    {categories.map(cat => (
-                        <option key={cat} value={cat}>{cat}</option>
-                    ))}
-                </select>
+                <div>
+                    <label className="block text-sm font-medium text-slate-700">
+                        Category
+                    </label>
 
-                {productInfo.category === "Others" && (
-                    <input
-                        type="text"
-                        placeholder="Enter custom category"
-                        value={customCategory}
-                        onChange={(e) => setCustomCategory(e.target.value)}
-                        className="w-full p-3 border rounded-lg"
+                    <select
+                        className="w-full mt-1 p-3 border rounded-lg"
+                        value={productInfo.category}
+                        onChange={e => setProductInfo({ ...productInfo, category: e.target.value })}
                         required
-                    />
+                    >
+                        <option value="">Select category</option>
+                        {categories.map(cat => (
+                            <option key={cat} value={cat}>{cat}</option>
+                        ))}
+                    </select>
+                </div>
+
+                {/* Custom Category */}
+                {productInfo.category === "Others" && (
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700">
+                            Custom Category
+                        </label>
+                        <input
+                            type="text"
+                            placeholder="Enter custom category"
+                            value={customCategory}
+                            onChange={(e) => setCustomCategory(e.target.value)}
+                            className="w-full mt-1 p-3 border rounded-lg"
+                            required
+                        />
+                    </div>
                 )}
 
+                {/* Submit */}
                 <button
                     disabled={loading}
                     className="w-full bg-slate-900 text-white py-3 rounded-xl"
                 >
-                    Add Product
+                    {loading ? "Adding Product..." : "Add Product"}
                 </button>
 
             </div>

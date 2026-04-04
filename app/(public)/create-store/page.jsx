@@ -248,7 +248,7 @@ export default function CreateStore() {
                                                 )}
                                             </div>
                                             <label className="rounded-xl bg-white dark:bg-zinc-800 px-4 py-2.5 text-sm font-semibold text-gray-900 dark:text-white shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-zinc-600 hover:bg-gray-50 dark:hover:bg-zinc-700 cursor-pointer transition-colors">
-                                                Change Logo
+                                                Store Logo
                                                 <input type="file" accept="image/*" onChange={(e) => setStoreInfo({ ...storeInfo, image: e.target.files[0] })} hidden />
                                             </label>
                                         </div>
