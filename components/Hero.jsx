@@ -1,295 +1,569 @@
 'use client'
 
-import { assets } from '@/assets/assets'
-import { ArrowRightIcon, ChevronRight, ChevronLeft } from 'lucide-react'
-import Image from 'next/image'
-import React, { useEffect, useRef, useState } from 'react'
+import { ArrowRight, ChevronRight, ChevronLeft } from 'lucide-react'
+import React, { useEffect, useRef, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import gsap from 'gsap'
 
+// ─── Slide data ────────────────────────────────────────────────────────────────
 const slides = [
   {
     id: 1,
     tag: 'NEW ARRIVAL',
-    title: 'Future.',
-    subtitle: 'Redefined.',
-    desc: 'Experience next-gen gadgets built for absolute precision and seamless integration.',
-    price: 699,
-    image: assets.product_img4,
-    color: 'from-emerald-500/20 to-cyan-500/20',
-    accent: 'text-emerald-400',
-    bgAccent: 'bg-emerald-500',
+    line1: 'Future.',
+    line2: 'Redefined.',
+    desc: 'Experience next-gen gadgets built for absolute precision and seamless integration into your world.',
+    price: '₹699',
+    accent: '#00d4a1',
+    accentRGB: '0,212,161',
+    gen: '4th Gen',
+    productLabel: 'NEXUS X1',
+    icon: '⬡',
+    screenBg: 'linear-gradient(135deg,#001a15,#003328)',
+    glow: 'radial-gradient(circle, rgba(0,212,161,.55) 0%, transparent 70%)',
   },
   {
     id: 2,
     tag: 'PREMIUM TECH',
-    title: 'Minimal.',
-    subtitle: 'Powerful.',
-    desc: 'Luxury performance meets clean, uncompromising architectural design.',
-    price: 999,
-    image: assets.hero_product_img1,
-    color: 'from-blue-500/20 to-purple-500/20',
-    accent: 'text-blue-400',
-    bgAccent: 'bg-blue-500',
+    line1: 'Minimal.',
+    line2: 'Powerful.',
+    desc: 'Luxury performance meets clean uncompromising architectural design. Zero compromise on perfection.',
+    price: '₹999',
+    accent: '#4f8eff',
+    accentRGB: '79,142,255',
+    gen: '5th Gen',
+    productLabel: 'NEXUS ULTRA',
+    icon: '◈',
+    screenBg: 'linear-gradient(135deg,#000d28,#001852)',
+    glow: 'radial-gradient(circle, rgba(79,142,255,.55) 0%, transparent 70%)',
   },
   {
     id: 3,
     tag: 'SMART ERA',
-    title: 'Smart.',
-    subtitle: 'Evolution.',
-    desc: 'Cognitive technology that anticipates and adapts to your daily lifestyle.',
-    price: 1299,
-    image: assets.hero_product_img2,
-    color: 'from-orange-500/20 to-red-500/20',
-    accent: 'text-orange-400',
-    bgAccent: 'bg-orange-500',
+    line1: 'Smart.',
+    line2: 'Evolution.',
+    desc: 'Cognitive technology that anticipates and adapts seamlessly to your daily rhythm and lifestyle.',
+    price: '₹1299',
+    accent: '#ffb347',
+    accentRGB: '255,179,71',
+    gen: '6th Gen',
+    productLabel: 'NEXUS PRO',
+    icon: '◉',
+    screenBg: 'linear-gradient(135deg,#1a1000,#2d1d00)',
+    glow: 'radial-gradient(circle, rgba(255,179,71,.55) 0%, transparent 70%)',
   },
 ]
 
+const SLIDE_DURATION = 6 // seconds
+
+// ─── Particle Canvas Background ────────────────────────────────────────────────
+function ParticleBg({ accentRGB }) {
+  const canvasRef = useRef(null)
+  const frameRef = useRef(null)
+  const rgbRef = useRef(accentRGB)
+
+  useEffect(() => {
+    rgbRef.current = accentRGB
+  }, [accentRGB])
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    const ctx = canvas.getContext('2d')
+    let W, H
+
+    const resize = () => {
+      W = canvas.width = canvas.offsetWidth
+      H = canvas.height = canvas.offsetHeight
+    }
+    resize()
+    window.addEventListener('resize', resize)
+
+    const pts = Array.from({ length: 60 }, () => ({
+      x: Math.random() * 1400,
+      y: Math.random() * 900,
+      vx: (Math.random() - 0.5) * 0.15,
+      vy: (Math.random() - 0.5) * 0.15,
+      r: Math.random() * 1.2 + 0.3,
+      a: Math.random() * 0.6 + 0.1,
+    }))
+
+    const draw = () => {
+      ctx.clearRect(0, 0, W, H)
+      const [r, g, b] = rgbRef.current.split(',').map(Number)
+      const grd = ctx.createRadialGradient(W * 0.65, H * 0.4, 0, W * 0.65, H * 0.4, W * 0.55)
+      grd.addColorStop(0, `rgba(${r},${g},${b},.12)`)
+      grd.addColorStop(1, 'transparent')
+      ctx.fillStyle = grd
+      ctx.fillRect(0, 0, W, H)
+
+      pts.forEach((p) => {
+        p.x += p.vx; p.y += p.vy
+        if (p.x < 0) p.x = W; if (p.x > W) p.x = 0
+        if (p.y < 0) p.y = H; if (p.y > H) p.y = 0
+        ctx.beginPath()
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2)
+        ctx.fillStyle = `rgba(${r},${g},${b},${p.a * 0.4})`
+        ctx.fill()
+      })
+
+      frameRef.current = requestAnimationFrame(draw)
+    }
+    draw()
+
+    return () => {
+      cancelAnimationFrame(frameRef.current)
+      window.removeEventListener('resize', resize)
+    }
+  }, [])
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className="absolute inset-0 w-full h-full z-0"
+    />
+  )
+}
+
+// ─── Product Card visual ────────────────────────────────────────────────────────
+function ProductCard({ slide, cardRef, onMouseMove, onMouseLeave }) {
+  return (
+    <div
+      ref={cardRef}
+      onMouseMove={onMouseMove}
+      onMouseLeave={onMouseLeave}
+      className="relative w-full"
+      style={{
+        maxWidth: 440,
+        aspectRatio: '1',
+        transformStyle: 'preserve-3d',
+        perspective: '1000px',
+      }}
+    >
+      {/* Glow orb */}
+      <div
+        className="absolute rounded-full transition-all duration-1000 pointer-events-none"
+        style={{
+          width: '70%', height: '70%',
+          top: '15%', left: '15%',
+          background: slide.glow,
+          filter: 'blur(60px)',
+          opacity: 0.45,
+        }}
+      />
+
+      {/* Glass card */}
+      <div
+        className="absolute inset-0 rounded-[2rem]"
+        style={{
+          border: '1px solid rgba(255,255,255,.07)',
+          background: 'linear-gradient(135deg,rgba(255,255,255,.05) 0%,rgba(255,255,255,.01) 100%)',
+          backdropFilter: 'blur(20px)',
+          boxShadow: 'inset 0 1px 0 rgba(255,255,255,.1), 0 40px 80px rgba(0,0,0,.5)',
+        }}
+      >
+        <div
+          className="absolute inset-[1px] rounded-[calc(2rem_-_1px)] pointer-events-none"
+          style={{ background: 'linear-gradient(135deg,rgba(255,255,255,.06) 0%,transparent 60%)' }}
+        />
+      </div>
+
+      {/* Product visual */}
+      <div className="absolute inset-0 flex items-center justify-center p-8">
+        <div
+          className="w-3/4 h-3/4 rounded-[2rem] relative overflow-hidden flex items-center justify-center flex-col gap-2"
+          style={{
+            background: slide.screenBg,
+            border: '2px solid rgba(255,255,255,.15)',
+            boxShadow: '0 0 0 1px rgba(255,255,255,.05), inset 0 1px 0 rgba(255,255,255,.15)',
+          }}
+        >
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{ background: 'linear-gradient(135deg,rgba(255,255,255,.08) 0%,transparent 50%)' }}
+          />
+          <span className="text-5xl leading-none z-10" style={{ color: slide.accent }}>
+            {slide.icon}
+          </span>
+          <span
+            className="text-[.65rem] tracking-[.18em] uppercase z-10"
+            style={{ color: 'rgba(255,255,255,.45)', fontFamily: 'DM Sans, sans-serif' }}
+          >
+            {slide.productLabel}
+          </span>
+        </div>
+      </div>
+
+      {/* Corner badge */}
+      <div
+        className="absolute bottom-6 left-6 right-6 flex items-center justify-between rounded-xl px-4 py-3"
+        style={{
+          background: 'rgba(0,0,0,.3)',
+          backdropFilter: 'blur(12px)',
+          border: '1px solid rgba(255,255,255,.08)',
+        }}
+      >
+        <div>
+          <div className="text-[.68rem] tracking-wider" style={{ color: 'rgba(200,210,240,.45)' }}>
+            Generation
+          </div>
+          <div className="text-base font-medium" style={{ color: '#f0f4ff' }}>
+            {slide.gen}
+          </div>
+        </div>
+        <div
+          className="w-8 h-8 rounded-full flex items-center justify-center cursor-pointer"
+          style={{ background: slide.accent }}
+        >
+          <ArrowRight size={14} color="#000" />
+        </div>
+      </div>
+
+      {/* Rings */}
+      <div
+        className="absolute rounded-full pointer-events-none"
+        style={{ inset: '-5%', border: '1px solid rgba(255,255,255,.04)' }}
+      />
+      <div
+        className="absolute rounded-full pointer-events-none"
+        style={{ inset: '-12.5%', border: '1px solid rgba(255,255,255,.025)' }}
+      />
+    </div>
+  )
+}
+
+// ─── Main Hero Component ────────────────────────────────────────────────────────
 const Hero = () => {
   const router = useRouter()
-  const [index, setIndex] = useState(0)
-  
-  // Using useRef instead of useState prevents React from re-rendering and killing the GSAP timeline
-  const isAnimating = useRef(false) 
-  
+  const [idx, setIdx] = useState(0)
+  const isAnimating = useRef(false)
+
   const containerRef = useRef(null)
   const cardRef = useRef(null)
-  const imageRef = useRef(null)
   const progressRef = useRef(null)
-  
-  const slide = slides[index]
-  const SLIDE_DURATION = 6 // seconds
+  const progressAnimRef = useRef(null)
 
-  const changeSlide = (newIndex) => {
+  // Refs for animated elements
+  const tagRef = useRef(null)
+  const line1Ref = useRef(null)
+  const line2Ref = useRef(null)
+  const descRef = useRef(null)
+  const priceRowRef = useRef(null)
+
+  const slide = slides[idx]
+
+  // ── Progress bar ──────────────────────────────────────────────────────────────
+  const startProgress = useCallback((currentIdx) => {
+    if (progressAnimRef.current) progressAnimRef.current.kill()
+    if (!progressRef.current) return
+    gsap.set(progressRef.current, { scaleX: 0 })
+    progressAnimRef.current = gsap.to(progressRef.current, {
+      scaleX: 1,
+      duration: SLIDE_DURATION,
+      ease: 'none',
+      onComplete: () => {
+        goSlide((currentIdx + 1) % slides.length)
+      },
+    })
+  }, [])
+
+  // ── Slide transition ──────────────────────────────────────────────────────────
+  const goSlide = useCallback((newIdx) => {
     if (isAnimating.current) return
     isAnimating.current = true
+    if (progressAnimRef.current) progressAnimRef.current.kill()
 
-    const ctx = gsap.context(() => {
-      const tl = gsap.timeline({
-        onComplete: () => {
-          setIndex(newIndex)
-          isAnimating.current = false
-        }
-      })
+    const leftEls = [tagRef.current, line1Ref.current, line2Ref.current, descRef.current, priceRowRef.current].filter(Boolean)
 
-      // Animate out current slide
-      tl.to('.anim-elem', {
-        y: -30,
-        opacity: 0,
-        duration: 0.4,
-        stagger: 0.05,
-        ease: 'power2.in'
-      }).to(imageRef.current, {
-        scale: 0.8,
-        opacity: 0,
-        rotation: -5,
-        duration: 0.4,
-        ease: 'power2.in'
-      }, '<')
-    }, containerRef)
-  }
+    const tl = gsap.timeline({
+      onComplete: () => {
+        isAnimating.current = false
+        startProgress(newIdx)
+      },
+    })
 
-  // Entry Animation & Progress Bar
+    tl.to(leftEls, { y: -24, opacity: 0, duration: 0.35, stagger: 0.04, ease: 'power2.in' })
+      .to(cardRef.current, { scale: 0.88, opacity: 0, rotation: -4, duration: 0.35, ease: 'power2.in' }, '<0.05')
+      .call(() => setIdx(newIdx))
+      .fromTo(leftEls, { y: 32, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, stagger: 0.07, ease: 'power3.out' })
+      .fromTo(
+        cardRef.current,
+        { scale: 0.88, opacity: 0, rotation: 4 },
+        { scale: 1, opacity: 1, rotation: 0, duration: 0.75, ease: 'elastic.out(1, 0.6)' },
+        '<0.1'
+      )
+  }, [startProgress])
+
+  // ── Mount animation ───────────────────────────────────────────────────────────
   useEffect(() => {
-    const ctx = gsap.context(() => {
-      const tl = gsap.timeline()
+    const leftEls = [tagRef.current, line1Ref.current, line2Ref.current, descRef.current, priceRowRef.current].filter(Boolean)
 
-      // Animate in new slide elements
-      tl.fromTo('.anim-elem', 
-        { y: 40, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.8, stagger: 0.1, ease: 'power3.out' }
-      ).fromTo(imageRef.current,
-        { scale: 0.8, opacity: 0, rotation: 10 },
-        { scale: 1, opacity: 1, rotation: 0, duration: 1, ease: 'elastic.out(1, 0.5)' },
-        "-=0.6"
-      )
+    gsap.from('#hero-nav', { y: -30, opacity: 0, duration: 0.7, ease: 'power2.out', delay: 0.1 })
+    gsap.from(leftEls, { y: 40, opacity: 0, duration: 0.9, stagger: 0.1, ease: 'power3.out', delay: 0.25 })
+    gsap.from(cardRef.current, { scale: 0.8, opacity: 0, rotation: 8, duration: 1.1, ease: 'elastic.out(1, 0.5)', delay: 0.3 })
+    gsap.from('#hero-bottom', { y: 20, opacity: 0, duration: 0.6, ease: 'power2.out', delay: 0.55 })
 
-      // Floating animation for image
-      gsap.to(imageRef.current, {
-        y: -15,
-        duration: 3,
-        repeat: -1,
-        yoyo: true,
-        ease: 'sine.inOut'
-      })
+    // Floating card
+    gsap.to(cardRef.current, { y: -14, duration: 3.5, repeat: -1, yoyo: true, ease: 'sine.inOut', delay: 1.2 })
 
-      // Progress bar animation triggers the next slide automatically
-      gsap.fromTo(progressRef.current,
-        { scaleX: 0 },
-        { 
-          scaleX: 1, 
-          duration: SLIDE_DURATION, 
-          ease: 'none',
-          onComplete: () => changeSlide((index + 1) % slides.length)
-        }
-      )
-    }, containerRef)
+    startProgress(0)
+    return () => { if (progressAnimRef.current) progressAnimRef.current.kill() }
+  }, []) // eslint-disable-line
 
-    // Cleanup ensures old animations are killed cleanly before new ones start
-    return () => ctx.revert()
-  }, [index]) // Only re-run this effect when the index changes
-
-  // 3D Mouse Tilt Parallax Effect
+  // ── 3D tilt ───────────────────────────────────────────────────────────────────
   const handleMouseMove = (e) => {
-    if (!cardRef.current || !imageRef.current) return
-    
+    if (!cardRef.current) return
     const { left, top, width, height } = cardRef.current.getBoundingClientRect()
-    const x = (e.clientX - left - width / 2) / 15
-    const y = -(e.clientY - top - height / 2) / 15
-
-    // Tilt the card
-    gsap.to(cardRef.current, {
-      rotationY: x,
-      rotationX: y,
-      transformPerspective: 1000,
-      ease: 'power2.out',
-      duration: 0.4
-    })
-    
-    // Parallax the image off the card for 3D depth
-    gsap.to(imageRef.current, {
-      x: x * 2,
-      y: -y * 2,
-      ease: 'power2.out',
-      duration: 0.4
-    })
+    const x = (e.clientX - left - width / 2) / 18
+    const y = -(e.clientY - top - height / 2) / 18
+    gsap.to(cardRef.current, { rotationY: x, rotationX: y, transformPerspective: 1200, ease: 'power2.out', duration: 0.5 })
   }
 
   const handleMouseLeave = () => {
-    gsap.to(cardRef.current, {
-      rotationY: 0,
-      rotationX: 0,
-      ease: 'elastic.out(1, 0.3)',
-      duration: 1
-    })
-    gsap.to(imageRef.current, {
-      x: 0,
-      y: 0,
-      ease: 'elastic.out(1, 0.3)',
-      duration: 1
-    })
+    gsap.to(cardRef.current, { rotationY: 0, rotationX: 0, ease: 'elastic.out(1, 0.3)', duration: 1.2 })
   }
 
+  // ─── Render ──────────────────────────────────────────────────────────────────
   return (
-    <section 
-      ref={containerRef} 
-      className="relative min-h-screen bg-[#050914] text-white overflow-hidden flex flex-col justify-center pt-20 pb-10"
+    <section
+      ref={containerRef}
+      className="relative min-h-screen overflow-hidden flex flex-col"
+      style={{ background: '#03060f', color: '#f0f4ff', fontFamily: "'DM Sans', sans-serif" }}
     >
-      {/* Dynamic Background Glow */}
-      <div 
-        className={`absolute inset-0 bg-gradient-to-br ${slide.color} transition-colors duration-1000 ease-in-out opacity-40`} 
-      />
-      
-      {/* Grid Pattern overlay for tech feel */}
-      <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] mix-blend-overlay" />
+      {/* Particle canvas */}
+      <ParticleBg accentRGB={slide.accentRGB} />
 
-      <div className="relative z-10 w-full max-w-7xl mx-auto px-6 lg:px-12 grid lg:grid-cols-2 gap-12 lg:gap-8 items-center flex-1">
-        
-        {/* LEFT: Content */}
-        <div className="space-y-8 z-20 mt-10 lg:mt-0 order-2 lg:order-1">
-          <div className={`anim-elem inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-xs tracking-[0.2em] font-bold ${slide.accent} backdrop-blur-md shadow-2xl`}>
-            <span className={`w-2 h-2 rounded-full ${slide.bgAccent} animate-pulse`} />
-            {slide.tag}
+      {/* Noise overlay */}
+      <div
+        className="absolute inset-0 z-[1] opacity-[.025] mix-blend-overlay pointer-events-none"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+          backgroundSize: '128px',
+        }}
+      />
+
+      {/* ── Nav ── */}
+      <nav
+        id="hero-nav"
+        className="relative z-50 flex items-center justify-between px-8 md:px-12 py-6"
+      >
+        <div
+          className="text-2xl tracking-widest font-black"
+          style={{ fontFamily: "'Bebas Neue', sans-serif", letterSpacing: '.12em' }}
+        >
+          NEXUS
+        </div>
+        <div className="hidden md:flex gap-8">
+          {['Products', 'Experience', 'Ecosystem'].map((l) => (
+            <a
+              key={l}
+              href="#"
+              className="text-xs tracking-[.12em] transition-colors duration-300"
+              style={{ color: 'rgba(200,210,240,.45)' }}
+              onMouseEnter={(e) => (e.target.style.color = '#f0f4ff')}
+              onMouseLeave={(e) => (e.target.style.color = 'rgba(200,210,240,.45)')}
+            >
+              {l}
+            </a>
+          ))}
+        </div>
+        <button
+          className="text-xs tracking-[.1em] px-5 py-2 rounded-full transition-all duration-300"
+          style={{
+            border: '1px solid rgba(255,255,255,.08)',
+            background: 'rgba(255,255,255,.04)',
+            color: '#f0f4ff',
+            backdropFilter: 'blur(12px)',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'rgba(255,255,255,.08)'
+            e.currentTarget.style.borderColor = 'rgba(255,255,255,.2)'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'rgba(255,255,255,.04)'
+            e.currentTarget.style.borderColor = 'rgba(255,255,255,.08)'
+          }}
+        >
+          Get Early Access
+        </button>
+      </nav>
+
+      {/* ── Main grid ── */}
+      <main className="relative z-10 flex-1 grid grid-cols-1 lg:grid-cols-2 items-center px-8 md:px-12 pb-8 gap-8 lg:gap-0">
+        {/* Left */}
+        <div className="flex flex-col gap-7 max-w-[540px] order-2 lg:order-1 mt-4 lg:mt-0">
+          {/* Tag */}
+          <div
+            ref={tagRef}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full w-fit"
+            style={{
+              border: `1px solid rgba(${slide.accentRGB},.25)`,
+              background: 'rgba(255,255,255,.04)',
+              backdropFilter: 'blur(12px)',
+              transition: 'border-color .6s',
+            }}
+          >
+            <span
+              className="w-[7px] h-[7px] rounded-full animate-pulse"
+              style={{ background: slide.accent, transition: 'background .6s' }}
+            />
+            <span
+              className="text-[.68rem] tracking-[.18em] font-semibold"
+              style={{ color: slide.accent, transition: 'color .6s' }}
+            >
+              {slide.tag}
+            </span>
           </div>
 
-          <h1 className="text-6xl md:text-8xl font-black leading-[0.9] tracking-tighter">
-            <span className="anim-elem block text-white">{slide.title}</span>
-            <span className="anim-elem block text-white/20 mt-2">{slide.subtitle}</span>
-          </h1>
+          {/* Title */}
+          <div style={{ overflow: 'hidden' }}>
+            <span
+              ref={line1Ref}
+              className="block font-black leading-[.92] text-[clamp(4.5rem,9vw,9rem)]"
+              style={{ fontFamily: "'Bebas Neue', sans-serif", color: '#f0f4ff' }}
+            >
+              {slide.line1}
+            </span>
+            <span
+              ref={line2Ref}
+              className="block font-black leading-[.92] text-[clamp(4.5rem,9vw,9rem)]"
+              style={{
+                fontFamily: "'Bebas Neue', sans-serif",
+                WebkitTextStroke: '1px rgba(255,255,255,.2)',
+                color: 'transparent',
+              }}
+            >
+              {slide.line2}
+            </span>
+          </div>
 
-          <p className="anim-elem text-lg md:text-xl text-white/50 max-w-md leading-relaxed font-light">
+          {/* Description */}
+          <p
+            ref={descRef}
+            className="text-[1rem] leading-relaxed font-light max-w-[380px]"
+            style={{ color: 'rgba(200,210,240,.45)' }}
+          >
             {slide.desc}
           </p>
 
-          <div className="anim-elem flex flex-wrap items-center gap-8 pt-4">
-            <div className="flex flex-col">
-              <span className="text-sm text-white/40 uppercase tracking-widest font-semibold mb-1">Starting at</span>
-              <span className={`text-5xl font-light ${slide.accent}`}>
-                ₹{slide.price}
-              </span>
+          {/* Price + CTA */}
+          <div ref={priceRowRef} className="flex flex-wrap items-center gap-8 pt-2">
+            <div>
+              <div
+                className="text-[.68rem] tracking-[.15em] uppercase mb-1"
+                style={{ color: 'rgba(200,210,240,.45)' }}
+              >
+                Starting at
+              </div>
+              <div
+                className="font-black leading-none text-[3.2rem]"
+                style={{ fontFamily: "'Bebas Neue', sans-serif", color: slide.accent, transition: 'color .6s' }}
+              >
+                {slide.price}
+              </div>
             </div>
 
             <button
               onClick={() => router.push('/shop')}
-              className={`group relative overflow-hidden px-8 py-4 rounded-full ${slide.bgAccent} transition-all duration-300 hover:scale-105 hover:shadow-[0_0_40px_-10px_rgba(255,255,255,0.3)] text-white font-semibold flex items-center gap-3`}
+              className="group flex items-center gap-3 px-8 py-4 rounded-full font-medium text-sm tracking-widest uppercase transition-all duration-300 hover:scale-[1.04]"
+              style={{
+                background: slide.accent,
+                color: '#000',
+                transition: 'background .6s, transform .3s',
+              }}
             >
-              <span className="relative z-10 tracking-wide">Explore Device</span>
-              <ArrowRightIcon className="relative z-10 group-hover:translate-x-1 transition-transform" size={18} />
-              <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
+              <span>Explore Device</span>
+              <ArrowRight
+                size={17}
+                className="transition-transform duration-300 group-hover:translate-x-1"
+              />
             </button>
           </div>
         </div>
 
-        {/* RIGHT: 3D Interactive Card */}
-        <div className="relative flex justify-center items-center h-[400px] lg:h-[600px] order-1 lg:order-2 perspective-[1000px]">
-          {/* Animated Glow behind card */}
-          <div className={`absolute w-[300px] h-[300px] md:w-[500px] md:h-[500px] ${slide.bgAccent} blur-[120px] rounded-full opacity-30 transition-colors duration-700`} />
-
-          {/* Glass Card Container (Tilts on mouse move) */}
-          <div
-            ref={cardRef}
+        {/* Right — Card */}
+        <div className="flex justify-center items-center h-[300px] md:h-[500px] lg:h-full order-1 lg:order-2 py-4">
+          <ProductCard
+            slide={slide}
+            cardRef={cardRef}
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
-            className="relative w-full max-w-[350px] md:max-w-[450px] aspect-square rounded-[2.5rem] bg-white/[0.02] border border-white/[0.08] backdrop-blur-2xl flex items-center justify-center p-8 transition-shadow duration-300 hover:shadow-2xl hover:shadow-white/5 group"
-            style={{ transformStyle: 'preserve-3d' }}
-          >
-            {/* Inner Ring */}
-            <div className="absolute inset-4 rounded-[2rem] border border-white/5" />
-            
-            {/* The Image (Floats off the card via JS parallax) */}
-            <Image
-              ref={imageRef}
-              src={slide.image}
-              alt={slide.title}
-              priority
-              className="w-full max-w-[280px] md:max-w-[380px] object-contain drop-shadow-[0_20px_30px_rgba(0,0,0,0.5)]"
-              style={{ transformStyle: 'preserve-3d', transform: 'translateZ(50px)' }}
-            />
-          </div>
+          />
         </div>
-      </div>
+      </main>
 
-      {/* BOTTOM SLIDER CONTROLS */}
-      <div className="relative z-20 max-w-7xl mx-auto w-full px-6 lg:px-12 flex items-center justify-between mt-8 lg:mt-0">
-        
-        {/* Slide Indicators */}
-        <div className="flex gap-4">
-          {slides.map((_, i) => (
-            <button 
-              key={i} 
-              onClick={() => changeSlide(i)}
-              className={`h-1.5 rounded-full transition-all duration-300 ${i === index ? `w-8 ${slide.bgAccent}` : 'w-4 bg-white/20 hover:bg-white/40'}`}
-              aria-label={`Go to slide ${i + 1}`}
+      {/* ── Bottom bar ── */}
+      <div
+        id="hero-bottom"
+        className="relative z-50 flex items-center justify-between px-8 md:px-12 pb-8"
+      >
+        {/* Dots */}
+        <div className="flex gap-2 items-center">
+          {slides.map((s, i) => (
+            <button
+              key={i}
+              onClick={() => goSlide(i)}
+              className="h-[4px] rounded-full transition-all duration-[400ms]"
+              style={{
+                width: i === idx ? 28 : 14,
+                background: i === idx ? slide.accent : 'rgba(255,255,255,.2)',
+              }}
+              aria-label={`Slide ${i + 1}`}
             />
           ))}
         </div>
 
-        {/* Progress Bar & Arrows */}
-        <div className="flex items-center gap-6">
-          <div className="hidden md:block w-48 h-1 bg-white/10 rounded-full overflow-hidden">
-            <div 
+        {/* Right controls */}
+        <div className="flex items-center gap-5">
+          {/* Slide number */}
+          <span
+            className="hidden md:block text-lg tracking-[.1em]"
+            style={{ fontFamily: "'Bebas Neue', sans-serif", color: 'rgba(200,210,240,.45)' }}
+          >
+            0{idx + 1} / 0{slides.length}
+          </span>
+
+          {/* Progress bar */}
+          <div
+            className="hidden md:block w-36 h-[2px] rounded-full overflow-hidden"
+            style={{ background: 'rgba(255,255,255,.1)' }}
+          >
+            <div
               ref={progressRef}
-              className={`h-full ${slide.bgAccent} origin-left`}
+              className="h-full rounded-full origin-left"
+              style={{ background: slide.accent, transform: 'scaleX(0)', transition: 'background .6s' }}
             />
           </div>
 
+          {/* Arrow buttons */}
           <div className="flex gap-2">
-            <button 
-              onClick={() => changeSlide((index - 1 + slides.length) % slides.length)}
-              className="p-3 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 backdrop-blur-md transition-colors"
+            <button
+              onClick={() => goSlide((idx - 1 + slides.length) % slides.length)}
+              className="w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300"
+              style={{
+                border: '1px solid rgba(255,255,255,.08)',
+                background: 'rgba(255,255,255,.04)',
+                backdropFilter: 'blur(12px)',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,.08)'; e.currentTarget.style.transform = 'scale(1.05)' }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,.04)'; e.currentTarget.style.transform = 'scale(1)' }}
             >
-              <ChevronLeft size={20} />
+              <ChevronLeft size={18} />
             </button>
-            <button 
-              onClick={() => changeSlide((index + 1) % slides.length)}
-              className="p-3 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 backdrop-blur-md transition-colors"
+            <button
+              onClick={() => goSlide((idx + 1) % slides.length)}
+              className="w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300"
+              style={{
+                border: '1px solid rgba(255,255,255,.08)',
+                background: 'rgba(255,255,255,.04)',
+                backdropFilter: 'blur(12px)',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,.08)'; e.currentTarget.style.transform = 'scale(1.05)' }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,.04)'; e.currentTarget.style.transform = 'scale(1)' }}
             >
-              <ChevronRight size={20} />
+              <ChevronRight size={18} />
             </button>
           </div>
         </div>
-
       </div>
     </section>
   )
