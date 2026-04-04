@@ -20,8 +20,6 @@ export async function POST(request) {
         const address = formData.get("address")
         const image = formData.get("image")
         const gst = formData.get("gst")
-        const category = formData.get("category")
-        const customCategory = formData.get("customCategory")
 
         const verifiedOtp = await prisma.whatsappOtp.findFirst({
             where: {
@@ -34,20 +32,6 @@ export async function POST(request) {
         if (!verifiedOtp) {
             return NextResponse.json(
                 { error: "WhatsApp not verified" },
-                { status: 400 }
-            )
-        }
-
-        if (!category) {
-            return NextResponse.json(
-                { error: "Category is required" },
-                { status: 400 }
-            )
-        }
-
-        if (category === "Other" && !customCategory) {
-            return NextResponse.json(
-                { error: "Please enter custom category" },
                 { status: 400 }
             )
         }
@@ -134,9 +118,7 @@ export async function POST(request) {
                 contact,
                 address,
                 gst,
-                logo: optimizedImage,
-                category,
-                customCategory: category === "Other" ? customCategory : null
+                logo: optimizedImage
             }
         })
 

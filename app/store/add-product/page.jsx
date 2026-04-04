@@ -39,31 +39,6 @@ export default function StoreAddProduct() {
     const [discount, setDiscount] = useState(0)
     const [barcodeExists, setBarcodeExists] = useState(false)
     const [scanning, setScanning] = useState(false)
-    const [storeCategory, setStoreCategory] = useState("")
-    const [attributes, setAttributes] = useState({})
-
-    useEffect(() => {
-        const fetchStore = async () => {
-            try {
-                const token = await getToken()
-
-                const { data } = await axios.get('/api/store/me', {
-                    headers: { Authorization: `Bearer ${token}` }
-                })
-
-                setStoreCategory(
-                    data.category === "Other"
-                        ? data.customCategory
-                        : data.category
-                )
-
-            } catch (err) {
-                toast.error("Failed to load store info")
-            }
-        }
-
-        fetchStore()
-    }, [])
 
     const onChangeHandler = (e) => {
         const { name, value } = e.target
@@ -299,7 +274,6 @@ export default function StoreAddProduct() {
             formData.append('price', productInfo.price)
             formData.append('quantity', productInfo.quantity)
             formData.append('category', finalCategory)
-            formData.append("attributes", JSON.stringify(attributes))
 
             // ✅ barcode optional
             if (productInfo.barcode) {
@@ -506,123 +480,6 @@ export default function StoreAddProduct() {
                     </div>
                 </div>
 
-                {/* Dynamic Fields based on Store Category */}
-                {storeCategory === "Clothing" && (
-                    <div className="space-y-4">
-
-                        {/* Size */}
-                        <input
-                            type="text"
-                            placeholder="Size (S, M, L...)"
-                            className="p-3 border rounded-lg w-full"
-                            onChange={(e) =>
-                                setAttributes({ ...attributes, size: e.target.value })
-                            }
-                        />
-
-                        {/* Color Picker */}
-                        <div>
-                            <p className="text-sm font-medium text-gray-700 mb-2">
-                                Select Colors
-                            </p>
-
-                            {/* Color Input */}
-                            <div className="flex items-center gap-3">
-                                <input
-                                    type="color"
-                                    className="w-12 h-12 p-1 border rounded-lg cursor-pointer"
-                                    onChange={(e) => {
-                                        const newColor = e.target.value
-
-                                        // prevent duplicates
-                                        if (!attributes.colors?.includes(newColor)) {
-                                            setAttributes({
-                                                ...attributes,
-                                                colors: [...(attributes.colors || []), newColor]
-                                            })
-                                        }
-                                    }}
-                                />
-
-                                <span className="text-sm text-gray-500">
-                                    Pick multiple colors
-                                </span>
-                            </div>
-
-                            {/* Selected Colors Preview */}
-                            <div className="flex flex-wrap gap-2 mt-3">
-                                {attributes.colors?.map((color, index) => (
-                                    <div
-                                        key={index}
-                                        className="flex items-center gap-2 bg-gray-100 px-2 py-1 rounded-full"
-                                    >
-                                        {/* Color circle */}
-                                        <div
-                                            className="w-5 h-5 rounded-full border"
-                                            style={{ backgroundColor: color }}
-                                        />
-
-                                        {/* Remove button */}
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                const updated = attributes.colors.filter((c) => c !== color)
-                                                setAttributes({ ...attributes, colors: updated })
-                                            }}
-                                            className="text-xs text-red-500"
-                                        >
-                                            ✕
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {storeCategory === "Grocery" && (
-                    <div className="grid grid-cols-2 gap-4">
-                        <input
-                            type="text"
-                            placeholder="Weight (e.g. 1kg)"
-                            className="p-3 border rounded-lg"
-                            onChange={(e) =>
-                                setAttributes({ ...attributes, weight: e.target.value })
-                            }
-                        />
-
-                        <input
-                            type="date"
-                            className="p-3 border rounded-lg"
-                            onChange={(e) =>
-                                setAttributes({ ...attributes, expiry: e.target.value })
-                            }
-                        />
-                    </div>
-                )}
-
-                {storeCategory === "Electronics" && (
-                    <div className="grid grid-cols-2 gap-4">
-                        <input
-                            type="text"
-                            placeholder="Brand"
-                            className="p-3 border rounded-lg"
-                            onChange={(e) =>
-                                setAttributes({ ...attributes, brand: e.target.value })
-                            }
-                        />
-
-                        <input
-                            type="text"
-                            placeholder="Warranty (e.g. 1 Year)"
-                            className="p-3 border rounded-lg"
-                            onChange={(e) =>
-                                setAttributes({ ...attributes, warranty: e.target.value })
-                            }
-                        />
-                    </div>
-                )}
-
                 {/* Category */}
                 <div>
                     <label className="block text-sm font-medium text-slate-700">
@@ -658,8 +515,6 @@ export default function StoreAddProduct() {
                         />
                     </div>
                 )}
-
-
 
                 {/* Submit */}
                 <button
