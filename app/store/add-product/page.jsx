@@ -579,17 +579,9 @@ export default function StoreAddProduct() {
                     </label>
 
                     <select
-                        className="w-full mt-2 p-3 border rounded-lg bg-white"
+                        className="w-full mt-1 p-3 border rounded-lg"
                         value={productInfo.category}
-                        onChange={e => {
-                            const value = e.target.value
-
-                            setProductInfo({ ...productInfo, category: value })
-
-                            if (value !== "Others") {
-                                setCustomCategory("")
-                            }
-                        }}
+                        onChange={e => setProductInfo({ ...productInfo, category: e.target.value })}
                         required
                     >
                         <option value="">Select category</option>
@@ -610,7 +602,7 @@ export default function StoreAddProduct() {
                             placeholder="Enter custom category"
                             value={customCategory}
                             onChange={(e) => setCustomCategory(e.target.value)}
-                            className="w-full mt-2 p-3 border rounded-lg"
+                            className="w-full mt-1 p-3 border rounded-lg"
                             required
                         />
                     </div>

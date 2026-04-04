@@ -23,7 +23,7 @@ export default function CreateStore() {
     const [whatsappVerified, setWhatsappVerified] = useState(false)
     const [gstValid, setGstValid] = useState(false)
     const [gstError, setGstError] = useState("")
-    
+
 
     const [storeInfo, setStoreInfo] = useState({
         name: "",
@@ -357,45 +357,73 @@ export default function CreateStore() {
                                     </div>
 
                                     {/* Category Section */}
-                                    <div>
-                                        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                                            Store Category
-                                        </h2>
-                                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                                            Select the category that best represents your store
-                                        </p>
+                                    <div className="space-y-4">
 
-                                        <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
-                                            {["Clothing", "Electronics", "Grocery", "Stationery", "Bakery", "Other"].map((cat) => (
-                                                <button
-                                                    type="button"
-                                                    key={cat}
-                                                    onClick={() => setStoreInfo({ ...storeInfo, category: cat })}
-                                                    className={`p-3 rounded-xl border text-sm font-medium transition-all
-                                                            ${storeInfo.category === cat
-                                                            ? "bg-indigo-600 text-white border-indigo-600"
-                                                            : "bg-gray-50 dark:bg-zinc-800 border-gray-200 dark:border-zinc-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-700"
-                                                        }`}
-                                                >
-                                                    {cat}
-                                                </button>
-                                            ))}
+                                        <div>
+                                            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                                                Store Category
+                                            </h2>
+                                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                                                Select the category that best represents your store
+                                            </p>
                                         </div>
 
-                                        {/* Custom Category */}
+                                        {/* Category Grid */}
+                                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                                            {["Clothing", "Electronics", "Grocery", "Stationery", "Bakery", "Other"].map((cat) => {
+                                                const isActive = storeInfo.category === cat
+
+                                                return (
+                                                    <button
+                                                        type="button"
+                                                        key={cat}
+                                                        onClick={() =>
+                                                            setStoreInfo({
+                                                                ...storeInfo,
+                                                                category: cat,
+                                                                customCategory: cat === "Other" ? storeInfo.customCategory : ""
+                                                            })
+                                                        }
+                                                        className={`
+                                                                    flex items-center justify-center
+                                                                h-14 px-4 rounded-xl border text-sm font-medium
+                                                                transition-all duration-200 ease-in-out
+                                                                shadow-sm
+
+                                                            ${isActive
+                                                                ? "bg-indigo-600 text-white border-indigo-600 scale-[1.02] shadow-md"
+                                                                : "bg-white dark:bg-zinc-800 border-gray-200 dark:border-zinc-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-700 hover:scale-[1.02]"
+                                                            }
+                                                        `}
+                                                    >
+                                                        {cat}
+                                                    </button>
+                                                )
+                                            })}
+                                        </div>
+
+                                        {/* Custom Category Input */}
                                         {storeInfo.category === "Other" && (
-                                            <input
-                                                type="text"
-                                                placeholder="Enter your custom category"
-                                                value={storeInfo.customCategory}
-                                                onChange={(e) =>
-                                                    setStoreInfo({ ...storeInfo, customCategory: e.target.value })
-                                                }
-                                                className="mt-4 w-full p-3 rounded-xl border bg-gray-50 dark:bg-zinc-800"
-                                            />
+                                            <div className="mt-2">
+                                                <input
+                                                    type="text"
+                                                    placeholder="Enter your custom category"
+                                                    value={storeInfo.customCategory}
+                                                    onChange={(e) =>
+                                                        setStoreInfo({
+                                                            ...storeInfo,
+                                                            customCategory: e.target.value
+                                                        })
+                                                    }
+                                                    className="w-full p-3 rounded-xl border 
+                   bg-white dark:bg-zinc-800 
+                   border-gray-200 dark:border-zinc-700
+                   focus:outline-none focus:ring-2 focus:ring-indigo-500
+                   transition"
+                                                />
+                                            </div>
                                         )}
                                     </div>
-
                                     <div className="col-span-full">
                                         <label className={labelClass}>Business Address</label>
                                         <textarea name="address" onChange={onChangeHandler} value={storeInfo.address} rows={3} placeholder="Complete registered business address..." className={`${inputClass} resize-none`} />
