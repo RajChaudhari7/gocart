@@ -31,6 +31,13 @@ export async function POST(request) {
 
     const barcode = formData.get("barcode")?.trim() || null
     const images = formData.getAll("images")
+    let attributes = {}
+
+    try {
+      attributes = JSON.parse(formData.get("attributes") || "{}")
+    } catch {
+      attributes = {}
+    }
 
     if (price > mrp) {
       return NextResponse.json(
@@ -109,6 +116,8 @@ export async function POST(request) {
     )
 
 
+
+
     // ================= CREATE PRODUCT =================
     await prisma.product.create({
       data: {
@@ -120,7 +129,8 @@ export async function POST(request) {
         category,
         images: imagesUrl,
         storeId,
-        barcode
+        barcode,
+        attributes
       }
     })
 
@@ -142,8 +152,6 @@ export async function POST(request) {
   }
 
 }
-
-
 
 // ================= GET SELLER PRODUCTS =================
 export async function GET(request) {
@@ -217,7 +225,10 @@ export async function PUT(request) {
 
     // ✅ Get product + store + email
     const product = await prisma.product.findUnique({
-      where: { id: productId },
+      where: {
+        id: productId,
+        storeId
+      },
       include: {
         store: {
           include: {
@@ -310,7 +321,10 @@ export async function DELETE(request) {
     const { productId } = await request.json()
 
     await prisma.product.delete({
-      where: { id: productId }
+      where: {
+        id: productId,
+        storeId
+      }
     })
 
     return NextResponse.json({

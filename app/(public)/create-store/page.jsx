@@ -23,6 +23,7 @@ export default function CreateStore() {
     const [whatsappVerified, setWhatsappVerified] = useState(false)
     const [gstValid, setGstValid] = useState(false)
     const [gstError, setGstError] = useState("")
+    
 
     const [storeInfo, setStoreInfo] = useState({
         name: "",
@@ -33,7 +34,9 @@ export default function CreateStore() {
         address: "",
         image: "",
         gst: "",
-        isWhatsapp: false
+        isWhatsapp: false,
+        category: "",
+        customCategory: ""
     })
 
     const sendOtp = async () => {
@@ -353,6 +356,46 @@ export default function CreateStore() {
                                         )}
                                     </div>
 
+                                    {/* Category Section */}
+                                    <div>
+                                        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                                            Store Category
+                                        </h2>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                                            Select the category that best represents your store
+                                        </p>
+
+                                        <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                            {["Clothing", "Electronics", "Grocery", "Stationery", "Bakery", "Other"].map((cat) => (
+                                                <button
+                                                    type="button"
+                                                    key={cat}
+                                                    onClick={() => setStoreInfo({ ...storeInfo, category: cat })}
+                                                    className={`p-3 rounded-xl border text-sm font-medium transition-all
+                                                            ${storeInfo.category === cat
+                                                            ? "bg-indigo-600 text-white border-indigo-600"
+                                                            : "bg-gray-50 dark:bg-zinc-800 border-gray-200 dark:border-zinc-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-700"
+                                                        }`}
+                                                >
+                                                    {cat}
+                                                </button>
+                                            ))}
+                                        </div>
+
+                                        {/* Custom Category */}
+                                        {storeInfo.category === "Other" && (
+                                            <input
+                                                type="text"
+                                                placeholder="Enter your custom category"
+                                                value={storeInfo.customCategory}
+                                                onChange={(e) =>
+                                                    setStoreInfo({ ...storeInfo, customCategory: e.target.value })
+                                                }
+                                                className="mt-4 w-full p-3 rounded-xl border bg-gray-50 dark:bg-zinc-800"
+                                            />
+                                        )}
+                                    </div>
+
                                     <div className="col-span-full">
                                         <label className={labelClass}>Business Address</label>
                                         <textarea name="address" onChange={onChangeHandler} value={storeInfo.address} rows={3} placeholder="Complete registered business address..." className={`${inputClass} resize-none`} />
@@ -369,7 +412,12 @@ export default function CreateStore() {
                                 </span>
                             )}
                             <button
-                                disabled={!gstValid || !whatsappVerified}
+                                disabled={
+                                    !gstValid ||
+                                    !whatsappVerified ||
+                                    !storeInfo.category ||
+                                    (storeInfo.category === "Other" && !storeInfo.customCategory)
+                                }
                                 className={`w-full sm:w-auto px-8 py-3.5 text-sm font-semibold rounded-xl transition-all duration-300
                                     ${gstValid && whatsappVerified
                                         ? "bg-indigo-600 text-white hover:bg-indigo-500 shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-0"

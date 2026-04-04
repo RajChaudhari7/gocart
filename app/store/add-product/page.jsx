@@ -26,9 +26,9 @@ export default function StoreAddProduct() {
     const [productInfo, setProductInfo] = useState({
         name: "",
         description: "",
-        mrp,
-        price,
-        quantity,
+        mrp: 0,
+        price: 0,
+        quantity: 0,
         category: "",
         barcode: "",
     })
@@ -39,6 +39,31 @@ export default function StoreAddProduct() {
     const [discount, setDiscount] = useState(0)
     const [barcodeExists, setBarcodeExists] = useState(false)
     const [scanning, setScanning] = useState(false)
+    const [storeCategory, setStoreCategory] = useState("")
+    const [attributes, setAttributes] = useState({})
+
+    useEffect(() => {
+        const fetchStore = async () => {
+            try {
+                const token = await getToken()
+
+                const { data } = await axios.get('/api/store/me', {
+                    headers: { Authorization: `Bearer ${token}` }
+                })
+
+                setStoreCategory(
+                    data.category === "Other"
+                        ? data.customCategory
+                        : data.category
+                )
+
+            } catch (err) {
+                toast.error("Failed to load store info")
+            }
+        }
+
+        fetchStore()
+    }, [])
 
     const onChangeHandler = (e) => {
         const { name, value } = e.target
@@ -274,6 +299,7 @@ export default function StoreAddProduct() {
             formData.append('price', productInfo.price)
             formData.append('quantity', productInfo.quantity)
             formData.append('category', finalCategory)
+            formData.append("attributes", JSON.stringify(attributes))
 
             // ✅ barcode optional
             if (productInfo.barcode) {
@@ -480,6 +506,72 @@ export default function StoreAddProduct() {
                     </div>
                 </div>
 
+                {/* Dynamic Fields based on Store Category */}
+                {storeCategory === "Clothing" && (
+                    <div className="grid grid-cols-2 gap-4">
+                        <input
+                            type="text"
+                            placeholder="Size (S, M, L...)"
+                            className="p-3 border rounded-lg"
+                            onChange={(e) =>
+                                setAttributes({ ...attributes, size: e.target.value })
+                            }
+                        />
+
+                        <input
+                            type="text"
+                            placeholder="Color"
+                            className="p-3 border rounded-lg"
+                            onChange={(e) =>
+                                setAttributes({ ...attributes, color: e.target.value })
+                            }
+                        />
+                    </div>
+                )}
+
+                {storeCategory === "Grocery" && (
+                    <div className="grid grid-cols-2 gap-4">
+                        <input
+                            type="text"
+                            placeholder="Weight (e.g. 1kg)"
+                            className="p-3 border rounded-lg"
+                            onChange={(e) =>
+                                setAttributes({ ...attributes, weight: e.target.value })
+                            }
+                        />
+
+                        <input
+                            type="date"
+                            className="p-3 border rounded-lg"
+                            onChange={(e) =>
+                                setAttributes({ ...attributes, expiry: e.target.value })
+                            }
+                        />
+                    </div>
+                )}
+
+                {storeCategory === "Electronics" && (
+                    <div className="grid grid-cols-2 gap-4">
+                        <input
+                            type="text"
+                            placeholder="Brand"
+                            className="p-3 border rounded-lg"
+                            onChange={(e) =>
+                                setAttributes({ ...attributes, brand: e.target.value })
+                            }
+                        />
+
+                        <input
+                            type="text"
+                            placeholder="Warranty (e.g. 1 Year)"
+                            className="p-3 border rounded-lg"
+                            onChange={(e) =>
+                                setAttributes({ ...attributes, warranty: e.target.value })
+                            }
+                        />
+                    </div>
+                )}
+
                 {/* Category */}
                 <div>
                     <label className="block text-sm font-medium text-slate-700">
@@ -515,6 +607,8 @@ export default function StoreAddProduct() {
                         />
                     </div>
                 )}
+
+
 
                 {/* Submit */}
                 <button
