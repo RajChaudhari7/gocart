@@ -507,78 +507,78 @@ export default function StoreAddProduct() {
                 </div>
 
                 {/* Dynamic Fields based on Store Category */}
-               {storeCategory === "Clothing" && (
-    <div className="space-y-4">
+                {storeCategory === "Clothing" && (
+                    <div className="space-y-4">
 
-        {/* Size */}
-        <input
-            type="text"
-            placeholder="Size (S, M, L...)"
-            className="p-3 border rounded-lg w-full"
-            onChange={(e) =>
-                setAttributes({ ...attributes, size: e.target.value })
-            }
-        />
-
-        {/* Color Picker */}
-        <div>
-            <p className="text-sm font-medium text-gray-700 mb-2">
-                Select Colors
-            </p>
-
-            {/* Color Input */}
-            <div className="flex items-center gap-3">
-                <input
-                    type="color"
-                    className="w-12 h-12 p-1 border rounded-lg cursor-pointer"
-                    onChange={(e) => {
-                        const newColor = e.target.value
-
-                        // prevent duplicates
-                        if (!attributes.colors?.includes(newColor)) {
-                            setAttributes({
-                                ...attributes,
-                                colors: [...(attributes.colors || []), newColor]
-                            })
-                        }
-                    }}
-                />
-
-                <span className="text-sm text-gray-500">
-                    Pick multiple colors
-                </span>
-            </div>
-
-            {/* Selected Colors Preview */}
-            <div className="flex flex-wrap gap-2 mt-3">
-                {attributes.colors?.map((color, index) => (
-                    <div
-                        key={index}
-                        className="flex items-center gap-2 bg-gray-100 px-2 py-1 rounded-full"
-                    >
-                        {/* Color circle */}
-                        <div
-                            className="w-5 h-5 rounded-full border"
-                            style={{ backgroundColor: color }}
+                        {/* Size */}
+                        <input
+                            type="text"
+                            placeholder="Size (S, M, L...)"
+                            className="p-3 border rounded-lg w-full"
+                            onChange={(e) =>
+                                setAttributes({ ...attributes, size: e.target.value })
+                            }
                         />
 
-                        {/* Remove button */}
-                        <button
-                            type="button"
-                            onClick={() => {
-                                const updated = attributes.colors.filter((c) => c !== color)
-                                setAttributes({ ...attributes, colors: updated })
-                            }}
-                            className="text-xs text-red-500"
-                        >
-                            ✕
-                        </button>
+                        {/* Color Picker */}
+                        <div>
+                            <p className="text-sm font-medium text-gray-700 mb-2">
+                                Select Colors
+                            </p>
+
+                            {/* Color Input */}
+                            <div className="flex items-center gap-3">
+                                <input
+                                    type="color"
+                                    className="w-12 h-12 p-1 border rounded-lg cursor-pointer"
+                                    onChange={(e) => {
+                                        const newColor = e.target.value
+
+                                        // prevent duplicates
+                                        if (!attributes.colors?.includes(newColor)) {
+                                            setAttributes({
+                                                ...attributes,
+                                                colors: [...(attributes.colors || []), newColor]
+                                            })
+                                        }
+                                    }}
+                                />
+
+                                <span className="text-sm text-gray-500">
+                                    Pick multiple colors
+                                </span>
+                            </div>
+
+                            {/* Selected Colors Preview */}
+                            <div className="flex flex-wrap gap-2 mt-3">
+                                {attributes.colors?.map((color, index) => (
+                                    <div
+                                        key={index}
+                                        className="flex items-center gap-2 bg-gray-100 px-2 py-1 rounded-full"
+                                    >
+                                        {/* Color circle */}
+                                        <div
+                                            className="w-5 h-5 rounded-full border"
+                                            style={{ backgroundColor: color }}
+                                        />
+
+                                        {/* Remove button */}
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const updated = attributes.colors.filter((c) => c !== color)
+                                                setAttributes({ ...attributes, colors: updated })
+                                            }}
+                                            className="text-xs text-red-500"
+                                        >
+                                            ✕
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
                     </div>
-                ))}
-            </div>
-        </div>
-    </div>
-)}
+                )}
 
                 {storeCategory === "Grocery" && (
                     <div className="grid grid-cols-2 gap-4">
