@@ -357,7 +357,7 @@ export default function CreateStore() {
                                     </div>
 
                                     {/* Category Section */}
-                                    <div className="space-y-4">
+                                    <div className="space-y-5">
 
                                         <div>
                                             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -369,7 +369,7 @@ export default function CreateStore() {
                                         </div>
 
                                         {/* Category Grid */}
-                                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                                             {["Clothing", "Electronics", "Grocery", "Stationery", "Bakery", "Other"].map((cat) => {
                                                 const isActive = storeInfo.category === cat
 
@@ -385,43 +385,41 @@ export default function CreateStore() {
                                                             })
                                                         }
                                                         className={`
-                                                                    flex items-center justify-center
-                                                                h-14 px-4 rounded-xl border text-sm font-medium
-                                                                transition-all duration-200 ease-in-out
-                                                                shadow-sm
+                        flex items-center justify-center text-center
+                        min-h-[52px] px-3 py-2
+                        rounded-xl border text-sm font-medium
+                        transition-all duration-200
 
-                                                            ${isActive
-                                                                ? "bg-indigo-600 text-white border-indigo-600 scale-[1.02] shadow-md"
-                                                                : "bg-white dark:bg-zinc-800 border-gray-200 dark:border-zinc-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-700 hover:scale-[1.02]"
+                        ${isActive
+                                                                ? "bg-indigo-600 text-white border-indigo-600 shadow-md"
+                                                                : "bg-white dark:bg-zinc-800 border-gray-200 dark:border-zinc-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-700"
                                                             }
-                                                        `}
+                    `}
                                                     >
-                                                        {cat}
+                                                        <span className="truncate">{cat}</span>
                                                     </button>
                                                 )
                                             })}
                                         </div>
 
-                                        {/* Custom Category Input */}
+                                        {/* Custom Category */}
                                         {storeInfo.category === "Other" && (
-                                            <div className="mt-2">
-                                                <input
-                                                    type="text"
-                                                    placeholder="Enter your custom category"
-                                                    value={storeInfo.customCategory}
-                                                    onChange={(e) =>
-                                                        setStoreInfo({
-                                                            ...storeInfo,
-                                                            customCategory: e.target.value
-                                                        })
-                                                    }
-                                                    className="w-full p-3 rounded-xl border 
-                   bg-white dark:bg-zinc-800 
-                   border-gray-200 dark:border-zinc-700
-                   focus:outline-none focus:ring-2 focus:ring-indigo-500
-                   transition"
-                                                />
-                                            </div>
+                                            <input
+                                                type="text"
+                                                placeholder="Enter your custom category"
+                                                value={storeInfo.customCategory}
+                                                onChange={(e) =>
+                                                    setStoreInfo({
+                                                        ...storeInfo,
+                                                        customCategory: e.target.value
+                                                    })
+                                                }
+                                                className="w-full p-3 rounded-xl border 
+            bg-white dark:bg-zinc-800 
+            border-gray-200 dark:border-zinc-700
+            focus:outline-none focus:ring-2 focus:ring-indigo-500
+            transition"
+                                            />
                                         )}
                                     </div>
                                     <div className="col-span-full">
