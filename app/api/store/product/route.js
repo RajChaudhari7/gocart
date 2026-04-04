@@ -3,343 +3,287 @@ import prisma from "@/lib/prisma";
 import { authSeller } from "@/middlewares/authSeller";
 import { getAuth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
-import { sendEmail } from "@/lib/sendEmail"
+import { sendEmail } from "@/lib/sendEmail";
 
 const LOW_STOCK_LIMIT = 10;
 
-
 // ================= ADD PRODUCT =================
 export async function POST(request) {
-
   try {
-
-    const { userId } = getAuth(request)
-    const storeId = await authSeller(userId)
+    const { userId } = getAuth(request);
+    const storeId = await authSeller(userId);
 
     if (!storeId) {
-      return NextResponse.json({ error: "Not authorized" }, { status: 401 })
+      return NextResponse.json({ error: "Not authorized" }, { status: 401 });
     }
 
-    const formData = await request.formData()
+    const formData = await request.formData();
 
-    const name = formData.get("name")
-    const description = formData.get("description")
-    const mrp = Number(formData.get("mrp"))
-    const price = Number(formData.get("price"))
-    const quantity = Math.max(0, Number(formData.get("quantity")) || 0)
-    const category = formData.get("category")
+    const name = formData.get("name");
+    const description = formData.get("description");
+    const category = formData.get("category");
+    const barcode = formData.get("barcode")?.trim() || null;
+    const images = formData.getAll("images");
 
-    const barcode = formData.get("barcode")?.trim() || null
-    const images = formData.getAll("images")
-    let attributes = {}
+    let parsedVariants = [];
 
     try {
-      attributes = JSON.parse(formData.get("attributes") || "{}")
+      parsedVariants = JSON.parse(formData.get("variants") || "[]");
     } catch {
-      attributes = {}
+      parsedVariants = [];
     }
 
-    if (price > mrp) {
-      return NextResponse.json(
-        { error: "Price cannot be greater than MRP" },
-        { status: 400 }
-      )
-    }
-
-
-    // ================= BARCODE LOGIC =================
-    if (barcode) {
-
-      const existingProduct = await prisma.product.findFirst({
-        where: {
-          barcode,
-          storeId
-        }
-      })
-
-      if (existingProduct) {
-
-        await prisma.product.update({
-          where: { id: existingProduct.id },
-          data: {
-            quantity: { increment: quantity > 0 ? quantity : 1 }
-          }
-        })
-
-        return NextResponse.json({
-          message: "Product exists. Quantity increased 📦",
-          mode: "INCREMENT"
-        })
-      }
-
-    }
-
-
-    // ================= NEW PRODUCT VALIDATION =================
-    if (
-      !name ||
-      !description ||
-      mrp <= 0 ||
-      price <= 0 ||
-      !category ||
-      images.length === 0
-    ) {
+    // ✅ VALIDATION
+    if (!name || !description || !category || images.length === 0) {
       return NextResponse.json(
         { error: "Missing product details" },
         { status: 400 }
-      )
+      );
     }
 
+    if (!parsedVariants.length) {
+      return NextResponse.json(
+        { error: "At least one variant required" },
+        { status: 400 }
+      );
+    }
+
+    // ================= BARCODE LOGIC =================
+    if (barcode) {
+      const existingProduct = await prisma.product.findFirst({
+        where: { barcode, storeId },
+        include: { variants: true },
+      });
+
+      if (existingProduct) {
+        // Increase stock of ALL variants
+        await prisma.variant.updateMany({
+          where: { productId: existingProduct.id },
+          data: { quantity: { increment: 1 } },
+        });
+
+        return NextResponse.json({
+          message: "Product exists. Stock increased 📦",
+          mode: "INCREMENT",
+        });
+      }
+    }
 
     // ================= IMAGE UPLOAD =================
     const imagesUrl = await Promise.all(
       images.map(async (image) => {
-
-        const buffer = Buffer.from(await image.arrayBuffer())
+        const buffer = Buffer.from(await image.arrayBuffer());
 
         const upload = await imagekit.upload({
           file: buffer,
           fileName: image.name,
-          folder: "products"
-        })
+          folder: "products",
+        });
 
         return imagekit.url({
           path: upload.filePath,
           transformation: [
             { quality: "auto" },
             { format: "webp" },
-            { width: "1024" }
-          ]
-        })
-
+            { width: "1024" },
+          ],
+        });
       })
-    )
+    );
 
-
-
-
-    // ================= CREATE PRODUCT =================
+    // ================= CREATE PRODUCT + VARIANTS =================
     await prisma.product.create({
       data: {
         name,
         description,
-        mrp,
-        price,
-        quantity: quantity > 0 ? quantity : 1,
         category,
         images: imagesUrl,
         storeId,
         barcode,
-        attributes
-      }
-    })
 
+        variants: {
+          create: parsedVariants.map((v) => ({
+            size: v.size || null,
+            color: v.color || null,
+            weight: v.weight || null,
+            mrp: Number(v.mrp),
+            price: Number(v.price),
+            quantity: Number(v.quantity),
+          })),
+        },
+      },
+    });
 
     return NextResponse.json({
-      message: "New product added successfully 🎉",
-      mode: "CREATE"
-    })
-
+      message: "Product added successfully 🎉",
+      mode: "CREATE",
+    });
   } catch (error) {
-
-    console.error(error)
-
+    console.error(error);
     return NextResponse.json(
       { error: error.message },
       { status: 400 }
-    )
-
+    );
   }
-
 }
 
-// ================= GET SELLER PRODUCTS =================
+// ================= GET PRODUCTS =================
 export async function GET(request) {
-
   try {
-
-    const { userId } = getAuth(request)
-    const storeId = await authSeller(userId)
+    const { userId } = getAuth(request);
+    const storeId = await authSeller(userId);
 
     if (!storeId) {
-      return NextResponse.json({ error: "Not authorized" }, { status: 401 })
+      return NextResponse.json({ error: "Not authorized" }, { status: 401 });
     }
 
     const products = await prisma.product.findMany({
       where: { storeId },
       include: {
+        variants: true,
         store: {
-          select: {
-            isActive: true
-          }
-        }
+          select: { isActive: true },
+        },
       },
-      orderBy: { createdAt: "desc" }
-    })
+      orderBy: { createdAt: "desc" },
+    });
 
+    const formattedProducts = products.map((product) => {
+      const totalQty = product.variants.reduce(
+        (sum, v) => sum + v.quantity,
+        0
+      );
 
-    const formattedProducts = products.map((product) => ({
-      ...product,
-      lowStock:
-        product.quantity > 0 &&
-        product.quantity < LOW_STOCK_LIMIT,
-      isOutOfStock: product.quantity <= 0
-    }))
+      return {
+        ...product,
+        totalQuantity: totalQty,
+        lowStock: totalQty > 0 && totalQty < LOW_STOCK_LIMIT,
+        isOutOfStock: totalQty <= 0,
+      };
+    });
 
-
-    return NextResponse.json({ products: formattedProducts })
-
+    return NextResponse.json({ products: formattedProducts });
   } catch (error) {
-
-    console.error(error)
-
+    console.error(error);
     return NextResponse.json(
       { error: error.message },
       { status: 400 }
-    )
-
+    );
   }
-
 }
 
-
-
-// ================= UPDATE PRODUCT =================
+// ================= UPDATE VARIANT =================
 export async function PUT(request) {
   try {
-    const { userId } = getAuth(request)
-    const storeId = await authSeller(userId)
+    const { userId } = getAuth(request);
+    const storeId = await authSeller(userId);
 
     if (!storeId) {
-      return NextResponse.json({ error: "Not authorized" }, { status: 401 })
+      return NextResponse.json({ error: "Not authorized" }, { status: 401 });
     }
 
-    const { productId, price, quantity } = await request.json()
+    const { variantId, price, quantity } = await request.json();
 
-    if (!productId || price <= 0 || quantity < 0) {
+    if (!variantId || price <= 0 || quantity < 0) {
       return NextResponse.json(
         { error: "Invalid values" },
         { status: 400 }
-      )
+      );
     }
 
-    // ✅ Get product + store + email
-    const product = await prisma.product.findUnique({
-      where: {
-        id: productId,
-        storeId
-      },
+    const variant = await prisma.variant.findUnique({
+      where: { id: variantId },
       include: {
-        store: {
+        product: {
           include: {
-            user: true
-          }
-        }
-      }
-    })
+            store: {
+              include: { user: true },
+            },
+          },
+        },
+      },
+    });
 
-    if (!product) {
-      return NextResponse.json({ error: "Product not found" }, { status: 404 })
+    if (!variant || variant.product.storeId !== storeId) {
+      return NextResponse.json(
+        { error: "Variant not found" },
+        { status: 404 }
+      );
     }
 
-    const oldQty = product.quantity
+    const oldQty = variant.quantity;
 
-    // ✅ Update product
-    await prisma.product.update({
-      where: { id: productId },
-      data: { price, quantity }
-    })
+    await prisma.variant.update({
+      where: { id: variantId },
+      data: { price, quantity },
+    });
 
-    // ================= EMAIL LOGIC =================
+    // ================= EMAIL ALERT =================
     const isLowStock =
-      quantity > 0 && quantity <= LOW_STOCK_LIMIT && oldQty > LOW_STOCK_LIMIT
+      quantity > 0 &&
+      quantity <= LOW_STOCK_LIMIT &&
+      oldQty > LOW_STOCK_LIMIT;
 
-    const isOutOfStock =
-      quantity === 0 && oldQty !== 0
+    const isOutOfStock = quantity === 0 && oldQty !== 0;
 
     const STOCK_EMAIL = (productName, quantity) => `
-  <div style="font-family: Arial; padding:20px;">
-    <h2 style="color:#dc2626;">Stock Alert 🚨</h2>
-
-    <p><b>Product:</b> ${productName}</p>
-    <p><b>Current Stock:</b> ${quantity}</p>
-
-    ${quantity === 0
-        ? `<p style="color:red; font-weight:bold;">❌ Out of Stock</p>`
-        : `<p style="color:orange; font-weight:bold;">⚠️ Low Stock</p>`
+      <div style="font-family: Arial; padding:20px;">
+        <h2 style="color:#dc2626;">Stock Alert 🚨</h2>
+        <p><b>Product:</b> ${productName}</p>
+        <p><b>Current Stock:</b> ${quantity}</p>
+        ${quantity === 0
+        ? `<p style="color:red;">❌ Out of Stock</p>`
+        : `<p style="color:orange;">⚠️ Low Stock</p>`
       }
-
-    <p style="margin-top:15px;">
-      👉 Please <b>restock this product</b> immediately.
-    </p>
-
-    <hr/>
-    <p style="font-size:12px; color:gray;">
-      This is an automated notification from your store.
-    </p>
-  </div>
-`
+      </div>
+    `;
 
     if (isLowStock || isOutOfStock) {
       await sendEmail({
-        to: product.store.user.email,
-        type: "stock",
-        subject: `⚠️ Stock Alert - ${product.name}`,
-        html: STOCK_EMAIL(product.name, quantity)
-      })
+        to: variant.product.store.user.email,
+        subject: `⚠️ Stock Alert - ${variant.product.name}`,
+        html: STOCK_EMAIL(variant.product.name, quantity),
+      });
     }
 
     return NextResponse.json({
-      message: "Product updated successfully",
+      message: "Variant updated successfully",
+      lowStock: quantity > 0 && quantity < LOW_STOCK_LIMIT,
       isOutOfStock: quantity <= 0,
-      lowStock: quantity > 0 && quantity < LOW_STOCK_LIMIT
-    })
-
+    });
   } catch (error) {
-    console.error(error)
+    console.error(error);
     return NextResponse.json(
       { error: error.message },
       { status: 400 }
-    )
+    );
   }
 }
 
-
-
 // ================= DELETE PRODUCT =================
 export async function DELETE(request) {
-
   try {
-
-    const { userId } = getAuth(request)
-    const storeId = await authSeller(userId)
+    const { userId } = getAuth(request);
+    const storeId = await authSeller(userId);
 
     if (!storeId) {
-      return NextResponse.json({ error: "Not authorized" }, { status: 401 })
+      return NextResponse.json({ error: "Not authorized" }, { status: 401 });
     }
 
-    const { productId } = await request.json()
+    const { productId } = await request.json();
 
     await prisma.product.delete({
-      where: {
-        id: productId,
-        storeId
-      }
-    })
+      where: { id: productId, storeId },
+    });
 
     return NextResponse.json({
-      message: "Product deleted successfully"
-    })
-
+      message: "Product deleted successfully",
+    });
   } catch (error) {
-
-    console.error(error)
-
+    console.error(error);
     return NextResponse.json(
       { error: error.message },
       { status: 400 }
-    )
-
+    );
   }
-
 }
