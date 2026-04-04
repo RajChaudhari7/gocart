@@ -50,31 +50,15 @@ export async function GET(request) {
         status: true,
         orderItems: {
           select: {
-            variantId: true,
+            productId: true,
             quantity: true,
-            price: true,
-            variant: {
-              select: {
-                id: true,
-                size: true,
-                color: true,
-                weight: true,
-                product: {
-                  select: {
-                    id: true,
-                    name: true,
-                    images: true,
-                    category: true
-                  }
-                }
-              }
-            }
+            price: true
           }
         }
       }
     });
 
-    /* ---------- FILTERED ORDERS ---------- */
+    /* ---------- FILTERED ORDERS (YEAR + MONTH) ---------- */
     const filteredOrders = orders.filter((order) => {
       const istDate = new Date(
         new Date(order.createdAt).toLocaleString("en-US", {
@@ -95,12 +79,16 @@ export async function GET(request) {
     /* ---------- PRODUCTS ---------- */
     const products = await prisma.product.findMany({
       where: { storeId },
-      include: {
-        variants: true
-      }
+      select: { id: true, name: true, category: true, images: true }
     });
 
-    /* ---------- STORE ---------- */
+    /* ---------- RATINGS ---------- */
+    const ratings = await prisma.rating.findMany({
+      where: { productId: { in: products.map((p) => p.id) } },
+      include: { user: true, product: true }
+    });
+
+    /* ---------- STORE INFO (UPDATED) ---------- */
     const store = await prisma.store.findUnique({
       where: { id: storeId },
       select: {
@@ -111,28 +99,21 @@ export async function GET(request) {
     });
 
     /* ---------- TOP PRODUCTS ---------- */
-    const productSales = {};
+    const topProducts = products
+      .map((p) => ({
+        ...p,
+        sold: orders.reduce((acc, order) => {
+          const items = order.orderItems.filter(
+            (oi) => oi.productId === p.id
+          );
 
-    orders.forEach((order) => {
-      order.orderItems.forEach((item) => {
-        const product = item.variant.product;
-
-        if (!productSales[product.id]) {
-          productSales[product.id] = {
-            ...product,
-            sold: 0
-          };
-        }
-
-        productSales[product.id].sold += item.quantity;
-      });
-    });
-
-    const topProducts = Object.values(productSales)
+          return acc + items.reduce((sum, i) => sum + i.quantity, 0);
+        }, 0)
+      }))
       .sort((a, b) => b.sold - a.sold)
       .slice(0, 5);
 
-    /* ---------- CHART DATA ---------- */
+    /* ---------- CHART DATA (FULL YEAR) ---------- */
     const months = getAll12Months(selectedYear);
 
     orders.forEach((order) => {
@@ -161,18 +142,40 @@ export async function GET(request) {
       }
     });
 
-    /* ---------- KPI ---------- */
-    let returnedProducts = 0;
-    let returnedAmount = 0;
+    const earningsChart = months.map((m) => ({
+      name: m.name,
+      value: Math.round(m.earnings)
+    }));
+
+    const ordersChart = months.map((m) => ({
+      name: m.name,
+      value: m.orders
+    }));
+
+    const canceledChart = months.map((m) => ({
+      name: m.name,
+      value: m.canceled
+    }));
+
+    const returnedChart = months.map((m) => ({
+      name: m.name,
+      value: m.returned
+    }));
+
+
+    /* ---------- KPI CALCULATIONS (FILTERED) ---------- */
+    let filteredReturnedProducts = 0;
+    let filteredReturnedAmount = 0;
     let cancelledAmount = 0;
 
     filteredOrders.forEach((order) => {
       if (order.status === "RETURNED") {
-        returnedProducts += order.orderItems.reduce(
+        filteredReturnedProducts += order.orderItems.reduce(
           (acc, item) => acc + item.quantity,
           0
         );
-        returnedAmount += order.total;
+
+        filteredReturnedAmount += order.total;
       }
 
       if (order.status === "CANCELLED") {
@@ -180,69 +183,118 @@ export async function GET(request) {
       }
     });
 
+    /* ✅ FIXED EARNINGS */
     const totalEarnings = filteredOrders
       .filter(
-        (o) => o.status !== "CANCELLED" && o.status !== "RETURNED"
+        (order) =>
+          order.status !== "CANCELLED" &&
+          order.status !== "RETURNED"
       )
-      .reduce((acc, o) => acc + o.total, 0);
+      .reduce((acc, order) => acc + order.total, 0);
 
-    /* ---------- MONTHLY DETAILS ---------- */
-    const cancelledDetails = [];
-    const returnedDetails = [];
+    /* ---------- MONTHLY REPORT ---------- */
 
-    filteredOrders.forEach((order) => {
-      order.orderItems.forEach((item) => {
-        const productName = item.variant.product.name;
+    // ONLY for selected month (IMPORTANT)
+    const monthlyOrders = filteredOrders;
 
-        if (order.status === "CANCELLED") {
-          cancelledDetails.push({
-            productName,
+    /* ---------- TOP PRODUCTS (MONTH) ---------- */
+    const monthlyTopProducts = products
+      .map((p) => ({
+        ...p,
+        sold: monthlyOrders.reduce((acc, order) => {
+          if (order.status === "CANCELLED") return acc;
+
+          const item = order.orderItems.find(
+            (oi) => oi.productId === p.id
+          );
+
+          return acc + (item ? item.quantity : 0);
+        }, 0)
+      }))
+      .sort((a, b) => b.sold - a.sold)
+      .slice(0, 5);
+
+    /* ---------- DELIVERED ORDERS ---------- */
+    const deliveredOrders = monthlyOrders.filter(
+      (order) => order.status === "DELIVERED"
+    ).length;
+
+    /* ---------- CANCELLED DETAILS ---------- */
+    const cancelledOrdersDetails = [];
+
+    monthlyOrders.forEach((order) => {
+      if (order.status === "CANCELLED") {
+        order.orderItems.forEach((item) => {
+          const product = products.find((p) => p.id === item.productId);
+
+          cancelledOrdersDetails.push({
+            productName: product?.name || "Unknown",
             quantity: item.quantity,
             price: item.price
           });
-        }
-
-        if (order.status === "RETURNED") {
-          returnedDetails.push({
-            productName,
-            quantity: item.quantity,
-            price: item.price
-          });
-        }
-      });
-    });
-
-    /* ---------- RESPONSE ---------- */
-    return NextResponse.json({
-      dashboardData: {
-        storeIsActive: store.isActive,
-        storeName: store.name,
-        storeLogo: store.logo,
-
-        totalOrders: filteredOrders.length,
-        totalEarnings: Math.round(totalEarnings),
-        totalProducts: products.length,
-
-        topProducts,
-
-        returnedProducts,
-        returnedAmount,
-        cancelledAmount,
-
-        monthlyReport: {
-          totalSales: Math.round(totalEarnings),
-          cancelledAmount,
-          returnedAmount,
-          cancelledDetails,
-          returnedDetails
-        }
+        });
       }
     });
+
+    /* ---------- RETURNED DETAILS ---------- */
+    const returnedOrdersDetails = [];
+
+    monthlyOrders.forEach((order) => {
+      if (order.status === "RETURNED") {
+        order.orderItems.forEach((item) => {
+          const product = products.find((p) => p.id === item.productId);
+
+          returnedOrdersDetails.push({
+            productName: product?.name || "Unknown",
+            quantity: item.quantity,
+            price: item.price
+          });
+        });
+      }
+    });
+
+
+
+    /* ---------- RESPONSE ---------- */
+    const dashboardData = {
+      storeIsActive: store.isActive,
+      storeName: store.name,
+      storeLogo: store.logo,
+      ratings,
+
+      totalOrders: filteredOrders.length,
+      totalEarnings: Math.round(totalEarnings),
+      totalProducts: products.length,
+
+      earningsChart,
+      ordersChart,
+      canceledChart,
+      returnedChart,
+
+      returnedProducts: filteredReturnedProducts,
+      returnedAmount: filteredReturnedAmount,
+      cancelledAmount,
+
+      orders: filteredOrders,
+      topProducts,
+      monthlyReport: {
+        topProducts: monthlyTopProducts,
+        totalSales: Math.round(totalEarnings),
+        deliveredOrders,
+        cancelledOrders: cancelledOrdersDetails.length,
+        cancelledAmount,
+        returnedAmount: filteredReturnedAmount, 
+        cancelledDetails: cancelledOrdersDetails,
+        returnedDetails: returnedOrdersDetails
+      }
+    };
+
+    return NextResponse.json({ dashboardData });
 
   } catch (error) {
     console.error(error);
     return NextResponse.json(
-      { error: error.message },
+      { error: error.message || "Something went wrong" },
       { status: 400 }
     );
   }

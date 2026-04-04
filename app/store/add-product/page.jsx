@@ -40,14 +40,7 @@ export default function StoreAddProduct() {
     const [barcodeExists, setBarcodeExists] = useState(false)
     const [scanning, setScanning] = useState(false)
     const [storeCategory, setStoreCategory] = useState("")
-    const [variants, setVariants] = useState([])
-    const [sizes, setSizes] = useState([])
-    const [colors, setColors] = useState([])
-    const [selectedColor, setSelectedColor] = useState("Red")
-    const colorOptions = [
-        "Red", "Blue", "Green", "Black", "White",
-        "Yellow", "Purple", "Pink", "Orange", "Brown", "Gray"
-    ]
+    const [attributes, setAttributes] = useState({})
 
     useEffect(() => {
         const fetchStore = async () => {
@@ -283,6 +276,7 @@ export default function StoreAddProduct() {
                 : productInfo.category
 
         if (!finalCategory) return toast.error("Please enter a category")
+        if (productInfo.quantity === 0) return toast.error("Product is out of stock")
 
         if (
             !barcodeExists &&
@@ -305,21 +299,8 @@ export default function StoreAddProduct() {
             formData.append('price', productInfo.price)
             formData.append('quantity', productInfo.quantity)
             formData.append('category', finalCategory)
-            // Convert variants to backend format
-            const formattedVariants = variants.map(v => ({
-                attributes: {
-                    size: v.size || null,
-                    color: v.color || null,
-                    weight: v.weight || null,
-                    brand: v.brand || null,
-                    warranty: v.warranty || null
-                },
-                mrp: Number(v.mrp),
-                price: Number(v.price),
-                quantity: Number(v.quantity)
-            }))
+            formData.append("attributes", JSON.stringify(attributes))
 
-            formData.append("variants", JSON.stringify(formattedVariants))
             // ✅ barcode optional
             if (productInfo.barcode) {
                 formData.append("barcode", productInfo.barcode)
@@ -357,20 +338,6 @@ export default function StoreAddProduct() {
         } finally {
             setLoading(false)
         }
-    }
-
-    const updateVariant = (key, data) => {
-        setVariants(prev => {
-            const exists = prev.find(v => v.key === key)
-
-            if (exists) {
-                return prev.map(v =>
-                    v.key === key ? { ...v, ...data } : v
-                )
-            }
-
-            return [...prev, { key, ...data }]
-        })
     }
 
     return (
@@ -541,283 +508,118 @@ export default function StoreAddProduct() {
 
                 {/* Dynamic Fields based on Store Category */}
                 {storeCategory === "Clothing" && (
-                    <div className="space-y-6">
+                    <div className="space-y-4">
 
-                        {/* SIZE SELECTOR */}
+                        {/* Size */}
+                        <input
+                            type="text"
+                            placeholder="Size (S, M, L...)"
+                            className="p-3 border rounded-lg w-full"
+                            onChange={(e) =>
+                                setAttributes({ ...attributes, size: e.target.value })
+                            }
+                        />
+
+                        {/* Color Picker */}
                         <div>
-                            <p className="text-sm font-medium mb-2">Select Sizes</p>
+                            <p className="text-sm font-medium text-gray-700 mb-2">
+                                Select Colors
+                            </p>
 
-                            <div className="flex flex-wrap gap-2">
-                                {["S", "M", "L", "XL", "XXL"].map(size => (
-                                    <button
-                                        key={size}
-                                        type="button"
-                                        onClick={() => {
-                                            if (!sizes.includes(size)) {
-                                                setSizes([...sizes, size])
-                                            }
-                                        }}
-                                        className="px-3 py-1 border rounded-lg text-sm"
+                            {/* Color Input */}
+                            <div className="flex items-center gap-3">
+                                <input
+                                    type="color"
+                                    className="w-12 h-12 p-1 border rounded-lg cursor-pointer"
+                                    onChange={(e) => {
+                                        const newColor = e.target.value
+
+                                        // prevent duplicates
+                                        if (!attributes.colors?.includes(newColor)) {
+                                            setAttributes({
+                                                ...attributes,
+                                                colors: [...(attributes.colors || []), newColor]
+                                            })
+                                        }
+                                    }}
+                                />
+
+                                <span className="text-sm text-gray-500">
+                                    Pick multiple colors
+                                </span>
+                            </div>
+
+                            {/* Selected Colors Preview */}
+                            <div className="flex flex-wrap gap-2 mt-3">
+                                {attributes.colors?.map((color, index) => (
+                                    <div
+                                        key={index}
+                                        className="flex items-center gap-2 bg-gray-100 px-2 py-1 rounded-full"
                                     >
-                                        {size}
-                                    </button>
+                                        {/* Color circle */}
+                                        <div
+                                            className="w-5 h-5 rounded-full border"
+                                            style={{ backgroundColor: color }}
+                                        />
+
+                                        {/* Remove button */}
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const updated = attributes.colors.filter((c) => c !== color)
+                                                setAttributes({ ...attributes, colors: updated })
+                                            }}
+                                            className="text-xs text-red-500"
+                                        >
+                                            ✕
+                                        </button>
+                                    </div>
                                 ))}
                             </div>
-
-                            {/* Selected Sizes */}
-                            <div className="flex gap-2 mt-2">
-                                {sizes.map(size => (
-                                    <span key={size} className="px-2 py-1 bg-gray-200 rounded">
-                                        {size}
-                                    </span>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* COLOR SELECTOR */}
-                        <div>
-                            <p className="text-sm font-medium mb-2">Select Colors</p>
-
-                            <div className="flex gap-2 flex-wrap">
-                                {colorOptions.map(color => (
-                                    <button
-                                        key={color}
-                                        type="button"
-                                        onClick={() => setSelectedColor(color)}
-                                        className={`px-3 py-1 rounded border text-sm ${selectedColor === color ? "bg-black text-white" : ""
-                                            }`}
-                                    >
-                                        {color}
-                                    </button>
-                                ))}
-                            </div>
-
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    if (!colors.includes(selectedColor)) {
-                                        setColors([...colors, selectedColor])
-                                    }
-                                }}
-                                className="mt-2 px-4 py-1 bg-indigo-600 text-white rounded"
-                            >
-                                Add Color
-                            </button>
-
-                            {/* Selected Colors */}
-                            <div className="flex gap-2 mt-2">
-                                {colors.map(color => (
-                                    <span key={color} className="px-2 py-1 bg-gray-200 rounded">
-                                        {color}
-                                    </span>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* VARIANTS TABLE */}
-                        <div>
-                            <p className="text-sm font-medium mb-2">Variants</p>
-
-                            {sizes.length > 0 && colors.length > 0 && (
-                                <div className="space-y-3">
-                                    {sizes.map(size =>
-                                        colors.map(color => {
-                                            const key = `${size}-${color}`
-
-                                            const existing = variants.find(v => v.key === key) || {}
-
-                                            return (
-                                                <div key={key} className="grid grid-cols-5 gap-2 items-center border p-2 rounded-lg">
-
-                                                    <span>{size} / {color}</span>
-
-                                                    <input
-                                                        type="number"
-                                                        placeholder="Qty"
-                                                        className="p-2 border rounded"
-                                                        value={existing.quantity || ""}
-                                                        onChange={(e) =>
-                                                            updateVariant(key, {
-                                                                size,
-                                                                color,
-                                                                quantity: e.target.value
-                                                            })
-                                                        }
-                                                    />
-
-                                                    <input
-                                                        type="number"
-                                                        placeholder="MRP"
-                                                        className="p-2 border rounded"
-                                                        value={existing.mrp || ""}
-                                                        onChange={(e) =>
-                                                            updateVariant(key, {
-                                                                size,
-                                                                color,
-                                                                mrp: e.target.value
-                                                            })
-                                                        }
-                                                    />
-
-                                                    <input
-                                                        type="number"
-                                                        placeholder="Price"
-                                                        className="p-2 border rounded"
-                                                        value={existing.price || ""}
-                                                        onChange={(e) =>
-                                                            updateVariant(key, {
-                                                                size,
-                                                                color,
-                                                                price: e.target.value
-                                                            })
-                                                        }
-                                                    />
-                                                </div>
-                                            )
-                                        })
-                                    )}
-                                </div>
-                            )}
                         </div>
                     </div>
                 )}
 
                 {storeCategory === "Grocery" && (
-                    <div className="space-y-4">
-
+                    <div className="grid grid-cols-2 gap-4">
                         <input
                             type="text"
-                            placeholder="Add Weight (e.g. 1kg)"
-                            className="p-3 border rounded-lg w-full"
-                            onKeyDown={(e) => {
-                                if (e.key === "Enter") {
-                                    e.preventDefault()
-                                    const weight = e.target.value.trim()
-
-                                    if (!weight) return
-
-                                    const key = weight
-
-                                    updateVariant(key, { weight })
-
-                                    e.target.value = ""
-                                }
-                            }}
+                            placeholder="Weight (e.g. 1kg)"
+                            className="p-3 border rounded-lg"
+                            onChange={(e) =>
+                                setAttributes({ ...attributes, weight: e.target.value })
+                            }
                         />
 
-                        <div className="space-y-2">
-                            {variants.map(v => (
-                                <div key={v.key} className="grid grid-cols-4 gap-2 border p-2 rounded">
-
-                                    <span>{v.weight}</span>
-
-                                    <input
-                                        type="number"
-                                        placeholder="Qty"
-                                        className="p-2 border rounded"
-                                        onChange={(e) =>
-                                            updateVariant(v.key, {
-                                                weight: v.weight,
-                                                quantity: e.target.value
-                                            })
-                                        }
-                                    />
-
-                                    <input
-                                        type="number"
-                                        placeholder="MRP"
-                                        className="p-2 border rounded"
-                                        onChange={(e) =>
-                                            updateVariant(v.key, {
-                                                weight: v.weight,
-                                                mrp: e.target.value
-                                            })
-                                        }
-                                    />
-
-                                    <input
-                                        type="number"
-                                        placeholder="Price"
-                                        className="p-2 border rounded"
-                                        onChange={(e) =>
-                                            updateVariant(v.key, {
-                                                weight: v.weight,
-                                                price: e.target.value
-                                            })
-                                        }
-                                    />
-
-                                </div>
-                            ))}
-                        </div>
+                        <input
+                            type="date"
+                            className="p-3 border rounded-lg"
+                            onChange={(e) =>
+                                setAttributes({ ...attributes, expiry: e.target.value })
+                            }
+                        />
                     </div>
                 )}
 
-
                 {storeCategory === "Electronics" && (
-                    <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                        <input
+                            type="text"
+                            placeholder="Brand"
+                            className="p-3 border rounded-lg"
+                            onChange={(e) =>
+                                setAttributes({ ...attributes, brand: e.target.value })
+                            }
+                        />
 
                         <input
                             type="text"
-                            placeholder="Variant (e.g. 8GB RAM / 128GB)"
-                            className="p-3 border rounded-lg w-full"
-                            onKeyDown={(e) => {
-                                if (e.key === "Enter") {
-                                    e.preventDefault()
-
-                                    const value = e.target.value.trim()
-                                    if (!value) return
-
-                                    updateVariant(value, { label: value })
-
-                                    e.target.value = ""
-                                }
-                            }}
+                            placeholder="Warranty (e.g. 1 Year)"
+                            className="p-3 border rounded-lg"
+                            onChange={(e) =>
+                                setAttributes({ ...attributes, warranty: e.target.value })
+                            }
                         />
-
-                        {variants.map(v => (
-                            <div key={v.key} className="grid grid-cols-4 gap-2 border p-2 rounded">
-
-                                <span>{v.label}</span>
-
-                                <input
-                                    type="number"
-                                    placeholder="Qty"
-                                    className="p-2 border rounded"
-                                    onChange={(e) =>
-                                        updateVariant(v.key, {
-                                            label: v.label,
-                                            quantity: e.target.value
-                                        })
-                                    }
-                                />
-
-                                <input
-                                    type="number"
-                                    placeholder="MRP"
-                                    className="p-2 border rounded"
-                                    onChange={(e) =>
-                                        updateVariant(v.key, {
-                                            label: v.label,
-                                            mrp: e.target.value
-                                        })
-                                    }
-                                />
-
-                                <input
-                                    type="number"
-                                    placeholder="Price"
-                                    className="p-2 border rounded"
-                                    onChange={(e) =>
-                                        updateVariant(v.key, {
-                                            label: v.label,
-                                            price: e.target.value
-                                        })
-                                    }
-                                />
-
-                            </div>
-                        ))}
                     </div>
                 )}
 

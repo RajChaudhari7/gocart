@@ -22,43 +22,25 @@ model User {
   returnRequests ReturnRequest[]
 }
 
-model Variant {
-  id String @id @default(cuid())
-
-  productId  String
-  product    Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
-  orderItems OrderItem[] @relation("VariantOrderItems")
-  returnItems ReturnItem[]
-
-  // Dynamic fields
-  size   String?
-  color  String?
-  weight String?
-
-  // Core business fields
-  mrp      Float
-  price    Float
-  quantity Int
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
 model Product {
   id          String   @id @default(cuid())
   name        String
   description String
   keywords    String[]
+  mrp         Float
+  price       Float
+  quantity    Int      @default(0)
   images      String[]
   barcode     String?
   category    String
   storeId     String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  attributes  Json     @default("{}")
 
-  store    Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  rating   Rating[]
-  variants Variant[]
+  store      Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  orderItems OrderItem[]
+  rating     Rating[]
 
   returnItems ReturnItem[]
 
@@ -132,14 +114,14 @@ model Order {
 
 model OrderItem {
   orderId   String
-  variantId String
+  productId String
   quantity  Int
   price     Float
 
   order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  variant Variant @relation("VariantOrderItems", fields: [variantId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
 
-  @@id([orderId, variantId])
+  @@id([orderId, productId])
 }
 
 model WhatsappOtp {
@@ -167,16 +149,13 @@ model ReturnRequest {
 }
 
 model ReturnItem {
-  id        String  @id @default(cuid())
+  id        String @id @default(cuid())
   returnId  String
-  variantId String
-  productId String?   
-
+  productId String
   quantity  Int
 
   returnRequest ReturnRequest @relation(fields: [returnId], references: [id])
-  variant       Variant       @relation(fields: [variantId], references: [id])
-  product       Product?      @relation(fields: [productId], references: [id]) 
+  product       Product       @relation(fields: [productId], references: [id])
 }
 
 model Rating {
@@ -240,8 +219,8 @@ model Store {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  category       String?
-  customCategory String?
+  category        String?
+  customCategory  String?
 
   Product Product[]
   Order   Order[]
