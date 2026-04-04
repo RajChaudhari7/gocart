@@ -26,9 +26,9 @@ export default function StoreAddProduct() {
     const [productInfo, setProductInfo] = useState({
         name: "",
         description: "",
-        mrp: 0,
-        price: 0,
-        quantity: 0,
+        mrp,
+        price,
+        quantity,
         category: "",
         barcode: "",
     })
