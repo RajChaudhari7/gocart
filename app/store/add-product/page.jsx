@@ -45,8 +45,6 @@ export default function StoreAddProduct() {
         weight: "",
         warranty: ""
     })
-    const [variants, setVariants] = useState([])
-    const [sizeInput, setSizeInput] = useState("")
 
     useEffect(() => {
         const fetchStore = async () => {
@@ -296,9 +294,9 @@ export default function StoreAddProduct() {
             formData.append('price', productInfo.price)
             formData.append('quantity', productInfo.quantity)
             formData.append('category', finalCategory)
+            formData.append("size", extraFields.size)
             formData.append("weight", extraFields.weight)
             formData.append("warranty", extraFields.warranty)
-            formData.append("variants", JSON.stringify(variants))
 
             // ✅ barcode optional
             if (productInfo.barcode) {
@@ -509,53 +507,18 @@ export default function StoreAddProduct() {
 
                 {storeCategory === "Clothing" && (
                     <div>
-                        <label className="block text-sm font-medium">Sizes</label>
-
-                        {/* Input */}
-                        <div className="flex gap-2 mt-1">
-                            <input
-                                type="text"
-                                placeholder="Enter size (e.g. M, 32, 6XL)"
-                                value={sizeInput}
-                                onChange={(e) => setSizeInput(e.target.value)}
-                                className="w-full p-3 border rounded-lg"
-                            />
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    if (!sizeInput.trim()) return
-
-                                    if (!variants.includes(sizeInput.toUpperCase())) {
-                                        setVariants([...variants, sizeInput.toUpperCase()])
-                                    }
-
-                                    setSizeInput("")
-                                }}
-                                className="px-4 bg-slate-900 text-white rounded-lg"
-                            >
-                                Add
-                            </button>
-                        </div>
-
-                        {/* Size Chips */}
-                        <div className="flex flex-wrap gap-2 mt-3">
-                            {variants.map((size, index) => (
-                                <div
-                                    key={index}
-                                    className="px-3 py-1 bg-gray-200 rounded-full text-sm flex items-center gap-2"
-                                >
-                                    {size}
-                                    <button
-                                        type="button"
-                                        onClick={() =>
-                                            setVariants(variants.filter((_, i) => i !== index))
-                                        }
-                                    >
-                                        ✕
-                                    </button>
-                                </div>
-                            ))}
-                        </div>
+                        <label className="block text-sm font-medium">Size</label>
+                        <select
+                            className="w-full mt-1 p-3 border rounded-lg"
+                            value={extraFields.size}
+                            onChange={(e) => setExtraFields({ ...extraFields, size: e.target.value })}
+                        >
+                            <option value="">Select Size</option>
+                            <option>S</option>
+                            <option>M</option>
+                            <option>L</option>
+                            <option>XL</option>
+                        </select>
                     </div>
                 )}
 

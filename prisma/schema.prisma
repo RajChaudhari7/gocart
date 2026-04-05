@@ -36,7 +36,7 @@ model Product {
   storeId     String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  variants    Json? // for clothing
+  size        String? // for clothing
   weight      String? // for grocery
   warranty    String? // for electronics
   attributes  Json? // for future dynamic fields
