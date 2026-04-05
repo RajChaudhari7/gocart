@@ -31,7 +31,7 @@ export async function POST(request) {
 
     const barcode = formData.get("barcode")?.trim() || null
     const images = formData.getAll("images")
-    const sizes = JSON.parse(formData.get("sizes") || "[]")
+    const variants = JSON.parse(formData.get("variants") || "[]")
     const weight = formData.get("weight")
     const warranty = formData.get("warranty")
 
@@ -124,7 +124,7 @@ export async function POST(request) {
         images: imagesUrl,
         storeId,
         barcode,
-        sizes,
+        variants,
         weight,
         warranty
       }

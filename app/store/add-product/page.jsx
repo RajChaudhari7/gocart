@@ -298,7 +298,7 @@ export default function StoreAddProduct() {
             formData.append('category', finalCategory)
             formData.append("weight", extraFields.weight)
             formData.append("warranty", extraFields.warranty)
-            formData.append("sizes", JSON.stringify(sizes))
+            formData.append("variants", JSON.stringify(variants))
 
             // ✅ barcode optional
             if (productInfo.barcode) {
