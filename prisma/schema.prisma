@@ -36,7 +36,10 @@ model Product {
   storeId     String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  attributes  Json     @default("{}")
+  size        String? // for clothing
+  weight      String? // for grocery
+  warranty    String? // for electronics
+  attributes  Json? // for future dynamic fields
 
   store      Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
   orderItems OrderItem[]
@@ -219,8 +222,8 @@ model Store {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  category        String?
-  customCategory  String?
+  category       String?
+  customCategory String?
 
   Product Product[]
   Order   Order[]

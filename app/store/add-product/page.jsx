@@ -39,6 +39,26 @@ export default function StoreAddProduct() {
     const [discount, setDiscount] = useState(0)
     const [barcodeExists, setBarcodeExists] = useState(false)
     const [scanning, setScanning] = useState(false)
+    const [storeCategory, setStoreCategory] = useState("")
+    const [extraFields, setExtraFields] = useState({
+        size: "",
+        weight: "",
+        warranty: ""
+    })
+
+    useEffect(() => {
+        const fetchStore = async () => {
+            const token = await getToken()
+
+            const { data } = await axios.get('/api/store/me', {
+                headers: { Authorization: `Bearer ${token}` }
+            })
+
+            setStoreCategory(data.category)
+        }
+
+        fetchStore()
+    }, [])
 
     const onChangeHandler = (e) => {
         const { name, value } = e.target
@@ -274,6 +294,9 @@ export default function StoreAddProduct() {
             formData.append('price', productInfo.price)
             formData.append('quantity', productInfo.quantity)
             formData.append('category', finalCategory)
+            formData.append("size", extraFields.size)
+            formData.append("weight", extraFields.weight)
+            formData.append("warranty", extraFields.warranty)
 
             // ✅ barcode optional
             if (productInfo.barcode) {
@@ -479,6 +502,51 @@ export default function StoreAddProduct() {
                         />
                     </div>
                 </div>
+
+                {/* Dynamic Fields Based on Store Category */}
+
+                {storeCategory === "Clothing" && (
+                    <div>
+                        <label className="block text-sm font-medium">Size</label>
+                        <select
+                            className="w-full mt-1 p-3 border rounded-lg"
+                            value={extraFields.size}
+                            onChange={(e) => setExtraFields({ ...extraFields, size: e.target.value })}
+                        >
+                            <option value="">Select Size</option>
+                            <option>S</option>
+                            <option>M</option>
+                            <option>L</option>
+                            <option>XL</option>
+                        </select>
+                    </div>
+                )}
+
+                {storeCategory === "Grocery" && (
+                    <div>
+                        <label className="block text-sm font-medium">Weight</label>
+                        <input
+                            type="text"
+                            placeholder="e.g. 1kg, 500g"
+                            value={extraFields.weight}
+                            onChange={(e) => setExtraFields({ ...extraFields, weight: e.target.value })}
+                            className="w-full mt-1 p-3 border rounded-lg"
+                        />
+                    </div>
+                )}
+
+                {storeCategory === "Electronics" && (
+                    <div>
+                        <label className="block text-sm font-medium">Warranty</label>
+                        <input
+                            type="text"
+                            placeholder="e.g. 1 Year"
+                            value={extraFields.warranty}
+                            onChange={(e) => setExtraFields({ ...extraFields, warranty: e.target.value })}
+                            className="w-full mt-1 p-3 border rounded-lg"
+                        />
+                    </div>
+                )}
 
                 {/* Category */}
                 <div>

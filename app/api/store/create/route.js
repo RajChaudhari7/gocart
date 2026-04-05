@@ -108,6 +108,12 @@ export async function POST(request) {
             ]
         })
 
+        const category = formData.get("category")
+        const customCategory = formData.get("customCategory")
+
+        const finalCategory =
+            category === "Other" ? customCategory : category
+
         const newStore = await prisma.store.create({
             data: {
                 userId,
@@ -118,7 +124,8 @@ export async function POST(request) {
                 contact,
                 address,
                 gst,
-                logo: optimizedImage
+                logo: optimizedImage,
+                category: finalCategory // ✅ SAVE CATEGORY
             }
         })
 

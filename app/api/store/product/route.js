@@ -31,6 +31,9 @@ export async function POST(request) {
 
     const barcode = formData.get("barcode")?.trim() || null
     const images = formData.getAll("images")
+    const size = formData.get("size")
+    const weight = formData.get("weight")
+    const warranty = formData.get("warranty")
 
     if (price > mrp) {
       return NextResponse.json(
@@ -120,7 +123,10 @@ export async function POST(request) {
         category,
         images: imagesUrl,
         storeId,
-        barcode
+        barcode,
+        size,
+        weight,
+        warranty
       }
     })
 
