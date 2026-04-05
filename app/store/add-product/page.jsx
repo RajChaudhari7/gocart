@@ -45,7 +45,7 @@ export default function StoreAddProduct() {
         weight: "",
         warranty: ""
     })
-    const [sizes, setSizes] = useState([])
+    const [variants, setVariants] = useState([])
     const [sizeInput, setSizeInput] = useState("")
 
     useEffect(() => {
@@ -525,8 +525,8 @@ export default function StoreAddProduct() {
                                 onClick={() => {
                                     if (!sizeInput.trim()) return
 
-                                    if (!sizes.includes(sizeInput.toUpperCase())) {
-                                        setSizes([...sizes, sizeInput.toUpperCase()])
+                                    if (!variants.includes(sizeInput.toUpperCase())) {
+                                        setVariants([...variants, sizeInput.toUpperCase()])
                                     }
 
                                     setSizeInput("")
@@ -539,7 +539,7 @@ export default function StoreAddProduct() {
 
                         {/* Size Chips */}
                         <div className="flex flex-wrap gap-2 mt-3">
-                            {sizes.map((size, index) => (
+                            {variants.map((size, index) => (
                                 <div
                                     key={index}
                                     className="px-3 py-1 bg-gray-200 rounded-full text-sm flex items-center gap-2"
@@ -548,7 +548,7 @@ export default function StoreAddProduct() {
                                     <button
                                         type="button"
                                         onClick={() =>
-                                            setSizes(sizes.filter((_, i) => i !== index))
+                                            setVariants(variants.filter((_, i) => i !== index))
                                         }
                                     >
                                         ✕
