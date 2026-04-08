@@ -22,18 +22,22 @@ const AddressModal = ({ setShowAddressModal }) => {
     city: '',
     state: '',
     zip: '',
-    country: INDIA_NAME,
+    country: '',
     phone: '',
   })
 
   const [errors, setErrors] = useState({})
+
+  // 🌍 Country & State
   const [countries, setCountries] = useState([])
   const [states, setStates] = useState([])
   const [loadingStates, setLoadingStates] = useState(false)
   const [pinLoading, setPinLoading] = useState(false)
+
+  // ✅ PIN verification flag
   const [isPinVerified, setIsPinVerified] = useState(false)
 
-  /* ---------------- INIT ---------------- */
+  /* ---------------- FETCH COUNTRIES + PRELOAD INDIA ---------------- */
   useEffect(() => {
     const init = async () => {
       try {
@@ -42,14 +46,25 @@ const AddressModal = ({ setShowAddressModal }) => {
         )
         setCountries(data)
 
-        // Load India states
+        // 🇮🇳 Auto-select India
+        setAddress((prev) => ({
+          ...prev,
+          country: INDIA_NAME,
+          state: '',
+          city: '',
+          zip: '',
+        }))
+
+        setIsPinVerified(false)
+
+        // 🇮🇳 Preload Indian states
         setLoadingStates(true)
-        const res = await axios.get(
+        const statesRes = await axios.get(
           `https://country-api.drnyeinchan.com/v1/countries/${INDIA_CODE}/states`
         )
-        setStates(res.data)
+        setStates(statesRes.data)
       } catch (err) {
-        console.error(err)
+        console.error('Init failed')
       } finally {
         setLoadingStates(false)
       }
@@ -58,7 +73,7 @@ const AddressModal = ({ setShowAddressModal }) => {
     init()
   }, [])
 
-  /* ---------------- INPUT ---------------- */
+  /* ---------------- INPUT HANDLER ---------------- */
   const handleAddressChange = (e) => {
     const { name, value } = e.target
 
@@ -70,44 +85,84 @@ const AddressModal = ({ setShowAddressModal }) => {
     if (name === 'zip') {
       if (!/^\d*$/.test(value)) return
       if (value.length > 6) return
+      setIsPinVerified(false) // zip edited → invalidate
+    }
 
-      setAddress((prev) => ({ ...prev, zip: value }))
+    if (name === 'city') {
       setIsPinVerified(false)
+    }
 
-      // 🔥 FIX: call with VALUE not state
-      if (value.length === 6) {
-        handlePinLookup(value)
-      }
+    setAddress({ ...address, [name]: value })
+    setErrors({ ...errors, [name]: '' })
+  }
+
+  /* ---------------- COUNTRY CHANGE ---------------- */
+  const handleCountrySelect = async (e) => {
+    const countryCode = e.target.value
+    const countryName =
+      countries.find((c) => c.code === countryCode)?.name || ''
+
+    setAddress((prev) => ({
+      ...prev,
+      country: countryName,
+      state: '',
+      city: '',
+      zip: '',
+    }))
+
+    setIsPinVerified(false)
+
+    if (!countryCode) {
+      setStates([])
       return
     }
 
-    setAddress((prev) => ({ ...prev, [name]: value }))
-    setErrors((prev) => ({ ...prev, [name]: '' }))
+    // Country Api
+    try {
+      setLoadingStates(true)
+      const { data } = await axios.get(
+        `https://country-api.drnyeinchan.com/v1/countries/${countryCode}/states`
+      )
+      setStates(data)
+    } catch {
+      setStates([])
+    } finally {
+      setLoadingStates(false)
+    }
   }
 
-  /* ---------------- PIN LOOKUP ---------------- */
-  const handlePinLookup = async (zip) => {
+  /* ---------------- STATE CHANGE ---------------- */
+  const handleStateSelect = (e) => {
+    setAddress((prev) => ({ ...prev, state: e.target.value }))
+    setIsPinVerified(false)
+  }
+
+  /* ---------------- 🇮🇳 PIN CODE LOOKUP ---------------- */
+  const handlePinBlur = async () => {
+    if (address.country !== INDIA_NAME) return
+    if (address.zip.length !== 6) return
+
     try {
       setPinLoading(true)
 
-      const res = await axios.get(
-        `https://api.postalpincode.in/pincode/${zip}`
+      const { data } = await axios.get(
+        `https://api.postalpincode.in/pincode/${address.zip}`
       )
 
-      const result = res.data?.[0]
-
-      if (!result || result.Status !== 'Success') {
-        throw new Error('Invalid PIN')
+      if (data[0].Status !== 'Success') {
+        setErrors((prev) => ({
+          ...prev,
+          zip: 'Invalid PIN code',
+        }))
+        setIsPinVerified(false)
+        return
       }
 
-      const po = result.PostOffice?.[0]
+      const postOffice = data[0].PostOffice[0]
+      const detectedCity = postOffice.District
+      const detectedState = postOffice.State
 
-      if (!po) throw new Error('No location found')
-
-      const detectedState = po.State
-      const detectedCity = po.District
-
-      // ✅ Ensure state exists in dropdown
+      // find matching state from dropdown list
       const matchedState = states.find(
         (s) => s.name.toLowerCase() === detectedState.toLowerCase()
       )
@@ -118,15 +173,14 @@ const AddressModal = ({ setShowAddressModal }) => {
         state: matchedState ? matchedState.name : detectedState,
         country: INDIA_NAME,
       }))
-
       setIsPinVerified(true)
       setErrors((prev) => ({ ...prev, zip: '' }))
     } catch (err) {
-      setIsPinVerified(false)
       setErrors((prev) => ({
         ...prev,
-        zip: 'Invalid PIN code',
+        zip: 'PIN verification failed',
       }))
+      setIsPinVerified(false)
     } finally {
       setPinLoading(false)
     }
@@ -137,11 +191,17 @@ const AddressModal = ({ setShowAddressModal }) => {
     const newErrors = {}
 
     if (address.phone.length !== 10) {
-      newErrors.phone = 'Phone must be 10 digits'
+      newErrors.phone = 'Phone number must be exactly 10 digits'
     }
 
-    if (!isPinVerified) {
-      newErrors.zip = 'Verify PIN code'
+    if (address.country === INDIA_NAME) {
+      if (address.zip.length !== 6) {
+        newErrors.zip = 'Indian PIN must be 6 digits'
+      }
+
+      if (!isPinVerified) {
+        newErrors.zip = 'Please verify PIN code'
+      }
     }
 
     setErrors(newErrors)
@@ -153,7 +213,7 @@ const AddressModal = ({ setShowAddressModal }) => {
     e.preventDefault()
 
     if (!validate()) {
-      toast.error('Fix errors first')
+      toast.error('Please fix validation errors')
       return
     }
 
@@ -179,48 +239,105 @@ const AddressModal = ({ setShowAddressModal }) => {
       onSubmit={(e) =>
         toast.promise(handleSubmit(e), { loading: 'Saving address...' })
       }
-      className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center px-3"
+      className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center px-3 sm:px-4"
     >
-      <div className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-xl">
-
+      <div className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl p-5 sm:p-6 shadow-2xl border border-slate-200 dark:border-slate-700 animate-scaleIn">
         <XIcon
+          size={22}
           onClick={() => setShowAddressModal(false)}
           className="absolute top-4 right-4 cursor-pointer"
         />
 
-        <h2 className="text-xl font-semibold mb-4">Add Address</h2>
+        <h2 className="text-xl sm:text-2xl font-semibold mb-4">
+          Add New Address
+        </h2>
 
         <div className="space-y-3">
-          <input name="name" placeholder="Name" className="input" onChange={handleAddressChange} />
-          <input name="email" placeholder="Email" className="input" onChange={handleAddressChange} />
-          <input name="street" placeholder="Street" className="input" onChange={handleAddressChange} />
+          <input name="name" value={address.name} onChange={handleAddressChange} placeholder="Full Name" required className="input" />
+          <input name="email" type="email" value={address.email} onChange={handleAddressChange} placeholder="Email Address" required className="input" />
+          <input name="street" value={address.street} onChange={handleAddressChange} placeholder="Street Address" required className="input" />
 
-          <input
-            name="zip"
-            placeholder="PIN Code"
-            className="input"
-            onChange={handleAddressChange}
-          />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <input
+              name="city"
+              value={address.city}
+              onChange={handleAddressChange}
+              placeholder="City (Auto-filled by PIN)"
+              required
+              disabled={isPinVerified}
+              className="input"
+            />
 
-          {pinLoading && <p className="text-xs">Checking...</p>}
-          {isPinVerified && <p className="text-xs text-green-600">✓ Verified</p>}
-          {errors.zip && <p className="text-xs text-red-500">{errors.zip}</p>}
+            <select
+              value={address.state}
+              onChange={handleStateSelect}
+              required
+              disabled={loadingStates || isPinVerified}
+              className="input"
+            >
+              <option value="">
+                {loadingStates ? 'Loading states...' : 'Select State'}
+              </option>
+              {states.map((s) => (
+                <option key={s.code} value={s.name}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+          </div>
 
-          <input value={address.city} disabled className="input" placeholder="City" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <input
+                name="zip"
+                value={address.zip}
+                onChange={handleAddressChange}
+                onBlur={handlePinBlur}
+                placeholder="PIN Code (Auto-verified)"
+                className={`input ${errors.zip ? 'error' : ''}`}
+              />
+              {pinLoading && (
+                <p className="text-xs text-slate-500">Verifying PIN...</p>
+              )}
+              {isPinVerified && (
+                <p className="text-xs text-green-600">PIN verified ✓</p>
+              )}
+              {errors.zip && <p className="error-text">{errors.zip}</p>}
+            </div>
 
-          <select value={address.state} className="input" disabled>
-            <option>{address.state || 'State'}</option>
-          </select>
+            <select
+              value={
+                countries.find((c) => c.name === address.country)?.code || ''
+              }
+              onChange={handleCountrySelect}
+              required
+              className="input"
+            >
+              <option value="">Select Country</option>
+              {countries.map((c) => (
+                <option key={c.code} value={c.code}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
 
-          <input
-            name="phone"
-            placeholder="Phone"
-            className="input"
-            onChange={handleAddressChange}
-          />
+          <div>
+            <input
+              name="phone"
+              value={address.phone}
+              onChange={handleAddressChange}
+              placeholder="Phone Number"
+              className={`input ${errors.phone ? 'error' : ''}`}
+            />
+            {errors.phone && <p className="error-text">{errors.phone}</p>}
+          </div>
         </div>
 
-        <button className="w-full mt-4 py-3 bg-black text-white rounded-xl">
+        <button
+          type="submit"
+          className="w-full mt-6 py-3 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-medium"
+        >
           Save Address
         </button>
       </div>
@@ -228,9 +345,52 @@ const AddressModal = ({ setShowAddressModal }) => {
       <style jsx>{`
         .input {
           width: 100%;
-          padding: 10px;
-          border: 1px solid #ccc;
-          border-radius: 8px;
+          padding: 0.65rem 0.75rem;
+          border-radius: 0.5rem;
+          border: 1px solid rgb(203 213 225);
+          background: white;
+          outline: none;
+          color: rgb(15 23 42);
+          font-size: 16px;
+        }
+
+        .dark .input {
+          background: rgb(15 23 42);
+          border-color: rgb(51 65 85);
+          color: rgb(226 232 240);
+        }
+
+        .input::placeholder {
+          color: rgb(100 116 139);
+        }
+
+        .dark .input::placeholder {
+          color: rgb(148 163 184);
+        }
+
+        .error {
+          border-color: rgb(239 68 68);
+        }
+
+        .error-text {
+          font-size: 0.75rem;
+          color: rgb(239 68 68);
+          margin-top: 2px;
+        }
+
+        .animate-scaleIn {
+          animation: scaleIn 0.2s ease-out;
+        }
+
+        @keyframes scaleIn {
+          from {
+            opacity: 0;
+            transform: scale(0.95);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
         }
       `}</style>
     </form>
