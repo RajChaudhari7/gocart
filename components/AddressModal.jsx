@@ -88,6 +88,10 @@ const AddressModal = ({ setShowAddressModal }) => {
       setIsPinVerified(false) // zip edited → invalidate
     }
 
+    if (name === "zip" && value.length === 6) {
+      setTimeout(() => handlePinBlur(), 300)
+    }
+
     if (name === 'city') {
       setIsPinVerified(false)
     }
@@ -139,41 +143,63 @@ const AddressModal = ({ setShowAddressModal }) => {
 
   /* ---------------- 🇮🇳 PIN CODE LOOKUP ---------------- */
   const handlePinBlur = async () => {
-    if (address.country !== INDIA_NAME) return
-    if (address.zip.length !== 6) return
+    if (address.country === INDIA_NAME) {
+      if (address.zip.length !== 6) {
+        newErrors.zip = 'Indian PIN must be 6 digits'
+      } else if (!isPinVerified) {
+        newErrors.zip = 'Please verify PIN code'
+      }
+    }
 
     try {
       setPinLoading(true)
 
-      const { data } = await axios.get(
+      const res = await axios.get(
         `https://api.postalpincode.in/pincode/${address.zip}`
       )
 
-      if (data[0].Status !== 'Success') {
+      const result = res.data?.[0]
+
+      // ❌ Invalid response
+      if (!result || result.Status !== "Success" || !result.PostOffice) {
         setErrors((prev) => ({
           ...prev,
-          zip: 'Invalid PIN code',
+          zip: "Invalid PIN code"
         }))
         setIsPinVerified(false)
         return
       }
 
-      const postOffice = data[0].PostOffice[0]
-      const detectedCity = postOffice.District
-      const detectedState = postOffice.State
+      // ✅ Pick first valid post office
+      const postOffice = result.PostOffice.find(po => po.District && po.State)
+
+      if (!postOffice) {
+        setErrors((prev) => ({
+          ...prev,
+          zip: "Location not found"
+        }))
+        setIsPinVerified(false)
+        return
+      }
 
       setAddress((prev) => ({
         ...prev,
-        city: detectedCity,
-        state: detectedState,
+        city: postOffice.District,
+        state: postOffice.State
       }))
 
       setIsPinVerified(true)
-      setErrors((prev) => ({ ...prev, zip: '' }))
-    } catch (err) {
+
       setErrors((prev) => ({
         ...prev,
-        zip: 'PIN verification failed',
+        zip: ""
+      }))
+
+    } catch (err) {
+      console.error(err)
+      setErrors((prev) => ({
+        ...prev,
+        zip: "PIN verification failed"
       }))
       setIsPinVerified(false)
     } finally {
