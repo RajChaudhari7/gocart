@@ -71,8 +71,8 @@ const Navbar = () => {
 
   const mobileLinks = [
     { id: 'home', href: '/', icon: <HomeIcon size={18} />, label: 'Home' },
-    { id: 'product', href: '/shop', icon: <Search size={18} />, label: 'Product' },
-    { id: 'shop', href: '/product', icon: <Search size={18} />, label: 'Shop' },
+    { id: 'product', href: '/product', icon: <Search size={18} />, label: 'Product' },
+    { id: 'shop', href: '/shop', icon: <Search size={18} />, label: 'Shop' },
     { id: 'orders', href: '/orders', icon: <PackageIcon size={18} />, label: 'Orders' },
     { id: 'cart', href: '/cart', icon: <ShoppingCart size={18} />, label: 'Cart' },
   ]
