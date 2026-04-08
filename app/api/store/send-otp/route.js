@@ -1,5 +1,5 @@
 import prisma from "@/lib/prisma"
-import { transporter } from "@/lib/sendEmail"
+import { transporter } from "@/lib/sendEmail.js"
 import { NextResponse } from "next/server"
 
 export async function POST(req) {
