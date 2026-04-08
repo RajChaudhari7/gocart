@@ -73,7 +73,7 @@ export async function POST(request) {
             html:
                 status === "approved"
                     ? APPROVE_EMAIL(store)
-                    : REJECT_EMAIL(store)
+                    : REJECT_EMAIL(store,"GST details mismatch")
         })
 
         return NextResponse.json({
@@ -131,41 +131,65 @@ export async function GET(request) {
 // 📧 Email Templates
 // ===============================
 const APPROVE_EMAIL = (store) => `
-<div style="margin:0;padding:0;background:#f4f6f8;font-family:Arial,Helvetica,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="padding:20px 0;">
+<div style="margin:0;padding:0;background:#f3f4f6;font-family:Inter,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="padding:30px 0;">
     <tr>
       <td align="center">
 
-        <table width="100%" style="max-width:520px;background:#ffffff;border-radius:14px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.08);">
+        <table width="100%" style="max-width:560px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,0.08);">
 
           <!-- Header -->
           <tr>
-            <td style="background:linear-gradient(90deg,#22c55e,#16a34a);padding:22px;text-align:center;">
-              <h1 style="color:#fff;margin:0;font-size:22px;">GlobalMart</h1>
-              <p style="color:#dcfce7;margin:6px 0 0;font-size:13px;">Store Approved ✅</p>
+            <td style="background:linear-gradient(135deg,#4f46e5,#6366f1);padding:26px;text-align:center;">
+              <h1 style="color:#fff;margin:0;font-size:24px;letter-spacing:0.5px;">
+                GlobalMart
+              </h1>
+              <p style="color:#e0e7ff;margin-top:6px;font-size:13px;">
+                Your Store is Live 🚀
+              </p>
             </td>
           </tr>
 
           <!-- Body -->
           <tr>
-            <td style="padding:30px 25px;text-align:center;">
-              
-              <h2 style="color:#111827;margin-bottom:10px;">
-                🎉 Congratulations, ${store.name}!
+            <td style="padding:32px 28px;text-align:center;">
+
+              <!-- Store Logo -->
+              ${store.logo ? `
+              <img src="${store.logo}" 
+                   alt="Store Logo" 
+                   style="width:72px;height:72px;border-radius:12px;object-fit:cover;margin-bottom:15px;border:1px solid #e5e7eb;" />
+              ` : ""}
+
+              <h2 style="color:#111827;margin-bottom:8px;">
+                Hi ${store.user?.name || "Seller"} 👋
               </h2>
 
-              <p style="color:#6b7280;font-size:14px;line-height:1.6;margin-bottom:20px;">
-                Your store has been successfully approved. You can now start listing products and selling on GlobalMart.
+              <p style="color:#6b7280;font-size:14px;margin-bottom:20px;">
+                Great news! Your store <strong>${store.name}</strong> has been successfully approved.
               </p>
 
-              <!-- CTA Button -->
+              <!-- Info Box -->
+              <div style="background:#f9fafb;border-radius:10px;padding:15px;text-align:left;margin-bottom:20px;">
+                <p style="margin:4px 0;font-size:13px;color:#374151;">
+                  <strong>Store Name:</strong> ${store.name}
+                </p>
+                <p style="margin:4px 0;font-size:13px;color:#374151;">
+                  <strong>Category:</strong> ${store.category || "N/A"}
+                </p>
+                <p style="margin:4px 0;font-size:13px;color:#374151;">
+                  <strong>Status:</strong> <span style="color:#16a34a;font-weight:600;">Approved</span>
+                </p>
+              </div>
+
+              <!-- CTA -->
               <a href="${process.env.NEXT_PUBLIC_APP_URL}/store"
-                 style="display:inline-block;padding:12px 24px;background:#4f46e5;color:#ffffff;text-decoration:none;border-radius:8px;font-weight:600;font-size:14px;">
+                 style="display:inline-block;padding:14px 26px;background:#4f46e5;color:#fff;text-decoration:none;border-radius:10px;font-weight:600;font-size:14px;">
                  Go to Dashboard
               </a>
 
-              <p style="margin-top:20px;color:#9ca3af;font-size:12px;">
-                Start uploading products and grow your business 🚀
+              <p style="margin-top:18px;color:#9ca3af;font-size:12px;">
+                Start adding products and grow your business with GlobalMart.
               </p>
 
             </td>
@@ -173,8 +197,11 @@ const APPROVE_EMAIL = (store) => `
 
           <!-- Footer -->
           <tr>
-            <td style="padding:18px;text-align:center;background:#f9fafb;">
+            <td style="padding:20px;text-align:center;background:#f9fafb;">
               <p style="font-size:12px;color:#9ca3af;margin:0;">
+                Need help? Contact our support team anytime.
+              </p>
+              <p style="font-size:12px;color:#9ca3af;margin-top:5px;">
                 © ${new Date().getFullYear()} GlobalMart. All rights reserved.
               </p>
             </td>
@@ -188,46 +215,56 @@ const APPROVE_EMAIL = (store) => `
 </div>
 `
 
-const REJECT_EMAIL = (store) => `
-<div style="margin:0;padding:0;background:#f4f6f8;font-family:Arial,Helvetica,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="padding:20px 0;">
+const REJECT_EMAIL = (store, reason = "Incomplete or invalid details") => `
+<div style="margin:0;padding:0;background:#f3f4f6;font-family:Inter,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="padding:30px 0;">
     <tr>
       <td align="center">
 
-        <table width="100%" style="max-width:520px;background:#ffffff;border-radius:14px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.08);">
+        <table width="100%" style="max-width:560px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,0.08);">
 
           <!-- Header -->
           <tr>
-            <td style="background:linear-gradient(90deg,#ef4444,#dc2626);padding:22px;text-align:center;">
-              <h1 style="color:#fff;margin:0;font-size:22px;">GlobalMart</h1>
-              <p style="color:#fee2e2;margin:6px 0 0;font-size:13px;">Application Update</p>
+            <td style="background:linear-gradient(135deg,#ef4444,#dc2626);padding:26px;text-align:center;">
+              <h1 style="color:#fff;margin:0;font-size:24px;">
+                GlobalMart
+              </h1>
+              <p style="color:#fee2e2;margin-top:6px;font-size:13px;">
+                Application Update
+              </p>
             </td>
           </tr>
 
           <!-- Body -->
           <tr>
-            <td style="padding:30px 25px;text-align:center;">
-              
+            <td style="padding:32px 28px;text-align:center;">
+
               <h2 style="color:#111827;margin-bottom:10px;">
-                Store Not Approved
+                Hi ${store.user?.name || "Seller"} 👋
               </h2>
 
-              <p style="color:#6b7280;font-size:14px;line-height:1.6;margin-bottom:20px;">
-                Unfortunately, your store <strong>${store.name}</strong> was not approved at this time.
+              <p style="color:#6b7280;font-size:14px;margin-bottom:20px;">
+                We reviewed your store <strong>${store.name}</strong>, but unfortunately it was not approved.
               </p>
 
-              <p style="color:#6b7280;font-size:14px;line-height:1.6;margin-bottom:20px;">
-                This may be due to incomplete or incorrect information. You can update your details and reapply.
+              <!-- Reason Box -->
+              <div style="background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:10px;padding:14px;margin-bottom:20px;text-align:left;">
+                <strong>Reason:</strong><br/>
+                ${reason}
+              </div>
+
+              <p style="color:#6b7280;font-size:14px;margin-bottom:20px;">
+                You can update your details and reapply anytime.
               </p>
 
               <!-- CTA -->
               <a href="${process.env.NEXT_PUBLIC_APP_URL}/contact"
-                 style="display:inline-block;padding:12px 24px;background:#111827;color:#ffffff;text-decoration:none;border-radius:8px;font-weight:600;font-size:14px;">
+                 style="display:inline-block;padding:14px 26px;background:#111827;color:#fff;text-decoration:none;border-radius:10px;font-weight:600;font-size:14px;">
                  Contact Support
               </a>
 
-              <p style="margin-top:20px;color:#9ca3af;font-size:12px;">
-                Need help? Our team is here for you.
+              <p style="margin-top:18px;color:#9ca3af;font-size:12px;">
+                We're here to help you succeed on GlobalMart 💙
               </p>
 
             </td>
@@ -235,7 +272,7 @@ const REJECT_EMAIL = (store) => `
 
           <!-- Footer -->
           <tr>
-            <td style="padding:18px;text-align:center;background:#f9fafb;">
+            <td style="padding:20px;text-align:center;background:#f9fafb;">
               <p style="font-size:12px;color:#9ca3af;margin:0;">
                 © ${new Date().getFullYear()} GlobalMart. All rights reserved.
               </p>
