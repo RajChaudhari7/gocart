@@ -7,6 +7,7 @@ import { XIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { toast } from 'react-hot-toast'
 import { useDispatch } from 'react-redux'
+import { indianStates } from '@/assets/indianStates'
 
 const INDIA_CODE = 'IN'
 const INDIA_NAME = 'India'
@@ -29,7 +30,7 @@ const AddressModal = ({ setShowAddressModal }) => {
   const [errors, setErrors] = useState({})
 
   // 🌍 Country & State
-  const [countries, setCountries] = useState([])
+  const countries = [{ name: 'India', code: 'IN' }]
   const [states, setStates] = useState([])
   const [loadingStates, setLoadingStates] = useState(false)
   const [pinLoading, setPinLoading] = useState(false)
@@ -42,9 +43,15 @@ const AddressModal = ({ setShowAddressModal }) => {
     const init = async () => {
       try {
         const { data } = await axios.get(
-          'https://country-api.drnyeinchan.com/v1/countries'
+          'https://restcountries.com/v3.1/all'
         )
-        setCountries(data)
+
+        const formatted = data.map((c) => ({
+          name: c.name.common,
+          code: c.cca2,
+        }))
+
+        setCountries(formatted)
 
         // 🇮🇳 Auto-select India
         setAddress((prev) => ({
@@ -62,7 +69,7 @@ const AddressModal = ({ setShowAddressModal }) => {
         const statesRes = await axios.get(
           `https://country-api.drnyeinchan.com/v1/countries/${INDIA_CODE}/states`
         )
-        setStates(statesRes.data)
+        setStates(indianStates)
       } catch (err) {
         console.error('Init failed')
       } finally {
@@ -164,9 +171,8 @@ const AddressModal = ({ setShowAddressModal }) => {
 
       // find matching state from dropdown list
       const matchedState = states.find(
-        (s) => s.name.toLowerCase() === detectedState.toLowerCase()
+        (s) => s.name.toLowerCase() === detectedState.toLowerCase().trim()
       )
-
       setAddress((prev) => ({
         ...prev,
         city: detectedCity,
