@@ -130,6 +130,25 @@ function ShopContent() {
         </div>
       </div>
 
+
+      <div className="sticky top-[80px] z-40 bg-[#020617]/80 backdrop-blur-xl border-b border-white/5">
+        <div className="max-w-4xl mx-auto px-4 py-4">
+          <input
+            type="text"
+            placeholder="🔍 Search products..."
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            className="w-full px-5 py-3 rounded-full 
+      bg-white/5 border border-white/10 
+      text-white placeholder-white/40 
+      outline-none 
+      focus:ring-2 focus:ring-cyan-400 
+      transition-all duration-300
+      text-sm sm:text-base"
+          />
+        </div>
+      </div>
+
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-10">
         <div className="flex flex-col lg:flex-row gap-10">
 
@@ -179,23 +198,6 @@ function ShopContent() {
             </div>
           </aside>
 
-          <div className="sticky top-[80px] z-40 bg-[#020617]/80 backdrop-blur-xl border-b border-white/5">
-            <div className="max-w-4xl mx-auto px-4 py-4">
-              <input
-                type="text"
-                placeholder="🔍 Search products..."
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                className="w-full px-5 py-3 rounded-full 
-      bg-white/5 border border-white/10 
-      text-white placeholder-white/40 
-      outline-none 
-      focus:ring-2 focus:ring-cyan-400 
-      transition-all duration-300
-      text-sm sm:text-base"
-              />
-            </div>
-          </div>
 
           {/* ================= PRODUCT GRID ================= */}
           <div className="flex-1">
