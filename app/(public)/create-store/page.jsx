@@ -253,18 +253,15 @@ export default function CreateStore() {
 
                                     <div className="sm:col-span-3">
                                         <label className={labelClass}>Business Phone</label>
-                                        <div className="sm:col-span-3">
-                                            <label className={labelClass}>Business Phone</label>
-                                            <input
-                                                name="contact"
-                                                onChange={onChangeHandler}
-                                                value={storeInfo.contact}
-                                                type="text"
-                                                placeholder="10-digit number"
-                                                maxLength={10}
-                                                className={inputClass}
-                                            />
-                                        </div>
+                                        <input
+                                            name="contact"
+                                            onChange={onChangeHandler}
+                                            value={storeInfo.contact}
+                                            type="text"
+                                            placeholder="10-digit number"
+                                            maxLength={10}
+                                            className={inputClass}
+                                        />
                                     </div>
                                 </div>
                             </div>

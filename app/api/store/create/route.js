@@ -21,21 +21,6 @@ export async function POST(request) {
         const image = formData.get("image")
         const gst = formData.get("gst")
 
-        const verifiedOtp = await prisma.whatsappOtp.findFirst({
-            where: {
-                phone: contact,
-                verified: true
-            },
-            orderBy: { createdAt: "desc" }
-        })
-
-        if (!verifiedOtp) {
-            return NextResponse.json(
-                { error: "WhatsApp not verified" },
-                { status: 400 }
-            )
-        }
-
         if (!name || !description || !username || !email || !contact || !address || !image || !gst) {
             return NextResponse.json({ error: "Missing Store info" }, { status: 400 })
         }
