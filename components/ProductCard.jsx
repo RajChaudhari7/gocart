@@ -124,7 +124,7 @@ const ProductCard = ({ product, storeIsActive }) => {
         ${!isOutOfStock && !isShopClosed ? 'hover:shadow-[0_8px_40px_rgba(34,211,238,0.1)] hover:border-white/20 hover:bg-white/[0.04]' : ''}
         ${isOutOfStock ? 'opacity-70 grayscale-[0.5]' : ''}`}
       >
-        
+
         {/* SHOP CLOSED OVERLAY */}
         {isShopClosed && (
           <div className="absolute inset-0 z-40 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center gap-3">
@@ -146,8 +146,9 @@ const ProductCard = ({ product, storeIsActive }) => {
         )}
 
         {/* IMAGE CONTAINER (Swipeable) */}
-        <div className="relative w-full aspect-square md:h-[240px] bg-gradient-to-b from-white/[0.05] to-transparent p-6 overflow-hidden flex items-center justify-center">
-          
+
+        <div className="relative w-full aspect-square md:h-[240px] bg-gradient-to-b from-white/[0.05] to-transparent 
+          p-3 md:p-6 overflow-hidden flex items-center justify-center">
           <AnimatePresence initial={false} custom={direction}>
             <motion.div
               key={page}
@@ -168,7 +169,7 @@ const ProductCard = ({ product, storeIsActive }) => {
                 alt={product.name || 'Product image'}
                 fill
                 sizes="(max-width: 768px) 100vw, 300px"
-                className="object-contain drop-shadow-2xl pointer-events-none p-6"
+                className="object-contain drop-shadow-xl pointer-events-none p-2 md:p-6"
                 priority
               />
             </motion.div>
@@ -196,9 +197,9 @@ const ProductCard = ({ product, storeIsActive }) => {
           {hasMultiple && (
             <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-20">
               {images.map((_, i) => (
-                <div 
-                  key={i} 
-                  className={`h-1 rounded-full transition-all duration-300 ${i === imageIndex ? 'w-4 bg-cyan-400' : 'w-1.5 bg-white/30'}`} 
+                <div
+                  key={i}
+                  className={`h-1 rounded-full transition-all duration-300 ${i === imageIndex ? 'w-4 bg-cyan-400' : 'w-1.5 bg-white/30'}`}
                 />
               ))}
             </div>
@@ -219,10 +220,10 @@ const ProductCard = ({ product, storeIsActive }) => {
         </div>
 
         {/* CONTENT */}
-        <div className="p-5 flex flex-col flex-grow bg-black/20 relative z-10">
-          
+        <div className="p-3 md:p-5 flex flex-col flex-grow bg-black/20 relative z-10">
+
           <div className="flex justify-between items-start mb-2">
-            <span className="text-[10px] uppercase tracking-[0.2em] text-cyan-400 font-bold">
+            <span className="text-[9px] sm:text-[10px] uppercase tracking-[0.2em] text-cyan-400 font-bold">
               {product.category || 'Gear'}
             </span>
             {rating > 0 && (
@@ -234,7 +235,8 @@ const ProductCard = ({ product, storeIsActive }) => {
           </div>
 
           <Link href={`/product/${product.id}`} className="block group/link mb-3">
-            <h3 className="text-sm md:text-base font-medium text-white/90 group-hover/link:text-cyan-400 transition-colors line-clamp-2 leading-snug">
+            <h3 className="text-xs sm:text-sm md:text-base font-medium text-white/90 
+            group-hover/link:text-cyan-400 transition-colors line-clamp-2 leading-tight">
               {product.name}
             </h3>
           </Link>
@@ -247,7 +249,7 @@ const ProductCard = ({ product, storeIsActive }) => {
                   {currency}{(product.price * 1.2).toFixed(2)}
                 </span>
               )}
-              <p className={`text-lg font-bold tracking-tight ${isOutOfStock ? 'text-white/40' : 'text-white'}`}>
+              <p className={`text-sm sm:text-base md:text-lg font-bold tracking-tight ${isOutOfStock ? 'text-white/40' : 'text-white'}`}>
                 {currency}{Number(product.price).toLocaleString()}
               </p>
             </div>
