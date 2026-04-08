@@ -1,7 +1,7 @@
 'use client'
 
 import { Suspense, useMemo, useEffect, useState } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import Link from "next/link"
 
@@ -11,6 +11,21 @@ function ShopContent() {
   const search = searchParams.get('search')
 
   const [stores, setStores] = useState([])
+
+  const router = useRouter()
+  const [searchInput, setSearchInput] = useState(search || '')
+
+  useEffect(() => {
+    const delay = setTimeout(() => {
+      if (searchInput.trim() === '') {
+        router.push('/shop')
+      } else {
+        router.push(`/shop?search=${encodeURIComponent(searchInput)}`)
+      }
+    }, 400)
+
+    return () => clearTimeout(delay)
+  }, [searchInput])
 
   // FETCH STORES FROM API
   useEffect(() => {
@@ -55,6 +70,24 @@ function ShopContent() {
             Discover Stores
           </p>
 
+        </div>
+      </div>
+
+      <div className="sticky top-[80px] z-40 bg-[#020617]/80 backdrop-blur-xl border-b border-white/5">
+        <div className="max-w-4xl mx-auto px-4 py-4">
+          <input
+            type="text"
+            placeholder="🏬 Search shops..."
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            className="w-full px-5 py-3 rounded-full 
+      bg-white/5 border border-white/10 
+      text-white placeholder-white/40 
+      outline-none 
+      focus:ring-2 focus:ring-emerald-400 
+      transition-all duration-300
+      text-sm sm:text-base"
+          />
         </div>
       </div>
 

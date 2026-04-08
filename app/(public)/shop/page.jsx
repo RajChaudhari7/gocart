@@ -1,11 +1,12 @@
 'use client'
 
-import { Suspense, useState, useMemo } from 'react'
+import { Suspense, useState, useMemo, useEffect } from 'react'
 import ProductCard from '@/components/ProductCard'
 import { SlidersHorizontal, X } from 'lucide-react'
 import { useSearchParams } from 'next/navigation'
 import { useSelector } from 'react-redux'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useRouter } from 'next/navigation'
 
 /* ✅ DEFAULT CATEGORIES */
 const DEFAULT_CATEGORIES = [
@@ -39,6 +40,20 @@ function ShopContent() {
   const [sort, setSort] = useState('')
   const [priceRange, setPriceRange] = useState('ALL')
   const [showMobileFilter, setShowMobileFilter] = useState(false)
+  const router = useRouter()
+  const [searchInput, setSearchInput] = useState(search || '')
+
+  useEffect(() => {
+    const delay = setTimeout(() => {
+      if (searchInput.trim() === '') {
+        router.push('/product')
+      } else {
+        router.push(`/product?search=${encodeURIComponent(searchInput)}`)
+      }
+    }, 400)
+
+    return () => clearTimeout(delay)
+  }, [searchInput])
 
   const storeIsActive = useSelector(
     state => state.store?.current?.isActive
@@ -163,6 +178,24 @@ function ShopContent() {
               </div>
             </div>
           </aside>
+
+          <div className="sticky top-[80px] z-40 bg-[#020617]/80 backdrop-blur-xl border-b border-white/5">
+            <div className="max-w-4xl mx-auto px-4 py-4">
+              <input
+                type="text"
+                placeholder="🔍 Search products..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                className="w-full px-5 py-3 rounded-full 
+      bg-white/5 border border-white/10 
+      text-white placeholder-white/40 
+      outline-none 
+      focus:ring-2 focus:ring-cyan-400 
+      transition-all duration-300
+      text-sm sm:text-base"
+              />
+            </div>
+          </div>
 
           {/* ================= PRODUCT GRID ================= */}
           <div className="flex-1">

@@ -29,13 +29,13 @@ const AddressModal = ({ setShowAddressModal }) => {
 
   const [errors, setErrors] = useState({})
 
-  // 🌍 Country & State
+  //  Country & State
   const countries = [{ name: 'India', code: 'IN' }]
   const [states, setStates] = useState([])
   const [loadingStates, setLoadingStates] = useState(false)
   const [pinLoading, setPinLoading] = useState(false)
 
-  // ✅ PIN verification flag
+  // PIN verification flag
   const [isPinVerified, setIsPinVerified] = useState(false)
 
   /* ---------------- FETCH COUNTRIES + PRELOAD INDIA ---------------- */

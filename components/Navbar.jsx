@@ -2,7 +2,6 @@
 
 import {
   PackageIcon,
-  Search,
   ShoppingCart,
   Menu,
   X,
@@ -44,8 +43,6 @@ const Navbar = () => {
   )
   const prevCartCount = useRef(cartCount)
   const [pulse, setPulse] = useState(false)
-
-  const [search, setSearch] = useState('')
   const [menuOpen, setMenuOpen] = useState(false)
 
   const isActive = (href) => pathname === href
@@ -60,19 +57,7 @@ const Navbar = () => {
     }
   }, [cartCount])
 
-  /* ===== SEARCH HANDLERS ===== */
-  const handleSearchChange = (e) => {
-    const value = e.target.value
-    setSearch(value)
-
-    if (value.trim() === '') {
-      router.push('/shop') // show all products if empty
-    } else {
-      router.push(`/shop?search=${encodeURIComponent(value.trim())}`)
-    }
-  }
-
-  const handleSearchSubmit = (e) => e.preventDefault() // prevent page reload
+ 
 
   const desktopLinks = [
     { name: 'Home', href: '/' },
@@ -100,21 +85,7 @@ const Navbar = () => {
             <span className="text-cyan-400">She</span>Kart<span className="text-cyan-400">.</span>
           </Link>
 
-          {/* MOBILE SEARCH */}
-          <form
-            onSubmit={handleSearchSubmit}
-            className="flex items-center gap-2 bg-white/10 focus-within:bg-white/20 px-3 py-1.5 rounded-full transition-colors duration-300"
-          >
-            <Search size={14} className="text-white/70" />
-            <input
-              type="text"
-              placeholder="Search products..."
-              value={search}
-              onChange={handleSearchChange}
-              className="bg-transparent outline-none text-sm w-24 text-white placeholder-white/50
-                focus:w-36 transition-all duration-300"
-            />
-          </form>
+        
 
           {!user ? (
             <button
@@ -159,21 +130,6 @@ const Navbar = () => {
                 )}
               </Link>
             ))}
-
-            {/* DESKTOP SEARCH */}
-            <form
-              onSubmit={handleSearchSubmit}
-              className="hidden xl:flex items-center gap-2 bg-white/10 focus-within:bg-white/20 px-4 py-2 rounded-full transition-colors duration-300 shadow-[inset_0_0_10px_rgba(255,255,255,0.05)]"
-            >
-              <Search size={16} className="text-white/70" />
-              <input
-                type="text"
-                placeholder="Search products..."
-                value={search}
-                onChange={handleSearchChange}
-                className="bg-transparent outline-none text-sm text-white placeholder-white/50 focus:w-64 w-40 transition-all duration-300"
-              />
-            </form>
 
             {/* CART */}
             <Link href="/cart" className="relative">
