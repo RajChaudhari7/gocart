@@ -115,6 +115,14 @@ model Order {
   driverId String?
 }
 
+model EmailOtp {
+  id        String   @id @default(cuid())
+  email     String
+  otp       String
+  verified  Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
 model OrderItem {
   orderId   String
   productId String
