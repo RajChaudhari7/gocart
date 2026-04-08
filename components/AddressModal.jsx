@@ -40,44 +40,14 @@ const AddressModal = ({ setShowAddressModal }) => {
 
   /* ---------------- FETCH COUNTRIES + PRELOAD INDIA ---------------- */
   useEffect(() => {
-    const init = async () => {
-      try {
-        const { data } = await axios.get(
-          'https://restcountries.com/v3.1/all'
-        )
+    // 🇮🇳 Set India by default
+    setAddress((prev) => ({
+      ...prev,
+      country: INDIA_NAME,
+    }))
 
-        const formatted = data.map((c) => ({
-          name: c.name.common,
-          code: c.cca2,
-        }))
-
-        setCountries(formatted)
-
-        // 🇮🇳 Auto-select India
-        setAddress((prev) => ({
-          ...prev,
-          country: INDIA_NAME,
-          state: '',
-          city: '',
-          zip: '',
-        }))
-
-        setIsPinVerified(false)
-
-        // 🇮🇳 Preload Indian states
-        setLoadingStates(true)
-        const statesRes = await axios.get(
-          `https://country-api.drnyeinchan.com/v1/countries/${INDIA_CODE}/states`
-        )
-        setStates(indianStates)
-      } catch (err) {
-        console.error('Init failed')
-      } finally {
-        setLoadingStates(false)
-      }
-    }
-
-    init()
+    // 🇮🇳 Load Indian states
+    setStates(indianStates)
   }, [])
 
   /* ---------------- INPUT HANDLER ---------------- */
@@ -104,38 +74,16 @@ const AddressModal = ({ setShowAddressModal }) => {
   }
 
   /* ---------------- COUNTRY CHANGE ---------------- */
-  const handleCountrySelect = async (e) => {
+  const handleCountrySelect = (e) => {
     const countryCode = e.target.value
-    const countryName =
-      countries.find((c) => c.code === countryCode)?.name || ''
 
     setAddress((prev) => ({
       ...prev,
-      country: countryName,
-      state: '',
-      city: '',
-      zip: '',
+      country: INDIA_NAME,
     }))
 
+    setStates(indianStates)
     setIsPinVerified(false)
-
-    if (!countryCode) {
-      setStates([])
-      return
-    }
-
-    // Country Api
-    try {
-      setLoadingStates(true)
-      const { data } = await axios.get(
-        `https://country-api.drnyeinchan.com/v1/countries/${countryCode}/states`
-      )
-      setStates(data)
-    } catch {
-      setStates([])
-    } finally {
-      setLoadingStates(false)
-    }
   }
 
   /* ---------------- STATE CHANGE ---------------- */
@@ -171,7 +119,7 @@ const AddressModal = ({ setShowAddressModal }) => {
 
       // find matching state from dropdown list
       const matchedState = states.find(
-        (s) => s.name.toLowerCase() === detectedState.toLowerCase().trim()
+        (s) => s.name.toLowerCase().trim() === detectedState.toLowerCase().trim()
       )
       setAddress((prev) => ({
         ...prev,
@@ -231,6 +179,11 @@ const AddressModal = ({ setShowAddressModal }) => {
         { address },
         { headers: { Authorization: `Bearer ${token}` } }
       )
+
+      if (!data?.newAddress) {
+        toast.error("Address not saved properly")
+        return
+      }
 
       dispatch(addAddress(data.newAddress))
       toast.success(data.message)
