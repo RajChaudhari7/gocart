@@ -64,7 +64,7 @@ export async function POST(request) {
 
         // 📧 Send Email to Store Owner
         await sendEmail({
-            to: store.user.email,
+            to: store.email,
             type:"store",
             subject:
                 status === "approved"
@@ -131,23 +131,121 @@ export async function GET(request) {
 // 📧 Email Templates
 // ===============================
 const APPROVE_EMAIL = (store) => `
-    <div style="font-family: Arial, sans-serif; line-height: 1.6">
-        <h2>🎉 Congratulations!</h2>
-        <p>Your store <strong>${store.name}</strong> has been approved.</p>
-        <p>You can now start selling your products on our platform.</p>
-        <br />
-        <p>Best wishes,</p>
-        <p><strong>Admin Team</strong></p>
-    </div>
+<div style="margin:0;padding:0;background:#f4f6f8;font-family:Arial,Helvetica,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="padding:20px 0;">
+    <tr>
+      <td align="center">
+
+        <table width="100%" style="max-width:520px;background:#ffffff;border-radius:14px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.08);">
+
+          <!-- Header -->
+          <tr>
+            <td style="background:linear-gradient(90deg,#22c55e,#16a34a);padding:22px;text-align:center;">
+              <h1 style="color:#fff;margin:0;font-size:22px;">GlobalMart</h1>
+              <p style="color:#dcfce7;margin:6px 0 0;font-size:13px;">Store Approved ✅</p>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding:30px 25px;text-align:center;">
+              
+              <h2 style="color:#111827;margin-bottom:10px;">
+                🎉 Congratulations, ${store.name}!
+              </h2>
+
+              <p style="color:#6b7280;font-size:14px;line-height:1.6;margin-bottom:20px;">
+                Your store has been successfully approved. You can now start listing products and selling on GlobalMart.
+              </p>
+
+              <!-- CTA Button -->
+              <a href="${process.env.NEXT_PUBLIC_APP_URL}/store"
+                 style="display:inline-block;padding:12px 24px;background:#4f46e5;color:#ffffff;text-decoration:none;border-radius:8px;font-weight:600;font-size:14px;">
+                 Go to Dashboard
+              </a>
+
+              <p style="margin-top:20px;color:#9ca3af;font-size:12px;">
+                Start uploading products and grow your business 🚀
+              </p>
+
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding:18px;text-align:center;background:#f9fafb;">
+              <p style="font-size:12px;color:#9ca3af;margin:0;">
+                © ${new Date().getFullYear()} GlobalMart. All rights reserved.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+
+      </td>
+    </tr>
+  </table>
+</div>
 `
 
 const REJECT_EMAIL = (store) => `
-    <div style="font-family: Arial, sans-serif; line-height: 1.6">
-        <h2>Store Application Update</h2>
-        <p>Unfortunately, your store <strong>${store.name}</strong> was not approved.</p>
-        <p>You may contact support for further clarification.</p>
-        <br />
-        <p>Regards,</p>
-        <p><strong>Admin Team</strong></p>
-    </div>
+<div style="margin:0;padding:0;background:#f4f6f8;font-family:Arial,Helvetica,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="padding:20px 0;">
+    <tr>
+      <td align="center">
+
+        <table width="100%" style="max-width:520px;background:#ffffff;border-radius:14px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.08);">
+
+          <!-- Header -->
+          <tr>
+            <td style="background:linear-gradient(90deg,#ef4444,#dc2626);padding:22px;text-align:center;">
+              <h1 style="color:#fff;margin:0;font-size:22px;">GlobalMart</h1>
+              <p style="color:#fee2e2;margin:6px 0 0;font-size:13px;">Application Update</p>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding:30px 25px;text-align:center;">
+              
+              <h2 style="color:#111827;margin-bottom:10px;">
+                Store Not Approved
+              </h2>
+
+              <p style="color:#6b7280;font-size:14px;line-height:1.6;margin-bottom:20px;">
+                Unfortunately, your store <strong>${store.name}</strong> was not approved at this time.
+              </p>
+
+              <p style="color:#6b7280;font-size:14px;line-height:1.6;margin-bottom:20px;">
+                This may be due to incomplete or incorrect information. You can update your details and reapply.
+              </p>
+
+              <!-- CTA -->
+              <a href="${process.env.NEXT_PUBLIC_APP_URL}/contact"
+                 style="display:inline-block;padding:12px 24px;background:#111827;color:#ffffff;text-decoration:none;border-radius:8px;font-weight:600;font-size:14px;">
+                 Contact Support
+              </a>
+
+              <p style="margin-top:20px;color:#9ca3af;font-size:12px;">
+                Need help? Our team is here for you.
+              </p>
+
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding:18px;text-align:center;background:#f9fafb;">
+              <p style="font-size:12px;color:#9ca3af;margin:0;">
+                © ${new Date().getFullYear()} GlobalMart. All rights reserved.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+
+      </td>
+    </tr>
+  </table>
+</div>
 `
