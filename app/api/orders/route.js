@@ -7,6 +7,7 @@ import Stripe from "stripe";
 export async function POST(request) {
   try {
     const { userId, has } = getAuth(request);
+
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -21,23 +22,30 @@ export async function POST(request) {
     }
 
     const isPrimeMember = has({ plan: "prime" });
-    const ordersByStore = new Map();
 
     let orderIds = [];
     let fullAmount = 0;
     let isShippingFeeAdded = false;
 
-    // 🔥 EVERYTHING INSIDE ONE TRANSACTION
+    // 🔥 TRANSACTION START
     await prisma.$transaction(async (tx) => {
-      // 1️⃣ Lock + validate + group
-      for (const item of items) {
-        const product = await tx.product.findUnique({
-          where: { id: item.id },
-        });
+      const ordersByStore = new Map();
 
-        if (!product) {
+      // ===============================
+      // 🔒 STEP 1: LOCK + VALIDATE + DECREMENT
+      // ===============================
+      for (const item of items) {
+        const products = await tx.$queryRaw`
+          SELECT * FROM "Product"
+          WHERE id = ${item.id}
+          FOR UPDATE
+        `;
+
+        if (!products.length) {
           throw new Error("Product not found");
         }
+
+        const product = products[0];
 
         if (product.quantity < item.quantity) {
           throw new Error(
@@ -45,22 +53,34 @@ export async function POST(request) {
           );
         }
 
+        // ✅ Group by store
         if (!ordersByStore.has(product.storeId)) {
           ordersByStore.set(product.storeId, []);
         }
 
-        ordersByStore
-          .get(product.storeId)
-          .push({ ...item, price: product.price });
+        ordersByStore.get(product.storeId).push({
+          ...item,
+          price: product.price,
+        });
+
+        // 🔥 SAFE DECREMENT (inside lock)
+        await tx.$executeRaw`
+          UPDATE "Product"
+          SET quantity = quantity - ${item.quantity}
+          WHERE id = ${item.id}
+        `;
       }
 
-      // 2️⃣ Create orders + decrement stock atomically
+      // ===============================
+      // 📦 STEP 2: CREATE ORDERS
+      // ===============================
       for (const [storeId, sellerItems] of ordersByStore.entries()) {
         let total = sellerItems.reduce(
           (acc, item) => acc + item.price * item.quantity,
           0
         );
 
+        // 🚚 Shipping logic
         if (!isPrimeMember && !isShippingFeeAdded) {
           total += 50;
           isShippingFeeAdded = true;
@@ -91,57 +111,23 @@ export async function POST(request) {
         });
 
         orderIds.push(order.id);
-
-        // 🔥 DECREMENT STOCK SAFELY
-        for (const item of sellerItems) {
-          await tx.product.update({
-            where: { id: item.id },
-            data: {
-              quantity: {
-                decrement: item.quantity,
-              },
-            },
-          });
-        }
       }
     });
+    // 🔥 TRANSACTION END
 
-    // ---------------- STRIPE ----------------
-    if (paymentMethod === "STRIPE") {
-      const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-      const origin = request.headers.get("origin");
+    // ===============================
+    // 💵 COD RESPONSE
+    // ===============================
+    return NextResponse.json({
+      message: "Order Placed Successfully",
+      orderIds,
+    });
 
-      const session = await stripe.checkout.sessions.create({
-        payment_method_types: ["card"],
-        line_items: [
-          {
-            price_data: {
-              currency: "inr",
-              product_data: { name: "Order" },
-              unit_amount: Math.round(fullAmount * 100),
-            },
-            quantity: 1,
-          },
-        ],
-        mode: "payment",
-        success_url: `${origin}/loading?nextUrl=orders`,
-        cancel_url: `${origin}/cart`,
-        metadata: {
-          orderIds: orderIds.join(","),
-          userId,
-          appId: "globalmart", // ✅ REQUIRED FOR WEBHOOK
-        },
-      });
-
-      return NextResponse.json({ session });
-    }
-
-    // ---------------- COD ----------------
-    return NextResponse.json({ message: "Order Placed Successfully" });
   } catch (error) {
     console.error(error);
+
     return NextResponse.json(
-      { error: error.message },
+      { error: error.message || "Something went wrong" },
       { status: 400 }
     );
   }
