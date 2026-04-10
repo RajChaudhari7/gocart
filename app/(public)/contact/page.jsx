@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import emailjs from '@emailjs/browser'
 import { Mail, Phone, MapPin, Send, ArrowRight } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import ParallaxTilt from 'react-parallax-tilt'
@@ -19,29 +18,42 @@ export default function ContactPage() {
 
   const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value })
 
-  const handleSubmit = async e => {
-    e.preventDefault()
-    setLoading(true)
-    setStatus(null)
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setStatus(null);
+
     try {
-      await emailjs.sendForm(
-        process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID,
-        process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID,
-        formRef.current,
-        process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY
-      )
-      setStatus({ type: 'success', message: 'Message sent successfully. We’ll get back to you shortly.' })
-      setForm({ name: '', email: '', message: '' })
-    } catch {
-      setStatus({ type: 'error', message: 'Something went wrong. Please try again.' })
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(form),
+      });
+
+      if (res.ok) {
+        setStatus({
+          type: "success",
+          message: "Message sent successfully. We’ll get back to you shortly.",
+        });
+        setForm({ name: "", email: "", message: "" });
+      } else {
+        throw new Error();
+      }
+    } catch (err) {
+      setStatus({
+        type: "error",
+        message: "Something went wrong. Please try again.",
+      });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <section className="relative min-h-screen bg-[#050914] text-white overflow-hidden selection:bg-cyan-500/30">
-      
+
       {/* ---------------- Premium Ambient Background ---------------- */}
       <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-blue-600/10 blur-[150px] rounded-full pointer-events-none mix-blend-screen" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-cyan-400/10 blur-[150px] rounded-full pointer-events-none mix-blend-screen" />
@@ -73,7 +85,7 @@ export default function ContactPage() {
           </h1>
 
           <p className="mt-8 text-lg md:text-xl text-white/50 font-light max-w-2xl mx-auto leading-relaxed">
-            Questions about orders, enterprise solutions, or partnerships? 
+            Questions about orders, enterprise solutions, or partnerships?
             Our dedicated support team is ready to assist you.
           </p>
         </motion.div>
@@ -109,7 +121,7 @@ export default function ContactPage() {
           >
             <div className="rounded-[2.5rem] bg-white/[0.02] backdrop-blur-2xl border border-white/10 p-8 sm:p-12 shadow-[0_8px_30px_rgb(0,0,0,0.12)]">
               <div className="space-y-6">
-                
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <Input label="Full Name" name="name" value={form.name} onChange={handleChange} placeholder="John Doe" />
                   <Input label="Email Address" name="email" type="email" value={form.email} onChange={handleChange} placeholder="john@company.com" />

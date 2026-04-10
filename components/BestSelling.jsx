@@ -18,7 +18,7 @@ const BestSelling = () => {
         <div className="mt-16 grid grid-cols-1 md:grid-cols-2 gap-10">
 
           {/* Shop by Shop */}
-          <Link href="/product">
+          <Link href="/shop">
             <div className="group cursor-pointer relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-white/5 to-white/0 backdrop-blur-xl p-12 transition-all duration-500 hover:scale-[1.04] hover:border-blue-500/40 hover:shadow-[0_0_40px_rgba(59,130,246,0.25)]">
 
               <div className="flex flex-col items-center text-center">
