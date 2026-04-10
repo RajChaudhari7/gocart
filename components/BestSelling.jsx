@@ -11,7 +11,7 @@ const BestSelling = () => {
         <Title
           title="Start Shopping"
           description="Choose how you want to explore products"
-          href="/shop"
+          href="/product"
           theme="dark"
         />
 
@@ -41,7 +41,7 @@ const BestSelling = () => {
           </Link>
 
           {/* Shop by Product */}
-          <Link href="/shop">
+          <Link href="/product">
             <div className="group cursor-pointer relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-white/5 to-white/0 backdrop-blur-xl p-12 transition-all duration-500 hover:scale-[1.04] hover:border-purple-500/40 hover:shadow-[0_0_40px_rgba(168,85,247,0.25)]">
 
               <div className="flex flex-col items-center text-center">

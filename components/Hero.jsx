@@ -211,7 +211,7 @@ const Hero = () => {
             </div>
 
             <button
-              onClick={() => router.push('/shop')}
+              onClick={() => router.push('/product')}
               className={`group relative overflow-hidden px-8 py-4 rounded-full ${slide.bgAccent} transition-all duration-300 hover:scale-105 hover:shadow-[0_0_40px_-10px_rgba(255,255,255,0.3)] text-white font-semibold flex items-center gap-3`}
             >
               <span className="relative z-10 tracking-wide">Explore Device</span>
