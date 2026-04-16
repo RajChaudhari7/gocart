@@ -17,7 +17,14 @@ export default function ReturnPage() {
   const [items, setItems] = useState([])
   const [selected, setSelected] = useState({})
   const [reason, setReason] = useState("")
-  const [step, setStep] = useState("SELECT")
+  const [showReason, setShowReason] = useState(false)
+
+  const reasons = [
+    { label: "Damaged product", value: "DAMAGED" },
+    { label: "Wrong item received", value: "WRONG_ITEM" },
+    { label: "No longer needed", value: "NOT_NEEDED" },
+    { label: "Quality not good", value: "QUALITY_ISSUE" },
+  ]
 
 
   const fetchOrder = async () => {
@@ -164,20 +171,42 @@ export default function ReturnPage() {
         })}
 
         {step === "SELECT" && (
-          <div className="px-4 mt-6">
+          <div className="mt-6 relative">
             <p className="text-sm text-white/60 mb-2">Select reason</p>
 
-            <select
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              className="w-full p-3 rounded-xl bg-white/10 border border-white/20 text-sm"
+            {/* BUTTON */}
+            <div
+              onClick={() => setShowReason(!showReason)}
+              className="w-full p-3 rounded-xl bg-white/10 border border-white/20 text-sm cursor-pointer flex justify-between"
             >
-              <option value="">Choose reason</option>
-              <option value="DAMAGED">Damaged product</option>
-              <option value="WRONG_ITEM">Wrong item received</option>
-              <option value="NOT_NEEDED">No longer needed</option>
-              <option value="QUALITY_ISSUE">Quality not good</option>
-            </select>
+              <span className={reason ? "text-white" : "text-white/40"}>
+                {reason
+                  ? reasons.find(r => r.value === reason)?.label
+                  : "Choose reason"}
+              </span>
+
+              <span>⌄</span>
+            </div>
+
+            {/* DROPDOWN */}
+            {showReason && (
+              <div className="absolute z-50 mt-2 w-full bg-[#0f172a] border border-white/10 rounded-xl overflow-hidden shadow-xl">
+
+                {reasons.map((r) => (
+                  <div
+                    key={r.value}
+                    onClick={() => {
+                      setReason(r.value)
+                      setShowReason(false)
+                    }}
+                    className="px-4 py-3 text-sm hover:bg-white/10 cursor-pointer"
+                  >
+                    {r.label}
+                  </div>
+                ))}
+
+              </div>
+            )}
           </div>
         )}
 
