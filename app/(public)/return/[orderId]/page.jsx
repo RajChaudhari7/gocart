@@ -16,6 +16,9 @@ export default function ReturnPage() {
 
   const [items, setItems] = useState([])
   const [selected, setSelected] = useState({})
+  const [reason, setReason] = useState("")
+  const [step, setStep] = useState("SELECT")
+
 
   const fetchOrder = async () => {
     const token = await getToken()
@@ -46,19 +49,54 @@ export default function ReturnPage() {
       return
     }
 
+    if (!reason) {
+      toast.error("Please select reason")
+      return
+    }
+
     const token = await getToken()
 
     await axios.post("/api/return/create", {
       orderId,
-      products
+      products,
+      reason
     }, {
       headers: { Authorization: `Bearer ${token}` }
     })
 
     toast.success("OTP sent to your email")
+
+    setStep("SUCCESS")
   }
 
   const selectedCount = Object.values(selected).filter(Boolean).length
+
+  if (step === "SUCCESS") {
+    return (
+      <div className="fixed inset-0 bg-black text-white flex flex-col items-center justify-center text-center px-6">
+
+        <div className="w-20 h-20 rounded-full bg-emerald-500/20 flex items-center justify-center mb-6">
+          <span className="text-3xl">✅</span>
+        </div>
+
+        <h2 className="text-xl font-semibold mb-2">
+          Return Request Submitted
+        </h2>
+
+        <p className="text-sm text-white/60 mb-6">
+          Seller will verify your OTP and process the return.
+        </p>
+
+        <button
+          onClick={() => router.push("/orders")}
+          className="px-6 py-2 rounded-full bg-emerald-600"
+        >
+          Go to Orders
+        </button>
+
+      </div>
+    )
+  }
 
   return (
     <div className="fixed inset-0 z-[999] bg-black text-white overflow-y-auto">
@@ -125,7 +163,27 @@ export default function ReturnPage() {
           )
         })}
 
+        {step === "SELECT" && (
+          <div className="px-4 mt-6">
+            <p className="text-sm text-white/60 mb-2">Select reason</p>
+
+            <select
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              className="w-full p-3 rounded-xl bg-white/10 border border-white/20 text-sm"
+            >
+              <option value="">Choose reason</option>
+              <option value="DAMAGED">Damaged product</option>
+              <option value="WRONG_ITEM">Wrong item received</option>
+              <option value="NOT_NEEDED">No longer needed</option>
+              <option value="QUALITY_ISSUE">Quality not good</option>
+            </select>
+          </div>
+        )}
+
       </div>
+
+
 
       {/* 🔻 FIXED RETURN BUTTON (ALWAYS VISIBLE) */}
       <div className="fixed bottom-0 left-0 right-0 z-[1000] bg-black border-t border-white/10 p-4">
@@ -138,7 +196,12 @@ export default function ReturnPage() {
 
           <button
             onClick={submitReturn}
-            className="px-6 py-2 rounded-full bg-red-600 text-sm"
+            disabled={!selectedCount || !reason}
+            className={`px-6 py-2 rounded-full text-sm
+    ${selectedCount && reason
+                ? "bg-red-600"
+                : "bg-gray-600 cursor-not-allowed"}
+  `}
           >
             Return
           </button>
