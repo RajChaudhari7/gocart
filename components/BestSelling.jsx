@@ -15,7 +15,7 @@ const BestSelling = () => {
           theme="dark"
         />
 
-        <div className="mt-16 grid grid-cols-1 md:grid-cols-2 gap-10">
+        <div className="mt-16 grid grid-cols-2 md:grid-cols-2 gap-10">
 
           {/* Shop by Shop */}
           <Link href="/shop">
