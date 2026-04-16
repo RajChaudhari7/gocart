@@ -18,6 +18,7 @@ export default function ReturnPage() {
   const [selected, setSelected] = useState({})
   const [reason, setReason] = useState("")
   const [showReason, setShowReason] = useState(false)
+  const [step, setStep] = useState("SELECT")
 
   const reasons = [
     { label: "Damaged product", value: "DAMAGED" },
