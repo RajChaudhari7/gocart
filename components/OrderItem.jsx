@@ -49,7 +49,11 @@ const OrderItem = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className={`hidden md:table-row bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl ${isFinalState ? 'opacity-60' : ''}`}
+      className={`hidden md:table-row 
+        bg-gradient-to-r from-white/[0.04] to-white/[0.02]
+        backdrop-blur-2xl border border-white/10 
+        rounded-2xl hover:border-white/20 transition-all duration-300
+        ${isFinalState ? 'opacity-60' : ''}`}
     >
 
       {/* PRODUCT */}
@@ -108,84 +112,77 @@ const OrderItem = ({
 
 
       {/* ACTION */}
-      <td className="text-center align-top space-x-2">
+      <td className="text-center align-top">
+        <div className="flex flex-wrap justify-center gap-2">
 
-        {!isCanceled && !isReturned && (
-
-          <>
-
-            {/* TRACK */}
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={onTrack}
-              className="px-4 py-1.5 rounded-full bg-indigo-500/15 text-indigo-400 border border-indigo-500/30 hover:bg-indigo-500/25 text-sm"
-            >
-              Track
-            </motion.button>
-
-
-            {/* VERIFY OTP */}
-            {isDeliveryInitiated && (
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={onVerifyOtp}
-                className="px-4 py-1.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25 text-sm"
+          {!isCanceled && !isReturned && (
+            <>
+              {/* TRACK */}
+              <button
+                onClick={onTrack}
+                className="px-4 py-1.5 rounded-full text-sm 
+          bg-indigo-500/15 text-indigo-400 border border-indigo-500/30 
+          hover:bg-indigo-500/25 transition"
               >
-                Verify OTP
-              </motion.button>
-            )}
+                Track
+              </button>
 
+              {/* VERIFY OTP */}
+              {isDeliveryInitiated && (
+                <button
+                  onClick={onVerifyOtp}
+                  className="px-4 py-1.5 rounded-full text-sm 
+            bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 
+            hover:bg-emerald-500/25 transition"
+                >
+                  Verify OTP
+                </button>
+              )}
 
-            {/* RATE */}
-            {isDelivered && onRate && (
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={onRate}
-                className="px-4 py-1.5 rounded-full bg-yellow-500/15 text-yellow-400 border border-yellow-500/30 hover:bg-yellow-500/25 text-sm"
-              >
-                ⭐ Rate
-              </motion.button>
-            )}
+              {/* RATE */}
+              {isDelivered && onRate && (
+                <button
+                  onClick={onRate}
+                  className="px-4 py-1.5 rounded-full text-sm 
+            bg-yellow-500/15 text-yellow-400 border border-yellow-500/30 
+            hover:bg-yellow-500/25 transition"
+                >
+                  ⭐ Rate
+                </button>
+              )}
 
+              {/* RETURN */}
+              {canReturn && (
+                <button
+                  onClick={onReturn}
+                  className="px-4 py-1.5 rounded-full text-sm 
+            bg-orange-500/15 text-orange-400 border border-orange-500/30 
+            hover:bg-orange-500/25 transition"
+                >
+                  Return
+                </button>
+              )}
 
-            {/* RETURN */}
-            {canReturn && (
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={onReturn}
-                className="px-4 py-1.5 rounded-full bg-orange-500/15 text-orange-400 border border-orange-500/30 hover:bg-orange-500/25 text-sm"
-              >
-                Return
-              </motion.button>
-            )}
+              {/* CANCEL */}
+              {canCancel && onCancel && (
+                <button
+                  onClick={onCancel}
+                  className="px-4 py-1.5 rounded-full text-sm 
+            bg-red-500/15 text-red-400 border border-red-500/30 
+            hover:bg-red-500/25 transition"
+                >
+                  Cancel
+                </button>
+              )}
+            </>
+          )}
 
-
-            {/* CANCEL */}
-            {canCancel && onCancel && (
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={onCancel}
-                className="px-4 py-1.5 rounded-full bg-red-500/15 text-red-400 border border-red-500/30 hover:bg-red-500/25 text-sm"
-              >
-                Cancel
-              </motion.button>
-            )}
-
-          </>
-
-        )}
-
-        {isCanceled && <span className="text-red-400 text-sm">Cancelled</span>}
-        {isReturned && <span className="text-orange-400 text-sm">Returned</span>}
-        {isDelivered && !isReturned && (
-          <span className="text-emerald-400 text-sm">Completed</span>
-        )}
-
+          {isCanceled && <span className="text-red-400 text-sm">Cancelled</span>}
+          {isReturned && <span className="text-orange-400 text-sm">Returned</span>}
+          {isDelivered && !isReturned && (
+            <span className="text-emerald-400 text-sm">Completed</span>
+          )}
+        </div>
       </td>
 
     </motion.tr>
@@ -200,78 +197,97 @@ const OrderItem = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className={`rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 p-6 space-y-4 ${isFinalState ? 'opacity-60' : ''}`}
+      className={`rounded-2xl 
+    bg-gradient-to-br from-white/[0.05] to-white/[0.02]
+    backdrop-blur-2xl border border-white/10 
+    p-5 space-y-5 shadow-lg
+    ${isFinalState ? 'opacity-60' : ''}`}
     >
 
+      {/* PRODUCTS */}
       {order.orderItems.map((item, idx) => (
-
         <div key={idx} className="flex gap-4">
 
-          <div className="w-20 aspect-square bg-white/10 rounded-xl flex items-center justify-center">
+          <div className="w-16 h-16 bg-white/10 rounded-xl flex items-center justify-center">
             <Image
               src={item.product.images[0]}
               alt={item.product.name}
-              width={56}
-              height={56}
+              width={48}
+              height={48}
               className="object-contain"
             />
           </div>
 
           <div className="flex-1">
-            <p className="font-medium text-white">{item.product.name}</p>
-            <p className="text-sm text-white/60">
+            <p className="font-medium text-white text-sm leading-tight">
+              {item.product.name}
+            </p>
+
+            <p className="text-xs text-white/60 mt-1">
               {currency}{item.price} × {item.quantity}
             </p>
-            <p className="text-xs text-white/40">
+
+            <p className="text-[11px] text-white/40 mt-1">
               {new Date(order.createdAt).toDateString()}
             </p>
           </div>
-
         </div>
-
       ))}
 
+      {/* ACTIONS */}
       <div className="flex flex-wrap gap-2">
 
         {!isCanceled && !isReturned && (
-
           <>
-
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+            <button
               onClick={onTrack}
-              className="flex-1 px-4 py-2 rounded-full bg-indigo-500/15 text-indigo-400 border border-indigo-500/30 text-sm"
+              className="flex-1 min-w-[45%] px-4 py-2 rounded-full text-sm
+            bg-indigo-500/15 text-indigo-400 border border-indigo-500/30"
             >
               Track
-            </motion.button>
+            </button>
 
+            {isDeliveryInitiated && (
+              <button
+                onClick={onVerifyOtp}
+                className="flex-1 min-w-[45%] px-4 py-2 rounded-full text-sm
+              bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+              >
+                Verify OTP
+              </button>
+            )}
+
+            {/* ⭐ FIXED: RATE BUTTON NOW IN MOBILE */}
+            {isDelivered && onRate && (
+              <button
+                onClick={onRate}
+                className="flex-1 min-w-[45%] px-4 py-2 rounded-full text-sm
+              bg-yellow-500/15 text-yellow-400 border border-yellow-500/30"
+              >
+                ⭐ Rate
+              </button>
+            )}
 
             {canReturn && (
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+              <button
                 onClick={onReturn}
-                className="flex-1 px-4 py-2 rounded-full bg-orange-500/15 text-orange-400 border border-orange-500/30 text-sm"
+                className="flex-1 min-w-[45%] px-4 py-2 rounded-full text-sm
+              bg-orange-500/15 text-orange-400 border border-orange-500/30"
               >
                 Return
-              </motion.button>
+              </button>
             )}
-
 
             {canCancel && onCancel && (
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+              <button
                 onClick={onCancel}
-                className="flex-1 px-4 py-2 rounded-full bg-red-500/15 text-red-400 border border-red-500/30 text-sm"
+                className="flex-1 min-w-[45%] px-4 py-2 rounded-full text-sm
+              bg-red-500/15 text-red-400 border border-red-500/30"
               >
                 Cancel
-              </motion.button>
+              </button>
             )}
-
           </>
-
         )}
 
         {isCanceled && <span className="text-red-400 text-sm">Cancelled</span>}
@@ -279,9 +295,7 @@ const OrderItem = ({
         {isDelivered && !isReturned && (
           <span className="text-emerald-400 text-sm">Completed</span>
         )}
-
       </div>
-
     </motion.div>
   )
 
