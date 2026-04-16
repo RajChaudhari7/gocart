@@ -6,7 +6,6 @@ import { useParams, useRouter } from "next/navigation"
 import { useAuth } from "@clerk/nextjs"
 import toast from "react-hot-toast"
 import Image from "next/image"
-import { motion } from "framer-motion"
 import { X } from "lucide-react"
 
 export default function ReturnPage() {
@@ -62,113 +61,91 @@ export default function ReturnPage() {
   const selectedCount = Object.values(selected).filter(Boolean).length
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#020617] to-black text-white">
+    <div className="fixed inset-0 z-[999] bg-black text-white overflow-y-auto">
 
-      {/* 🔝 HEADER */}
-      <div className="sticky top-0 z-20 bg-black/70 backdrop-blur-xl border-b border-white/10">
+      {/* ❌ CLOSE BUTTON (FORCED FIXED) */}
+      <button
+        onClick={() => router.back()}
+        className="fixed top-4 left-4 z-[1000] p-3 rounded-full bg-white/10 backdrop-blur-md"
+      >
+        <X size={18} />
+      </button>
 
-        <div className="flex items-center justify-between px-4 py-4 max-w-4xl mx-auto">
-
-          {/* CLOSE BUTTON */}
-          <button
-            onClick={() => router.back()}
-            className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition"
-          >
-            <X size={18} />
-          </button>
-
-          <div>
-            <h1 className="text-lg sm:text-xl font-semibold">
-              Return Products
-            </h1>
-            <p className="text-xs text-white/50">
-              Select items to return
-            </p>
-          </div>
-
-          {/* Spacer for balance */}
-          <div className="w-8" />
-        </div>
+      {/* HEADER */}
+      <div className="pt-16 px-4 pb-4">
+        <h1 className="text-xl font-semibold">Return Products</h1>
+        <p className="text-sm text-white/50">Select items to return</p>
       </div>
 
-      {/* 📦 ITEMS */}
-      <div className="w-full max-w-4xl mx-auto px-4 py-5 space-y-4">
+      {/* ITEMS */}
+      <div className="px-4 space-y-3 pb-24">
 
-        {items.map((item, idx) => {
+        {items.map((item) => {
           const isChecked = selected[item.productId]
 
           return (
-            <motion.div
+            <div
               key={item.productId}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.05 }}
               onClick={() => toggleItem(item.productId)}
               className={`
-                flex gap-3 items-center p-4 rounded-xl border cursor-pointer
-                transition-all duration-300 w-full
+                flex gap-3 items-center p-3 rounded-xl border w-full
                 ${isChecked
-                  ? "bg-emerald-500/10 border-emerald-500/40"
-                  : "bg-white/5 border-white/10 hover:bg-white/10"}
+                  ? "bg-emerald-500/10 border-emerald-500"
+                  : "bg-white/5 border-white/10"}
               `}
             >
 
-              {/* CHECKBOX */}
-              <div className={`
-                min-w-[20px] h-5 rounded-md border flex items-center justify-center
-                ${isChecked ? "bg-emerald-500 border-emerald-500" : "border-white/30"}
-              `}>
-                {isChecked && <span className="text-xs">✔</span>}
+              {/* CHECK */}
+              <div className={`w-5 h-5 rounded border flex items-center justify-center
+                ${isChecked ? "bg-emerald-500" : "border-white/30"}`}>
+                {isChecked && "✓"}
               </div>
 
               {/* IMAGE */}
-              <div className="w-14 h-14 sm:w-16 sm:h-16 bg-white/10 rounded-lg flex items-center justify-center">
+              <div className="w-14 h-14 bg-white/10 rounded-lg flex items-center justify-center">
                 <Image
                   src={item.product.images[0]}
                   alt={item.product.name}
                   width={40}
                   height={40}
-                  className="object-contain"
                 />
               </div>
 
-              {/* INFO */}
-              <div className="flex-1 min-w-0">
-                <p className="text-sm sm:text-base font-medium truncate">
+              {/* TEXT */}
+              <div className="flex-1">
+                <p className="text-sm font-medium">
                   {item.product.name}
                 </p>
-                <p className="text-xs text-white/50 mt-1">
+                <p className="text-xs text-white/50">
                   Qty: {item.quantity}
                 </p>
               </div>
 
-            </motion.div>
+            </div>
           )
         })}
 
       </div>
 
-      {/* 🔻 STICKY FOOTER */}
-      <div className="fixed bottom-0 left-0 right-0 z-20 bg-black/80 backdrop-blur-xl border-t border-white/10">
+      {/* 🔻 FIXED RETURN BUTTON (ALWAYS VISIBLE) */}
+      <div className="fixed bottom-0 left-0 right-0 z-[1000] bg-black border-t border-white/10 p-4">
 
-        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center justify-between">
 
-          <p className="text-xs sm:text-sm text-white/60">
+          <p className="text-sm text-white/60">
             {selectedCount} selected
           </p>
 
           <button
             onClick={submitReturn}
-            className="px-5 py-2 rounded-full bg-red-600 hover:bg-red-700 transition text-sm font-medium"
+            className="px-6 py-2 rounded-full bg-red-600 text-sm"
           >
             Return
           </button>
 
         </div>
-      </div>
 
-      {/* SPACE FOR FOOTER */}
-      <div className="h-20" />
+      </div>
 
     </div>
   )
