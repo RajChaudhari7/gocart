@@ -15,7 +15,7 @@ const BestSelling = () => {
           theme="dark"
         />
 
-        <div className="mt-16 grid grid-cols-2 gap-4 md:gap-10">
+        <div className="mt-10 md:mt-16 grid grid-cols-2 gap-3 md:gap-10">
 
           {/* Shop by Shop */}
           <Link href="/shop">
@@ -23,15 +23,15 @@ const BestSelling = () => {
 
               <div className="flex flex-col items-center text-center">
 
-                <div className="mb-6 p-4 rounded-2xl bg-blue-500/10 group-hover:bg-blue-500/20 transition">
-                  <Store className="w-10 h-10 text-blue-400" />
+                <div className="mb-3 md:mb-6 p-3 md:p-4 rounded-2xl">
+                  <Store className="w-6 h-6 md:w-10 md:h-10" />
                 </div>
 
-               <h2 className="text-lg md:text-2xl font-semibold text-white mb-3">
+                <h2 className="text-lg md:text-2xl font-semibold text-white mb-3">
                   Shop by Shop
                 </h2>
 
-                <p className="text-gray-400 max-w-xs">
+                <p className="text-gray-400 text-sm md:text-base max-w-[140px] md:max-w-xs">
                   Browse products from your favorite stores and discover
                   everything they offer in one place.
                 </p>
@@ -54,7 +54,7 @@ const BestSelling = () => {
                   Shop by Product
                 </h2>
 
-                <p className="text-gray-400 max-w-xs">
+                <p className="text-gray-400 text-sm md:text-base max-w-[140px] md:max-w-xs">
                   Explore all available products across different shops
                   and find exactly what you need quickly.
                 </p>
