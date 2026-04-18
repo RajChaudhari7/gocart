@@ -15,11 +15,11 @@ const BestSelling = () => {
           theme="dark"
         />
 
-        <div className="mt-16 grid grid-cols-2 md:grid-cols-2 gap-10">
+        <div className="mt-16 grid grid-cols-2 gap-4 md:gap-10">
 
           {/* Shop by Shop */}
           <Link href="/shop">
-            <div className="group cursor-pointer relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-white/5 to-white/0 backdrop-blur-xl p-12 transition-all duration-500 hover:scale-[1.04] hover:border-blue-500/40 hover:shadow-[0_0_40px_rgba(59,130,246,0.25)]">
+            <div className="group cursor-pointer relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-white/5 to-white/0 backdrop-blur-xl p-4 md:p-12 transition-all duration-500 hover:scale-[1.04] hover:border-blue-500/40 hover:shadow-[0_0_40px_rgba(59,130,246,0.25)]">
 
               <div className="flex flex-col items-center text-center">
 
@@ -27,7 +27,7 @@ const BestSelling = () => {
                   <Store className="w-10 h-10 text-blue-400" />
                 </div>
 
-                <h2 className="text-2xl font-semibold text-white mb-3">
+               <h2 className="text-lg md:text-2xl font-semibold text-white mb-3">
                   Shop by Shop
                 </h2>
 
@@ -50,7 +50,7 @@ const BestSelling = () => {
                   <Package className="w-10 h-10 text-purple-400" />
                 </div>
 
-                <h2 className="text-2xl font-semibold text-white mb-3">
+                <h2 className="text-lg md:text-2xl font-semibold text-white mb-3">
                   Shop by Product
                 </h2>
 
