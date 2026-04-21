@@ -33,10 +33,11 @@ const PRICE_RANGES = [
 function ShopContent() {
   const searchParams = useSearchParams()
   const search = searchParams.get('search')
+  const categoryFromURL = searchParams.get('category')
 
   const products = useSelector((state) => state.product.list || [])
 
-  const [category, setCategory] = useState('all')
+  const [category, setCategory] = useState(categoryFromURL || 'all')
   const [sort, setSort] = useState('')
   const [priceRange, setPriceRange] = useState('ALL')
   const [showMobileFilter, setShowMobileFilter] = useState(false)
@@ -44,11 +45,17 @@ function ShopContent() {
   const [searchInput, setSearchInput] = useState(search || '')
 
   useEffect(() => {
+    if (categoryFromURL) {
+      setCategory(categoryFromURL)
+    }
+  }, [categoryFromURL])
+
+  useEffect(() => {
     const delay = setTimeout(() => {
       if (searchInput.trim() === '') {
-        router.push('/product')
+        router.push('/products')
       } else {
-        router.push(`/product?search=${encodeURIComponent(searchInput)}`)
+        router.push(`/products?search=${encodeURIComponent(searchInput)}`)
       }
     }, 400)
 
