@@ -49,17 +49,40 @@ const slides = [
 const Hero = () => {
   const router = useRouter()
   const [index, setIndex] = useState(0)
-  
+
   // Using useRef instead of useState prevents React from re-rendering and killing the GSAP timeline
-  const isAnimating = useRef(false) 
-  
+  const isAnimating = useRef(false)
+
   const containerRef = useRef(null)
   const cardRef = useRef(null)
   const imageRef = useRef(null)
   const progressRef = useRef(null)
-  
+
   const slide = slides[index]
   const SLIDE_DURATION = 6 // seconds
+  const typedTitle = useTypewriter(slide.title, 60)
+  const typedSubtitle = useTypewriter(slide.subtitle, 60)
+  const typedDesc = useTypewriter(slide.desc, 20)
+
+  const useTypewriter = (text, speed = 40) => {
+    const [displayed, setDisplayed] = useState('')
+
+    useEffect(() => {
+      let i = 0
+      setDisplayed('')
+
+      const interval = setInterval(() => {
+        i++
+        setDisplayed(text.slice(0, i))
+
+        if (i >= text.length) clearInterval(interval)
+      }, speed)
+
+      return () => clearInterval(interval)
+    }, [text, speed])
+
+    return displayed
+  }
 
   const changeSlide = (newIndex) => {
     if (isAnimating.current) return
@@ -96,7 +119,7 @@ const Hero = () => {
       const tl = gsap.timeline()
 
       // Animate in new slide elements
-      tl.fromTo('.anim-elem', 
+      tl.fromTo('.anim-elem',
         { y: 40, opacity: 0 },
         { y: 0, opacity: 1, duration: 0.8, stagger: 0.1, ease: 'power3.out' }
       ).fromTo(imageRef.current,
@@ -117,9 +140,9 @@ const Hero = () => {
       // Progress bar animation triggers the next slide automatically
       gsap.fromTo(progressRef.current,
         { scaleX: 0 },
-        { 
-          scaleX: 1, 
-          duration: SLIDE_DURATION, 
+        {
+          scaleX: 1,
+          duration: SLIDE_DURATION,
           ease: 'none',
           onComplete: () => changeSlide((index + 1) % slides.length)
         }
@@ -133,7 +156,7 @@ const Hero = () => {
   // 3D Mouse Tilt Parallax Effect
   const handleMouseMove = (e) => {
     if (!cardRef.current || !imageRef.current) return
-    
+
     const { left, top, width, height } = cardRef.current.getBoundingClientRect()
     const x = (e.clientX - left - width / 2) / 15
     const y = -(e.clientY - top - height / 2) / 15
@@ -146,7 +169,7 @@ const Hero = () => {
       ease: 'power2.out',
       duration: 0.4
     })
-    
+
     // Parallax the image off the card for 3D depth
     gsap.to(imageRef.current, {
       x: x * 2,
@@ -172,20 +195,20 @@ const Hero = () => {
   }
 
   return (
-    <section 
-      ref={containerRef} 
+    <section
+      ref={containerRef}
       className="relative min-h-screen bg-[#050914] text-white overflow-hidden flex flex-col justify-center pt-20 pb-10"
     >
       {/* Dynamic Background Glow */}
-      <div 
-        className={`absolute inset-0 bg-gradient-to-br ${slide.color} transition-colors duration-1000 ease-in-out opacity-40`} 
+      <div
+        className={`absolute inset-0 bg-gradient-to-br ${slide.color} transition-colors duration-1000 ease-in-out opacity-40`}
       />
-      
+
       {/* Grid Pattern overlay for tech feel */}
       <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] mix-blend-overlay" />
 
       <div className="relative z-10 w-full max-w-7xl mx-auto px-6 lg:px-12 grid lg:grid-cols-2 gap-12 lg:gap-8 items-center flex-1">
-        
+
         {/* LEFT: Content */}
         <div className="space-y-8 z-20 mt-10 lg:mt-0 order-2 lg:order-1">
           <div className={`anim-elem inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-xs tracking-[0.2em] font-bold ${slide.accent} backdrop-blur-md shadow-2xl`}>
@@ -194,12 +217,18 @@ const Hero = () => {
           </div>
 
           <h1 className="text-6xl md:text-8xl font-black leading-[0.9] tracking-tighter">
-            <span className="anim-elem block text-white">{slide.title}</span>
-            <span className="anim-elem block text-white/20 mt-2">{slide.subtitle}</span>
+            <span className="anim-elem block text-white">
+              {typedTitle}
+              <span className="animate-pulse">|</span>
+            </span>
+
+            <span className="anim-elem block text-white/20 mt-2">
+              {typedSubtitle}
+            </span>
           </h1>
 
           <p className="anim-elem text-lg md:text-xl text-white/50 max-w-md leading-relaxed font-light">
-            {slide.desc}
+            {typedDesc}
           </p>
 
           <div className="anim-elem flex flex-wrap items-center gap-8 pt-4">
@@ -236,7 +265,7 @@ const Hero = () => {
           >
             {/* Inner Ring */}
             <div className="absolute inset-4 rounded-[2rem] border border-white/5" />
-            
+
             {/* The Image (Floats off the card via JS parallax) */}
             <Image
               ref={imageRef}
@@ -252,12 +281,12 @@ const Hero = () => {
 
       {/* BOTTOM SLIDER CONTROLS */}
       <div className="relative z-20 max-w-7xl mx-auto w-full px-6 lg:px-12 flex items-center justify-between mt-8 lg:mt-0">
-        
+
         {/* Slide Indicators */}
         <div className="flex gap-4">
           {slides.map((_, i) => (
-            <button 
-              key={i} 
+            <button
+              key={i}
               onClick={() => changeSlide(i)}
               className={`h-1.5 rounded-full transition-all duration-300 ${i === index ? `w-8 ${slide.bgAccent}` : 'w-4 bg-white/20 hover:bg-white/40'}`}
               aria-label={`Go to slide ${i + 1}`}
@@ -268,20 +297,20 @@ const Hero = () => {
         {/* Progress Bar & Arrows */}
         <div className="flex items-center gap-6">
           <div className="hidden md:block w-48 h-1 bg-white/10 rounded-full overflow-hidden">
-            <div 
+            <div
               ref={progressRef}
               className={`h-full ${slide.bgAccent} origin-left`}
             />
           </div>
 
           <div className="flex gap-2">
-            <button 
+            <button
               onClick={() => changeSlide((index - 1 + slides.length) % slides.length)}
               className="p-3 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 backdrop-blur-md transition-colors"
             >
               <ChevronLeft size={20} />
             </button>
-            <button 
+            <button
               onClick={() => changeSlide((index + 1) % slides.length)}
               className="p-3 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 backdrop-blur-md transition-colors"
             >
