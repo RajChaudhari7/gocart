@@ -27,6 +27,7 @@
     .animate-slideFade {
         animation: slideFade 0.25s ease-out;
     }
+
     .animate-marqueeScroll {
         animation: marqueeScroll 20s linear infinite;
     }
@@ -47,4 +48,22 @@
     /* IE and Edge */
     scrollbar-width: none;
     /* Firefox */
+}
+
+@keyframes blink {
+
+    0%,
+    50%,
+    100% {
+        opacity: 1;
+    }
+
+    25%,
+    75% {
+        opacity: 0;
+    }
+}
+
+.animate-blink {
+    animation: blink 1s infinite;
 }

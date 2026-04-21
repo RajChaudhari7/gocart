@@ -89,29 +89,29 @@ const Hero = () => {
   const getTypingTime = (text, speed) => text.length * speed
 
   const slide = slides[index]
-  const typedTitle = useTypewriter(slide.title, 90, 300)
+  const typedTitle = useTypewriter(slide.title, 90, 400)
 
   const typedSubtitle = useTypewriter(
     typedTitle.length === slide.title.length ? slide.subtitle : '',
     90,
-    200
+    400
   )
 
   const typedDesc = useTypewriter(
     typedSubtitle.length === slide.subtitle.length ? slide.desc : '',
     35,
-    200
+    400
   )
 
-  const titleTime = getTypingTime(slide.title, 60)
-  const subtitleTime = getTypingTime(slide.subtitle, 60)
-  const descTime = getTypingTime(slide.desc, 20)
+  const titleTime = getTypingTime(slide.title, 90)
+  const subtitleTime = getTypingTime(slide.subtitle, 90)
+  const descTime = getTypingTime(slide.desc, 35)
 
   const totalTypingTime =
     titleTime +
     subtitleTime +
     descTime +
-    800 // small buffer between lines
+    1500 // increased pause
 
 
   const changeSlide = (newIndex) => {
@@ -252,7 +252,7 @@ const Hero = () => {
             <span className="anim-elem block text-white">
               {typedTitle}
               {typedTitle !== slide.title && (
-                <span className="animate-pulse">|</span>
+                <span className="ml-1 inline-block w-[2px] h-[1em] bg-white animate-blink" />
               )}
             </span>
 
@@ -260,7 +260,7 @@ const Hero = () => {
             <span className="anim-elem block text-white/20 mt-2">
               {typedSubtitle}
               {typedTitle === slide.title && typedSubtitle !== slide.subtitle && (
-                <span className="animate-pulse">|</span>
+                <span className="ml-1 inline-block w-[2px] h-[1em] bg-white animate-blink" />
               )}
             </span>
 
@@ -270,7 +270,7 @@ const Hero = () => {
           <p className="anim-elem text-lg md:text-xl text-white/50 max-w-md leading-relaxed font-light">
             {typedDesc}
             {typedSubtitle === slide.subtitle && typedDesc !== slide.desc && (
-              <span className="animate-pulse">|</span>
+              <span className="ml-1 inline-block w-[2px] h-[1em] bg-white animate-blink" />
             )}
           </p>
 
