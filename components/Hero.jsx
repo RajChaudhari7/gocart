@@ -81,21 +81,19 @@ const Hero = () => {
   const cardRef = useRef(null)
   const imageRef = useRef(null)
   const progressRef = useRef(null)
+  const getTypingTime = (text, speed) => text.length * speed
 
   const slide = slides[index]
-  const SLIDE_DURATION = 6 // seconds
-  const typedTitle = useTypewriter(slide.title, 60, 200)
-  
-  const typedSubtitle = useTypewriter(
-    typedTitle === slide.title ? slide.subtitle : '',
-    60,
-    100
-  )
-  const typedDesc = useTypewriter(
-    typedSubtitle === slide.subtitle ? slide.desc : '',
-    20,
-    100
-  )
+  const typedTitle = useTypewriter(slide.title, 60, 300)
+  const titleTime = getTypingTime(slide.title, 60)
+  const subtitleTime = getTypingTime(slide.subtitle, 60)
+  const descTime = getTypingTime(slide.desc, 20)
+
+  const totalTypingTime =
+    titleTime +
+    subtitleTime +
+    descTime +
+    800 // small buffer between lines
 
 
   const changeSlide = (newIndex) => {
@@ -156,7 +154,7 @@ const Hero = () => {
         { scaleX: 0 },
         {
           scaleX: 1,
-          duration: SLIDE_DURATION,
+          duration: totalTypingTime / 1000, // convert ms → sec
           ease: 'none',
           onComplete: () => changeSlide((index + 1) % slides.length)
         }
