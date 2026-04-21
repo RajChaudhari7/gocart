@@ -14,7 +14,7 @@ export default function Categories() {
   const router = useRouter()
 
   const handleClick = (category) => {
-    router.push(`/products?category=${category}`)
+    router.push(`/product?category=${category}`)
   }
 
   return (
