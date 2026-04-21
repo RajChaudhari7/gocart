@@ -46,22 +46,26 @@ const slides = [
   },
 ]
 
-const useTypewriter = (text, speed = 40) => {
+const useTypewriter = (text, speed = 40, delay = 0) => {
   const [displayed, setDisplayed] = useState('')
 
   useEffect(() => {
     let i = 0
     setDisplayed('')
 
-    const interval = setInterval(() => {
-      i++
-      setDisplayed(text.slice(0, i))
+    const timeout = setTimeout(() => {
+      const interval = setInterval(() => {
+        i++
+        setDisplayed(text.slice(0, i))
 
-      if (i >= text.length) clearInterval(interval)
-    }, speed)
+        if (i >= text.length) clearInterval(interval)
+      }, speed)
 
-    return () => clearInterval(interval)
-  }, [text, speed])
+      return () => clearInterval(interval)
+    }, delay)
+
+    return () => clearTimeout(timeout)
+  }, [text, speed, delay])
 
   return displayed
 }
@@ -80,16 +84,17 @@ const Hero = () => {
 
   const slide = slides[index]
   const SLIDE_DURATION = 6 // seconds
-  const typedTitle = useTypewriter(slide.title, 60)
-
+  const typedTitle = useTypewriter(slide.title, 60, 200)
+  
   const typedSubtitle = useTypewriter(
     typedTitle === slide.title ? slide.subtitle : '',
-    60
+    60,
+    100
   )
-
   const typedDesc = useTypewriter(
     typedSubtitle === slide.subtitle ? slide.desc : '',
-    20
+    20,
+    100
   )
 
 
@@ -228,7 +233,9 @@ const Hero = () => {
           <h1 className="text-6xl md:text-8xl font-black leading-[0.9] tracking-tighter">
             <span className="anim-elem block text-white">
               {typedTitle}
-              <span className="animate-pulse">|</span>
+              {typedTitle !== slide.title && (
+                <span className="animate-pulse">|</span>
+              )}
             </span>
 
             <span className="anim-elem block text-white/20 mt-2">
