@@ -84,7 +84,10 @@ const Hero = () => {
   const getTypingTime = (text, speed) => text.length * speed
 
   const slide = slides[index]
-  const typedTitle = useTypewriter(slide.title, 60, 300)
+  const typedTitle = useTypewriter(slide.title, 60, 200)
+  const typedSubtitle = useTypewriter(typedTitle === slide.title ? slide.subtitle : '', 60, 100)
+  const typedDesc = useTypewriter(typedSubtitle === slide.subtitle ? slide.desc : '', 20, 100)
+
   const titleTime = getTypingTime(slide.title, 60)
   const subtitleTime = getTypingTime(slide.subtitle, 60)
   const descTime = getTypingTime(slide.desc, 20)
