@@ -50,6 +50,11 @@ const useTypewriter = (text, speed = 40, delay = 0) => {
   const [displayed, setDisplayed] = useState('')
 
   useEffect(() => {
+    if (!text) {
+      setDisplayed('')
+      return
+    }
+
     let i = 0
     setDisplayed('')
 
@@ -87,13 +92,13 @@ const Hero = () => {
   const typedTitle = useTypewriter(slide.title, 90, 300)
 
   const typedSubtitle = useTypewriter(
-    typedTitle === slide.title ? slide.subtitle : '',
+    typedTitle.length === slide.title.length ? slide.subtitle : '',
     90,
     200
   )
 
   const typedDesc = useTypewriter(
-    typedSubtitle === slide.subtitle ? slide.desc : '',
+    typedSubtitle.length === slide.subtitle.length ? slide.desc : '',
     35,
     200
   )
