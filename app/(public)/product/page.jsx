@@ -53,9 +53,9 @@ function ShopContent() {
   useEffect(() => {
     const delay = setTimeout(() => {
       if (searchInput.trim() === '') {
-        router.push('/products')
+        router.push('/product')
       } else {
-        router.push(`/products?search=${encodeURIComponent(searchInput)}`)
+        router.push(`/product?search=${encodeURIComponent(searchInput)}`)
       }
     }, 400)
 
