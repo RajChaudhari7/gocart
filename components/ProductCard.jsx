@@ -243,15 +243,21 @@ const ProductCard = ({ product, storeIsActive }) => {
 
           <div className="mt-auto flex items-end justify-between">
             <div className="flex flex-col">
-              {/* Fake Original Price for Premium Look (Remove if not needed) */}
-              {!isOutOfStock && (
+              {product.mrp && product.mrp > product.price && (
                 <span className="text-[11px] text-white/30 line-through mb-0.5">
-                  {currency}{(product.price * 1.2).toFixed(2)}
+                  {currency}{Number(product.mrp).toLocaleString()}
                 </span>
               )}
+
               <p className={`text-sm sm:text-base md:text-lg font-bold tracking-tight ${isOutOfStock ? 'text-white/40' : 'text-white'}`}>
                 {currency}{Number(product.price).toLocaleString()}
               </p>
+
+              {product.mrp && product.mrp > product.price && (
+                <span className="text-green-400 text-[11px] font-semibold">
+                  {Math.round(((product.mrp - product.price) / product.mrp) * 100)}% OFF
+                </span>
+              )}
             </div>
 
             {isLowStock && (

@@ -205,7 +205,11 @@ const ProductDetails = ({ product }) => {
           <span className="text-3xl font-bold">{currency}{product.price}</span>
           <span className="line-through text-slate-400">{currency}{product.mrp}</span>
           <span className="text-green-400">
-            Save {(((product.mrp - product.price) / product.mrp) * 100).toFixed(0)}%
+            {product.mrp > product.price && (
+              <span className="text-green-400">
+                Save {Math.round(((product.mrp - product.price) / product.mrp) * 100)}%
+              </span>
+            )}
           </span>
         </div>
 
