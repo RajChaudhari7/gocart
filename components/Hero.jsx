@@ -46,6 +46,26 @@ const slides = [
   },
 ]
 
+const useTypewriter = (text, speed = 40) => {
+  const [displayed, setDisplayed] = useState('')
+
+  useEffect(() => {
+    let i = 0
+    setDisplayed('')
+
+    const interval = setInterval(() => {
+      i++
+      setDisplayed(text.slice(0, i))
+
+      if (i >= text.length) clearInterval(interval)
+    }, speed)
+
+    return () => clearInterval(interval)
+  }, [text, speed])
+
+  return displayed
+}
+
 const Hero = () => {
   const router = useRouter()
   const [index, setIndex] = useState(0)
@@ -61,28 +81,17 @@ const Hero = () => {
   const slide = slides[index]
   const SLIDE_DURATION = 6 // seconds
   const typedTitle = useTypewriter(slide.title, 60)
-  const typedSubtitle = useTypewriter(slide.subtitle, 60)
-  const typedDesc = useTypewriter(slide.desc, 20)
 
-  const useTypewriter = (text, speed = 40) => {
-    const [displayed, setDisplayed] = useState('')
+  const typedSubtitle = useTypewriter(
+    typedTitle === slide.title ? slide.subtitle : '',
+    60
+  )
 
-    useEffect(() => {
-      let i = 0
-      setDisplayed('')
+  const typedDesc = useTypewriter(
+    typedSubtitle === slide.subtitle ? slide.desc : '',
+    20
+  )
 
-      const interval = setInterval(() => {
-        i++
-        setDisplayed(text.slice(0, i))
-
-        if (i >= text.length) clearInterval(interval)
-      }, speed)
-
-      return () => clearInterval(interval)
-    }, [text, speed])
-
-    return displayed
-  }
 
   const changeSlide = (newIndex) => {
     if (isAnimating.current) return
