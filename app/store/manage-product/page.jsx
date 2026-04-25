@@ -17,6 +17,7 @@ export default function StoreManageProducts() {
 
     const [loading, setLoading] = useState(true)
     const [products, setProducts] = useState([])
+    const [search, setSearch] = useState("")
 
     // ================= FETCH PRODUCTS =================
     const fetchProducts = async () => {
@@ -133,13 +134,27 @@ export default function StoreManageProducts() {
         if (user) fetchProducts()
     }, [user])
 
+    const filteredProducts = products.filter(product =>
+        product.name.toLowerCase().includes(search.toLowerCase())
+    )
+
     if (loading) return <Loading />
 
     return (
         <>
-            <h1 className="text-2xl text-slate-500 mb-5">
-                Manage <span className="text-slate-800 font-medium">Products</span>
-            </h1>
+            <div className="flex justify-between items-center mb-5">
+                <h1 className="text-2xl text-slate-500">
+                    Manage <span className="text-slate-800 font-medium">Products</span>
+                </h1>
+
+                <input
+                    type="text"
+                    placeholder="Search product..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="border px-3 py-2 rounded w-64"
+                />
+            </div>
 
             <table className="w-full max-w-6xl text-left ring ring-slate-200 rounded text-sm">
                 <thead className="bg-slate-50 uppercase text-gray-700">
@@ -155,7 +170,7 @@ export default function StoreManageProducts() {
                 </thead>
 
                 <tbody>
-                    {products.map(product => (
+                    {filteredProducts.map(product => (
                         <tr
                             key={product.id}
                             className={`border-t ${product.quantity === 0
