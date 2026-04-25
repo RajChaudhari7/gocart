@@ -41,6 +41,10 @@ export default function StoreManageProducts() {
                     editQuantity: p.quantity,
                     originalPrice: p.price,
                     originalQuantity: p.quantity,
+                    editSize: p.size || "",
+                    editWeight: p.weight || "",
+                    originalSize: p.size || "",
+                    originalWeight: p.weight || "",
                     isEditing: false
                 }))
             )
@@ -62,7 +66,9 @@ export default function StoreManageProducts() {
                 {
                     productId: product.id,
                     price: Number(product.editPrice),
-                    quantity: Number(product.editQuantity)
+                    quantity: Number(product.editQuantity),
+                    size: product.editSize,
+                    weight: product.editWeight
                 },
                 { headers: { Authorization: `Bearer ${token}` } }
             )
@@ -76,12 +82,16 @@ export default function StoreManageProducts() {
                             quantity: Number(product.editQuantity),
                             originalPrice: Number(product.editPrice),
                             originalQuantity: Number(product.editQuantity),
+                            size: product.editSize,
+                            weight: product.editWeight,
+                            originalSize: product.editSize,
+                            originalWeight: product.editWeight,
                             isEditing: false
                         }
                         : p
                 )
             )
-            
+
             toast.success(data.message)
 
         } catch (error) {
@@ -138,6 +148,7 @@ export default function StoreManageProducts() {
                         <th className="px-4 py-3 hidden md:table-cell">MRP</th>
                         <th className="px-4 py-3">Price</th>
                         <th className="px-4 py-3">Quantity</th>
+                        <th className="px-4 py-3">Size / Weight</th>
                         <th className="px-4 py-3">Stock</th>
                         <th className="px-4 py-3">Action</th>
                     </tr>
@@ -200,6 +211,25 @@ export default function StoreManageProducts() {
                                         )
                                     }
                                     className="w-20 px-2 py-1 border rounded"
+                                />
+                            </td>
+
+                            <td className="px-4 py-3">
+                                <input
+                                    type="text"
+                                    value={product.editSize || product.editWeight}
+                                    disabled={!product.isEditing}
+                                    placeholder="Size / Weight"
+                                    onChange={e =>
+                                        setProducts(prev =>
+                                            prev.map(p =>
+                                                p.id === product.id
+                                                    ? { ...p, editSize: e.target.value }
+                                                    : p
+                                            )
+                                        )
+                                    }
+                                    className="w-28 px-2 py-1 border rounded"
                                 />
                             </td>
 

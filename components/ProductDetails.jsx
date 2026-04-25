@@ -226,6 +226,40 @@ const ProductDetails = ({ product }) => {
           </p>
         )}
 
+        {/* PRODUCT SPECIFICATIONS */}
+        {(product.size || product.weight || product.warranty) && (
+          <div className="mt-6 bg-white/5 border border-white/10 rounded-xl p-4">
+            <h3 className="text-lg font-semibold mb-3 text-cyan-400">
+              Product Details
+            </h3>
+
+            <div className="grid grid-cols-2 gap-3 text-sm">
+
+              {product.size && (
+                <>
+                  <span className="text-slate-400">Size</span>
+                  <span className="font-medium">{product.size}</span>
+                </>
+              )}
+
+              {product.weight && (
+                <>
+                  <span className="text-slate-400">Weight</span>
+                  <span className="font-medium">{product.weight}</span>
+                </>
+              )}
+
+              {product.warranty && (
+                <>
+                  <span className="text-slate-400">Warranty</span>
+                  <span className="font-medium">{product.warranty}</span>
+                </>
+              )}
+
+            </div>
+          </div>
+        )}
+
         {/* CART */}
         <div className="mt-6">
           {inCart ? (
