@@ -46,6 +46,46 @@ const Navbar = () => {
   const [pulse, setPulse] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
 
+  const [deferredPrompt, setDeferredPrompt] = useState(null)
+  const [isInstalled, setIsInstalled] = useState(false)
+
+  useEffect(() => {
+    const installed =
+      window.matchMedia('(display-mode: standalone)').matches
+
+    setIsInstalled(installed)
+
+    const handler = (e) => {
+      e.preventDefault()
+      setDeferredPrompt(e)
+    }
+
+    window.addEventListener('beforeinstallprompt', handler)
+
+    window.addEventListener('appinstalled', () => {
+      setIsInstalled(true)
+      setDeferredPrompt(null)
+    })
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handler)
+    }
+  }, [])
+
+  const installApp = async () => {
+    if (!deferredPrompt) return
+
+    deferredPrompt.prompt()
+
+    const result = await deferredPrompt.userChoice
+
+    if (result.outcome === 'accepted') {
+      setIsInstalled(true)
+    }
+
+    setDeferredPrompt(null)
+  }
+
   const isActive = (href) => pathname === href
 
   /* ===== CART PULSE ===== */
@@ -58,7 +98,7 @@ const Navbar = () => {
     }
   }, [cartCount])
 
- 
+
 
   const desktopLinks = [
     { name: 'Home', href: '/' },
@@ -86,7 +126,13 @@ const Navbar = () => {
             <span className="text-cyan-400">She</span>Kart<span className="text-cyan-400">.</span>
           </Link>
 
-        
+          <button
+            onClick={installApp}
+            disabled={isInstalled || !deferredPrompt}
+            className="text-xs px-3 py-1 rounded-full bg-cyan-400 text-black disabled:opacity-50"
+          >
+            {isInstalled ? 'Installed' : 'Install'}
+          </button>
 
           {!user ? (
             <button
@@ -118,9 +164,8 @@ const Navbar = () => {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`relative px-2 py-1 transition hover:-translate-y-[1px] hover:drop-shadow-[0_0_8px_rgba(34,211,238,0.8)] ${
-                  isActive(link.href) ? 'text-cyan-400' : 'hover:text-cyan-400'
-                }`}
+                className={`relative px-2 py-1 transition hover:-translate-y-[1px] hover:drop-shadow-[0_0_8px_rgba(34,211,238,0.8)] ${isActive(link.href) ? 'text-cyan-400' : 'hover:text-cyan-400'
+                  }`}
               >
                 {link.name}
                 {isActive(link.href) && (
@@ -158,6 +203,14 @@ const Navbar = () => {
               </AnimatePresence>
             </Link>
 
+            <button
+              onClick={installApp}
+              disabled={isInstalled || !deferredPrompt}
+              className="px-4 py-2 rounded-full bg-gradient-to-r from-cyan-400 to-emerald-400 text-black font-medium disabled:opacity-50"
+            >
+              {isInstalled ? 'Installed' : 'Install App'}
+            </button>
+
             {!user ? (
               <button
                 onClick={openSignIn}
@@ -181,11 +234,10 @@ const Navbar = () => {
               <Link
                 key={link.id}
                 href={link.href}
-                className={`relative flex flex-col items-center gap-1 ${
-                  isActive(link.href)
-                    ? 'text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,1)]'
-                    : 'text-white/70'
-                }`}
+                className={`relative flex flex-col items-center gap-1 ${isActive(link.href)
+                  ? 'text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,1)]'
+                  : 'text-white/70'
+                  }`}
               >
                 {isCart ? (
                   <motion.div variants={cartPulse} animate={pulse ? 'active' : 'idle'} className="flex flex-col items-center gap-1">
