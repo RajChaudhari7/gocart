@@ -122,8 +122,6 @@ const Navbar = () => {
       {/* ================= MOBILE TOP NAV ================= */}
       <nav className="sm:hidden fixed top-0 inset-x-0 z-50 bg-black/70 backdrop-blur-2xl border-b border-white/10 shadow-[0_8px_30px_rgba(0,255,255,0.2)]">
         <div className="flex items-center justify-between px-4 py-3">
-          /* ================= REPLACE BOTH MOBILE + DESKTOP LOGO CODE WITH THIS ================= */
-
           <Link
             href="/"
             className="group relative inline-flex items-center gap-2 select-none"
@@ -131,7 +129,7 @@ const Navbar = () => {
             {/* Premium Icon */}
             <div className="relative flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 via-emerald-400 to-cyan-500 shadow-[0_0_25px_rgba(34,211,238,0.35)] transition duration-300 group-hover:scale-105 group-hover:rotate-3">
               <span className="text-black font-black text-lg sm:text-xl">
-                N
+                NB
               </span>
 
               <div className="absolute inset-0 rounded-2xl border border-white/20" />
@@ -184,7 +182,6 @@ const Navbar = () => {
       {/* ================= DESKTOP NAV ================= */}
       <nav className="hidden sm:block fixed top-0 inset-x-0 z-50 backdrop-blur-2xl bg-black/60 border-b border-white/10 shadow-[0_10px_40px_rgba(0,255,255,0.15)]">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          /* ================= REPLACE BOTH MOBILE + DESKTOP LOGO CODE WITH THIS ================= */
 
           <Link
             href="/"
@@ -193,7 +190,7 @@ const Navbar = () => {
             {/* Premium Icon */}
             <div className="relative flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 via-emerald-400 to-cyan-500 shadow-[0_0_25px_rgba(34,211,238,0.35)] transition duration-300 group-hover:scale-105 group-hover:rotate-3">
               <span className="text-black font-black text-lg sm:text-xl">
-                N
+                NB
               </span>
 
               <div className="absolute inset-0 rounded-2xl border border-white/20" />
