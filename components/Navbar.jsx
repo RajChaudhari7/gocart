@@ -122,8 +122,42 @@ const Navbar = () => {
       {/* ================= MOBILE TOP NAV ================= */}
       <nav className="sm:hidden fixed top-0 inset-x-0 z-50 bg-black/70 backdrop-blur-2xl border-b border-white/10 shadow-[0_8px_30px_rgba(0,255,255,0.2)]">
         <div className="flex items-center justify-between px-4 py-3">
-          <Link href="/" className="text-lg font-semibold text-white">
-            <span className="text-cyan-400">Nandurbar</span>Bazar<span className="text-cyan-400">.</span>
+          /* ================= REPLACE BOTH MOBILE + DESKTOP LOGO CODE WITH THIS ================= */
+
+          <Link
+            href="/"
+            className="group relative inline-flex items-center gap-2 select-none"
+          >
+            {/* Premium Icon */}
+            <div className="relative flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 via-emerald-400 to-cyan-500 shadow-[0_0_25px_rgba(34,211,238,0.35)] transition duration-300 group-hover:scale-105 group-hover:rotate-3">
+              <span className="text-black font-black text-lg sm:text-xl">
+                N
+              </span>
+
+              <div className="absolute inset-0 rounded-2xl border border-white/20" />
+            </div>
+
+            {/* Brand Name */}
+            <div className="flex flex-col leading-none">
+              <span className="font-bold tracking-tight text-white text-[15px] sm:text-[22px]">
+                <span className="text-cyan-400">Nandurbar</span>
+              </span>
+
+              <span className="uppercase tracking-[0.28em] text-[8px] sm:text-[11px] text-white/70 font-medium">
+                Bazar
+              </span>
+            </div>
+
+            {/* Premium Dot */}
+            <span className="absolute -right-2 top-0 text-cyan-400 text-lg sm:text-xl font-bold">
+              .
+            </span>
+
+            <Protect plan="prime">
+              <span className="hidden sm:block absolute -top-2 -right-14 text-[10px] px-2 py-0.5 bg-gradient-to-r from-cyan-400 to-emerald-400 text-black rounded-full shadow-[0_0_15px_rgba(34,211,238,0.9)]">
+                prime
+              </span>
+            </Protect>
           </Link>
 
           <button
@@ -150,10 +184,39 @@ const Navbar = () => {
       {/* ================= DESKTOP NAV ================= */}
       <nav className="hidden sm:block fixed top-0 inset-x-0 z-50 backdrop-blur-2xl bg-black/60 border-b border-white/10 shadow-[0_10px_40px_rgba(0,255,255,0.15)]">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="relative text-2xl font-semibold text-white">
-            <span className="text-cyan-400">Nandurbar</span>Bazar<span className="text-cyan-400">.</span>
+          /* ================= REPLACE BOTH MOBILE + DESKTOP LOGO CODE WITH THIS ================= */
+
+          <Link
+            href="/"
+            className="group relative inline-flex items-center gap-2 select-none"
+          >
+            {/* Premium Icon */}
+            <div className="relative flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 via-emerald-400 to-cyan-500 shadow-[0_0_25px_rgba(34,211,238,0.35)] transition duration-300 group-hover:scale-105 group-hover:rotate-3">
+              <span className="text-black font-black text-lg sm:text-xl">
+                N
+              </span>
+
+              <div className="absolute inset-0 rounded-2xl border border-white/20" />
+            </div>
+
+            {/* Brand Name */}
+            <div className="flex flex-col leading-none">
+              <span className="font-bold tracking-tight text-white text-[15px] sm:text-[22px]">
+                <span className="text-cyan-400">Nandurbar</span>
+              </span>
+
+              <span className="uppercase tracking-[0.28em] text-[8px] sm:text-[11px] text-white/70 font-medium">
+                Bazar
+              </span>
+            </div>
+
+            {/* Premium Dot */}
+            <span className="absolute -right-2 top-0 text-cyan-400 text-lg sm:text-xl font-bold">
+              .
+            </span>
+
             <Protect plan="prime">
-              <span className="absolute -top-2 -right-10 text-xs px-2 py-0.5 bg-gradient-to-r from-cyan-400 to-emerald-400 text-black rounded-full shadow-[0_0_15px_rgba(34,211,238,0.9)]">
+              <span className="hidden sm:block absolute -top-2 -right-14 text-[10px] px-2 py-0.5 bg-gradient-to-r from-cyan-400 to-emerald-400 text-black rounded-full shadow-[0_0_15px_rgba(34,211,238,0.9)]">
                 prime
               </span>
             </Protect>
