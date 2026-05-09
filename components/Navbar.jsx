@@ -123,7 +123,7 @@ const Navbar = () => {
       <nav className="sm:hidden fixed top-0 inset-x-0 z-50 bg-black/70 backdrop-blur-2xl border-b border-white/10 shadow-[0_8px_30px_rgba(0,255,255,0.2)]">
         <div className="flex items-center justify-between px-4 py-3">
           <Link href="/" className="text-lg font-semibold text-white">
-            <span className="text-cyan-400">She</span>Kart<span className="text-cyan-400">.</span>
+            <span className="text-cyan-400">Nandurbar</span>Bazar<span className="text-cyan-400">.</span>
           </Link>
 
           <button
