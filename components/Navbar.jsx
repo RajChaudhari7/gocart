@@ -151,7 +151,7 @@ const Navbar = () => {
       <nav className="hidden sm:block fixed top-0 inset-x-0 z-50 backdrop-blur-2xl bg-black/60 border-b border-white/10 shadow-[0_10px_40px_rgba(0,255,255,0.15)]">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link href="/" className="relative text-2xl font-semibold text-white">
-            <span className="text-cyan-400">She</span>Kart<span className="text-cyan-400">.</span>
+            <span className="text-cyan-400">Nandurbar</span>Bazar<span className="text-cyan-400">.</span>
             <Protect plan="prime">
               <span className="absolute -top-2 -right-10 text-xs px-2 py-0.5 bg-gradient-to-r from-cyan-400 to-emerald-400 text-black rounded-full shadow-[0_0_15px_rgba(34,211,238,0.9)]">
                 prime

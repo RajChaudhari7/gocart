@@ -10,8 +10,8 @@ const outfit = Outfit({
 })
 
 export const metadata = {
-  title: "SheKart. - Shop smarter",
-  description: "SheKart. - Shop smarter",
+  title: "Nandurbar Bazar - Shop smarter",
+  description: "Nandurbar Bazar - Shop smarter",
   manifest: "/manifest.json",
 
   themeColor: "#06b6d4",
