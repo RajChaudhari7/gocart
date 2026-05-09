@@ -158,13 +158,15 @@ const Navbar = () => {
             </Protect>
           </Link>
 
-          <button
-            onClick={installApp}
-            disabled={isInstalled || !deferredPrompt}
-            className="text-xs px-3 py-1 rounded-full bg-cyan-400 text-black disabled:opacity-50"
-          >
-            {isInstalled ? 'Installed' : 'Install'}
-          </button>
+          {!isInstalled && (
+            <button
+              onClick={installApp}
+              disabled={!deferredPrompt}
+              className="text-xs px-3 py-1 rounded-full bg-cyan-400 text-black disabled:opacity-50"
+            >
+              Install
+            </button>
+          )}
 
           {!user ? (
             <button
@@ -263,13 +265,15 @@ const Navbar = () => {
               </AnimatePresence>
             </Link>
 
-            <button
-              onClick={installApp}
-              disabled={isInstalled || !deferredPrompt}
-              className="px-4 py-2 rounded-full bg-gradient-to-r from-cyan-400 to-emerald-400 text-black font-medium disabled:opacity-50"
-            >
-              {isInstalled ? 'Installed' : 'Install App'}
-            </button>
+            {!isInstalled && (
+              <button
+                onClick={installApp}
+                disabled={!deferredPrompt}
+                className="px-4 py-2 rounded-full bg-gradient-to-r from-cyan-400 to-emerald-400 text-black font-medium disabled:opacity-50"
+              >
+                Install App
+              </button>
+            )}
 
             {!user ? (
               <button
