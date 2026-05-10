@@ -2,8 +2,9 @@ import StoreLayout from "@/components/store/StoreLayout";
 import { SignedIn, SignedOut, SignIn } from "@clerk/nextjs";
 
 export const metadata = {
-  title: "SheKart. - Store Dashboard",
-  description: "SheKart. - Store Dashboard",
+  title: "Nandurbar Bazar Seller",
+  description: "Nandurbar Bazar Seller Dashboard",
+  manifest: "/store-manifest.json",
 };
 
 export default function RootAdminLayout({ children }) {
