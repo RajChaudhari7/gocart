@@ -1,7 +1,8 @@
 {
   "name": "Nandurbar Bazar Seller",
   "short_name": "NB Seller",
-  "start_url": "/store",
+  "description": "Seller Dashboard",
+  "start_url": "/store/",
   "scope": "/store/",
   "display": "standalone",
   "background_color": "#000000",

@@ -7,31 +7,28 @@ export const metadata = {
 
   manifest: "/store-manifest.json",
 
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "black-translucent",
-    title: "NB Seller",
-  },
-
   icons: {
     icon: "/seller-192.png",
     apple: "/seller-192.png",
   },
-};
 
+  appleWebApp: {
+    capable: true,
+    title: "NB Seller",
+    statusBarStyle: "black-translucent",
+  },
+};
 
 export default function RootAdminLayout({ children }) {
   return (
     <>
       <SignedIn>
-        <StoreLayout>
-          {children}
-        </StoreLayout>
+        <StoreLayout>{children}</StoreLayout>
       </SignedIn>
 
       <SignedOut>
-        <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-          <SignIn fallbackRedirectUrl="/store" routing="hash" />
+        <div className="min-h-screen flex items-center justify-center">
+          <SignIn fallbackRedirectUrl="/store/" routing="hash" />
         </div>
       </SignedOut>
     </>

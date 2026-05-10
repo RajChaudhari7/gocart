@@ -36,16 +36,19 @@ const StoreNavbar = () => {
 
     checkInstalled()
 
-    /* Register Service Worker */
+    /* REGISTER SELLER SERVICE WORKER */
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker
-        .register("/store-sw.js",{
-            scope: "/store/",
+        .register("/store-sw.js", {
+          scope: "/store/",
+        })
+        .then(() => {
+          console.log("Seller SW Registered")
         })
         .catch((err) => console.log("SW Error:", err))
     }
 
-    /* Capture install prompt */
+    /* INSTALL PROMPT */
     const handleBeforeInstallPrompt = (e) => {
       e.preventDefault()
       setDeferredPrompt(e)
@@ -77,20 +80,21 @@ const StoreNavbar = () => {
 
   /* ================= INSTALL APP ================= */
   const installApp = async () => {
-    if (!deferredPrompt) {
-      alert("Use browser menu ⋮ and tap Install App")
+    if (deferredPrompt) {
+      deferredPrompt.prompt()
+
+      const result = await deferredPrompt.userChoice
+
+      if (result.outcome === "accepted") {
+        setIsInstalled(true)
+      }
+
+      setDeferredPrompt(null)
       return
     }
 
-    deferredPrompt.prompt()
-
-    const result = await deferredPrompt.userChoice
-
-    if (result.outcome === "accepted") {
-      setIsInstalled(true)
-    }
-
-    setDeferredPrompt(null)
+    /* FALLBACK FOR MOBILE CHROME */
+    alert("Tap Chrome Menu ⋮ > Add to Home Screen / Install App")
   }
 
   return (
@@ -99,16 +103,14 @@ const StoreNavbar = () => {
 
         {/* ================= BRAND ================= */}
         <Link
-          href="/store"
+          href="/store/"
           className="group flex items-center gap-3 select-none"
         >
-          {/* Logo */}
           <div className="relative h-10 w-10 rounded-2xl bg-gradient-to-br from-cyan-400 via-emerald-400 to-cyan-500 flex items-center justify-center shadow-[0_0_25px_rgba(34,211,238,0.35)] group-hover:scale-105 transition">
             <span className="text-black font-black text-sm">NB</span>
             <div className="absolute inset-0 rounded-2xl border border-white/20"></div>
           </div>
 
-          {/* Text */}
           <div className="leading-none">
             <h1 className="text-[16px] sm:text-[22px] font-bold tracking-tight text-white">
               <span className="text-cyan-400">Nandurbar</span> Bazar

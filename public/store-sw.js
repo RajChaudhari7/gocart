@@ -1,47 +1,13 @@
-const CACHE_NAME = "nandurbar-seller-v1"
+const CACHE = "seller-v3";
 
-const urlsToCache = [
-  "/store",
-  "/store-manifest.json",
-  "/seller-192.png",
-  "/seller-512.png"
-]
-
-/* INSTALL */
 self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(urlsToCache)
-    })
-  )
+  self.skipWaiting();
+});
 
-  self.skipWaiting()
-})
-
-/* ACTIVATE */
 self.addEventListener("activate", (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(
-        keys.map((key) => {
-          if (key !== CACHE_NAME) {
-            return caches.delete(key)
-          }
-        })
-      )
-    )
-  )
+  event.waitUntil(self.clients.claim());
+});
 
-  self.clients.claim()
-})
-
-/* FETCH */
 self.addEventListener("fetch", (event) => {
-  if (event.request.url.includes("/store")) {
-    event.respondWith(
-      caches.match(event.request).then((response) => {
-        return response || fetch(event.request)
-      })
-    )
-  }
-})
+  event.respondWith(fetch(event.request));
+});
