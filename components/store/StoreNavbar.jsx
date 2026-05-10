@@ -12,8 +12,9 @@ const StoreNavbar = () => {
 
   const [deferredPrompt, setDeferredPrompt] = useState(null)
   const [isInstalled, setIsInstalled] = useState(false)
+  const [isIOS, setIsIOS] = useState(false)
 
-  /* ================= FETCH ORDER COUNT ================= */
+  /* ================= FETCH ORDERS ================= */
   useEffect(() => {
     fetchOrderCount()
 
@@ -24,17 +25,25 @@ const StoreNavbar = () => {
     return () => clearInterval(interval)
   }, [])
 
-  /* ================= INSTALL APP DETECT ================= */
+  /* ================= PWA DETECT ================= */
   useEffect(() => {
     const checkInstalled = () => {
       const installed =
         window.matchMedia("(display-mode: standalone)").matches ||
-        window.navigator.standalone === true
+        window.navigator.standalone === true ||
+        document.referrer.includes("android-app://")
 
       setIsInstalled(installed)
     }
 
     checkInstalled()
+
+    const ua = navigator.userAgent.toLowerCase()
+    const ios =
+      /iphone|ipad|ipod/.test(ua) &&
+      !window.matchMedia("(display-mode: standalone)").matches
+
+    setIsIOS(ios)
 
     const handler = (e) => {
       e.preventDefault()
@@ -58,17 +67,21 @@ const StoreNavbar = () => {
 
   /* ================= INSTALL APP ================= */
   const installApp = async () => {
-    if (!deferredPrompt) return
+    if (deferredPrompt) {
+      deferredPrompt.prompt()
 
-    deferredPrompt.prompt()
+      const result = await deferredPrompt.userChoice
 
-    const result = await deferredPrompt.userChoice
+      if (result.outcome === "accepted") {
+        setIsInstalled(true)
+      }
 
-    if (result.outcome === "accepted") {
-      setIsInstalled(true)
+      setDeferredPrompt(null)
+    } else if (isIOS) {
+      alert("Tap Share icon in Safari → Add to Home Screen")
+    } else {
+      alert("Open browser menu (⋮) → Install App")
     }
-
-    setDeferredPrompt(null)
   }
 
   return (
@@ -80,13 +93,11 @@ const StoreNavbar = () => {
           href="/store"
           className="group flex items-center gap-3 select-none"
         >
-          {/* Logo */}
           <div className="relative h-10 w-10 rounded-2xl bg-gradient-to-br from-cyan-400 via-emerald-400 to-cyan-500 flex items-center justify-center shadow-[0_0_25px_rgba(34,211,238,0.35)] group-hover:scale-105 transition">
             <span className="text-black font-black text-sm">NB</span>
             <div className="absolute inset-0 rounded-2xl border border-white/20"></div>
           </div>
 
-          {/* Text */}
           <div className="leading-none">
             <h1 className="text-[16px] sm:text-[22px] font-bold tracking-tight text-white">
               <span className="text-cyan-400">Nandurbar</span> Bazar
@@ -101,8 +112,8 @@ const StoreNavbar = () => {
         {/* ================= RIGHT ================= */}
         <div className="flex items-center gap-3 sm:gap-5">
 
-          {/* INSTALL BUTTON */}
-          {!isInstalled && deferredPrompt && (
+          {/* INSTALL BUTTON DESKTOP */}
+          {!isInstalled && (
             <button
               onClick={installApp}
               className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-cyan-400 to-emerald-400 text-black text-sm font-semibold shadow-[0_0_20px_rgba(34,211,238,0.35)] hover:scale-105 transition"
@@ -112,11 +123,11 @@ const StoreNavbar = () => {
             </button>
           )}
 
-          {/* MOBILE INSTALL */}
-          {!isInstalled && deferredPrompt && (
+          {/* INSTALL BUTTON MOBILE */}
+          {!isInstalled && (
             <button
               onClick={installApp}
-              className="sm:hidden h-9 w-9 rounded-full bg-cyan-400 text-black flex items-center justify-center"
+              className="sm:hidden h-9 w-9 rounded-full bg-cyan-400 text-black flex items-center justify-center shadow-[0_0_15px_rgba(34,211,238,0.35)]"
             >
               <Download size={16} />
             </button>
@@ -153,6 +164,7 @@ const StoreNavbar = () => {
 
           {/* USER */}
           <div className="flex items-center gap-3 border-l border-white/10 pl-3 sm:pl-5">
+
             <div className="hidden sm:flex flex-col text-right">
               <span className="text-[10px] text-cyan-400 font-bold uppercase tracking-widest leading-none mb-1">
                 Seller
@@ -177,6 +189,7 @@ const StoreNavbar = () => {
                 />
               </div>
             </div>
+
           </div>
 
         </div>
