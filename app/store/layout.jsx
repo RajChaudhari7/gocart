@@ -3,9 +3,22 @@ import { SignedIn, SignedOut, SignIn } from "@clerk/nextjs";
 
 export const metadata = {
   title: "Nandurbar Bazar Seller",
-  description: "Nandurbar Bazar Seller Dashboard",
+  description: "Seller Dashboard",
+
   manifest: "/store-manifest.json",
+
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "NB Seller",
+  },
+
+  icons: {
+    icon: "/seller-192.png",
+    apple: "/seller-192.png",
+  },
 };
+
 
 export default function RootAdminLayout({ children }) {
   return (
