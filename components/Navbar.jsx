@@ -9,7 +9,7 @@ import {
   Search,
 } from 'lucide-react'
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { useUser, useClerk, UserButton, Protect } from '@clerk/nextjs'
@@ -36,44 +36,65 @@ const drawerVariants = {
 const Navbar = () => {
   const { user } = useUser()
   const { openSignIn } = useClerk()
-  const router = useRouter()
   const pathname = usePathname()
 
   const cartCount = useSelector(
     (state) => state.cart?.total || state.cart?.items?.length || 0
   )
+
   const prevCartCount = useRef(cartCount)
+
   const [pulse, setPulse] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
 
   const [deferredPrompt, setDeferredPrompt] = useState(null)
   const [isInstalled, setIsInstalled] = useState(false)
 
+  /* ================= PWA ================= */
   useEffect(() => {
-    const installed =
-      window.matchMedia('(display-mode: standalone)').matches
+    const checkInstalled = () => {
+      const installed =
+        window.matchMedia('(display-mode: standalone)').matches ||
+        window.navigator.standalone === true
 
-    setIsInstalled(installed)
+      setIsInstalled(installed)
+    }
+
+    checkInstalled()
+
+    /* USER APP SERVICE WORKER */
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker
+        .register('/sw.js', { scope: '/' })
+        .catch((err) => console.log('SW Error:', err))
+    }
 
     const handler = (e) => {
       e.preventDefault()
       setDeferredPrompt(e)
     }
 
-    window.addEventListener('beforeinstallprompt', handler)
-
-    window.addEventListener('appinstalled', () => {
+    const installedHandler = () => {
       setIsInstalled(true)
       setDeferredPrompt(null)
-    })
+    }
+
+    window.addEventListener('beforeinstallprompt', handler)
+    window.addEventListener('appinstalled', installedHandler)
+    window.addEventListener('focus', checkInstalled)
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handler)
+      window.removeEventListener('appinstalled', installedHandler)
+      window.removeEventListener('focus', checkInstalled)
     }
   }, [])
 
   const installApp = async () => {
-    if (!deferredPrompt) return
+    if (!deferredPrompt) {
+      alert('Use browser menu ⋮ and tap Install App')
+      return
+    }
 
     deferredPrompt.prompt()
 
@@ -88,17 +109,16 @@ const Navbar = () => {
 
   const isActive = (href) => pathname === href
 
-  /* ===== CART PULSE ===== */
+  /* ================= CART PULSE ================= */
   useEffect(() => {
     if (cartCount !== prevCartCount.current) {
       setPulse(true)
       prevCartCount.current = cartCount
+
       const timer = setTimeout(() => setPulse(false), 400)
       return () => clearTimeout(timer)
     }
   }, [cartCount])
-
-
 
   const desktopLinks = [
     { name: 'Home', href: '/' },
@@ -119,50 +139,31 @@ const Navbar = () => {
 
   return (
     <>
-      {/* ================= MOBILE TOP NAV ================= */}
-      <nav className="sm:hidden fixed top-0 inset-x-0 z-50 bg-black/70 backdrop-blur-2xl border-b border-white/10 shadow-[0_8px_30px_rgba(0,255,255,0.2)]">
+      {/* MOBILE TOP NAV */}
+      <nav className="sm:hidden fixed top-0 inset-x-0 z-50 bg-black/70 backdrop-blur-2xl border-b border-white/10">
         <div className="flex items-center justify-between px-4 py-3">
-          <Link
-            href="/"
-            className="group relative inline-flex items-center gap-2 select-none"
-          >
-            {/* Premium Icon */}
-            <div className="relative flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 via-emerald-400 to-cyan-500 shadow-[0_0_25px_rgba(34,211,238,0.35)] transition duration-300 group-hover:scale-105 group-hover:rotate-3">
-              <span className="text-black font-black text-lg sm:text-xl">
-                NB
-              </span>
 
-              <div className="absolute inset-0 rounded-2xl border border-white/20" />
+          <Link href="/" className="group relative inline-flex items-center gap-2">
+
+            <div className="relative flex h-9 w-9 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 via-emerald-400 to-cyan-500">
+              <span className="text-black font-black text-lg">NB</span>
             </div>
 
-            {/* Brand Name */}
             <div className="flex flex-col leading-none">
-              <span className="font-bold tracking-tight text-white text-[15px] sm:text-[22px]">
+              <span className="font-bold text-white text-[15px]">
                 <span className="text-cyan-400">Nandurbar</span>
               </span>
 
-              <span className="uppercase tracking-[0.28em] text-[8px] sm:text-[11px] text-white/70 font-medium">
+              <span className="uppercase tracking-[0.28em] text-[8px] text-white/70">
                 Bazar
               </span>
             </div>
-
-            {/* Premium Dot */}
-            <span className="absolute -right-2 top-0 text-cyan-400 text-lg sm:text-xl font-bold">
-              .
-            </span>
-
-            <Protect plan="prime">
-              <span className="hidden sm:block absolute -top-2 -right-14 text-[10px] px-2 py-0.5 bg-gradient-to-r from-cyan-400 to-emerald-400 text-black rounded-full shadow-[0_0_15px_rgba(34,211,238,0.9)]">
-                prime
-              </span>
-            </Protect>
           </Link>
 
           {!isInstalled && (
             <button
               onClick={installApp}
-              disabled={!deferredPrompt}
-              className="text-xs px-3 py-1 rounded-full bg-cyan-400 text-black disabled:opacity-50"
+              className="text-xs px-3 py-1 rounded-full bg-cyan-400 text-black"
             >
               Install
             </button>
@@ -171,7 +172,7 @@ const Navbar = () => {
           {!user ? (
             <button
               onClick={openSignIn}
-              className="text-sm px-3 py-1.5 rounded-full bg-gradient-to-r from-cyan-400 to-emerald-400 text-black shadow-[0_0_15px_rgba(34,211,238,0.8)]"
+              className="text-sm px-3 py-1.5 rounded-full bg-gradient-to-r from-cyan-400 to-emerald-400 text-black"
             >
               Login
             </button>
@@ -181,41 +182,28 @@ const Navbar = () => {
         </div>
       </nav>
 
-      {/* ================= DESKTOP NAV ================= */}
-      <nav className="hidden sm:block fixed top-0 inset-x-0 z-50 backdrop-blur-2xl bg-black/60 border-b border-white/10 shadow-[0_10px_40px_rgba(0,255,255,0.15)]">
+      {/* DESKTOP NAV */}
+      <nav className="hidden sm:block fixed top-0 inset-x-0 z-50 bg-black/60 backdrop-blur-2xl border-b border-white/10">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
 
-          <Link
-            href="/"
-            className="group relative inline-flex items-center gap-2 select-none"
-          >
-            {/* Premium Icon */}
-            <div className="relative flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 via-emerald-400 to-cyan-500 shadow-[0_0_25px_rgba(34,211,238,0.35)] transition duration-300 group-hover:scale-105 group-hover:rotate-3">
-              <span className="text-black font-black text-lg sm:text-xl">
-                NB
-              </span>
+          <Link href="/" className="group relative inline-flex items-center gap-2">
 
-              <div className="absolute inset-0 rounded-2xl border border-white/20" />
+            <div className="relative flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 via-emerald-400 to-cyan-500">
+              <span className="text-black font-black">NB</span>
             </div>
 
-            {/* Brand Name */}
             <div className="flex flex-col leading-none">
-              <span className="font-bold tracking-tight text-white text-[15px] sm:text-[22px]">
+              <span className="font-bold text-white text-[22px]">
                 <span className="text-cyan-400">Nandurbar</span>
               </span>
 
-              <span className="uppercase tracking-[0.28em] text-[8px] sm:text-[11px] text-white/70 font-medium">
+              <span className="uppercase tracking-[0.28em] text-[10px] text-white/70">
                 Bazar
               </span>
             </div>
 
-            {/* Premium Dot */}
-            <span className="absolute -right-2 top-0 text-cyan-400 text-lg sm:text-xl font-bold">
-              .
-            </span>
-
             <Protect plan="prime">
-              <span className="hidden sm:block absolute -top-2 -right-14 text-[10px] px-2 py-0.5 bg-gradient-to-r from-cyan-400 to-emerald-400 text-black rounded-full shadow-[0_0_15px_rgba(34,211,238,0.9)]">
+              <span className="absolute -top-2 -right-14 text-[10px] px-2 py-0.5 bg-cyan-400 text-black rounded-full">
                 prime
               </span>
             </Protect>
@@ -226,50 +214,33 @@ const Navbar = () => {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`relative px-2 py-1 transition hover:-translate-y-[1px] hover:drop-shadow-[0_0_8px_rgba(34,211,238,0.8)] ${isActive(link.href) ? 'text-cyan-400' : 'hover:text-cyan-400'
-                  }`}
+                className={`${isActive(link.href) ? 'text-cyan-400' : 'hover:text-cyan-400'}`}
               >
                 {link.name}
-                {isActive(link.href) && (
-                  <motion.span
-                    layoutId="nav-underline"
-                    className="absolute -bottom-1 left-0 w-full h-[2px] bg-cyan-400 rounded shadow-[0_0_10px_rgba(34,211,238,1)]"
-                  />
-                )}
               </Link>
             ))}
 
-            {/* CART */}
             <Link href="/cart" className="relative">
               <motion.div
                 variants={cartPulse}
                 animate={pulse ? 'active' : 'idle'}
-                className="flex items-center gap-1 hover:drop-shadow-[0_0_12px_rgba(34,211,238,0.8)]"
+                className="flex items-center gap-1"
               >
                 <ShoppingCart size={18} />
                 Cart
               </motion.div>
 
-              <AnimatePresence>
-                {cartCount > 0 && (
-                  <motion.span
-                    key={cartCount}
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    exit={{ scale: 0 }}
-                    className="absolute -top-3 -right-4 text-xs px-2 py-0.5 rounded-full bg-gradient-to-r from-cyan-400 to-emerald-400 text-black shadow-[0_0_15px_rgba(34,211,238,0.9)] font-bold"
-                  >
-                    {cartCount}
-                  </motion.span>
-                )}
-              </AnimatePresence>
+              {cartCount > 0 && (
+                <span className="absolute -top-3 -right-4 text-xs px-2 py-0.5 rounded-full bg-cyan-400 text-black font-bold">
+                  {cartCount}
+                </span>
+              )}
             </Link>
 
             {!isInstalled && (
               <button
                 onClick={installApp}
-                disabled={!deferredPrompt}
-                className="px-4 py-2 rounded-full bg-gradient-to-r from-cyan-400 to-emerald-400 text-black font-medium disabled:opacity-50"
+                className="px-4 py-2 rounded-full bg-gradient-to-r from-cyan-400 to-emerald-400 text-black font-medium"
               >
                 Install App
               </button>
@@ -278,7 +249,7 @@ const Navbar = () => {
             {!user ? (
               <button
                 onClick={openSignIn}
-                className="px-5 py-2 rounded-full bg-gradient-to-r from-cyan-400 to-emerald-400 text-black font-medium shadow-[0_0_20px_rgba(34,211,238,0.9)]"
+                className="px-5 py-2 rounded-full bg-gradient-to-r from-cyan-400 to-emerald-400 text-black"
               >
                 Login
               </button>
@@ -289,49 +260,25 @@ const Navbar = () => {
         </div>
       </nav>
 
-      {/* ================= MOBILE BOTTOM NAV ================= */}
-      <div className="sm:hidden fixed bottom-0 inset-x-0 z-50 bg-black/70 backdrop-blur-2xl border-t border-white/10 shadow-[0_-8px_30px_rgba(0,255,255,0.2)]">
+      {/* MOBILE BOTTOM */}
+      <div className="sm:hidden fixed bottom-0 inset-x-0 z-50 bg-black/70 backdrop-blur-2xl border-t border-white/10">
         <div className="flex justify-around py-2 text-xs">
-          {mobileLinks.map((link) => {
-            const isCart = link.id === 'cart'
-            return (
-              <Link
-                key={link.id}
-                href={link.href}
-                className={`relative flex flex-col items-center gap-1 ${isActive(link.href)
-                  ? 'text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,1)]'
-                  : 'text-white/70'
-                  }`}
-              >
-                {isCart ? (
-                  <motion.div variants={cartPulse} animate={pulse ? 'active' : 'idle'} className="flex flex-col items-center gap-1">
-                    {link.icon}
-                    {link.label}
-                  </motion.div>
-                ) : (
-                  <>
-                    {link.icon}
-                    {link.label}
-                  </>
-                )}
-                {isCart && cartCount > 0 && (
-                  <motion.span
-                    key={cartCount}
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    exit={{ scale: 0 }}
-                    className="absolute -top-1 -right-2 text-[10px] px-1 py-0.5 rounded-full bg-gradient-to-r from-cyan-400 to-emerald-400 text-black font-bold"
-                  >
-                    {cartCount}
-                  </motion.span>
-                )}
-              </Link>
-            )
-          })}
+          {mobileLinks.map((link) => (
+            <Link
+              key={link.id}
+              href={link.href}
+              className={`flex flex-col items-center gap-1 ${
+                isActive(link.href) ? 'text-cyan-400' : 'text-white/70'
+              }`}
+            >
+              {link.icon}
+              {link.label}
+            </Link>
+          ))}
 
           <button
             onClick={() => setMenuOpen(true)}
-            className="flex flex-col items-center gap-1 text-white/70 hover:text-cyan-400"
+            className="flex flex-col items-center gap-1 text-white/70"
           >
             <Menu size={18} />
             Menu
@@ -339,7 +286,7 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* ================= MOBILE DRAWER MENU ================= */}
+      {/* MOBILE DRAWER */}
       <AnimatePresence>
         {menuOpen && (
           <>
@@ -350,35 +297,33 @@ const Navbar = () => {
               onClick={() => setMenuOpen(false)}
               className="fixed inset-0 bg-black/60 z-[60]"
             />
+
             <motion.div
               variants={drawerVariants}
               initial="hidden"
               animate="visible"
               exit="exit"
-              className="fixed top-0 right-0 h-full w-72 bg-black/90 backdrop-blur-2xl z-[70] border-l border-white/10 shadow-[-10px_0_40px_rgba(0,255,255,0.2)] p-6"
+              className="fixed top-0 right-0 h-full w-72 bg-black z-[70] p-6"
             >
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-lg font-semibold text-white">Menu</h2>
+                <h2 className="text-lg text-white">Menu</h2>
                 <button onClick={() => setMenuOpen(false)}>
                   <X size={20} />
                 </button>
               </div>
+
               <div className="flex flex-col gap-4 text-white/80">
                 {desktopLinks.map((link) => (
                   <Link
                     key={link.href}
                     href={link.href}
                     onClick={() => setMenuOpen(false)}
-                    className="py-2 px-3 rounded-lg hover:bg-white/10 hover:text-cyan-400 hover:shadow-[0_0_15px_rgba(34,211,238,0.4)] transition"
                   >
                     {link.name}
                   </Link>
                 ))}
-                <Link
-                  href="/cart"
-                  onClick={() => setMenuOpen(false)}
-                  className="py-2 px-3 rounded-lg hover:bg-white/10 hover:text-cyan-400 transition"
-                >
+
+                <Link href="/cart" onClick={() => setMenuOpen(false)}>
                   Cart ({cartCount})
                 </Link>
               </div>

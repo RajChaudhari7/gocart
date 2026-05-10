@@ -1,10 +1,10 @@
-const CACHE_NAME = "nandurbar-seller-v1"
+const CACHE_NAME = "nandurbar-user-v1"
 
 const urlsToCache = [
-  "/store",
-  "/store-manifest.json",
-  "/seller-192.png",
-  "/seller-512.png"
+  "/",
+  "/manifest.json",
+  "/icon-192.png",
+  "/icon-512.png"
 ]
 
 /* INSTALL */
@@ -37,11 +37,9 @@ self.addEventListener("activate", (event) => {
 
 /* FETCH */
 self.addEventListener("fetch", (event) => {
-  if (event.request.url.includes("/store")) {
-    event.respondWith(
-      caches.match(event.request).then((response) => {
-        return response || fetch(event.request)
-      })
-    )
-  }
+  event.respondWith(
+    caches.match(event.request).then((response) => {
+      return response || fetch(event.request)
+    })
+  )
 })
