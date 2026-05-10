@@ -5,6 +5,7 @@ import Link from "next/link"
 import axios from "axios"
 import { ArrowRightIcon } from "lucide-react"
 import { useAuth } from "@clerk/nextjs"
+import { usePathname, useRouter } from "next/navigation"
 
 import Loading from "../Loading"
 import SellerNavbar from "./StoreNavbar"
@@ -12,13 +13,14 @@ import SellerSidebar from "./StoreSidebar"
 
 const StoreLayout = ({ children }) => {
   const { getToken } = useAuth()
+  const pathname = usePathname()
+  const router = useRouter()
 
   const [isSeller, setIsSeller] = useState(false)
   const [loading, setLoading] = useState(true)
   const [storeInfo, setStoreInfo] = useState(null)
   const [pendingOrdersCount, setPendingOrdersCount] = useState(0)
 
-  /* ---------------- FETCH SELLER INFO ---------------- */
   const fetchSellerInfo = async () => {
     try {
       const token = await getToken()
@@ -35,7 +37,6 @@ const StoreLayout = ({ children }) => {
     }
   }
 
-  /* ---------------- FETCH ORDERS (BADGE) ---------------- */
   const fetchOrdersCount = async () => {
     try {
       const token = await getToken()
@@ -55,20 +56,25 @@ const StoreLayout = ({ children }) => {
     }
   }
 
-  /* ---------------- INIT ---------------- */
   useEffect(() => {
+    /* FORCE /store/ */
+    if (pathname === "/store") {
+      router.replace("/store/")
+      return
+    }
+
     const init = async () => {
       await Promise.all([
         fetchSellerInfo(),
         fetchOrdersCount()
       ])
+
       setLoading(false)
     }
 
     init()
   }, [])
 
-  /* ---------------- LOADING ---------------- */
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -77,7 +83,6 @@ const StoreLayout = ({ children }) => {
     )
   }
 
-  /* ---------------- NOT SELLER ---------------- */
   if (!isSeller) {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center text-center px-6">
@@ -95,11 +100,9 @@ const StoreLayout = ({ children }) => {
     )
   }
 
-  /* ---------------- LAYOUT ---------------- */
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900">
 
-      {/* Top Navbar */}
       <SellerNavbar />
 
       <div className="flex flex-1 overflow-hidden">
