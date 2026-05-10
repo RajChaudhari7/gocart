@@ -39,7 +39,9 @@ const StoreNavbar = () => {
     /* Register Service Worker */
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker
-        .register("/sw.js")
+        .register("/store-sw.js",{
+            scope: "/store/",
+        })
         .catch((err) => console.log("SW Error:", err))
     }
 
