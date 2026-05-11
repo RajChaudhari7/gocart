@@ -57,12 +57,6 @@ const StoreLayout = ({ children }) => {
   }
 
   useEffect(() => {
-    /* FORCE /store/ */
-    if (pathname === "/store") {
-      router.replace("/store/")
-      return
-    }
-
     const init = async () => {
       await Promise.all([
         fetchSellerInfo(),
