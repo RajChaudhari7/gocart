@@ -1,4 +1,4 @@
-const CACHE_NAME = "seller-app-v5";
+const CACHE_NAME = "seller-v10";
 
 const urlsToCache = [
   "/store/",
@@ -20,11 +20,11 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
-  if (event.request.url.includes("/store")) {
-    event.respondWith(
-      caches.match(event.request).then((response) => {
-        return response || fetch(event.request);
-      })
-    );
-  }
+  if (event.request.method !== "GET") return;
+
+  event.respondWith(
+    fetch(event.request)
+      .then((response) => response)
+      .catch(() => caches.match(event.request))
+  );
 });
