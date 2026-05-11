@@ -5,24 +5,13 @@ import withPWAInit from "next-pwa";
 const withPWA = withPWAInit({
   dest: "public",
   register: true,
-  skipWaiting: true,
-  disable: process.env.NODE_ENV === "development",
+  skipWaiting: true
 });
 
 const nextConfig = {
   images: {
-    unoptimized: true,
-  },
-
-  async redirects() {
-    return [
-      {
-        source: "/store",
-        destination: "/store/",
-        permanent: false,
-      },
-    ];
-  },
+    unoptimized: true
+  }
 };
 
 export default withPWA(nextConfig);
