@@ -78,21 +78,21 @@ const StoreNavbar = () => {
 
   /* ================= INSTALL APP ================= */
   const installApp = async () => {
-    if (!deferredPrompt) {
-      alert("Please wait few seconds or use browser install icon.")
+    if (deferredPrompt) {
+      deferredPrompt.prompt()
+
+      const result = await deferredPrompt.userChoice
+
+      if (result.outcome === "accepted") {
+        setIsInstalled(true)
+      }
+
+      setDeferredPrompt(null)
       return
     }
 
-    deferredPrompt.prompt()
-
-    const result = await deferredPrompt.userChoice
-
-    if (result.outcome === "accepted") {
-      setIsInstalled(true)
-    }
-
-    setDeferredPrompt(null)
-    setCanInstall(false)
+    /* MOBILE FALLBACK */
+    alert("Tap Chrome Menu ⋮ → Add to Home Screen")
   }
 
   return (
@@ -125,8 +125,7 @@ const StoreNavbar = () => {
           {!isInstalled && (
             <button
               onClick={installApp}
-              disabled={!canInstall}
-              className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-cyan-400 to-emerald-400 text-black text-sm font-semibold disabled:opacity-50"
+              className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-cyan-400 to-emerald-400 text-black text-sm font-semibold"
             >
               <Download size={16} />
               Install App
@@ -136,8 +135,7 @@ const StoreNavbar = () => {
           {!isInstalled && (
             <button
               onClick={installApp}
-              disabled={!canInstall}
-              className="sm:hidden h-9 w-9 rounded-full bg-gradient-to-r from-cyan-400 to-emerald-400 text-black flex items-center justify-center disabled:opacity-50"
+              className="sm:hidden h-9 w-9 rounded-full bg-gradient-to-r from-cyan-400 to-emerald-400 text-black flex items-center justify-center"
             >
               <Download size={16} />
             </button>
