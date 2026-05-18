@@ -450,131 +450,197 @@ export default function Dashboard() {
           left: "-9999px",
           top: 0,
           width: "800px",
-          background: "#f8fafc",
-          color: "#0f172a",
-          padding: "30px",
-          fontFamily: "Segoe UI"
+          background: "#ffffff",
+          color: "#1e293b",
+          padding: "40px",
+          fontFamily: "'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+          boxSizing: "border-box"
         }}
       >
-
-        {/* 🔥 HEADER */}
+        {/* 🏢 HEADER SECTION */}
         <div style={{
-          background: "linear-gradient(135deg, #6366f1, #4f46e5)",
-          padding: "20px",
-          borderRadius: "12px",
-          color: "white",
           display: "flex",
-          alignItems: "center"
+          justifyContent: "space-between",
+          alignItems: "center",
+          borderBottom: "2px solid #e2e8f0",
+          paddingBottom: "20px",
+          marginBottom: "30px"
         }}>
-          {dashboardData.storeLogo && (
-            <img
-              src={dashboardData.storeLogo}
-              style={{
-                width: "60px",
-                height: "60px",
-                borderRadius: "10px",
-                marginRight: "15px",
-                border: "2px solid white"
-              }}
-            />
-          )}
-          <div>
-            <h1 style={{ margin: 0 }}>🏪 {dashboardData.storeName}</h1>
-            <p style={{ margin: 0, opacity: 0.8 }}>
-              📅 {monthOptions[filterMonth]} {filterYear} Report
+          <div style={{ display: "flex", alignItems: "center" }}>
+            {dashboardData.storeLogo && (
+              <img
+                src={dashboardData.storeLogo}
+                alt="Store Logo"
+                style={{
+                  width: "55px",
+                  height: "55px",
+                  borderRadius: "8px",
+                  marginRight: "16px",
+                  objectFit: "cover",
+                  border: "1px solid #e2e8f0"
+                }}
+              />
+            )}
+            <div>
+              <h1 style={{ margin: 0, fontSize: "24px", color: "#0f172a" }}>
+                {dashboardData.storeName}
+              </h1>
+              <p style={{ margin: "4px 0 0", color: "#64748b", fontSize: "14px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                Vendor Performance Report
+              </p>
+            </div>
+          </div>
+          <div style={{ textAlign: "right" }}>
+            <p style={{ margin: 0, fontSize: "14px", color: "#64748b", fontWeight: 500 }}>
+              Reporting Period
+            </p>
+            <p style={{ margin: "4px 0 0", fontSize: "16px", color: "#0f172a", fontWeight: "bold" }}>
+              {monthOptions[filterMonth]} {filterYear}
             </p>
           </div>
         </div>
 
-        {/* 📊 SUMMARY */}
-        <h2 style={{ marginTop: "25px" }}>📊 Business Overview</h2>
-
+        {/* 📊 EXECUTIVE SUMMARY (GRID) */}
+        <h2 style={{ fontSize: "18px", color: "#0f172a", borderBottom: "1px solid #f1f5f9", paddingBottom: "8px", marginBottom: "15px" }}>
+          Executive Summary
+        </h2>
         <div style={{
           display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: "12px"
+          gridTemplateColumns: "repeat(4, 1fr)",
+          gap: "15px",
+          marginBottom: "30px"
         }}>
-          <div style={card("#E0F2FE")}>
-            💰 Earnings <br />
-            <b>{currency}{dashboardData.totalEarnings}</b>
-          </div>
-
-          <div style={card("#DCFCE7")}>
-            📦 Orders <br />
-            <b>{dashboardData.totalOrders}</b>
-          </div>
-
-          <div style={card("#FEE2E2")}>
-            ❌ Cancelled <br />
-            <b>{dashboardData.monthlyReport?.cancelledOrders}</b>
-          </div>
-
-          <div style={card("#FEF3C7")}>
-            🔁 Returned <br />
-            <b>{dashboardData.returnedProducts}</b>
-          </div>
-        </div>
-
-        {/* 💰 FINANCIAL */}
-        <h2 style={{ marginTop: "25px" }}>💰 Financial Breakdown</h2>
-
-        <div style={box}>
-          <p>💰 Net Earnings: <b>{currency}{dashboardData.totalEarnings}</b></p>
-
-          <p>❌ Cancelled Amount: <b>
-            {currency}{
-              dashboardData.monthlyReport?.cancelledDetails
-                ?.reduce((a, c) => a + (c.price * c.quantity), 0)
-            }
-          </b></p>
-
-          <p>🔁 Returned Amount: <b>
-            {currency}{dashboardData.returnedAmount}
-          </b></p>
-        </div>
-
-        {/* 🔥 TOP PRODUCTS */}
-        <h2 style={{ marginTop: "25px" }}>🔥 Top Products</h2>
-
-        <div style={box}>
-          {dashboardData.monthlyReport?.topProducts?.map((p, i) => (
-            <p key={i}>
-              🛒 <b>{p.name}</b> — {p.sold} sold
-            </p>
+          {[
+            { label: "Net Earnings", value: `${currency}${dashboardData.totalEarnings}`, color: "#0ea5e9", bg: "#f0f9ff", border: "#bae6fd" },
+            { label: "Total Orders", value: dashboardData.totalOrders, color: "#10b981", bg: "#ecfdf5", border: "#a7f3d0" },
+            { label: "Cancelled", value: dashboardData.monthlyReport?.cancelledOrders || 0, color: "#ef4444", bg: "#fef2f2", border: "#fecaca" },
+            { label: "Returned", value: dashboardData.returnedProducts || 0, color: "#f59e0b", bg: "#fffbeb", border: "#fde68a" }
+          ].map((card, idx) => (
+            <div key={idx} style={{
+              backgroundColor: card.bg,
+              border: `1px solid ${card.border}`,
+              padding: "16px",
+              borderRadius: "8px",
+              textAlign: "center"
+            }}>
+              <p style={{ margin: 0, fontSize: "12px", color: "#475569", fontWeight: 600, textTransform: "uppercase" }}>
+                {card.label}
+              </p>
+              <p style={{ margin: "8px 0 0", fontSize: "20px", color: card.color, fontWeight: "bold" }}>
+                {card.value}
+              </p>
+            </div>
           ))}
         </div>
 
-        {/* ❌ CANCELLED */}
-        <h2 style={{ marginTop: "25px" }}>❌ Cancelled Orders</h2>
+        {/* 💰 FINANCIAL & TOP PRODUCTS (TWO COLUMNS) */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "30px" }}>
 
-        <div style={box}>
-          {dashboardData.monthlyReport?.cancelledDetails?.map((c, i) => (
-            <p key={i}>
-              {c.productName} | Qty: {c.quantity} | ₹{c.price}
-            </p>
-          ))}
+          {/* Financial Breakdown */}
+          <div>
+            <h2 style={{ fontSize: "16px", color: "#0f172a", borderBottom: "1px solid #e2e8f0", paddingBottom: "8px", marginBottom: "12px" }}>
+              Financial Breakdown
+            </h2>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "14px" }}>
+              <tbody>
+                <tr style={{ borderBottom: "1px solid #f1f5f9" }}>
+                  <td style={{ padding: "10px 0", color: "#475569" }}>Net Earnings</td>
+                  <td style={{ padding: "10px 0", textAlign: "right", fontWeight: "bold", color: "#0f172a" }}>
+                    {currency}{dashboardData.totalEarnings}
+                  </td>
+                </tr>
+                <tr style={{ borderBottom: "1px solid #f1f5f9" }}>
+                  <td style={{ padding: "10px 0", color: "#475569" }}>Cancelled Revenue Loss</td>
+                  <td style={{ padding: "10px 0", textAlign: "right", fontWeight: "bold", color: "#ef4444" }}>
+                    {currency}{dashboardData.monthlyReport?.cancelledDetails?.reduce((a, c) => a + (c.price * c.quantity), 0) || 0}
+                  </td>
+                </tr>
+                <tr>
+                  <td style={{ padding: "10px 0", color: "#475569" }}>Returned Revenue Loss</td>
+                  <td style={{ padding: "10px 0", textAlign: "right", fontWeight: "bold", color: "#f59e0b" }}>
+                    {currency}{dashboardData.returnedAmount || 0}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          {/* Top Products */}
+          <div>
+            <h2 style={{ fontSize: "16px", color: "#0f172a", borderBottom: "1px solid #e2e8f0", paddingBottom: "8px", marginBottom: "12px" }}>
+              Top Performing Products
+            </h2>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "14px" }}>
+              <tbody>
+                {dashboardData.monthlyReport?.topProducts?.length > 0 ? (
+                  dashboardData.monthlyReport.topProducts.map((p, i) => (
+                    <tr key={i} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                      <td style={{ padding: "8px 0", color: "#0f172a", fontWeight: 500 }}>{p.name}</td>
+                      <td style={{ padding: "8px 0", textAlign: "right", color: "#475569" }}>
+                        <span style={{ fontWeight: "bold" }}>{p.sold}</span> units sold
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr><td style={{ padding: "8px 0", color: "#94a3b8" }}>No data available.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
 
-        {/* 🔁 RETURNED */}
-        <h2 style={{ marginTop: "25px" }}>🔁 Returned Orders</h2>
+        {/* ❌ CANCELLED & RETURNED ORDERS TABLES */}
+        {[
+          { title: "Cancelled Orders", data: dashboardData.monthlyReport?.cancelledDetails },
+          { title: "Returned Orders", data: dashboardData.monthlyReport?.returnedDetails }
+        ].map((section, idx) => (
+          <div key={idx} style={{ marginBottom: "30px" }}>
+            <h2 style={{ fontSize: "16px", color: "#0f172a", borderBottom: "2px solid #e2e8f0", paddingBottom: "8px", marginBottom: "12px" }}>
+              {section.title}
+            </h2>
+            {section.data && section.data.length > 0 ? (
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
+                <thead>
+                  <tr style={{ backgroundColor: "#f8fafc", color: "#475569", textAlign: "left" }}>
+                    <th style={{ padding: "10px", borderBottom: "1px solid #e2e8f0" }}>Product Name</th>
+                    <th style={{ padding: "10px", borderBottom: "1px solid #e2e8f0", textAlign: "center" }}>Quantity</th>
+                    <th style={{ padding: "10px", borderBottom: "1px solid #e2e8f0", textAlign: "right" }}>Unit Price</th>
+                    <th style={{ padding: "10px", borderBottom: "1px solid #e2e8f0", textAlign: "right" }}>Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {section.data.map((item, i) => (
+                    <tr key={i} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                      <td style={{ padding: "10px", color: "#0f172a" }}>{item.productName}</td>
+                      <td style={{ padding: "10px", textAlign: "center", color: "#475569" }}>{item.quantity}</td>
+                      <td style={{ padding: "10px", textAlign: "right", color: "#475569" }}>{currency}{item.price}</td>
+                      <td style={{ padding: "10px", textAlign: "right", fontWeight: "bold", color: "#0f172a" }}>
+                        {currency}{item.price * item.quantity}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <p style={{ fontSize: "13px", color: "#94a3b8", fontStyle: "italic" }}>No {section.title.toLowerCase()} recorded for this period.</p>
+            )}
+          </div>
+        ))}
 
-        <div style={box}>
-          {dashboardData.monthlyReport?.returnedDetails?.map((r, i) => (
-            <p key={i}>
-              {r.productName} | Qty: {r.quantity} | ₹{r.price}
-            </p>
-          ))}
-        </div>
-
-        {/* FOOTER */}
-        <p style={{
-          marginTop: "30px",
-          fontSize: "12px",
+        {/* 🏁 FOOTER */}
+        <div style={{
+          marginTop: "40px",
+          paddingTop: "20px",
+          borderTop: "1px solid #e2e8f0",
           textAlign: "center",
-          color: "#64748b"
         }}>
-          🚀 Generated by Smart Analytics • Premium Report
-        </p>
+          <p style={{ margin: 0, fontSize: "12px", color: "#94a3b8", fontWeight: 500 }}>
+            CONFIDENTIAL & PROPRIETARY • GENERATED BY SMART ANALYTICS
+          </p>
+          <p style={{ margin: "4px 0 0", fontSize: "11px", color: "#cbd5e1" }}>
+            Report generated on {new Date().toLocaleDateString()}
+          </p>
+        </div>
       </div>
     </div>
 
