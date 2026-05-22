@@ -1,115 +1,145 @@
+# GoCart — Multi-Vendor E-Commerce Platform
 
-# GlobalMart
+🔗 [Live Demo](https://gocart-delta.vercel.app) &nbsp;|&nbsp; 📂 [GitHub Repository](https://github.com/RajChaudhari7/gocart)
 
-GlobalMart is a modern multivendor ecommerce platform built with Next.js, Prisma, and PostgreSQL.
-It allows users to shop as customers or become sellers and manage their stores with ease.
+A modern multi-vendor e-commerce platform where customers can shop across multiple sellers, sellers can manage their own stores, and admins oversee the entire platform. Powered by Next.js, PostgreSQL, Prisma, and AI-generated product listings.
 
-✨ A unique feature is its AI-powered product listing system: sellers upload a product image, and the platform automatically generates the name, description, price, and offer price, saving time and ensuring professional listings.
+---
 
-## ✨ Features
+## Features
 
-🔑 User authentication & authorization
+### For Customers
+- Browse and search products across multiple vendors
+- Shopping cart and seamless checkout
+- Multiple payment options — Stripe (card) and Cash on Delivery
+- Coupon/discount code support
+- **Prime Membership** with exclusive pricing and benefits
+- Order history and product ratings
 
-🛒 Customers can become sellers
+### For Sellers
+- Register as a seller or switch from a customer account
+- **AI-powered product listing** — upload a product image and the platform auto-generates the product name, description, price, and offer price
+- Add, edit, and delete products
+- Seller dashboard to manage orders, revenue, and performance
 
-🤖 AI-powered product listings
+### For Admins
+- Manage and approve/block user accounts
+- Approve and verify sellers
+- Monitor and manage all product listings
+- View and manage orders across the platform
+- Handle reports, disputes, and platform settings
 
-📦 Product management (add, edit, delete)
+---
 
-🛍 Shopping cart & checkout system
+## Tech Stack
 
-📊 Seller dashboard for orders & revenue
+| Layer | Technology |
+|---|---|
+| Frontend | Next.js, Tailwind CSS |
+| Backend | Next.js API Routes |
+| Database | PostgreSQL |
+| ORM | Prisma |
+| Authentication | Clerk |
+| Payments | Stripe |
+| AI | OpenAI API (product listing generation) |
+| Deployment | Vercel |
 
-🔎 Smart search & filtering
+---
 
-📱 Responsive design for all devices
+## Getting Started
 
+### Prerequisites
 
-## 👥 Roles & Permissions
+- Node.js v18+
+- PostgreSQL database
+- Clerk account
+- Stripe account
+- OpenAI API key
 
-👤 User (Customer)
+### Installation
 
-Register and log in securely with the help of clerk
+```bash
+# Clone the repository
+git clone https://github.com/RajChaudhari7/gocart.git
+cd gocart
 
-Browse products across multiple vendors
+# Install dependencies
+npm install
+```
 
-Add products to the cart and checkout
+### Environment Variables
 
-Search and filter products
+Create a `.env` file in the root directory:
 
-View order history
+```env
+DATABASE_URL="postgresql://username:password@localhost:5432/gocart"
+NEXTAUTH_SECRET=your_nextauth_secret
 
-Can rate the products 
+# Clerk
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
+CLERK_SECRET_KEY=sk_test_...
 
-Can use the Coupon Code 
+# Stripe
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
 
-Can be the prime member 
+# OpenAI
+OPENAI_API_KEY=your_openai_api_key
+```
 
-🛍 Seller (Vendor)
+### Database Setup
 
-Register as a seller / switch to seller account
+```bash
+# Run Prisma migrations
+npx prisma migrate dev
 
-Upload product images → AI auto-generates product details (name, description, price, offer)
+# (Optional) Seed the database
+npx prisma db seed
+```
 
-Add, edit, or delete products
+### Run the App
 
-Manage orders received from customers
+```bash
+npm run dev
+```
 
-Track sales, revenue, and performance in the seller dashboard
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-🛠 Admin
+---
 
-Manage all users (approve/block accounts)
+## Project Structure
 
-Approve or verify sellers
+```
+gocart/
+├── app/              # Next.js app router — pages and API routes
+├── components/       # Reusable UI components
+├── hooks/            # Custom React hooks
+├── lib/              # Utility functions and API clients
+├── middlewares/      # Auth and role-check middleware
+├── inngest/          # Background job handlers
+├── prisma/           # Prisma schema and migrations
+├── configs/          # App-level config files
+└── public/           # Static assets
+```
 
-Monitor and manage product listings
+---
 
-View and manage orders across the platform
+## Key Implementation Highlights
 
-Handle reports, disputes, and platform settings
-## 🛠 Tech Stack
-Frontend: Next.js, Tailwind CSS
+- **AI product generation** — product images are sent server-side to OpenAI's vision API; the response returns a structured name, description, and price suggestion that sellers can review and edit before publishing
+- **Role-based access control** — Clerk authentication with role metadata (`user` / `seller` / `admin`); each section of the app is protected by middleware checking the user's role
+- **Stripe integration** — card payments via Stripe Checkout; webhook handlers confirm orders on `payment_intent.succeeded` events
+- **Prime membership** — subscribers see exclusive pricing applied automatically at checkout
 
-Backend: Next.js API Routes
+---
 
-Database: PostgreSQL
+## Screenshots
 
-ORM: Prisma
+> Add screenshots of the homepage, product listing with AI generation, seller dashboard, and checkout here.
 
-AI Integration: OpenAI API
+---
 
-Deployment: Vercel 
-## ⚙️ Installation & Setup
+## Author
 
-1.Clone the repo
-
-    git clone https://github.com/RajChaudhari7/gocart.git
-    cd gocart
-
-2.Install dependencies
-
-    npm install
-
-3.Configure environment variables in .env
-
-    DATABASE_URL="postgresql://username:password@localhost:5432/globalmart"
-    NEXTAUTH_SECRET=your_secret_key
-    OPENAI_API_KEY=your_openai_api_key
-
-4.Start development server
-
-    npm run dev
-
-
-5.App will be running at 👉 http://localhost:3000
-
-
-## 🙏 Acknowledgement
-
-Thanks to Next.js, Prisma, and PostgreSQL communities for their excellent documentation.
-
-Special thanks to OpenAI API for enabling AI-powered product listing.
-
-Appreciation to the open-source community and resources that guided this project.
-
+**Raj Chaudhari** — [LinkedIn](https://linkedin.com/in/raj-chaudhari-mern) · [GitHub](https://github.com/RajChaudhari7)
