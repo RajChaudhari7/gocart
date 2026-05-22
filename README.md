@@ -134,11 +134,6 @@ gocart/
 
 ---
 
-## Screenshots
-
-> Add screenshots of the homepage, product listing with AI generation, seller dashboard, and checkout here.
-
----
 
 ## Author
 
