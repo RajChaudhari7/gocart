@@ -126,14 +126,16 @@ const OrderSummary = ({ totalPrice, items }) => {
           Cash on Delivery
         </label>
 
-        <label className="flex items-center gap-2 cursor-pointer">
+        <label
+          className="flex items-center gap-2 cursor-not-allowed opacity-50"
+          onClick={() => toast.error('Stripe service is currently unavailable')}
+        >
           <input
             type="radio"
             name="paymentMethod"
-            checked={paymentMethod === 'STRIPE'}
-            onChange={() => setPaymentMethod('STRIPE')}
+            disabled
           />
-          Stripe Payment
+          Stripe Payment (Unavailable)
         </label>
       </div>
 
