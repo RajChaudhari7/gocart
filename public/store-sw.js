@@ -1,4 +1,4 @@
-const CACHE_NAME = "seller-v10";
+const CACHE_NAME = "seller-v11";
 
 const urlsToCache = [
   "/store/",
@@ -7,11 +7,24 @@ const urlsToCache = [
   "/seller-512.png"
 ];
 
-self.addEventListener("install", (event) => {
-  self.skipWaiting();
+self.addEventListener("fetch", (event) => {
+  if (event.request.method !== "GET") return;
 
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(urlsToCache))
+  event.respondWith(
+    fetch(event.request)
+      .then((response) => response)
+      .catch(async () => {
+        const cachedResponse = await caches.match(event.request);
+
+        if (cachedResponse) {
+          return cachedResponse;
+        }
+
+        return new Response("Offline", {
+          status: 503,
+          statusText: "Offline",
+        });
+      })
   );
 });
 
