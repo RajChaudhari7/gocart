@@ -4,7 +4,8 @@ import { UserButton, useUser } from "@clerk/nextjs"
 import Link from "next/link"
 import { BellDot, Download } from "lucide-react"
 import { useOrderStore } from "@/hooks/use-order-store"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
+import toast from "react-hot-toast"
 
 const StoreNavbar = () => {
   const { user } = useUser()
@@ -13,6 +14,95 @@ const StoreNavbar = () => {
   const [deferredPrompt, setDeferredPrompt] = useState(null)
   const [isInstalled, setIsInstalled] = useState(false)
   const [canInstall, setCanInstall] = useState(false)
+  const previousCountRef = useRef(0)
+  const audioRef = useRef(null)
+
+  useEffect(() => {
+    if ("Notification" in window) {
+      Notification.requestPermission().catch(() => { })
+    }
+  }, [])
+
+  useEffect(() => {
+    const previousCount = previousCountRef.current
+
+    if (
+      previousCount > 0 &&
+      orderCount > previousCount
+    ) {
+      // Play sound
+      if (audioRef.current) {
+        audioRef.current.currentTime = 0
+
+        audioRef.current.play().catch((err) => {
+          console.log("Audio blocked:", err)
+        })
+      }
+
+      // Toast notification
+      toast.success("🎉 New Order Received!", {
+        duration: 5000,
+      })
+
+      // Browser notification
+      if (
+        "Notification" in window &&
+        Notification.permission === "granted"
+      ) {
+        const notification = new Notification(
+          "New Order Received 🎉",
+          {
+            body: `You have ${orderCount} pending orders`,
+            icon: "/icon-192.png",
+            badge: "/icon-192.png",
+          }
+        )
+
+        notification.onclick = () => {
+          window.focus()
+
+          if (
+            window.location.pathname !== "/store/orders"
+          ) {
+            window.location.href = "/store/orders"
+          }
+
+          notification.close()
+        }
+      }
+    }
+
+    previousCountRef.current = orderCount
+  }, [orderCount])
+
+  useEffect(() => {
+    audioRef.current = new Audio("/sounds/new-order.mp3")
+    audioRef.current.preload = "auto"
+    audioRef.current.volume = 1
+
+    const unlockAudio = () => {
+      if (!audioRef.current) return
+
+      audioRef.current
+        .play()
+        .then(() => {
+          audioRef.current.pause()
+          audioRef.current.currentTime = 0
+        })
+        .catch(() => { })
+
+      document.removeEventListener("touchstart", unlockAudio)
+      document.removeEventListener("click", unlockAudio)
+    }
+
+    document.addEventListener("touchstart", unlockAudio)
+    document.addEventListener("click", unlockAudio)
+
+    return () => {
+      document.removeEventListener("touchstart", unlockAudio)
+      document.removeEventListener("click", unlockAudio)
+    }
+  }, [])
 
   /* ================= FETCH ORDERS ================= */
   useEffect(() => {

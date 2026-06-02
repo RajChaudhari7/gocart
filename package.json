@@ -38,6 +38,8 @@
     "nodemailer": "^7.0.13",
     "openai": "^5.20.2",
     "pdfkit": "^0.17.2",
+    "pusher": "^5.3.3",
+    "pusher-js": "^8.5.0",
     "razorpay": "^2.9.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
