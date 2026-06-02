@@ -19,7 +19,11 @@ const StoreNavbar = () => {
 
   useEffect(() => {
     if ("Notification" in window) {
-      Notification.requestPermission().catch(() => { })
+      try {
+        Notification.requestPermission()
+      } catch (err) {
+        console.log(err)
+      }
     }
   }, [])
 
@@ -54,7 +58,6 @@ const StoreNavbar = () => {
           {
             body: `You have ${orderCount} pending orders`,
             icon: "/icon-192.png",
-            badge: "/icon-192.png",
           }
         )
 
