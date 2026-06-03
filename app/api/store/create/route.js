@@ -36,20 +36,6 @@ export async function POST(request) {
         //     )
         // }
 
-        const verifiedEmail = await prisma.emailOtp.findFirst({
-            where: {
-                email,
-                verified: true
-            },
-            orderBy: { createdAt: "desc" }
-        })
-
-        if (!verifiedEmail) {
-            return NextResponse.json(
-                { error: "Email not verified" },
-                { status: 400 }
-            )
-        }
 
         if (!name || !description || !username || !email || !contact || !address || !image || !gst) {
             return NextResponse.json({ error: "Missing Store info" }, { status: 400 })
