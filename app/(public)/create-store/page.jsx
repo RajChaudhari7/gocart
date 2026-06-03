@@ -21,9 +21,6 @@ export default function CreateStore() {
     const [countdown, setCountdown] = useState(5)
     const [gstValid, setGstValid] = useState(false)
     const [gstError, setGstError] = useState("")
-    const [otpSent, setOtpSent] = useState(false)
-    const [otp, setOtp] = useState("")
-    const [emailVerified, setEmailVerified] = useState(false)
 
 
     const [storeInfo, setStoreInfo] = useState({
@@ -39,36 +36,7 @@ export default function CreateStore() {
         customCategory: ""
     })
 
-    const sendOtp = async () => {
-        if (!storeInfo.email) return toast.error("Enter email")
-
-        try {
-            const { data } = await axios.post("/api/store/send-otp", {
-                email: storeInfo.email
-            })
-
-            toast.success(data.message)
-            setOtpSent(true)
-
-        } catch (err) {
-            toast.error(err.response?.data?.error)
-        }
-    }
-
-    const verifyOtp = async () => {
-        try {
-            const { data } = await axios.post("/api/store/verify-otp", {
-                email: storeInfo.email,
-                otp
-            })
-
-            toast.success(data.message)
-            setEmailVerified(true)
-
-        } catch (err) {
-            toast.error(err.response?.data?.error)
-        }
-    }
+    
 
 
     const validateGST = (gst) => {
@@ -292,16 +260,16 @@ export default function CreateStore() {
                                                 className={inputClass}
                                             />
 
-                                            <button
+                                            {/* <button
                                                 type="button"
                                                 onClick={sendOtp}
                                                 className="px-4 py-2 bg-indigo-600 text-white rounded-xl"
                                             >
                                                 Send OTP
-                                            </button>
+                                            </button> */}
                                         </div>
 
-                                        {otpSent && !emailVerified && (
+                                        {/* {otpSent && !emailVerified && (
                                             <div className="mt-3 flex gap-2">
                                                 <input
                                                     type="text"
@@ -325,7 +293,7 @@ export default function CreateStore() {
                                             <p className="text-green-600 text-sm mt-2">
                                                 Email verified ✅
                                             </p>
-                                        )}
+                                        )} */}
                                     </div>
 
                                     <div className="sm:col-span-3">
@@ -458,7 +426,6 @@ export default function CreateStore() {
                                     !gstValid ||
                                     storeInfo.contact.length !== 10 ||
                                     !storeInfo.category ||
-                                    !emailVerified ||
                                     (storeInfo.category === "Other" && !storeInfo.customCategory)
                                 }
                                 className={`w-full sm:w-auto px-8 py-3.5 text-sm font-semibold rounded-xl transition-all duration-300
