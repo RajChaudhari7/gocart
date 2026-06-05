@@ -92,34 +92,6 @@ export default function Orders() {
     }
   }
 
-
-  // ================= CHECK RETURN ELIGIBILITY =================
-  const canReturn = (order) => {
-
-    if (order.status !== "DELIVERED") return false
-
-    if (!order.deliveredAt) return false
-
-    const deliveredDate = new Date(order.deliveredAt)
-
-    const now = new Date()
-
-    const diffDays =
-      (now - deliveredDate) / (1000 * 60 * 60 * 24)
-
-    return diffDays <= 7
-
-  }
-
-
-  // ================= HANDLE RETURN CLICK =================
-  const handleReturn = (order) => {
-
-    router.push(`/return/${order.id}`)
-
-  }
-
-
   if (!isLoaded || loading) return <Loading />
 
 
@@ -176,8 +148,6 @@ export default function Orders() {
                   <OrderItem
                     key={order.id}
                     order={order}
-                    canReturn={canReturn(order)}
-                    onReturn={() => handleReturn(order)}
                     onCancel={() => cancelOrder(order)}
                     onTrack={() => setTrackingOrder(order)}
                     onRate={() => setRatingOrder(order)}
@@ -200,13 +170,10 @@ export default function Orders() {
                   key={order.id}
                   order={order}
                   mobile
-                  canReturn={canReturn(order)}
-                  onReturn={() => handleReturn(order)}
                   onCancel={() => cancelOrder(order)}
                   onTrack={() => setTrackingOrder(order)}
                   onRate={() => setRatingOrder(order)}
                 />
-
               ))}
 
             </div>

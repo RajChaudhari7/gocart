@@ -11,9 +11,7 @@ const OrderItem = ({
   onCancel,
   onTrack,
   onVerifyOtp,
-  onRate,
-  canReturn,
-  onReturn
+  onRate
 }) => {
 
   const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '₹'
@@ -31,13 +29,11 @@ const OrderItem = ({
   const isDelivered = order.status === 'DELIVERED'
   const isDeliveryInitiated = order.status === "DELIVERY_INITIATED"
   const isCanceled = order.status === 'CANCELLED'
-  const isReturned = order.status === 'RETURNED'
 
-  const isFinalState = isCanceled || isReturned || isDelivered
+  const isFinalState = isCanceled || isDelivered
 
   const canCancel =
     order.status !== "DELIVERED" &&
-    order.status !== "RETURNED" &&
     order.status !== "CANCELLED"
 
 
@@ -151,18 +147,6 @@ const OrderItem = ({
                 </button>
               )}
 
-              {/* RETURN */}
-              {canReturn && (
-                <button
-                  onClick={onReturn}
-                  className="px-4 py-1.5 rounded-full text-sm 
-            bg-orange-500/15 text-orange-400 border border-orange-500/30 
-            hover:bg-orange-500/25 transition"
-                >
-                  Return
-                </button>
-              )}
-
               {/* CANCEL */}
               {canCancel && onCancel && (
                 <button
@@ -268,16 +252,6 @@ const OrderItem = ({
               </button>
             )}
 
-            {canReturn && (
-              <button
-                onClick={onReturn}
-                className="flex-1 min-w-[45%] px-4 py-2 rounded-full text-sm
-              bg-orange-500/15 text-orange-400 border border-orange-500/30"
-              >
-                Return
-              </button>
-            )}
-
             {canCancel && onCancel && (
               <button
                 onClick={onCancel}
@@ -291,7 +265,6 @@ const OrderItem = ({
         )}
 
         {isCanceled && <span className="text-red-400 text-sm">Cancelled</span>}
-        {isReturned && <span className="text-orange-400 text-sm">Returned</span>}
         {isDelivered && !isReturned && (
           <span className="text-emerald-400 text-sm">Completed</span>
         )}
