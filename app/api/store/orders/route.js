@@ -4,17 +4,14 @@ import { getAuth } from "@clerk/nextjs/server"
 import { NextResponse } from "next/server"
 import { sendEmail } from "@/lib/sendEmail"
 import { generateOtp, hashOtp } from "@/lib/otp"
+import { calculateDistance } from "@/lib/distance"
 
 // ✅ Must match Prisma + frontend
-const STATUS_FLOW = [
+const SELLER_FLOW = [
   "ORDER_PLACED",
-  "PACKED",
-  "PROCESSING",
-  "SHIPPED",
-  "OUT_FOR_DELIVERY",
-  "DELIVERY_INITIATED",
-  "DELIVERED",
-  "RETURNED",
+  "ORDER_CONFIRMED",
+  "ORDER_PACKING",
+  "ORDER_PACKED"
 ]
 
 // ================= UPDATE SELLER ORDER STATUS =================
@@ -37,9 +34,14 @@ export async function POST(request) {
     const order = await prisma.order.findUnique({
       where: { id: orderId },
       include: {
-        orderItems: { include: { product: true } },
+        orderItems: {
+          include: {
+            product: true
+          }
+        },
         user: true,
-        store: true
+        store: true,
+        address: true
       }
     })
 
@@ -54,12 +56,16 @@ export async function POST(request) {
       )
     }
 
-    const currentIndex = STATUS_FLOW.indexOf(order.status)
-    const newIndex = STATUS_FLOW.indexOf(status)
+    const currentIndex = SELLER_FLOW.indexOf(order.status)
+    const newIndex = SELLER_FLOW.indexOf(status)
 
-    if (newIndex === -1 || newIndex <= currentIndex) {
+    if (
+      currentIndex !== -1 &&
+      newIndex !== -1 &&
+      newIndex <= currentIndex
+    ) {
       return NextResponse.json(
-        { error: "Invalid order status flow" },
+        { error: "Invalid status flow" },
         { status: 400 }
       )
     }
@@ -125,16 +131,86 @@ export async function POST(request) {
 
       }
 
-      await tx.order.update({
-        where: { id: orderId },
-        data: {
-          status,
-          statusHistory: {
-            ...(order.statusHistory || {}),
-            [status]: new Date().toISOString()
+
+
+      if (status === "ORDER_PACKED") {
+
+        const drivers = await tx.driver.findMany({
+          where: {
+            isOnline: true,
+            isActive: true,
+            latitude: {
+              not: null
+            },
+            longitude: {
+              not: null
+            }
+          }
+        })
+
+
+        if (
+          status !== "ORDER_PACKED" &&
+          status !== "DELIVERY_INITIATED" &&
+          status !== "CANCELLED"
+        ) {
+          await tx.order.update({
+            where: { id: orderId },
+            data: {
+              status,
+              statusHistory: {
+                ...(order.statusHistory || {}),
+                [status]: new Date().toISOString()
+              }
+            }
+          })
+        }
+
+
+
+        if (drivers.length === 0) {
+          throw new Error("No online drivers available")
+        }
+
+        let nearestDriver = null
+        let shortestDistance = Infinity
+
+        for (const driver of drivers) {
+
+          const distance = calculateDistance(
+            order.address.latitude,
+            order.address.longitude,
+            driver.latitude,
+            driver.longitude
+          )
+
+          if (distance < shortestDistance) {
+            shortestDistance = distance
+            nearestDriver = driver
           }
         }
-      })
+
+        await tx.order.update({
+          where: {
+            id: orderId
+          },
+          data: {
+            driverId: nearestDriver.id,
+            assignedAt: new Date(),
+
+            // Automatically hand over to driver
+            status: "DRIVER_ASSIGNED",
+
+            statusHistory: {
+              ...(order.statusHistory || {}),
+              ORDER_PACKED: new Date().toISOString(),
+              DRIVER_ASSIGNED: new Date().toISOString()
+            }
+          }
+        })
+
+        return
+      }
 
     })
     // ================= SEND DELIVERY OTP EMAIL =================

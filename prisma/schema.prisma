@@ -61,9 +61,9 @@ model SearchSynonym {
 ////////////////////////////////////
 enum OrderStatus {
   ORDER_PLACED
-  PACKED
-  PROCESSING
-  SHIPPED
+  //PACKED
+  //PROCESSING
+  //SHIPPED
   REACHED_SHOP
   PICKED_UP
   OUT_FOR_DELIVERY
@@ -71,6 +71,10 @@ enum OrderStatus {
   DELIVERED
   CANCELLED
   RETURNED
+  ORDER_CONFIRMED
+  ORDER_PACKING
+  ORDER_PACKED
+  DRIVER_ASSIGNED
 }
 
 enum PaymentMethod {
@@ -245,6 +249,8 @@ model Store {
   logo        String
   email       String
   gst         String?
+  latitude    Float?
+  longitude   Float?
   contact     String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -258,11 +264,11 @@ model Store {
 }
 
 model Driver {
-  id        String   @id @default(cuid())
+  id String @id @default(cuid())
 
-  name      String
-  phone     String  
-  password  String
+  name     String
+  phone    String
+  password String
 
   vehicle   String?
   vehicleNo String?
@@ -270,8 +276,8 @@ model Driver {
   latitude  Float?
   longitude Float?
 
-  isOnline  Boolean @default(false)
-  isActive  Boolean @default(true)
+  isOnline Boolean @default(false)
+  isActive Boolean @default(true)
 
   orders Order[]
 

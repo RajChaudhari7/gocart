@@ -8,18 +8,13 @@ import toast from "react-hot-toast"
 import jsPDF from "jspdf"
 import html2canvas from "html2canvas"
 import { useOrderStore } from "@/hooks/use-order-store"
+import { selectAllErrorBarSettings } from "recharts/types/state/selectors/axisSelectors"
 
-const STATUS_FLOW = [
+const SELLER_STATUSES = [
     "ORDER_PLACED",
-    "PACKED",
-    "PROCESSING",
-    "SHIPPED",
-    "OUT_FOR_DELIVERY",
-    "DELIVERY_INITIATED",
-    "DELIVERED",
-    "RETURNED",     // ✅ ADD THIS
-    "CANCELLED",
-
+    "ORDER_CONFIRMED",
+    "ORDER_PACKING",
+    "ORDER_PACKED"
 ]
 
 export default function StoreOrders() {
@@ -56,7 +51,7 @@ export default function StoreOrders() {
     ]
 
 
-    
+
     useEffect(() => {
         fetchOrders()
     }, [])
@@ -175,8 +170,8 @@ export default function StoreOrders() {
 
     /* ================= UPDATE STATUS (FIXED) ================= */
     const updateOrderStatus = async (order, newStatus) => {
-        const currentIndex = STATUS_FLOW.indexOf(order.status)
-        const newIndex = STATUS_FLOW.indexOf(newStatus)
+        const currentIndex = SELLER_STATUSES.indexOf(order.status)
+        const newIndex = SELLER_STATUSES.indexOf(newStatus)
 
         // Prevent backward or invalid updates
         if (newIndex < currentIndex) {
@@ -253,7 +248,9 @@ export default function StoreOrders() {
 
     // 🟢 Revenue (Exclude Cancelled + Returned)
     const revenue = filteredOrders
-        .filter(order => order.status !== "CANCELLED" && order.status !== "RETURNED")
+        .filter(order =>
+            !["CANCELLED", "RETURNED"].includes(order.status)
+        )
         .reduce((total, order) => total + order.total, 0)
 
     // 🔴 Cancelled Amount
@@ -805,9 +802,16 @@ export default function StoreOrders() {
                             <div className="flex justify-between items-center mb-3">
                                 <h2 className="text-lg font-medium">{order.user?.name}</h2>
                                 <span className={`px-3 py-1 rounded-full text-sm font-semibold
-                                    ${order.status === "DELIVERED" ? "bg-green-100 text-green-800" :
-                                        order.status === "CANCELLED" ? "bg-red-100 text-red-800" :
-                                            "bg-yellow-100 text-yellow-800"}`}>
+                                    ${order.status === "DELIVERED"
+                                        ? "bg-green-100 text-green-800"
+                                        : order.status === "CANCELLED"
+                                            ? "bg-red-100 text-red-800"
+                                            : order.status === "RETURNED"
+                                                ? "bg-orange-100 text-orange-800"
+                                                : order.status === "DRIVER_ASSIGNED"
+                                                    ? "bg-blue-100 text-blue-800"
+                                                    : "bg-yellow-100 text-yellow-800"
+                                    }`}>
                                     {order.status}
                                 </span>
                             </div>
@@ -823,14 +827,20 @@ export default function StoreOrders() {
                                 {order.status !== "CANCELLED" && (
                                     <select
                                         value={order.status}
-                                        disabled={order.status === "DELIVERED" || order.status === "RETURNED"}
+                                        disabled={
+                                            order.status === "DELIVERED" ||
+                                            order.status === "RETURNED" ||
+                                            order.status === "CANCELLED" ||
+                                            !SELLER_STATUSES.includes(order.status)
+                                        }
                                         onClick={(e) => e.stopPropagation()}
                                         onChange={(e) => updateOrderStatus(order, e.target.value)}
                                         className="border rounded px-3 py-1 text-sm"
                                     >
-
-                                        {STATUS_FLOW.map(s => (
-                                            <option key={s} value={s}>{s}</option>
+                                        {SELLER_STATUSES.map(status => (
+                                            <option key={status} value={status}>
+                                                {status}
+                                            </option>
                                         ))}
                                     </select>
                                 )}
@@ -858,14 +868,22 @@ export default function StoreOrders() {
                                     </button>
                                 )}
 
-                                {order.status !== "DELIVERED" && order.status !== "CANCELLED" && (
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); cancelOrder(order) }}
-                                        className="px-3 py-1 bg-red-600 text-white rounded text-sm"
-                                    >
-                                        Cancel
-                                    </button>
-                                )}
+                                {![
+                                    "DRIVER_ASSIGNED",
+                                    "REACHED_SHOP",
+                                    "PICKED_UP",
+                                    "OUT_FOR_DELIVERY",
+                                    "DELIVERY_INITIATED",
+                                    "DELIVERED",
+                                    "CANCELLED"
+                                ].includes(order.status) && (
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); cancelOrder(order) }}
+                                            className="px-3 py-1 bg-red-600 text-white rounded text-sm"
+                                        >
+                                            Cancel
+                                        </button>
+                                    )}
 
 
 

@@ -7,6 +7,9 @@ import toast from "react-hot-toast"
 export default function DriverOrders() {
 
     const [orders, setOrders] = useState([])
+    const [showOtpModal, setShowOtpModal] = useState(false)
+    const [otpOrder, setOtpOrder] = useState(null)
+    const [otp, setOtp] = useState("")
 
     const fetchOrders = async () => {
         try {
@@ -26,15 +29,52 @@ export default function DriverOrders() {
         fetchOrders()
     }, [])
 
+    const verifyOtp = async () => {
+
+        if (otp.length !== 6) {
+            toast.error("Enter valid OTP")
+            return
+        }
+
+        try {
+
+            await axios.post(
+                "/api/driver/verify-otp",
+                {
+                    orderId: otpOrder.id,
+                    otp,
+                    driverId: localStorage.getItem("driverId")
+                }
+            )
+
+            toast.success("Order Delivered")
+
+            setShowOtpModal(false)
+            setOtp("")
+            setOtpOrder(null)
+
+            fetchOrders()
+
+        } catch (error) {
+
+            toast.error(
+                error?.response?.data?.error ||
+                "Verification failed"
+            )
+
+        }
+    }
+
     const updateStatus = async (orderId, status) => {
 
         try {
 
             await axios.post(
-                "/api/driver/update-status",
+                "/api/driver/update-order-status",
                 {
                     orderId,
-                    status
+                    status,
+                    driverId: localStorage.getItem("driverId")
                 }
             )
 
@@ -89,8 +129,40 @@ export default function DriverOrders() {
 
                         <div className="mt-4 flex gap-2">
 
-                            {order.status === "OUT_FOR_DELIVERY" && (
+                            {order.status === "DRIVER_ASSIGNED" && (
+                                <button
+                                    onClick={() =>
+                                        updateStatus(order.id, "REACHED_SHOP")
+                                    }
+                                    className="bg-blue-600 text-white px-4 py-2 rounded"
+                                >
+                                    Reached Shop
+                                </button>
+                            )}
 
+                            {order.status === "REACHED_SHOP" && (
+                                <button
+                                    onClick={() =>
+                                        updateStatus(order.id, "PICKED_UP")
+                                    }
+                                    className="bg-indigo-600 text-white px-4 py-2 rounded"
+                                >
+                                    Picked Up
+                                </button>
+                            )}
+
+                            {order.status === "PICKED_UP" && (
+                                <button
+                                    onClick={() =>
+                                        updateStatus(order.id, "OUT_FOR_DELIVERY")
+                                    }
+                                    className="bg-orange-600 text-white px-4 py-2 rounded"
+                                >
+                                    Out For Delivery
+                                </button>
+                            )}
+
+                            {order.status === "OUT_FOR_DELIVERY" && (
                                 <button
                                     onClick={() =>
                                         updateStatus(
@@ -98,34 +170,81 @@ export default function DriverOrders() {
                                             "DELIVERY_INITIATED"
                                         )
                                     }
-                                    className="bg-blue-600 text-white px-4 py-2 rounded"
+                                    className="bg-green-600 text-white px-4 py-2 rounded"
                                 >
                                     Start Delivery
                                 </button>
-
                             )}
 
                             {order.status === "DELIVERY_INITIATED" && (
-
                                 <button
-                                    onClick={() =>
-                                        updateStatus(
-                                            order.id,
-                                            "DELIVERED"
-                                        )
-                                    }
+                                    onClick={() => {
+                                        setOtpOrder(order)
+                                        setShowOtpModal(true)
+                                    }}
                                     className="bg-green-600 text-white px-4 py-2 rounded"
                                 >
-                                    Mark Delivered
+                                    Verify Delivery OTP
                                 </button>
-
                             )}
 
                         </div>
 
                     </div>
 
+
+
                 ))}
+
+                {showOtpModal && otpOrder && (
+
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+
+                        <div className="bg-white p-6 rounded-xl w-full max-w-sm">
+
+                            <h2 className="text-lg font-semibold mb-4">
+                                Verify Delivery OTP
+                            </h2>
+
+                            <input
+                                type="text"
+                                maxLength={6}
+                                value={otp}
+                                onChange={(e) =>
+                                    setOtp(
+                                        e.target.value.replace(/\D/g, "")
+                                    )
+                                }
+                                className="w-full border rounded px-4 py-2 mb-4"
+                                placeholder="Enter OTP"
+                            />
+
+                            <div className="flex gap-2">
+
+                                <button
+                                    onClick={() => {
+                                        setShowOtpModal(false)
+                                        setOtp("")
+                                    }}
+                                    className="flex-1 bg-gray-300 py-2 rounded"
+                                >
+                                    Cancel
+                                </button>
+
+                                <button
+                                    onClick={verifyOtp}
+                                    className="flex-1 bg-green-600 text-white py-2 rounded"
+                                >
+                                    Verify
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                )}
 
             </div>
 
