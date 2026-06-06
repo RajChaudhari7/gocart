@@ -7,6 +7,7 @@ import {
   StoreIcon,
   TicketPercentIcon,
   TrendingUpIcon,
+  TruckIcon,
 } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
@@ -21,7 +22,8 @@ const AdminSidebar = () => {
     { name: 'Stores', href: '/admin/stores', icon: StoreIcon },
     { name: 'Approve', href: '/admin/approve', icon: ShieldCheckIcon },
     { name: 'Coupons', href: '/admin/coupons', icon: TicketPercentIcon },
-    { name: 'Sales', href: '/admin/sales', icon: TrendingUpIcon }
+    { name: 'Sales', href: '/admin/sales', icon: TrendingUpIcon },
+    { name: 'Drivers', href: '/admin/drivers', icon: TruckIcon }
   ]
 
   if (!user) return null
