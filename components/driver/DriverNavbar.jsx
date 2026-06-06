@@ -77,7 +77,7 @@ export default function DriverNavbar() {
             if (driver?.id) {
 
                 await axios.post(
-                    "/api/driver/toggle-status",
+                    "/api/driver/logout",
                     {
                         driverId: driver.id
                     }
@@ -93,20 +93,31 @@ export default function DriverNavbar() {
         router.replace("/driver/login")
     }
 
-    const toggleStatus = () => {
+    const toggleStatus = async () => {
 
-        const newStatus = !isOnline
+        try {
 
-        setIsOnline(newStatus)
+            const { data } = await axios.post(
+                "/api/driver/toggle-status",
+                {
+                    driverId: driver.id
+                }
+            )
 
-        localStorage.setItem(
-            "driverStatus",
-            newStatus ? "ONLINE" : "OFFLINE"
-        )
+            setIsOnline(data.isOnline)
 
-        toast.success(
-            `You are now ${newStatus ? "Online" : "Offline"}`
-        )
+            toast.success(
+                data.isOnline
+                    ? "You are now Online"
+                    : "You are now Offline"
+            )
+
+        } catch (error) {
+
+            toast.error("Failed to update status")
+
+        }
+
     }
 
     const firstName =
