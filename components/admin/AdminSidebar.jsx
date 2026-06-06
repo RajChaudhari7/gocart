@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation"
 import {
   HomeIcon,
+  PersonStandingIcon,
   ShieldCheckIcon,
   StoreIcon,
   TicketPercentIcon,
@@ -23,7 +24,8 @@ const AdminSidebar = () => {
     { name: 'Approve', href: '/admin/approve', icon: ShieldCheckIcon },
     { name: 'Coupons', href: '/admin/coupons', icon: TicketPercentIcon },
     { name: 'Sales', href: '/admin/sales', icon: TrendingUpIcon },
-    { name: 'Drivers', href: '/admin/drivers', icon: TruckIcon }
+    { name: 'Drivers', href: '/admin/drivers', icon: TruckIcon },
+    { name: 'DriversList', href: '/admin/driverTable', icon: PersonStandingIcon },
   ]
 
   if (!user) return null

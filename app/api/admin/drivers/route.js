@@ -72,3 +72,24 @@ export async function POST(request) {
         )
     }
 }
+
+export async function GET() {
+    try {
+        const drivers = await prisma.driver.findMany({
+            orderBy: {
+                createdAt: "desc"
+            }
+        });
+
+        return NextResponse.json(drivers);
+    } catch (error) {
+        return NextResponse.json(
+            {
+                error: error.message
+            },
+            {
+                status: 500
+            }
+        );
+    }
+}
