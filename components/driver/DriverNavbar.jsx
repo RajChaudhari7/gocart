@@ -4,29 +4,109 @@ import { useEffect, useState } from "react"
 import { LogOut, Truck } from "lucide-react"
 import toast from "react-hot-toast"
 import { useRouter } from "next/navigation"
+import axios from "axios"
 
 export default function DriverNavbar() {
 
     const [driver, setDriver] = useState(null)
+    const [isOnline, setIsOnline] = useState(false)
     const router = useRouter()
 
     useEffect(() => {
 
-        const storedDriver = localStorage.getItem("driver")
+        const loadDriver = async () => {
 
-        if (storedDriver) {
-            setDriver(JSON.parse(storedDriver))
+            const storedDriver = localStorage.getItem("driver")
+
+            if (!storedDriver) return
+
+            const driverData = JSON.parse(storedDriver)
+
+            try {
+
+                const { data } = await axios.get(
+                    `/api/driver/profile?driverId=${driverData.id}`
+                )
+
+                setDriver(data.driver)
+                setIsOnline(data.driver.isOnline)
+
+            } catch (error) {
+                console.log(error)
+            }
+
         }
+
+        loadDriver()
 
     }, [])
 
-    const logout = () => {
+    useEffect(() => {
+
+        const loadDriver = async () => {
+
+            const storedDriver = localStorage.getItem("driver")
+
+            if (!storedDriver) return
+
+            const driverData = JSON.parse(storedDriver)
+
+            try {
+
+                const { data } = await axios.get(
+                    `/api/driver/profile?driverId=${driverData.id}`
+                )
+
+                setDriver(data.driver)
+                setIsOnline(data.driver.isOnline)
+
+            } catch (error) {
+                console.log(error)
+            }
+
+        }
+
+        loadDriver()
+
+    }, [])
+
+    const logout = async () => {
+
+        try {
+
+            if (driver?.id) {
+
+                await axios.post(
+                    "/api/driver/toggle-status",
+                    {
+                        driverId: driver.id
+                    }
+                )
+            }
+
+        } catch (error) { }
 
         localStorage.removeItem("driver")
 
         toast.success("Logged out successfully")
 
         router.replace("/driver/login")
+    }
+
+    const toggleStatus = () => {
+
+        const newStatus = !isOnline
+
+        setIsOnline(newStatus)
+
+        localStorage.setItem(
+            "driverStatus",
+            newStatus ? "ONLINE" : "OFFLINE"
+        )
+
+        toast.success(
+            `You are now ${newStatus ? "Online" : "Offline"}`
+        )
     }
 
     const firstName =
@@ -62,15 +142,27 @@ export default function DriverNavbar() {
                     <div className="flex items-center gap-4">
 
                         {/* Online Badge */}
-                        <div className="hidden sm:flex items-center gap-2 bg-green-50 px-3 py-1 rounded-full">
+                        <button
+                            onClick={toggleStatus}
+                            className={`hidden sm:flex items-center gap-2 px-4 py-2 rounded-full transition-all
+                                    ${isOnline
+                                    ? "bg-green-50 text-green-700"
+                                    : "bg-red-50 text-red-700"
+                                }`}
+                        >
 
-                            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                            <span
+                                className={`w-2 h-2 rounded-full ${isOnline
+                                    ? "bg-green-500 animate-pulse"
+                                    : "bg-red-500"
+                                    }`}
+                            />
 
-                            <span className="text-sm font-medium text-green-700">
-                                Online
+                            <span className="font-medium text-sm">
+                                {isOnline ? "Online" : "Offline"}
                             </span>
 
-                        </div>
+                        </button>
 
                         {/* Driver Name */}
                         <div className="flex items-center gap-3">
