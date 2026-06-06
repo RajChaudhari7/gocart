@@ -144,21 +144,22 @@ export default function DriverNavbar() {
                         {/* Online Badge */}
                         <button
                             onClick={toggleStatus}
-                            className={`hidden sm:flex items-center gap-2 px-4 py-2 rounded-full transition-all
-                                    ${isOnline
-                                    ? "bg-green-50 text-green-700"
-                                    : "bg-red-50 text-red-700"
+                            className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full transition-all shadow-sm border
+                                        ${isOnline
+                                    ? "bg-green-50 text-green-700 border-green-200"
+                                    : "bg-red-50 text-red-700 border-red-200"
                                 }`}
                         >
 
                             <span
-                                className={`w-2 h-2 rounded-full ${isOnline
-                                    ? "bg-green-500 animate-pulse"
-                                    : "bg-red-500"
+                                className={`w-2 h-2 rounded-full
+                                        ${isOnline
+                                        ? "bg-green-500 animate-pulse"
+                                        : "bg-red-500"
                                     }`}
                             />
 
-                            <span className="font-medium text-sm">
+                            <span className="text-xs sm:text-sm font-medium">
                                 {isOnline ? "Online" : "Offline"}
                             </span>
 
