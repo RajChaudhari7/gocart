@@ -1,7 +1,9 @@
 'use client'
 
+import { usePathname, useRouter } from "next/navigation"
+import DriverNavbar from "./DriverNavbar"
+import DriverSidebar from "./DriverSidebar"
 import { useEffect } from "react"
-import { useRouter } from "next/navigation"
 
 export default function DriverLayout({ children }) {
 
@@ -18,10 +20,18 @@ export default function DriverLayout({ children }) {
     }, [])
 
     return (
-        <>
-            {/* Navbar */}
-            {/* Sidebar */}
-            {children}
-        </>
+        <div className="min-h-screen bg-slate-50">
+
+            <DriverNavbar />
+
+            <div className="flex">
+                <DriverSidebar />
+
+                <main className="flex-1 p-6">
+                    {children}
+                </main>
+            </div>
+
+        </div>
     )
 }
