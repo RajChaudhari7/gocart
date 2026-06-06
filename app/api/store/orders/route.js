@@ -6,7 +6,7 @@ import { sendEmail } from "@/lib/sendEmail"
 import { generateOtp, hashOtp } from "@/lib/otp"
 import { calculateDistance } from "@/lib/distance"
 
-// ✅ Must match Prisma + frontend
+
 const SELLER_FLOW = [
   "ORDER_PLACED",
   "ORDER_CONFIRMED",
