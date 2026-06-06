@@ -25,7 +25,7 @@ const AdminSidebar = () => {
     { name: 'Coupons', href: '/admin/coupons', icon: TicketPercentIcon },
     { name: 'Sales', href: '/admin/sales', icon: TrendingUpIcon },
     { name: 'Drivers', href: '/admin/drivers', icon: TruckIcon },
-    { name: 'DriversList', href: '/admin/driverTable', icon: PersonStandingIcon },
+    { name: 'DriversList', href: '/admin/DriverTable', icon: PersonStandingIcon },
   ]
 
   if (!user) return null
