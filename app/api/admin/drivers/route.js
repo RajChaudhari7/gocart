@@ -26,7 +26,7 @@ export async function POST(request) {
         }
 
         // check existing phone
-        const existingDriver = await prisma.driver.findUnique({
+        const existingDriver = await prisma.driver.findFirst({
             where: {
                 phone
             }
