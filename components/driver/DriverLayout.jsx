@@ -1,28 +1,27 @@
 'use client'
 
-import DriverNavbar from "./DriverNavbar"
-import DriverSidebar from "./DriverSidebar"
+import { useEffect } from "react"
+import { useRouter } from "next/navigation"
 
 export default function DriverLayout({ children }) {
+
+    const router = useRouter()
+
+    useEffect(() => {
+
+        const driver = localStorage.getItem("driver")
+
+        if (!driver) {
+            router.replace("/driver/login")
+        }
+
+    }, [])
+
     return (
-        <div className="min-h-screen bg-slate-50">
-
-            {/* Top Navbar */}
-            <DriverNavbar />
-
-            {/* Body */}
-            <div className="flex">
-
-                {/* Sidebar */}
-                <DriverSidebar />
-
-                {/* Page Content */}
-                <main className="flex-1 p-6 overflow-auto">
-                    {children}
-                </main>
-
-            </div>
-
-        </div>
+        <>
+            {/* Navbar */}
+            {/* Sidebar */}
+            {children}
+        </>
     )
 }

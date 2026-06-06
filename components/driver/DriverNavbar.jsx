@@ -3,10 +3,12 @@
 import { useEffect, useState } from "react"
 import { LogOut, Truck } from "lucide-react"
 import toast from "react-hot-toast"
+import { useRouter } from "next/navigation"
 
 export default function DriverNavbar() {
 
     const [driver, setDriver] = useState(null)
+    const router = useRouter()
 
     useEffect(() => {
 
@@ -24,7 +26,7 @@ export default function DriverNavbar() {
 
         toast.success("Logged out successfully")
 
-        window.location.href = "/driver/login"
+        router.replace("/driver/login")
     }
 
     const firstName =
