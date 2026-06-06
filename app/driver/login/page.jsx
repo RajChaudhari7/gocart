@@ -53,6 +53,51 @@ export default function DriverLogin() {
 
     }
 
+    const requestLocation = async (driver) => {
+
+        if (!navigator.geolocation) {
+
+            toast.error("Location not supported")
+
+            return
+        }
+
+        navigator.geolocation.getCurrentPosition(
+
+            async (position) => {
+
+                try {
+
+                    await axios.post(
+                        "/api/driver/update-location",
+                        {
+                            driverId: driver.id,
+                            latitude: position.coords.latitude,
+                            longitude: position.coords.longitude
+                        }
+                    )
+
+                    await requestLocation(data.driver)
+
+                } catch (error) {
+
+                    toast.error("Failed to save location")
+                }
+
+            },
+
+            () => {
+
+                toast.error(
+                    "Location permission is required"
+                )
+
+            }
+
+        )
+
+    }
+
     return (
         <div className="min-h-screen flex items-center justify-center bg-slate-100">
 

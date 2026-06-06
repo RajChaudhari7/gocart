@@ -93,6 +93,52 @@ export default function DriverNavbar() {
         router.replace("/driver/login")
     }
 
+    useEffect(() => {
+
+        const storedDriver = localStorage.getItem("driver")
+
+        if (!storedDriver) return
+
+        const driver = JSON.parse(storedDriver)
+
+        const updateLocation = () => {
+
+            navigator.geolocation.getCurrentPosition(
+
+                async (position) => {
+
+                    try {
+
+                        await axios.post(
+                            "/api/driver/update-location",
+                            {
+                                driverId: driver.id,
+                                latitude: position.coords.latitude,
+                                longitude: position.coords.longitude
+                            }
+                        )
+
+                    } catch (error) {
+                        console.log(error)
+                    }
+
+                }
+
+            )
+
+        }
+
+        updateLocation()
+
+        const interval = setInterval(
+            updateLocation,
+            30000 // every 30 seconds
+        )
+
+        return () => clearInterval(interval)
+
+    }, [])
+
     const toggleStatus = async () => {
 
         try {
