@@ -1,25 +1,74 @@
-import prisma from "@/lib/prisma";
-import bcrypt from "bcryptjs";
-import { NextResponse } from "next/server";
+import prisma from "@/lib/prisma"
+import { NextResponse } from "next/server"
+import bcrypt from "bcryptjs"
 
-export async function POST(req) {
+export async function POST(request) {
+    try {
+        const body = await request.json()
 
-  const body = await req.json();
+        const {
+            name,
+            phone,
+            vehicle,
+            vehicleNo,
+            password
+        } = body
 
-  const hashedPassword = await bcrypt.hash(
-    body.password,
-    10
-  );
+        if (!name || !phone || !password) {
+            return NextResponse.json(
+                {
+                    error: "Name, phone and password are required"
+                },
+                {
+                    status: 400
+                }
+            )
+        }
 
-  const driver = await prisma.driver.create({
-    data: {
-      name: body.name,
-      phone: body.phone,
-      password: hashedPassword,
-      vehicle: body.vehicle,
-      vehicleNo: body.vehicleNo,
-    },
-  });
+        // check existing phone
+        const existingDriver = await prisma.driver.findUnique({
+            where: {
+                phone
+            }
+        })
 
-  return NextResponse.json(driver);
+        if (existingDriver) {
+            return NextResponse.json(
+                {
+                    error: "Driver already exists"
+                },
+                {
+                    status: 400
+                }
+            )
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10)
+
+        const driver = await prisma.driver.create({
+            data: {
+                name,
+                phone,
+                password: hashedPassword,
+                vehicle,
+                vehicleNo
+            }
+        })
+
+        return NextResponse.json({
+            success: true,
+            driver
+        })
+    } catch (error) {
+        console.log(error)
+
+        return NextResponse.json(
+            {
+                error: error.message
+            },
+            {
+                status: 500
+            }
+        )
+    }
 }
