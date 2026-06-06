@@ -33,10 +33,12 @@ export default function CreateStore() {
         image: "",
         gst: "",
         category: "",
-        customCategory: ""
+        customCategory: "",
+        latitude: "",
+        longitude: ""
     })
 
-    
+
 
 
     const validateGST = (gst) => {
@@ -169,6 +171,32 @@ export default function CreateStore() {
                     <p className="text-gray-500 dark:text-gray-400">Please login to create your GlobalMart store.</p>
                 </div>
             </div>
+        )
+    }
+
+    const getCurrentLocation = () => {
+
+        if (!navigator.geolocation) {
+            return toast.error("Geolocation not supported")
+        }
+
+        navigator.geolocation.getCurrentPosition(
+
+            (position) => {
+
+                setStoreInfo(prev => ({
+                    ...prev,
+                    latitude: position.coords.latitude,
+                    longitude: position.coords.longitude
+                }))
+
+                toast.success("Location captured")
+            },
+
+            () => {
+                toast.error("Location permission denied")
+            }
+
         )
     }
 
@@ -340,6 +368,22 @@ export default function CreateStore() {
                                         <label className={labelClass}>Business Address</label>
                                         <textarea name="address" onChange={onChangeHandler} value={storeInfo.address} rows={3} placeholder="Complete registered business address..." className={`${inputClass} resize-none`} />
                                     </div>
+
+                                    <div className="col-span-full">
+                                        <button
+                                            type="button"
+                                            onClick={getCurrentLocation}
+                                            className="px-4 py-2 bg-indigo-600 text-white rounded-xl"
+                                        >
+                                            Select Current Location
+                                        </button>
+
+                                        {storeInfo.latitude && (
+                                            <p className="mt-2 text-green-600">
+                                                Location Selected ✓
+                                            </p>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
 
@@ -426,6 +470,8 @@ export default function CreateStore() {
                                     !gstValid ||
                                     storeInfo.contact.length !== 10 ||
                                     !storeInfo.category ||
+                                    !storeInfo.latitude ||
+                                    !storeInfo.longitude ||
                                     (storeInfo.category === "Other" && !storeInfo.customCategory)
                                 }
                                 className={`w-full sm:w-auto px-8 py-3.5 text-sm font-semibold rounded-xl transition-all duration-300

@@ -132,6 +132,15 @@ export async function POST(request) {
       }
 
 
+      if (
+        !order.store?.latitude ||
+        !order.store?.longitude
+      ) {
+        throw new Error(
+          "Store location not configured. Please update store location first."
+        )
+      }
+
 
       if (status === "ORDER_PACKED") {
 
@@ -178,8 +187,8 @@ export async function POST(request) {
         for (const driver of drivers) {
 
           const distance = calculateDistance(
-            order.address.latitude,
-            order.address.longitude,
+            order.store.latitude,
+            order.store.longitude,
             driver.latitude,
             driver.longitude
           )
@@ -188,6 +197,10 @@ export async function POST(request) {
             shortestDistance = distance
             nearestDriver = driver
           }
+        }
+
+        if (!nearestDriver) {
+          throw new Error("No suitable driver found")
         }
 
         await tx.order.update({

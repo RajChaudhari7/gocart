@@ -92,6 +92,30 @@ export default function Dashboard() {
 
 
   useEffect(() => {
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+
+        const token = await getToken()
+
+        await axios.post(
+          "/api/store/location",
+          {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          }
+        )
+      }
+    )
+
+  }, [])
+
+  useEffect(() => {
     fetchDashboardData()
   }, [filterYear, filterMonth])
 

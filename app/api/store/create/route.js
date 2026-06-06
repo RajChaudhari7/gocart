@@ -20,6 +20,8 @@ export async function POST(request) {
         const address = formData.get("address")
         const image = formData.get("image")
         const gst = formData.get("gst")
+        const latitude = parseFloat(formData.get("latitude"))
+        const longitude = parseFloat(formData.get("longitude"))
 
         // const verifiedOtp = await prisma.whatsappOtp.findFirst({
         //     where: {
@@ -37,7 +39,8 @@ export async function POST(request) {
         // }
 
 
-        if (!name || !description || !username || !email || !contact || !address || !image || !gst) {
+        if (!name || !description || !username || !email || !contact || !address || !image || !gst || !latitude ||
+            !longitude) {
             return NextResponse.json({ error: "Missing Store info" }, { status: 400 })
         }
 
@@ -126,7 +129,9 @@ export async function POST(request) {
                 address,
                 gst,
                 logo: optimizedImage,
-                category: finalCategory // ✅ SAVE CATEGORY
+                category: finalCategory,
+                latitude,
+                longitude
             }
         })
 
