@@ -64,6 +64,8 @@ enum OrderStatus {
   PACKED
   PROCESSING
   SHIPPED
+  REACHED_SHOP
+  PICKED_UP
   OUT_FOR_DELIVERY
   DELIVERY_INITIATED
   DELIVERED
@@ -85,34 +87,51 @@ model Order {
   total  Float
   status OrderStatus @default(ORDER_PLACED)
 
-  /// 🔥 TRACKING HISTORY FOR DATE & TIME
+  /// Tracking History
   statusHistory Json @default("{}")
 
+  /// Delivery OTP
   deliveryOtp       String?
   deliveryOtpExpiry DateTime?
-  otpVerified       Boolean       @default(false)
-  otpVerifyAttempts Int           @default(0)
-  otpResendCount    Int           @default(0)
-  deliveredAt       DateTime?
-  userId            String
-  storeId           String
-  addressId         String
-  isPaid            Boolean       @default(false)
-  paymentMethod     PaymentMethod
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
-  isCouponUsed      Boolean       @default(false)
-  coupon            Json          @default("{}")
+  otpVerified       Boolean   @default(false)
+  otpVerifyAttempts Int       @default(0)
+  otpResendCount    Int       @default(0)
 
-  orderItems OrderItem[]
+  /// Driver Assignment
+  driverId String?
+  driver   Driver? @relation(fields: [driverId], references: [id])
 
+  driverAccepted Boolean   @default(false)
+  assignedAt     DateTime?
+  pickedAt       DateTime?
+  deliveredAt    DateTime?
+
+  /// Delivery Location
+  deliveryLatitude  Float?
+  deliveryLongitude Float?
+
+  /// Customer / Store
+  userId    String
+  storeId   String
+  addressId String
+
+  /// Payment
+  isPaid        Boolean       @default(false)
+  paymentMethod PaymentMethod
+  isCouponUsed  Boolean       @default(false)
+  coupon        Json          @default("{}")
+
+  /// Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// Relations
+  orderItems     OrderItem[]
   returnRequests ReturnRequest[]
 
-  user     User    @relation("BuyerRelation", fields: [userId], references: [id])
-  store    Store   @relation(fields: [storeId], references: [id])
-  address  Address @relation(fields: [addressId], references: [id])
-  driver   Driver? @relation(fields: [driverId], references: [id])
-  driverId String?
+  user    User    @relation("BuyerRelation", fields: [userId], references: [id])
+  store   Store   @relation(fields: [storeId], references: [id])
+  address Address @relation(fields: [addressId], references: [id])
 }
 
 model EmailOtp {
@@ -236,20 +255,26 @@ model Store {
   Product Product[]
   Order   Order[]
   user    User      @relation(fields: [userId], references: [id])
-  drivers Driver[]
 }
 
 model Driver {
-  id       String  @id @default(cuid())
-  name     String
-  phone    String
-  vehicle  String?
-  isActive Boolean @default(true)
+  id        String   @id @default(cuid())
 
-  storeId String
-  store   Store  @relation(fields: [storeId], references: [id])
+  name      String
+  phone     String  
+  password  String
+
+  vehicle   String?
+  vehicleNo String?
+
+  latitude  Float?
+  longitude Float?
+
+  isOnline  Boolean @default(false)
+  isActive  Boolean @default(true)
 
   orders Order[]
 
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
