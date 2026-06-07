@@ -3,6 +3,8 @@ import { NextResponse } from "next/server"
 import { sendEmail } from "@/lib/sendEmail"
 import { generateOtp, hashOtp } from "@/lib/otp"
 
+export const runtime = "nodejs"
+
 const DRIVER_FLOW = [
     "DRIVER_ASSIGNED",
     "REACHED_SHOP",
@@ -112,16 +114,23 @@ export async function POST(request) {
 
 
 
-            await sendEmail({
-                to: order.user.email,
-                type: "otp",
-                subject: "Delivery OTP",
-                html: `
+            try {
+                await sendEmail({
+                    to: order.user.email,
+                    type: "otp",
+                    subject: "Delivery OTP",
+                    html: `
           <h2>Delivery OTP</h2>
           <h1>${plainOtp}</h1>
           <p>Valid for 10 minutes</p>
         `
-            })
+                })
+
+                console.log("OTP email sent to:", order.user.email)
+
+            } catch (err) {
+                console.error("EMAIL FAILED:", err)
+            }
 
         } else {
 
