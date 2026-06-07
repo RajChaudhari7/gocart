@@ -112,6 +112,19 @@ export default function DriverOrders() {
                 }
             )
 
+            // Send OTP when order goes Out For Delivery
+            if (status === "OUT_FOR_DELIVERY") {
+
+                await axios.post(
+                    "/api/order/send-otp",
+                    {
+                        orderId
+                    }
+                )
+
+                toast.success("OTP sent to customer")
+            }
+
             toast.success("Updated")
 
             fetchOrders()
@@ -127,6 +140,8 @@ export default function DriverOrders() {
 
         }
     }
+
+
     return (
         <div className="p-6">
 
@@ -221,6 +236,35 @@ export default function DriverOrders() {
                                     Verify Delivery OTP
                                 </button>
                             )}
+
+                            <button
+                                onClick={async () => {
+
+                                    try {
+
+                                        await axios.post(
+                                            "/api/order/resend-otp",
+                                            {
+                                                orderId: otpOrder.id
+                                            }
+                                        )
+
+                                        toast.success("OTP resent")
+
+                                    } catch (error) {
+
+                                        toast.error(
+                                            error?.response?.data?.error ||
+                                            "Failed to resend OTP"
+                                        )
+
+                                    }
+
+                                }}
+                                className="flex-1 bg-blue-600 text-white py-2 rounded"
+                            >
+                                Resend OTP
+                            </button>
 
                         </div>
 
