@@ -111,7 +111,7 @@ const OrderItem = ({
       <td className="text-center align-top">
         <div className="flex flex-wrap justify-center gap-2">
 
-          {!isCanceled && !isReturned && (
+          {!isCanceled && (
             <>
               {/* TRACK */}
               <button
@@ -162,8 +162,7 @@ const OrderItem = ({
           )}
 
           {isCanceled && <span className="text-red-400 text-sm">Cancelled</span>}
-          {isReturned && <span className="text-orange-400 text-sm">Returned</span>}
-          {isDelivered && !isReturned && (
+          {isDelivered && (
             <span className="text-emerald-400 text-sm">Completed</span>
           )}
         </div>
@@ -221,7 +220,7 @@ const OrderItem = ({
       {/* ACTIONS */}
       <div className="flex flex-wrap gap-2">
 
-        {!isCanceled && !isReturned && (
+        {!isCanceled &&  (
           <>
             <button
               onClick={onTrack}
@@ -265,7 +264,7 @@ const OrderItem = ({
         )}
 
         {isCanceled && <span className="text-red-400 text-sm">Cancelled</span>}
-        {isDelivered && !isReturned && (
+        {isDelivered &&  (
           <span className="text-emerald-400 text-sm">Completed</span>
         )}
       </div>
