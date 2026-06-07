@@ -83,7 +83,7 @@ export async function POST(request) {
 
 
 
-        if (status === "DELIVERY_INITIATED") {
+        if (status === "OUT_FOR_DELIVERY") {
             if (!order.user?.email) {
                 return NextResponse.json(
                     { error: "Customer email not found" },
@@ -106,8 +106,7 @@ export async function POST(request) {
                     otpVerified: false,
                     statusHistory: {
                         ...(order.statusHistory || {}),
-                        DELIVERY_INITIATED:
-                            new Date().toISOString()
+                        OUT_FOR_DELIVERY: new Date().toISOString()
                     }
                 }
             })
