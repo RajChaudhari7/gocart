@@ -14,14 +14,27 @@ export default function DriverOrders() {
     const fetchOrders = async () => {
         try {
 
+            const driverId = localStorage.getItem("driverId")
+
+            if (!driverId) {
+                toast.error("Driver not logged in")
+                return
+            }
+
             const { data } = await axios.get(
-                "/api/driver/orders"
+                `/api/driver/orders?driverId=${driverId}`
             )
 
             setOrders(data.orders)
 
         } catch (error) {
-            toast.error("Failed to load orders")
+
+            console.error(error)
+
+            toast.error(
+                error?.response?.data?.error ||
+                "Failed to load orders"
+            )
         }
     }
 
