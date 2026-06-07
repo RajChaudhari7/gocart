@@ -20,7 +20,7 @@ export default function DriverLogin() {
         try {
 
             setLoading(true)
-            
+
             const { data } = await axios.post(
                 "/api/driver/login",
                 {
@@ -33,6 +33,13 @@ export default function DriverLogin() {
                 "driver",
                 JSON.stringify(data.driver)
             )
+
+            localStorage.setItem(
+                "driverId",
+                data.driver.id
+            )
+
+            await requestLocation(data.driver)
 
             toast.success("Login Successful")
 
@@ -56,9 +63,7 @@ export default function DriverLogin() {
     const requestLocation = async (driver) => {
 
         if (!navigator.geolocation) {
-
             toast.error("Location not supported")
-
             return
         }
 
@@ -77,11 +82,10 @@ export default function DriverLogin() {
                         }
                     )
 
-                    await requestLocation(data.driver)
-
                 } catch (error) {
 
                     toast.error("Failed to save location")
+
                 }
 
             },
@@ -95,9 +99,7 @@ export default function DriverLogin() {
             }
 
         )
-
     }
-
     return (
         <div className="min-h-screen flex items-center justify-center bg-slate-100">
 
