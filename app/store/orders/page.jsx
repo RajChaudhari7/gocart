@@ -20,22 +20,10 @@ const SELLER_STATUSES = [
 export default function StoreOrders() {
     const { getToken } = useAuth()
     const { setOrderCount } = useOrderStore()
-    const [otpExpiryTime, setOtpExpiryTime] = useState(null)
-    const [timeLeft, setTimeLeft] = useState(0)
-    const [showOtpModal, setShowOtpModal] = useState(false)
-    const [otpOrder, setOtpOrder] = useState(null)
-    const [enteredOtp, setEnteredOtp] = useState("")
-    const [verifyingOtp, setVerifyingOtp] = useState(false)
-    const [resendCooldown, setResendCooldown] = useState(0)
-    const [resendingOtp, setResendingOtp] = useState(false)
     const [orders, setOrders] = useState([])
     const [loading, setLoading] = useState(true)
     const [selectedOrder, setSelectedOrder] = useState(null)
     const [isModalOpen, setIsModalOpen] = useState(false)
-    const [showReturnOtpModal, setShowReturnOtpModal] = useState(false)
-    const [returnOtpOrder, setReturnOtpOrder] = useState(null)
-    const [enteredReturnOtp, setEnteredReturnOtp] = useState("")
-    const [verifyingReturnOtp, setVerifyingReturnOtp] = useState(false)
 
     const currentDate = new Date()
 
@@ -97,56 +85,7 @@ export default function StoreOrders() {
         return true
     })
 
-    const verifyReturnOtp = async () => {
-
-        const otp = enteredReturnOtp.trim()
-
-        if (!otp || otp.length !== 6) {
-            toast.error("Please enter valid 6 digit OTP")
-            return
-        }
-
-        try {
-
-            setVerifyingReturnOtp(true)
-
-            const token = await getToken()
-
-            await axios.post(
-                "/api/store/orders/verify-return-otp",
-                {
-                    orderId: returnOtpOrder.id,
-                    otp: otp
-                },
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
-            )
-
-            toast.success("Return verified successfully")
-
-            setShowReturnOtpModal(false)
-            setEnteredReturnOtp("")
-            setReturnOtpOrder(null)
-
-            fetchOrders()
-
-        } catch (error) {
-
-            toast.error(
-                error?.response?.data?.error || "Return verification failed"
-            )
-
-        } finally {
-
-            setVerifyingReturnOtp(false)
-
-        }
-
-    }
-
+   
 
     /* ================= FETCH ================= */
     const fetchOrders = async () => {
@@ -214,38 +153,7 @@ export default function StoreOrders() {
         }
     }
 
-    // function to verify otp
-    const verifyDeliveryOtp = async () => {
-        if (!enteredOtp || enteredOtp.length < 6) {
-            toast.error("Please enter valid 6-digit OTP")
-            return
-        }
-
-        try {
-            setVerifyingOtp(true)
-            const token = await getToken()
-
-            await axios.post(
-                "/api/store/orders/verify-delivery-otp",
-                { orderId: otpOrder.id, otp: enteredOtp },
-                { headers: { Authorization: `Bearer ${token}` } }
-            )
-
-            toast.success("Delivery verified. Order marked as DELIVERED ✅")
-
-            setShowOtpModal(false)
-            setEnteredOtp("")
-            setOtpOrder(null)
-
-            await fetchOrders()
-
-        } catch (error) {
-            toast.error(error?.response?.data?.error || "OTP verification failed")
-        } finally {
-            setVerifyingOtp(false)
-        }
-    }
-
+    
     // 🟢 Revenue (Exclude Cancelled + Returned)
     const revenue = filteredOrders
         .filter(order =>
@@ -596,64 +504,11 @@ export default function StoreOrders() {
             .padStart(2, "0")}`
     }
 
-    const resendOtp = async () => {
-        try {
-            setResendingOtp(true)
-            const token = await getToken()
-
-            const { data } = await axios.post(
-                "/api/store/orders/resend-otp",
-                { orderId: otpOrder.id },
-                { headers: { Authorization: `Bearer ${token}` } }
-            )
-
-            toast.success("OTP resent to customer email")
-
-            // ✅ USE RESPONSE ORDER (IMPORTANT)
-            if (data.order) {
-                setOtpOrder(data.order)
-
-                if (data.order.deliveryOtpExpiry) {
-                    const exp = new Date(data.order.deliveryOtpExpiry)
-                    setOtpExpiryTime(exp)
-                    setTimeLeft(Math.floor((exp - new Date()) / 1000))
-                }
-            }
-
-            setResendCooldown(60)
-
-        } catch (error) {
-            toast.error(error?.response?.data?.error || "Resend failed")
-        } finally {
-            setResendingOtp(false)
-        }
-    }
-
+    
     useEffect(() => {
         fetchOrders()
     }, [])
 
-    useEffect(() => {
-        if (resendCooldown <= 0) return
-
-        const t = setInterval(() => {
-            setResendCooldown(prev => prev - 1)
-        }, 1000)
-
-        return () => clearInterval(t)
-    }, [resendCooldown])
-
-
-    useEffect(() => {
-        if (!showOtpModal || !otpExpiryTime) return
-
-        const interval = setInterval(() => {
-            const diff = otpExpiryTime - new Date()
-            setTimeLeft(Math.max(0, Math.floor(diff / 1000)))
-        }, 1000)
-
-        return () => clearInterval(interval)
-    }, [showOtpModal, otpExpiryTime])
 
 
     if (loading) return <Loading />
@@ -845,28 +700,6 @@ export default function StoreOrders() {
                                     </select>
                                 )}
 
-                                {order.status === "DELIVERY_INITIATED" && (
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation()
-
-                                            setOtpOrder(order)
-                                            setShowOtpModal(true)
-
-                                            if (order.deliveryOtpExpiry) {
-                                                const exp = new Date(order.deliveryOtpExpiry)
-                                                setOtpExpiryTime(exp)
-                                                setTimeLeft(Math.floor((exp - new Date()) / 1000))
-                                            } else {
-                                                // 🔥 Force generate OTP if missing
-                                                resendOtp()
-                                            }
-                                        }}
-                                        className="px-3 py-1 bg-emerald-600 text-white rounded text-sm"
-                                    >
-                                        Verify Delivery OTP
-                                    </button>
-                                )}
 
                                 {![
                                     "DRIVER_ASSIGNED",
@@ -989,146 +822,6 @@ export default function StoreOrders() {
                             >
                                 Close
                             </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {showReturnOtpModal && returnOtpOrder && (
-
-                <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-
-                    <div className="bg-white rounded-xl p-6 w-full max-w-md">
-
-                        <h2 className="text-lg font-semibold mb-4 text-center">
-                            Verify Return OTP
-                        </h2>
-
-                        <input
-                            type="text"
-                            maxLength={6}
-                            value={enteredReturnOtp}
-                            onChange={(e) =>
-                                setEnteredReturnOtp(e.target.value.replace(/\D/g, ""))
-                            }
-                            className="w-full border rounded px-4 py-2 text-center text-xl tracking-widest"
-                            placeholder="••••••"
-                        />
-
-                        <div className="flex gap-3 mt-4">
-
-                            <button
-                                onClick={() => {
-                                    setShowReturnOtpModal(false)
-                                    setEnteredReturnOtp("")
-                                    setReturnOtpOrder(null)
-                                }}
-                                className="flex-1 bg-gray-200 py-2 rounded"
-                            >
-                                Cancel
-                            </button>
-
-                            <button
-                                onClick={verifyReturnOtp}
-                                disabled={verifyingReturnOtp || enteredReturnOtp.length !== 6}
-                                className="flex-1 bg-purple-600 text-white py-2 rounded"
-                            >
-                                {verifyingReturnOtp ? "Verifying..." : "Verify"}
-                            </button>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-            )}
-
-            {/* ================= OTP VERIFY MODAL ================= */}
-            {showOtpModal && otpOrder && (
-                <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-                    <div
-                        onClick={(e) => e.stopPropagation()}
-                        className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl"
-                    >
-                        <h2 className="text-xl font-semibold mb-2 text-center">
-                            Verify Delivery OTP
-                        </h2>
-
-                        <div className="text-center mb-4">
-                            <p className="text-sm text-gray-600">
-                                Ask customer for the OTP sent to their email
-                            </p>
-
-                            {timeLeft > 0 ? (
-                                <p
-                                    className={`mt-1 text-sm font-semibold ${timeLeft <= 60 ? "text-red-600" : "text-emerald-600"
-                                        }`}
-                                >
-                                    OTP expires in {formatTime(timeLeft)}
-                                </p>
-                            ) : (
-                                <p className="mt-1 text-sm font-semibold text-red-700">
-                                    OTP has expired
-                                </p>
-                            )}
-                        </div>
-
-
-                        <div className="mb-4">
-                            <label className="block text-sm font-medium mb-1">
-                                Enter 6-digit OTP
-                            </label>
-                            <input
-                                type="text"
-                                maxLength={6}
-                                value={enteredOtp}
-                                onChange={(e) =>
-                                    setEnteredOtp(e.target.value.replace(/\D/g, ""))
-                                }
-                                className="w-full border rounded-lg px-4 py-2 text-center text-xl tracking-widest focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                                placeholder="••••••"
-                            />
-                        </div>
-
-                        <div className="flex gap-3">
-                            <button
-                                onClick={() => {
-                                    setShowOtpModal(false)
-                                    setEnteredOtp("")
-                                    setOtpOrder(null)
-                                }}
-                                className="flex-1 px-4 py-2 bg-slate-200 rounded-lg"
-                                disabled={verifyingOtp}
-                            >
-                                Cancel
-                            </button>
-
-                            <button
-                                onClick={verifyDeliveryOtp}
-                                disabled={verifyingOtp || timeLeft <= 0}
-                                className="flex-1 px-4 py-2 bg-emerald-600 text-white rounded-lg font-semibold disabled:opacity-60"
-                            >
-                                {verifyingOtp ? "Verifying..." : "Verify OTP"}
-                            </button>
-
-                            <div className="text-center mt-3">
-                                {resendCooldown > 0 ? (
-                                    <p className="text-sm text-gray-500">
-                                        Resend available in {formatTime(resendCooldown)}
-                                    </p>
-                                ) : (
-                                    <button
-                                        onClick={resendOtp}
-                                        disabled={resendingOtp}
-                                        className="text-sm text-emerald-600 font-semibold hover:underline disabled:opacity-50"
-                                    >
-                                        {resendingOtp ? "Resending..." : "Resend OTP"}
-                                    </button>
-                                )}
-                            </div>
-
-
                         </div>
                     </div>
                 </div>
