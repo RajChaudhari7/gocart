@@ -11,6 +11,14 @@ export default function DriverOrders() {
     const [otpOrder, setOtpOrder] = useState(null)
     const [otp, setOtp] = useState("")
 
+    const getDriverId = () => {
+        const driver = JSON.parse(
+            localStorage.getItem("driver")
+        )
+
+        return driver?.id || null
+    }
+
     const fetchOrders = async () => {
 
         try {
@@ -61,7 +69,7 @@ export default function DriverOrders() {
                 {
                     orderId: otpOrder.id,
                     otp,
-                    driverId: localStorage.getItem("driverId")
+                    driverId: getDriverId()
                 }
             )
 
@@ -87,12 +95,20 @@ export default function DriverOrders() {
 
         try {
 
+            const driverId = getDriverId()
+
+            console.log({
+                orderId,
+                status,
+                driverId
+            })
+
             await axios.post(
                 "/api/driver/update-order-status",
                 {
                     orderId,
                     status,
-                    driverId: getDriverId()
+                    driverId
                 }
             )
 
@@ -102,15 +118,15 @@ export default function DriverOrders() {
 
         } catch (error) {
 
+            console.error(error?.response?.data)
+
             toast.error(
                 error?.response?.data?.error ||
                 "Failed"
             )
 
         }
-
     }
-
     return (
         <div className="p-6">
 
