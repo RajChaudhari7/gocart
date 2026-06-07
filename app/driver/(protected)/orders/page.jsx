@@ -92,7 +92,7 @@ export default function DriverOrders() {
                 {
                     orderId,
                     status,
-                    driverId: localStorage.getItem("driverId")
+                    driverId: getDriverId()
                 }
             )
 
