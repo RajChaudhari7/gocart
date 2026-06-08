@@ -113,7 +113,7 @@ export default function DriverOrders() {
             )
 
             // Send OTP when order goes Out For Delivery
-            if (status === "OUT_FOR_DELIVERY") {
+            if (status === "DELIVERY_INITIATED") {
 
                 await axios.post(
                     "/api/order/send-otp",
@@ -245,7 +245,7 @@ export default function DriverOrders() {
                                         await axios.post(
                                             "/api/order/resend-otp",
                                             {
-                                                orderId: otpOrder.id
+                                                orderId: order.id
                                             }
                                         )
 
