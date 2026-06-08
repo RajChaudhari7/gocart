@@ -226,46 +226,45 @@ export default function DriverOrders() {
                             )}
 
                             {order.status === "DELIVERY_INITIATED" && (
-                                <button
-                                    onClick={() => {
-                                        setOtpOrder(order)
-                                        setShowOtpModal(true)
-                                    }}
-                                    className="bg-green-600 text-white px-4 py-2 rounded"
-                                >
-                                    Verify Delivery OTP
-                                </button>
-                            )}
+                                <>
+                                    <button
+                                        onClick={() => {
+                                            setOtpOrder(order)
+                                            setShowOtpModal(true)
+                                        }}
+                                        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded transition"
+                                    >
+                                        Verify Delivery OTP
+                                    </button>
 
-                            <button
-                                onClick={async () => {
+                                    <button
+                                        onClick={async () => {
+                                            try {
 
-                                    try {
+                                                await axios.post(
+                                                    "/api/order/resend-otp",
+                                                    {
+                                                        orderId: order.id
+                                                    }
+                                                )
 
-                                        await axios.post(
-                                            "/api/order/resend-otp",
-                                            {
-                                                orderId: order.id
+                                                toast.success("OTP resent successfully")
+
+                                            } catch (error) {
+
+                                                toast.error(
+                                                    error?.response?.data?.error ||
+                                                    "Failed to resend OTP"
+                                                )
+
                                             }
-                                        )
-
-                                        toast.success("OTP resent")
-
-                                    } catch (error) {
-
-                                        toast.error(
-                                            error?.response?.data?.error ||
-                                            "Failed to resend OTP"
-                                        )
-
-                                    }
-
-                                }}
-                                className="flex-1 bg-blue-600 text-white py-2 rounded"
-                            >
-                                Resend OTP
-                            </button>
-
+                                        }}
+                                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded transition"
+                                    >
+                                        Resend OTP
+                                    </button>
+                                </>
+                            )}
                         </div>
 
                     </div>
