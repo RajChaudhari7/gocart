@@ -3,8 +3,13 @@
 import { motion } from "framer-motion";
 import Image from "next/image";
 import {
+    ClipboardList,
+    CheckSquare,
+    Box,
     Package,
-    Archive,
+    UserCheck,
+    Store,
+    ShoppingBag,
     Truck,
     MapPin,
     CheckCircle,
@@ -15,24 +20,34 @@ import { useRouter, useParams } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
 import axios from "axios";
 import toast from "react-hot-toast";
-import Loading from "@/components/Loading"; // Assuming you have this component
+import Loading from "@/components/Loading";
 
+// ✅ UPDATED: All new tracking statuses in chronological order
 const TRACKING_STEPS = [
-    { key: "ORDER_PLACED", label: "Order Placed", icon: Package },
-    { key: "PACKED", label: "Packed", icon: Archive },
-    { key: "PROCESSING", label: "Processing", icon: Archive },
-    { key: "SHIPPED", label: "Shipped", icon: Truck },
-    { key: "OUT_FOR_DELIVERY", label: "Out for delivery", icon: MapPin },
+    { key: "ORDER_PLACED", label: "Order Placed", icon: ClipboardList },
+    { key: "ORDER_CONFIRMED", label: "Order Confirmed", icon: CheckSquare },
+    { key: "ORDER_PACKING", label: "Packing Order", icon: Box },
+    { key: "ORDER_PACKED", label: "Order Packed", icon: Package },
+    { key: "DRIVER_ASSIGNED", label: "Driver Assigned", icon: UserCheck },
+    { key: "REACHED_SHOP", label: "Driver Reached Shop", icon: Store },
+    { key: "PICKED_UP", label: "Order Picked Up", icon: ShoppingBag },
+    { key: "OUT_FOR_DELIVERY", label: "Out for Delivery", icon: Truck },
+    { key: "DELIVERY_INITIATED", label: "Delivery Initiated", icon: MapPin },
     { key: "DELIVERED", label: "Delivered", icon: CheckCircle },
 ];
 
+// ✅ UPDATED: Index mapper for the progress line animation
 const TRACK_INDEX = {
     ORDER_PLACED: 0,
-    PACKED: 1,
-    PROCESSING: 2,
-    SHIPPED: 3,
-    OUT_FOR_DELIVERY: 4,
-    DELIVERED: 5,
+    ORDER_CONFIRMED: 1,
+    ORDER_PACKING: 2,
+    ORDER_PACKED: 3,
+    DRIVER_ASSIGNED: 4,
+    REACHED_SHOP: 5,
+    PICKED_UP: 6,
+    OUT_FOR_DELIVERY: 7,
+    DELIVERY_INITIATED: 8,
+    DELIVERED: 9,
 };
 
 const formatDateTime = (dateStr) => {
@@ -61,14 +76,13 @@ export default function TrackingPage() {
         const fetchOrder = async () => {
             try {
                 const token = await getToken();
-                // NOTE: Make sure you have an API route that fetches a single order by ID!
                 const { data } = await axios.get(`/api/orders/${params.id}`, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
                 setOrder(data.order);
             } catch (error) {
                 toast.error(error?.response?.data?.error || "Failed to load order");
-                router.push('/orders'); // Send them back if the order isn't found
+                router.push('/orders');
             } finally {
                 setLoading(false);
             }
@@ -208,11 +222,11 @@ export default function TrackingPage() {
                                         {/* ICON */}
                                         <div
                                             className={`
-                        relative z-10 w-10 h-10 flex items-center justify-center rounded-full border-2 transition-colors duration-300
-                        ${isCompleted ? "bg-emerald-500 border-emerald-500 text-black" : ""}
-                        ${isActive ? "bg-[#020617] border-indigo-500 text-indigo-400 shadow-[0_0_15px_rgba(99,102,241,0.5)]" : ""}
-                        ${!isCompleted && !isActive ? "bg-[#020617] border-white/20 text-white/40" : ""}
-                      `}
+                                                relative z-10 w-10 h-10 flex items-center justify-center rounded-full border-2 transition-colors duration-300
+                                                ${isCompleted ? "bg-emerald-500 border-emerald-500 text-black" : ""}
+                                                ${isActive ? "bg-[#020617] border-indigo-500 text-indigo-400 shadow-[0_0_15px_rgba(99,102,241,0.5)]" : ""}
+                                                ${!isCompleted && !isActive ? "bg-[#020617] border-white/20 text-white/40" : ""}
+                                            `}
                                         >
                                             <Icon size={18} />
                                         </div>
