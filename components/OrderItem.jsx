@@ -4,15 +4,17 @@ import Image from "next/image"
 import { CreditCard } from "lucide-react"
 import { useSelector } from "react-redux"
 import { motion, AnimatePresence } from "framer-motion"
+import { useRouter } from "next/navigation"
 
 const OrderItem = ({
   order,
   mobile,
   onCancel,
-  onTrack,
   onVerifyOtp,
   onRate
 }) => {
+
+  const router = useRouter()
 
   const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '₹'
 
@@ -115,10 +117,8 @@ const OrderItem = ({
             <>
               {/* TRACK */}
               <button
-                onClick={onTrack}
-                className="px-4 py-1.5 rounded-full text-sm 
-          bg-indigo-500/15 text-indigo-400 border border-indigo-500/30 
-          hover:bg-indigo-500/25 transition"
+                onClick={() => router.push(`/track/${order.id}`)}
+                className="px-4 py-1.5 rounded-full text-sm bg-indigo-500/15 text-indigo-400 border border-indigo-500/30 hover:bg-indigo-500/25 transition"
               >
                 Track
               </button>
@@ -220,12 +220,11 @@ const OrderItem = ({
       {/* ACTIONS */}
       <div className="flex flex-wrap gap-2">
 
-        {!isCanceled &&  (
+        {!isCanceled && (
           <>
             <button
-              onClick={onTrack}
-              className="flex-1 min-w-[45%] px-4 py-2 rounded-full text-sm
-            bg-indigo-500/15 text-indigo-400 border border-indigo-500/30"
+              onClick={() => router.push(`/track/${order.id}`)}
+              className="flex-1 min-w-[45%] px-4 py-2 rounded-full text-sm bg-indigo-500/15 text-indigo-400 border border-indigo-500/30"
             >
               Track
             </button>
@@ -264,7 +263,7 @@ const OrderItem = ({
         )}
 
         {isCanceled && <span className="text-red-400 text-sm">Cancelled</span>}
-        {isDelivered &&  (
+        {isDelivered && (
           <span className="text-emerald-400 text-sm">Completed</span>
         )}
       </div>
