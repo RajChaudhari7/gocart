@@ -168,6 +168,17 @@ export default function DriverOrders() {
                                 <p className="text-sm text-gray-500">
                                     ₹{order.total}
                                 </p>
+                                <div className="mt-2 text-sm text-gray-600">
+                                    <p>{order.address?.street}</p>
+                                    <p>
+                                        {order.address?.city},
+                                        {order.address?.state}
+                                    </p>
+
+                                    <p>
+                                        {order.address?.phone}
+                                    </p>
+                                </div>
                             </div>
 
                             <span className="font-medium">
@@ -227,6 +238,14 @@ export default function DriverOrders() {
 
                             {order.status === "DELIVERY_INITIATED" && (
                                 <>
+                                    <a
+                                        href={`https://www.google.com/maps/dir/?api=1&destination=${order.address?.latitude},${order.address?.longitude}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded transition"
+                                    >
+                                        Navigate
+                                    </a>
                                     <button
                                         onClick={() => {
                                             setOtpOrder(order)

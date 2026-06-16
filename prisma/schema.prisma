@@ -61,9 +61,9 @@ model SearchSynonym {
 ////////////////////////////////////
 enum OrderStatus {
   ORDER_PLACED
-  //PACKED
-  //PROCESSING
-  //SHIPPED
+  PACKED
+  PROCESSING
+  SHIPPED
   REACHED_SHOP
   PICKED_UP
   OUT_FOR_DELIVERY
@@ -220,6 +220,8 @@ model Address {
   zip       String
   country   String
   phone     String
+  latitude  Float?
+  longitude Float?
   createdAt DateTime @default(now())
 
   Order Order[]

@@ -25,6 +25,8 @@ const AddressModal = ({ setShowAddressModal }) => {
     zip: '',
     country: '',
     phone: '',
+    latitude: null,
+    longitude: null
   })
 
   const [errors, setErrors] = useState({})
@@ -192,6 +194,25 @@ const AddressModal = ({ setShowAddressModal }) => {
       toast.error(err?.response?.data?.error || err.message)
     }
   }
+
+  useEffect(() => {
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+
+        setAddress(prev => ({
+          ...prev,
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude
+        }))
+
+      },
+      (error) => {
+        console.log("Location permission denied", error)
+      }
+    )
+
+  }, [])
 
   return (
     <form
