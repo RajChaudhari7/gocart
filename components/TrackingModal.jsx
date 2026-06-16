@@ -13,21 +13,69 @@ import {
 import { useEffect, useState } from "react";
 
 const TRACKING_STEPS = [
-  { key: "ORDER_PLACED", label: "Order Placed", icon: Package },
-  { key: "PACKED", label: "Packed", icon: Archive },
-  { key: "PROCESSING", label: "Processing", icon: Archive },
-  { key: "SHIPPED", label: "Shipped", icon: Truck },
-  { key: "OUT_FOR_DELIVERY", label: "Out for delivery", icon: MapPin },
-  { key: "DELIVERED", label: "Delivered", icon: CheckCircle },
+  {
+    key: "ORDER_PLACED",
+    label: "Order Placed",
+    icon: Package,
+  },
+  {
+    key: "ORDER_CONFIRMED",
+    label: "Order Confirmed",
+    icon: CheckCircle,
+  },
+  {
+    key: "ORDER_PACKING",
+    label: "Order Packing",
+    icon: Archive,
+  },
+  {
+    key: "ORDER_PACKED",
+    label: "Order Packed",
+    icon: Archive,
+  },
+  {
+    key: "DRIVER_ASSIGNED",
+    label: "Driver Assigned",
+    icon: Truck,
+  },
+  {
+    key: "REACHED_SHOP",
+    label: "Driver Reached Shop",
+    icon: MapPin,
+  },
+  {
+    key: "PICKED_UP",
+    label: "Order Picked Up",
+    icon: Truck,
+  },
+  {
+    key: "OUT_FOR_DELIVERY",
+    label: "Out For Delivery",
+    icon: Truck,
+  },
+  {
+    key: "DELIVERY_INITIATED",
+    label: "Delivery Initiated",
+    icon: MapPin,
+  },
+  {
+    key: "DELIVERED",
+    label: "Delivered",
+    icon: CheckCircle,
+  },
 ];
 
 const TRACK_INDEX = {
   ORDER_PLACED: 0,
-  PACKED: 1,
-  PROCESSING: 2,
-  SHIPPED: 3,
-  OUT_FOR_DELIVERY: 4,
-  DELIVERED: 5,
+  ORDER_CONFIRMED: 1,
+  ORDER_PACKING: 2,
+  ORDER_PACKED: 3,
+  DRIVER_ASSIGNED: 4,
+  REACHED_SHOP: 5,
+  PICKED_UP: 6,
+  OUT_FOR_DELIVERY: 7,
+  DELIVERY_INITIATED: 8,
+  DELIVERED: 9,
 };
 
 const formatDateTime = (dateStr) => {
