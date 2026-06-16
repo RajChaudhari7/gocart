@@ -8,6 +8,7 @@ import axios from "axios"
 import toast from "react-hot-toast"
 import { useRouter } from "next/navigation"
 import Loading from "@/components/Loading"
+import TrackingModal from "@/components/TrackingModal"
 import RatingModal from "@/components/RatingModal"
 
 export default function Orders() {
@@ -17,6 +18,7 @@ export default function Orders() {
   const router = useRouter()
 
   const [orders, setOrders] = useState([])
+  const [trackingOrder, setTrackingOrder] = useState(null)
   const [loading, setLoading] = useState(true)
   const [ratingOrder, setRatingOrder] = useState(null)
 
@@ -147,6 +149,7 @@ export default function Orders() {
                     key={order.id}
                     order={order}
                     onCancel={() => cancelOrder(order)}
+                    onTrack={() => setTrackingOrder(order)}
                     onRate={() => setRatingOrder(order)}
                   />
 
@@ -168,6 +171,7 @@ export default function Orders() {
                   order={order}
                   mobile
                   onCancel={() => cancelOrder(order)}
+                  onTrack={() => setTrackingOrder(order)}
                   onRate={() => setRatingOrder(order)}
                 />
               ))}
@@ -204,6 +208,17 @@ export default function Orders() {
         )}
 
       </div>
+
+
+      {/* TRACKING MODAL */}
+      {trackingOrder && (
+
+        <TrackingModal
+          order={trackingOrder}
+          onClose={() => setTrackingOrder(null)}
+        />
+
+      )}
 
 
       {/* RATING MODAL */}
