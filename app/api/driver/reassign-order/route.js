@@ -141,6 +141,9 @@ export async function POST(request) {
 
                 assignedAt: new Date(),
 
+                // Keep order waiting for driver acceptance
+                status: "ORDER_PACKED",
+
                 reassignCount: {
                     increment: 1
                 }

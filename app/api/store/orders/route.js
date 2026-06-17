@@ -180,12 +180,12 @@ export async function POST(request) {
                 Date.now() + 10000
               ),
 
-              status: "DRIVER_ASSIGNED",
+             
+              status: "ORDER_PACKED",
 
               statusHistory: {
                 ...(order.statusHistory || {}),
-                ORDER_PACKED: new Date().toISOString(),
-                DRIVER_ASSIGNED: new Date().toISOString()
+                ORDER_PACKED: new Date().toISOString()
               }
             }
           })

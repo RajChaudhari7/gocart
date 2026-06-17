@@ -92,10 +92,14 @@ export default function DriverDashboard() {
 
                     if (
                         data.order &&
-                        data.order.id !== incomingOrder?.id
+                        !incomingOrder
                     ) {
                         setIncomingOrder(data.order)
                         setCountdown(10)
+
+                        toast.success(
+                            "New Delivery Request"
+                        )
                     }
 
                 } catch (error) {
@@ -106,9 +110,10 @@ export default function DriverDashboard() {
             2000
         )
 
-        return () => clearInterval(interval)
+        return () =>
+            clearInterval(interval)
 
-    }, [incomingOrder])
+    }, [])
 
     // COuntdown the orders waitig time to accept
     useEffect(() => {
@@ -123,7 +128,9 @@ export default function DriverDashboard() {
 
                     clearInterval(timer)
 
-                    handleDecline()
+                    setTimeout(() => {
+                        handleDecline()
+                    }, 0)
 
                     toast.error(
                         "Order request expired"
