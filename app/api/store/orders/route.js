@@ -156,43 +156,7 @@ export async function POST(request) {
             }
           }
         })
-
-
-        // if (
-        //   status !== "ORDER_PACKED" &&
-        //   status !== "DELIVERY_INITIATED" &&
-        //   status !== "CANCELLED"
-        // ) {
-        //   await tx.order.update({
-        //     where: {
-        //       id: orderId
-        //     },
-        //     data: {
-        //       driverId: nearestDriver.id,
-
-        //       assignedAt: new Date(),
-
-        //       driverAccepted: false,
-
-        //       assignmentStatus: "PENDING",
-
-        //       assignmentExpiresAt: new Date(
-        //         Date.now() + 10000
-        //       ),
-
-
-        //       status: "ORDER_PACKED",
-
-        //       statusHistory: {
-        //         ...(order.statusHistory || {}),
-        //         ORDER_PACKED: new Date().toISOString()
-        //       }
-        //     }
-        //   })
-        // }
-
-
-
+        
         if (drivers.length === 0) {
           throw new Error("No online drivers available")
         }

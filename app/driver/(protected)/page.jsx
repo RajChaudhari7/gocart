@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { Truck, Package, CheckCircle, User } from "lucide-react"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import axios from "axios"
 import toast from "react-hot-toast"
 import { useRouter } from "next/navigation"
@@ -10,14 +10,15 @@ import { useRouter } from "next/navigation"
 export default function DriverDashboard() {
 
     const [incomingOrder, setIncomingOrder] = useState(null)
+    const [ignoredOrders, setIgnoredOrders] = useState([])
 
     const [countdown, setCountdown] = useState(10)
+    const ignoredOrdersRef = useRef([])
 
 
     const router = useRouter()
 
     const handleAccept = async () => {
-
         try {
 
             await axios.post(
@@ -27,16 +28,17 @@ export default function DriverDashboard() {
                 }
             )
 
+            setIgnoredOrders(prev =>
+                prev.filter(id => id !== incomingOrder.id)
+            )
+
             setIncomingOrder(null)
 
-            toast.success(
-                "Order accepted"
-            )
+            toast.success("Order accepted")
 
             router.push("/driver/orders")
 
         } catch (error) {
-
             toast.error(
                 error?.response?.data?.error ||
                 "Failed to accept order"
@@ -46,26 +48,33 @@ export default function DriverDashboard() {
 
     const handleDecline = async () => {
 
+        if (!incomingOrder) return
+
+        const orderId = incomingOrder.id
+        const driverId = incomingOrder.driverId
+
+        // remove popup immediately
+        setIncomingOrder(null)
+        setCountdown(10)
+
         try {
 
             await axios.post(
                 "/api/driver/reassign-order",
                 {
-                    orderId: incomingOrder.id,
-                    currentDriverId:
-                        incomingOrder.driverId
+                    orderId,
+                    currentDriverId: driverId
                 }
             )
 
-            setIncomingOrder(null)
-
-            toast.success(
-                "Order reassigned"
-            )
+            toast.success("Order reassigned")
 
         } catch (error) {
 
+            console.error(error)
+
             toast.error(
+                error?.response?.data?.error ||
                 "Failed to reassign"
             )
         }
@@ -83,6 +92,8 @@ export default function DriverDashboard() {
 
                 if (!driver?.id) return
 
+                ignoredOrdersRef.current = ignoredOrders
+
                 try {
 
                     const { data } =
@@ -92,9 +103,14 @@ export default function DriverDashboard() {
 
                     if (
                         data.order &&
-                        !incomingOrder
+                        !incomingOrder &&
+                        !ignoredOrders.includes(data.order.id)
                     ) {
                         setIncomingOrder(data.order)
+                        setIgnoredOrders(prev => [
+                            ...prev,
+                            data.order.id
+                        ])
                         setCountdown(10)
 
                         toast.success(
@@ -113,7 +129,7 @@ export default function DriverDashboard() {
         return () =>
             clearInterval(interval)
 
-    }, [])
+    }, [ignoredOrders])
 
     // COuntdown the orders waitig time to accept
     useEffect(() => {
@@ -128,15 +144,11 @@ export default function DriverDashboard() {
 
                     clearInterval(timer)
 
-                    setTimeout(() => {
-                        handleDecline()
-                    }, 0)
+                    toast.error("Order request expired")
 
-                    toast.error(
-                        "Order request expired"
-                    )
+                    handleDecline()
 
-                    return 10
+                    return 0
                 }
 
                 return prev - 1
