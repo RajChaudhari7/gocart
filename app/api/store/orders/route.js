@@ -158,38 +158,38 @@ export async function POST(request) {
         })
 
 
-        if (
-          status !== "ORDER_PACKED" &&
-          status !== "DELIVERY_INITIATED" &&
-          status !== "CANCELLED"
-        ) {
-          await tx.order.update({
-            where: {
-              id: orderId
-            },
-            data: {
-              driverId: nearestDriver.id,
+        // if (
+        //   status !== "ORDER_PACKED" &&
+        //   status !== "DELIVERY_INITIATED" &&
+        //   status !== "CANCELLED"
+        // ) {
+        //   await tx.order.update({
+        //     where: {
+        //       id: orderId
+        //     },
+        //     data: {
+        //       driverId: nearestDriver.id,
 
-              assignedAt: new Date(),
+        //       assignedAt: new Date(),
 
-              driverAccepted: false,
+        //       driverAccepted: false,
 
-              assignmentStatus: "PENDING",
+        //       assignmentStatus: "PENDING",
 
-              assignmentExpiresAt: new Date(
-                Date.now() + 10000
-              ),
+        //       assignmentExpiresAt: new Date(
+        //         Date.now() + 10000
+        //       ),
 
-             
-              status: "ORDER_PACKED",
 
-              statusHistory: {
-                ...(order.statusHistory || {}),
-                ORDER_PACKED: new Date().toISOString()
-              }
-            }
-          })
-        }
+        //       status: "ORDER_PACKED",
+
+        //       statusHistory: {
+        //         ...(order.statusHistory || {}),
+        //         ORDER_PACKED: new Date().toISOString()
+        //       }
+        //     }
+        //   })
+        // }
 
 
 
@@ -225,15 +225,23 @@ export async function POST(request) {
           },
           data: {
             driverId: nearestDriver.id,
+
+            driverAccepted: false,
+
+            assignmentStatus: "PENDING",
+
+            assignmentExpiresAt: new Date(
+              Date.now() + 10000
+            ),
+
             assignedAt: new Date(),
 
-            // Automatically hand over to driver
-            status: "DRIVER_ASSIGNED",
+            // keep waiting for driver response
+            status: "ORDER_PACKED",
 
             statusHistory: {
               ...(order.statusHistory || {}),
-              ORDER_PACKED: new Date().toISOString(),
-              DRIVER_ASSIGNED: new Date().toISOString()
+              ORDER_PACKED: new Date().toISOString()
             }
           }
         })
