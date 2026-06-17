@@ -121,6 +121,8 @@ model Order {
 
   assignmentExpiresAt DateTime?
   assignmentStatus    String?   @default("PENDING")
+  reassignCount       Int       @default(0)
+  rejectedDrivers     Json      @default("[]")
 
   /// Payment
   isPaid        Boolean       @default(false)

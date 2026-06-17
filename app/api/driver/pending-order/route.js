@@ -8,20 +8,24 @@ export async function GET(request) {
     const driverId =
         searchParams.get("driverId")
 
-    const order =
-        await prisma.order.findFirst({
-            where: {
-                driverId,
-                driverAccepted: false,
-                assignmentStatus: "PENDING",
-                assignmentExpiresAt: {
-                    gt: new Date()
-                }
-            },
-            include: {
-                store: true
+    const order = await prisma.order.findFirst({
+        where: {
+            driverId,
+            driverAccepted: false,
+            assignmentStatus: "PENDING",
+            assignmentExpiresAt: {
+                gt: new Date()
             }
-        })
+        },
+        orderBy: {
+            assignedAt: "desc"
+        },
+        include: {
+            store: true
+        }
+    })
+    
+
     return NextResponse.json({
         order
     })
