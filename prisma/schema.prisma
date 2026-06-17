@@ -119,6 +119,9 @@ model Order {
   storeId   String
   addressId String
 
+  assignmentExpiresAt DateTime?
+  assignmentStatus    String?   @default("PENDING")
+
   /// Payment
   isPaid        Boolean       @default(false)
   paymentMethod PaymentMethod
@@ -277,6 +280,8 @@ model Driver {
 
   latitude  Float?
   longitude Float?
+
+  reassignCount Int @default(0)
 
   isOnline Boolean @default(false)
   isActive Boolean @default(true)

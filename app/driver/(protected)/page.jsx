@@ -2,14 +2,194 @@
 
 import Link from "next/link"
 import { Truck, Package, CheckCircle, User } from "lucide-react"
+import { useEffect, useState } from "react"
+import axios from "axios"
+import toast from "react-hot-toast"
+import { useRouter } from "next/navigation"
 
 export default function DriverDashboard() {
+
+    const [incomingOrder, setIncomingOrder] = useState(null)
+
+    const [countdown, setCountdown] = useState(10)
+
+
+    const router = useRouter()
+
+    const handleAccept = async () => {
+
+        try {
+
+            await axios.post(
+                "/api/driver/accept-order",
+                {
+                    orderId: incomingOrder.id
+                }
+            )
+
+            setIncomingOrder(null)
+
+            toast.success(
+                "Order accepted"
+            )
+
+            router.push("/driver/orders")
+
+        } catch (error) {
+
+            toast.error(
+                error?.response?.data?.error ||
+                "Failed to accept order"
+            )
+        }
+    }
+
+    const handleDecline = async () => {
+
+        try {
+
+            await axios.post(
+                "/api/driver/reassign-order",
+                {
+                    orderId: incomingOrder.id,
+                    currentDriverId:
+                        incomingOrder.driverId
+                }
+            )
+
+            setIncomingOrder(null)
+
+            toast.success(
+                "Order reassigned"
+            )
+
+        } catch (error) {
+
+            toast.error(
+                "Failed to reassign"
+            )
+        }
+    }
+
+    useEffect(() => {
+
+        const interval = setInterval(
+            async () => {
+
+                const driver =
+                    JSON.parse(
+                        localStorage.getItem("driver")
+                    )
+
+                if (!driver?.id) return
+
+                try {
+
+                    const { data } =
+                        await axios.get(
+                            `/api/driver/pending-order?driverId=${driver.id}`
+                        )
+
+                    if (
+                        data.order &&
+                        data.order.id !== incomingOrder?.id
+                    ) {
+                        setIncomingOrder(data.order)
+                        setCountdown(10)
+                    }
+
+                } catch (error) {
+                    console.error(error)
+                }
+
+            },
+            2000
+        )
+
+        return () => clearInterval(interval)
+
+    }, [incomingOrder])
+
+    // COuntdown the orders waitig time to accept
+    useEffect(() => {
+
+        if (!incomingOrder) return
+
+        const timer = setInterval(() => {
+
+            setCountdown(prev => {
+
+                if (prev <= 1) {
+
+                    clearInterval(timer)
+
+                    handleDecline()
+
+                    toast.error(
+                        "Order request expired"
+                    )
+
+                    return 10
+                }
+
+                return prev - 1
+
+            })
+
+        }, 1000)
+
+        return () => clearInterval(timer)
+
+    }, [incomingOrder])
+
     return (
         <div className="p-6">
 
             <h1 className="text-3xl font-bold mb-6">
                 Driver Dashboard
             </h1>
+
+            {incomingOrder && (
+
+                <div className="fixed top-6 right-6 z-50 bg-white shadow-2xl border rounded-xl p-5 w-80">
+
+                    <h2 className="font-bold text-lg">
+                        New Delivery Request
+                    </h2>
+
+                    <p className="mt-2">
+                        Store:
+                        {" "}
+                        {incomingOrder.store.name}
+                    </p>
+
+                    <p>
+                        Time Left:
+                        {" "}
+                        {countdown}s
+                    </p>
+
+                    <div className="flex gap-2 mt-4">
+
+                        <button
+                            onClick={handleAccept}
+                            className="flex-1 bg-green-600 text-white py-2 rounded"
+                        >
+                            Accept
+                        </button>
+
+                        <button
+                            onClick={handleDecline}
+                            className="flex-1 bg-red-600 text-white py-2 rounded"
+                        >
+                            Decline
+                        </button>
+
+                    </div>
+
+                </div>
+
+            )}
 
             <div className="grid md:grid-cols-4 gap-4">
 

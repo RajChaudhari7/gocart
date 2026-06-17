@@ -164,12 +164,28 @@ export async function POST(request) {
           status !== "CANCELLED"
         ) {
           await tx.order.update({
-            where: { id: orderId },
+            where: {
+              id: orderId
+            },
             data: {
-              status,
+              driverId: nearestDriver.id,
+
+              assignedAt: new Date(),
+
+              driverAccepted: false,
+
+              assignmentStatus: "PENDING",
+
+              assignmentExpiresAt: new Date(
+                Date.now() + 10000
+              ),
+
+              status: "DRIVER_ASSIGNED",
+
               statusHistory: {
                 ...(order.statusHistory || {}),
-                [status]: new Date().toISOString()
+                ORDER_PACKED: new Date().toISOString(),
+                DRIVER_ASSIGNED: new Date().toISOString()
               }
             }
           })
