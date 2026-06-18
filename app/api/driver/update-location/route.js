@@ -18,15 +18,34 @@ export async function POST(request) {
             )
         }
 
+        console.log("LOCATION UPDATE:", {
+            driverId,
+            latitude,
+            longitude
+        })
+
         await prisma.driver.update({
             where: {
                 id: driverId
             },
             data: {
-                latitude,
-                longitude
+                latitude: Number(latitude),
+                longitude: Number(longitude)
             }
         })
+
+        const updatedDriver =
+            await prisma.driver.findUnique({
+                where: {
+                    id: driverId
+                }
+            })
+
+        console.log(
+            "DRIVER SAVED:",
+            updatedDriver.latitude,
+            updatedDriver.longitude
+        )
 
         return NextResponse.json({
             success: true
@@ -34,11 +53,15 @@ export async function POST(request) {
 
     } catch (error) {
 
+        console.error(error)
+
         return NextResponse.json(
-            { error: error.message },
-            { status: 500 }
+            {
+                error: error.message
+            },
+            {
+                status: 500
+            }
         )
-
     }
-
 }
