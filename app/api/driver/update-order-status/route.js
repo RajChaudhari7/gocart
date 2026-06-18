@@ -2,6 +2,7 @@ import prisma from "@/lib/prisma"
 import { NextResponse } from "next/server"
 import { sendEmail } from "@/lib/sendEmail"
 import { generateOtp, hashOtp } from "@/lib/otp"
+import { calculateDistance } from "@/lib/distance"
 
 export const runtime = "nodejs"
 
@@ -30,7 +31,8 @@ export async function POST(request) {
                     id: orderId
                 },
                 include: {
-                    user: true
+                    user: true,
+                    address: true
                 }
             })
 
@@ -79,11 +81,70 @@ export async function POST(request) {
             )
         }
 
+        if (status === "DELIVERY_INITIATED") {
+
+            const driver =
+                await prisma.driver.findUnique({
+                    where: {
+                        id: driverId
+                    }
+                })
+
+            if (
+                !driver ||
+                !driver.latitude ||
+                !driver.longitude
+            ) {
+                return NextResponse.json(
+                    {
+                        error: "Driver location unavailable"
+                    },
+                    {
+                        status: 400
+                    }
+                )
+            }
+
+            if (
+                !order.address?.latitude ||
+                !order.address?.longitude
+            ) {
+                return NextResponse.json(
+                    {
+                        error: "Customer location unavailable"
+                    },
+                    {
+                        status: 400
+                    }
+                )
+            }
+
+            const distance =
+                calculateDistance(
+                    driver.latitude,
+                    driver.longitude,
+                    order.address.latitude,
+                    order.address.longitude
+                )
+
+            if (distance > 100) {
+
+                return NextResponse.json(
+                    {
+                        error: `You are ${Math.round(distance)} meters away from customer. Reach within 100m to mark arrival.`
+                    },
+                    {
+                        status: 400
+                    }
+                )
+            }
+        }
+
         let plainOtp = null
 
 
 
-        if (status === "OUT_FOR_DELIVERY") {
+        if (status === "DELIVERY_INITIATED") {
             if (!order.user?.email) {
                 return NextResponse.json(
                     { error: "Customer email not found" },

@@ -88,6 +88,52 @@ export default function DriverOrders() {
         }
     }
 
+    useEffect(() => {
+
+        const driverId = getDriverId()
+
+        if (!driverId) return
+
+        const watchId =
+            navigator.geolocation.watchPosition(
+
+                async (position) => {
+
+                    try {
+
+                        await axios.post(
+                            "/api/driver/update-location",
+                            {
+                                driverId,
+                                latitude:
+                                    position.coords.latitude,
+                                longitude:
+                                    position.coords.longitude
+                            }
+                        )
+
+                    } catch (error) {
+                        console.error(error)
+                    }
+
+                },
+
+                (error) => {
+                    console.error(error)
+                },
+
+                {
+                    enableHighAccuracy: true,
+                    maximumAge: 5000,
+                    timeout: 10000
+                }
+            )
+
+        return () =>
+            navigator.geolocation.clearWatch(watchId)
+
+    }, [])
+
     const fetchOrders = async () => {
         try {
             const driverId = getDriverId()
@@ -396,9 +442,32 @@ export default function DriverOrders() {
                                     )}
 
                                     {order.status === "OUT_FOR_DELIVERY" && (
-                                        <button onClick={() => updateStatus(order.id, "DELIVERY_INITIATED")} className="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium px-4 py-2.5 rounded-xl transition">
-                                            Arrived at Location
-                                        </button>
+
+                                        <div className="flex flex-col sm:flex-row gap-3 w-full">
+
+                                            <a
+                                                href={`https://maps.google.com/?q=${order.address?.latitude},${order.address?.longitude}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="flex-1 flex items-center justify-center gap-2 bg-purple-100 hover:bg-purple-200 text-purple-700 font-medium px-4 py-2.5 rounded-xl transition"
+                                            >
+                                                Navigate
+                                            </a>
+
+                                            <button
+                                                onClick={() =>
+                                                    updateStatus(
+                                                        order.id,
+                                                        "DELIVERY_INITIATED"
+                                                    )
+                                                }
+                                                className="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium px-4 py-2.5 rounded-xl transition"
+                                            >
+                                                Arrived At Location
+                                            </button>
+
+                                        </div>
+
                                     )}
 
                                     {order.status === "DELIVERY_INITIATED" && (
