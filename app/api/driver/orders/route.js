@@ -1,5 +1,6 @@
 import prisma from "@/lib/prisma"
 import { NextResponse } from "next/server"
+import { calculateDistance } from "@/lib/distance"
 
 export async function GET(request) {
 
@@ -15,6 +16,10 @@ export async function GET(request) {
                 { status: 400 }
             )
         }
+
+        const driver = await prisma.driver.findUnique({
+            where: { id: driverId }
+        })
 
         const orders = await prisma.order.findMany({
             where: {
@@ -44,10 +49,39 @@ export async function GET(request) {
             }
         })
 
-        return NextResponse.json({
-            orders
-        })
+        const ordersWithDistance = orders.map(order => ({
+            ...order,
 
+            distanceToStore:
+                driver?.latitude &&
+                    driver?.longitude &&
+                    order.store?.latitude &&
+                    order.store?.longitude
+                    ? calculateDistance(
+                        driver.latitude,
+                        driver.longitude,
+                        order.store.latitude,
+                        order.store.longitude
+                    )
+                    : null,
+
+            distanceToCustomer:
+                driver?.latitude &&
+                    driver?.longitude &&
+                    order.address?.latitude &&
+                    order.address?.longitude
+                    ? calculateDistance(
+                        driver.latitude,
+                        driver.longitude,
+                        order.address.latitude,
+                        order.address.longitude
+                    )
+                    : null
+        }))
+
+        return NextResponse.json({
+            orders: ordersWithDistance
+        })
     } catch (error) {
 
         return NextResponse.json(

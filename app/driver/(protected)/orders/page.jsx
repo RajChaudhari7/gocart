@@ -13,7 +13,7 @@ export default function DriverOrders() {
 
     const [incomingOrder, setIncomingOrder] = useState(null)
     const [ignoredOrders, setIgnoredOrders] = useState([])
-    const [countdown, setCountdown] = useState(10)
+    const [countdown, setCountdown] = useState(60)
 
     const ignoredOrdersRef = useRef([])
 
@@ -65,7 +65,7 @@ export default function DriverOrders() {
         const driverId = incomingOrder.driverId
 
         setIncomingOrder(null)
-        setCountdown(10)
+        setCountdown(60)
 
         try {
 
@@ -195,7 +195,7 @@ export default function DriverOrders() {
                             data.order.id
                         ])
 
-                        setCountdown(10)
+                        setCountdown(60)
 
                         toast.success(
                             "New Delivery Request"
@@ -290,6 +290,63 @@ export default function DriverOrders() {
             console.error(error?.response?.data)
             toast.error(error?.response?.data?.error || "Failed to update status")
         }
+    }
+
+    const canReachShop = async (order) => {
+
+        return new Promise((resolve) => {
+
+            navigator.geolocation.getCurrentPosition(
+
+                (position) => {
+
+                    const lat1 = position.coords.latitude
+                    const lon1 = position.coords.longitude
+
+                    const lat2 = order.store.latitude
+                    const lon2 = order.store.longitude
+
+                    const R = 6371e3
+
+                    const φ1 = lat1 * Math.PI / 180
+                    const φ2 = lat2 * Math.PI / 180
+
+                    const Δφ =
+                        (lat2 - lat1) *
+                        Math.PI / 180
+
+                    const Δλ =
+                        (lon2 - lon1) *
+                        Math.PI / 180
+
+                    const a =
+                        Math.sin(Δφ / 2) *
+                        Math.sin(Δφ / 2) +
+                        Math.cos(φ1) *
+                        Math.cos(φ2) *
+                        Math.sin(Δλ / 2) *
+                        Math.sin(Δλ / 2)
+
+                    const c =
+                        2 *
+                        Math.atan2(
+                            Math.sqrt(a),
+                            Math.sqrt(1 - a)
+                        )
+
+                    const distance =
+                        R * c
+
+                    resolve(distance <= 100)
+
+                },
+
+                () => resolve(false)
+
+            )
+
+        })
+
     }
 
     // Helper component for styled status badges
@@ -411,23 +468,84 @@ export default function DriverOrders() {
                                         <div className="flex items-start gap-2 text-gray-600 text-sm bg-gray-50 p-3 rounded-lg">
                                             <svg className="w-5 h-5 text-gray-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.243-4.243a8 8 0 1111.314 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                                             <div>
-                                                <p className="font-medium text-gray-900">{order.address?.street}</p>
-                                                <p>{order.address?.city}, {order.address?.state}</p>
-                                                <p className="mt-1 font-medium text-blue-600 flex items-center gap-1">
-                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
-                                                    {order.address?.phone}
-                                                </p>
+
+                                                {["DRIVER_ASSIGNED", "REACHED_SHOP"].includes(order.status) ? (
+
+                                                    <>
+                                                        <p className="font-medium text-gray-900">
+                                                            Store: {order.store?.name}
+                                                        </p>
+
+                                                        <p>
+                                                            {order.store?.address}
+                                                        </p>
+
+                                                        <p className="text-blue-600 font-semibold">
+                                                            {order.distanceToStore
+                                                                ? `${order.distanceToStore.toFixed(2)} km away`
+                                                                : "Calculating distance..."}
+                                                        </p>
+                                                    </>
+
+                                                ) : (
+
+                                                    <>
+                                                        <p className="font-medium text-gray-900">
+                                                            {order.address?.street}
+                                                        </p>
+
+                                                        <p>
+                                                            {order.address?.city},
+                                                            {order.address?.state}
+                                                        </p>
+
+                                                        <p className="text-blue-600 font-semibold">
+                                                            {order.distanceToCustomer
+                                                                ? `${order.distanceToCustomer.toFixed(2)} km away`
+                                                                : "Calculating distance..."}
+                                                        </p>
+
+                                                        <p className="mt-1 font-medium text-blue-600">
+                                                            {order.address?.phone}
+                                                        </p>
+                                                    </>
+
+                                                )}
+
                                             </div>
                                         </div>
                                     </div>
                                 </div>
 
                                 <div className="pt-4 border-t border-gray-100 flex flex-wrap gap-3">
-                                    {order.status === "DRIVER_ASSIGNED" && (
-                                        <button onClick={() => updateStatus(order.id, "REACHED_SHOP")} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2.5 rounded-xl transition">
+                                    <div className="flex gap-3 w-full">
+
+                                        <a
+                                            href={`https://maps.google.com/?q=${order.store?.latitude},${order.store?.longitude}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex-1 bg-purple-100 text-purple-700 py-2.5 rounded-xl text-center font-medium"
+                                        >
+                                            Navigate
+                                        </a>
+
+                                        <button
+                                            disabled={
+                                                !order.distanceToStore ||
+                                                order.distanceToStore > 0.1
+                                            }
+                                            onClick={() =>
+                                                updateStatus(order.id, "REACHED_SHOP")
+                                            }
+                                            className={`flex-1 py-2.5 rounded-xl text-white font-medium ${order.distanceToStore <= 0.1
+                                                    ? "bg-blue-600"
+                                                    : "bg-gray-400 cursor-not-allowed"
+                                                }`}
+                                        >
                                             Reached Shop
                                         </button>
-                                    )}
+
+                                    </div>
 
                                     {order.status === "REACHED_SHOP" && (
                                         <button onClick={() => updateStatus(order.id, "PICKED_UP")} className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2.5 rounded-xl transition">
