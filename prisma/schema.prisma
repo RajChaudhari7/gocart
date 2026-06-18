@@ -288,6 +288,8 @@ model Driver {
   isOnline Boolean @default(false)
   isActive Boolean @default(true)
 
+  isAvailable Boolean @default(true)
+
   orders Order[]
 
   createdAt DateTime @default(now())

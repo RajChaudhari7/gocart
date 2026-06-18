@@ -3,31 +3,80 @@ import { NextResponse } from "next/server"
 
 export async function POST(request) {
 
-    const { orderId } =
-        await request.json()
+    try {
 
-    await prisma.order.update({
-        where: {
-            id: orderId
-        },
-        data: {
+        const { orderId } = await request.json()
 
-            driverAccepted: true,
-
-            assignmentStatus: "ACCEPTED",
-
-            assignmentExpiresAt: null,
-
-            status: "DRIVER_ASSIGNED",
-
-            statusHistory: {
-                DRIVER_ASSIGNED:
-                    new Date().toISOString()
+        const order = await prisma.order.findUnique({
+            where: {
+                id: orderId
             }
-        }
-    })
+        })
 
-    return NextResponse.json({
-        success: true
-    })
+        if (!order) {
+            return NextResponse.json(
+                { error: "Order not found" },
+                { status: 404 }
+            )
+        }
+
+        // Check if driver already has an active order
+        const activeOrder =
+            await prisma.order.findFirst({
+                where: {
+                    driverId: order.driverId,
+                    status: {
+                        in: [
+                            "DRIVER_ASSIGNED",
+                            "REACHED_SHOP",
+                            "PICKED_UP",
+                            "OUT_FOR_DELIVERY",
+                            "DELIVERY_INITIATED"
+                        ]
+                    }
+                }
+            })
+
+        if (activeOrder) {
+            return NextResponse.json(
+                {
+                    error: "You already have an active order"
+                },
+                {
+                    status: 400
+                }
+            )
+        }
+
+        await prisma.order.update({
+            where: {
+                id: orderId
+            },
+            data: {
+                driverAccepted: true,
+                assignmentStatus: "ACCEPTED",
+                assignmentExpiresAt: null,
+                status: "DRIVER_ASSIGNED",
+                statusHistory: {
+                    DRIVER_ASSIGNED:
+                        new Date().toISOString()
+                }
+            }
+        })
+
+        return NextResponse.json({
+            success: true
+        })
+
+    } catch (error) {
+
+        return NextResponse.json(
+            {
+                error: error.message
+            },
+            {
+                status: 500
+            }
+        )
+    }
 }
