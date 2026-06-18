@@ -18,7 +18,9 @@ export async function GET(request) {
         }
 
         const driver = await prisma.driver.findUnique({
-            where: { id: driverId }
+            where: {
+                id: driverId
+            }
         })
 
         const orders = await prisma.order.findMany({
@@ -50,6 +52,7 @@ export async function GET(request) {
         })
 
         const ordersWithDistance = orders.map(order => ({
+
             ...order,
 
             distanceToStore:
@@ -58,10 +61,10 @@ export async function GET(request) {
                     order.store?.latitude &&
                     order.store?.longitude
                     ? calculateDistance(
-                        driver.latitude,
-                        driver.longitude,
-                        order.store.latitude,
-                        order.store.longitude
+                        Number(driver.latitude),
+                        Number(driver.longitude),
+                        Number(order.store.latitude),
+                        Number(order.store.longitude)
                     )
                     : null,
 
@@ -71,10 +74,10 @@ export async function GET(request) {
                     order.address?.latitude &&
                     order.address?.longitude
                     ? calculateDistance(
-                        driver.latitude,
-                        driver.longitude,
-                        order.address.latitude,
-                        order.address.longitude
+                        Number(driver.latitude),
+                        Number(driver.longitude),
+                        Number(order.address.latitude),
+                        Number(order.address.longitude)
                     )
                     : null
         }))
@@ -82,6 +85,7 @@ export async function GET(request) {
         return NextResponse.json({
             orders: ordersWithDistance
         })
+
     } catch (error) {
 
         return NextResponse.json(
