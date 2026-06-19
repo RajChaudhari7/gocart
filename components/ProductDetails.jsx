@@ -3,7 +3,16 @@
 import { useState, useEffect } from "react"
 import { useDispatch, useSelector } from "react-redux"
 import Image from "next/image"
-import { StarIcon, EarthIcon, CreditCardIcon, UserIcon } from "lucide-react"
+import { 
+  StarIcon, 
+  EarthIcon, 
+  CreditCardIcon, 
+  UserIcon, 
+  MinusIcon, 
+  PlusIcon,
+  ShoppingCartIcon,
+  AlertCircleIcon
+} from "lucide-react"
 import { useRouter } from "next/navigation"
 import { setCartItemQuantity } from "@/lib/features/cart/cartSlice"
 import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-motion"
@@ -50,8 +59,9 @@ const ProductDetails = ({ product }) => {
   const x = useMotionValue(0)
   const y = useMotionValue(0)
 
-  const rotateX = useTransform(y, [-100, 100], [12, -12])
-  const rotateY = useTransform(x, [-100, 100], [-12, 12])
+  // Softened the rotation for a more premium, subtle effect
+  const rotateX = useTransform(y, [-100, 100], [8, -8])
+  const rotateY = useTransform(x, [-100, 100], [-8, 8])
 
   /* ---------- CART SYNC ---------- */
   useEffect(() => {
@@ -101,7 +111,7 @@ const ProductDetails = ({ product }) => {
     }))
   }
 
-  const averageRating = product.rating.length
+  const averageRating = product.rating?.length
     ? product.rating.reduce((a, b) => a + b.rating, 0) / product.rating.length
     : 0
 
@@ -114,207 +124,231 @@ const ProductDetails = ({ product }) => {
   }
 
   return (
-    <div className="flex flex-col lg:flex-row gap-12 px-6 py-10 bg-gradient-to-b from-[#0f172a] to-[#020617] text-white rounded-3xl shadow-xl">
+    <div className="max-w-7xl mx-auto my-8">
+      <div className="flex flex-col lg:flex-row gap-12 p-6 lg:p-10 bg-slate-950 border border-slate-800 text-slate-200 rounded-[2.5rem] shadow-2xl shadow-black/50">
 
-      {/* ---------------- IMAGE GALLERY ---------------- */}
-      <div className="flex flex-col lg:flex-row gap-4 w-full lg:w-[58%]">
+        {/* ---------------- IMAGE GALLERY ---------------- */}
+        <div className="flex flex-col lg:flex-row gap-6 w-full lg:w-[55%]">
 
-        {/* 3D IMAGE CARD */}
-        <motion.div
-          style={{ rotateX, rotateY }}
-          onMouseMove={(e) => {
-            const rect = e.currentTarget.getBoundingClientRect()
-            x.set(e.clientX - rect.left - rect.width / 2)
-            y.set(e.clientY - rect.top - rect.height / 2)
-          }}
-          onMouseLeave={() => {
-            x.set(0)
-            y.set(0)
-          }}
-          whileHover={{ scale: 1.05 }}
-          transition={{ type: "spring", stiffness: 120, damping: 12 }}
-          className="order-1 lg:order-2 flex justify-center items-center bg-white/5 p-6 rounded-2xl w-full overflow-hidden perspective-[1200px]"
-        >
-          <motion.div
-            drag="x"
-            dragConstraints={{ left: 0, right: 0 }}
-            onDragEnd={handleSwipe}
-            className="relative"
-          >
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={activeIndex}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ duration: 0.3 }}
-              >
-                <Image
-                  src={product.images[activeIndex]}
-                  alt={product.name}
-                  width={420}
-                  height={420}
-                  priority
-                  placeholder="blur"
-                  blurDataURL={`data:image/svg+xml;base64,${toBase64(shimmer(420, 420))}`}
-                  className="object-contain drop-shadow-[0_30px_60px_rgba(0,255,255,0.25)]"
-                />
-              </motion.div>
-            </AnimatePresence>
-          </motion.div>
-        </motion.div>
-
-        {/* THUMBNAILS */}
-        <div className="order-2 lg:order-1 flex lg:flex-col gap-3 justify-center">
-          {product.images.map((img, i) => (
-            <button
-              key={i}
-              onClick={() => setActiveIndex(i)}
-              className={`p-2 rounded-xl border transition
-                ${activeIndex === i
-                  ? "border-cyan-400 bg-white/10"
-                  : "border-white/20 hover:border-cyan-400"
-                }`}
-            >
-              <Image src={img} alt="" width={56} height={56} />
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* ---------------- DETAILS ---------------- */}
-      <div className="flex-1">
-        <h1 className="text-3xl md:text-5xl font-bold">{product.name}</h1>
-
-        {/* RATING */}
-        <div className="flex items-center gap-2 mt-3">
-          {Array(5).fill("").map((_, i) => (
-            <StarIcon
-              key={i}
-              size={16}
-              fill={averageRating >= i + 1 ? "#00C950" : "#334155"}
-            />
-          ))}
-          <span className="text-sm text-slate-400 ml-2">
-            {product.rating.length} Reviews
-          </span>
-        </div>
-
-        {/* PRICE */}
-        <div className="flex gap-3 items-center mt-5">
-          <span className="text-3xl font-bold">{currency}{product.price}</span>
-          <span className="line-through text-slate-400">{currency}{product.mrp}</span>
-          <span className="text-green-400">
-            {product.mrp > product.price && (
-              <span className="text-green-400">
-                Save {Math.round(((product.mrp - product.price) / product.mrp) * 100)}%
-              </span>
-            )}
-          </span>
-        </div>
-
-        {/* LOW STOCK WARNING */}
-        {maxQty > 0 && maxQty <= 5 && (
-          <p className="mt-2 text-amber-400 font-medium">
-            Only {maxQty} left in stock!
-          </p>
-        )}
-
-        {isOutOfStock && (
-          <p className="mt-2 text-red-400 font-semibold">
-            Out of stock
-          </p>
-        )}
-
-        {/* PRODUCT SPECIFICATIONS */}
-        {(product.size || product.weight || product.warranty) && (
-          <div className="mt-6 bg-white/5 border border-white/10 rounded-xl p-4">
-            <h3 className="text-lg font-semibold mb-3 text-cyan-400">
-              Product Details
-            </h3>
-
-            <div className="grid grid-cols-2 gap-3 text-sm">
-
-              {product.size && (
-                <>
-                  <span className="text-slate-400">Size</span>
-                  <span className="font-medium">{product.size}</span>
-                </>
-              )}
-
-              {product.weight && (
-                <>
-                  <span className="text-slate-400">Weight</span>
-                  <span className="font-medium">{product.weight}</span>
-                </>
-              )}
-
-              {product.warranty && (
-                <>
-                  <span className="text-slate-400">Warranty</span>
-                  <span className="font-medium">{product.warranty}</span>
-                </>
-              )}
-
-            </div>
-          </div>
-        )}
-
-        {/* CART */}
-        <div className="mt-6">
-          {inCart ? (
-            <div className="flex items-center gap-4">
+          {/* THUMBNAILS */}
+          <div className="order-2 lg:order-1 flex lg:flex-col gap-4 justify-center overflow-x-auto pb-2 lg:pb-0 scrollbar-hide">
+            {product.images.map((img, i) => (
               <button
-                onClick={() => handleQuantityChange(quantity - 1)}
-                className="border px-3 py-1 rounded"
+                key={i}
+                onClick={() => setActiveIndex(i)}
+                className={`relative shrink-0 w-16 h-16 lg:w-20 lg:h-20 rounded-2xl overflow-hidden transition-all duration-300
+                  ${activeIndex === i
+                    ? "ring-2 ring-indigo-500 ring-offset-2 ring-offset-slate-950 opacity-100"
+                    : "opacity-60 hover:opacity-100 border border-slate-800 bg-slate-900"
+                  }`}
               >
-                −
+                <Image src={img} alt={`Thumbnail ${i + 1}`} fill className="object-cover" />
               </button>
+            ))}
+          </div>
 
-              <span>{quantity}</span>
+          {/* 3D MAIN IMAGE CARD */}
+          <motion.div
+            style={{ rotateX, rotateY }}
+            onMouseMove={(e) => {
+              const rect = e.currentTarget.getBoundingClientRect()
+              x.set(e.clientX - rect.left - rect.width / 2)
+              y.set(e.clientY - rect.top - rect.height / 2)
+            }}
+            onMouseLeave={() => {
+              x.set(0)
+              y.set(0)
+            }}
+            whileHover={{ scale: 1.02 }}
+            transition={{ type: "spring", stiffness: 200, damping: 20 }}
+            className="order-1 lg:order-2 relative flex justify-center items-center bg-gradient-to-br from-slate-800/40 to-slate-900/40 border border-slate-800/50 rounded-3xl w-full aspect-square overflow-hidden perspective-[1200px]"
+          >
+            {/* Subtle glow behind the image */}
+            <div className="absolute inset-0 bg-indigo-500/10 blur-[100px] rounded-full" />
+            
+            <motion.div
+              drag="x"
+              dragConstraints={{ left: 0, right: 0 }}
+              onDragEnd={handleSwipe}
+              className="relative z-10 w-full h-full flex items-center justify-center cursor-grab active:cursor-grabbing"
+            >
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeIndex}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3, ease: "easeOut" }}
+                >
+                  <Image
+                    src={product.images[activeIndex]}
+                    alt={product.name}
+                    width={500}
+                    height={500}
+                    priority
+                    placeholder="blur"
+                    blurDataURL={`data:image/svg+xml;base64,${toBase64(shimmer(500, 500))}`}
+                    className="object-contain drop-shadow-2xl"
+                  />
+                </motion.div>
+              </AnimatePresence>
+            </motion.div>
+          </motion.div>
 
-              <button
-                disabled={isAtMaxStock}
-                onClick={() => handleQuantityChange(quantity + 1)}
-                className={`border px-3 py-1 rounded
-                  ${isAtMaxStock ? "opacity-40 cursor-not-allowed" : ""}
+        </div>
+
+        {/* ---------------- DETAILS ---------------- */}
+        <div className="flex-1 flex flex-col justify-center">
+          
+          {/* Brand/Category Tag (Optional) */}
+          <span className="text-indigo-400 font-semibold tracking-wider text-sm uppercase mb-3">
+            {product.category || "Premium Product"}
+          </span>
+          
+          <h1 className="text-4xl lg:text-5xl font-extrabold tracking-tight text-white mb-4 leading-tight">
+            {product.name}
+          </h1>
+
+          {/* RATING */}
+          <div className="flex items-center gap-3 mb-6">
+            <div className="flex gap-1">
+              {Array(5).fill("").map((_, i) => (
+                <StarIcon
+                  key={i}
+                  size={18}
+                  className={averageRating >= i + 1 ? "fill-yellow-400 text-yellow-400" : "fill-slate-800 text-slate-800"}
+                />
+              ))}
+            </div>
+            <span className="text-sm font-medium text-slate-400 hover:text-indigo-400 cursor-pointer transition-colors">
+              {product.rating?.length || 0} Reviews
+            </span>
+          </div>
+
+          {/* PRICE */}
+          <div className="flex items-end gap-4 mb-6">
+            <span className="text-4xl font-black text-white">{currency}{product.price}</span>
+            {product.mrp > product.price && (
+              <>
+                <span className="text-xl line-through text-slate-500 mb-1">{currency}{product.mrp}</span>
+                <span className="mb-1.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-1 rounded-full text-xs font-bold tracking-wide">
+                  SAVE {Math.round(((product.mrp - product.price) / product.mrp) * 100)}%
+                </span>
+              </>
+            )}
+          </div>
+
+          {/* STOCK WARNING */}
+          {maxQty > 0 && maxQty <= 5 && (
+            <div className="flex items-center gap-2 text-amber-400 bg-amber-400/10 border border-amber-400/20 px-4 py-2 rounded-lg mb-6 w-fit">
+              <AlertCircleIcon size={16} />
+              <span className="text-sm font-semibold">Only {maxQty} left in stock!</span>
+            </div>
+          )}
+
+          {isOutOfStock && (
+            <div className="flex items-center gap-2 text-red-400 bg-red-400/10 border border-red-400/20 px-4 py-2 rounded-lg mb-6 w-fit">
+              <AlertCircleIcon size={16} />
+              <span className="text-sm font-semibold">Currently Out of Stock</span>
+            </div>
+          )}
+
+          {/* PRODUCT SPECIFICATIONS */}
+          {(product.size || product.weight || product.warranty) && (
+            <div className="grid grid-cols-2 gap-4 mb-8">
+              {product.size && (
+                <div className="bg-slate-900/50 border border-slate-800 p-4 rounded-2xl">
+                  <p className="text-slate-500 text-xs uppercase tracking-wider mb-1">Size</p>
+                  <p className="font-semibold text-slate-200">{product.size}</p>
+                </div>
+              )}
+              {product.weight && (
+                <div className="bg-slate-900/50 border border-slate-800 p-4 rounded-2xl">
+                  <p className="text-slate-500 text-xs uppercase tracking-wider mb-1">Weight</p>
+                  <p className="font-semibold text-slate-200">{product.weight}</p>
+                </div>
+              )}
+              {product.warranty && (
+                <div className="bg-slate-900/50 border border-slate-800 p-4 rounded-2xl col-span-2">
+                  <p className="text-slate-500 text-xs uppercase tracking-wider mb-1">Warranty</p>
+                  <p className="font-semibold text-slate-200">{product.warranty}</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* CART CONTROLS */}
+          <div className="mt-auto pt-6 border-t border-slate-800/80">
+            {inCart ? (
+              <div className="flex flex-col sm:flex-row items-center gap-4">
+                
+                {/* Custom Styled Quantity Pill */}
+                <div className="flex items-center justify-between bg-slate-900 border border-slate-700 rounded-full w-full sm:w-40 h-14 px-2">
+                  <button
+                    onClick={() => handleQuantityChange(quantity - 1)}
+                    className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-full transition-colors"
+                  >
+                    <MinusIcon size={20} />
+                  </button>
+                  <span className="font-bold text-lg w-8 text-center">{quantity}</span>
+                  <button
+                    disabled={isAtMaxStock}
+                    onClick={() => handleQuantityChange(quantity + 1)}
+                    className={`p-2 rounded-full transition-colors ${
+                      isAtMaxStock 
+                        ? "text-slate-700 cursor-not-allowed" 
+                        : "text-slate-400 hover:text-white hover:bg-slate-800"
+                    }`}
+                  >
+                    <PlusIcon size={20} />
+                  </button>
+                </div>
+
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => router.push("/cart")}
+                  className="w-full sm:w-auto flex-1 flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white h-14 px-8 rounded-full font-bold tracking-wide shadow-lg shadow-indigo-500/25 transition-all"
+                >
+                  <ShoppingCartIcon size={20} />
+                  View Cart
+                </motion.button>
+              </div>
+            ) : (
+              <motion.button
+                whileHover={!isOutOfStock ? { scale: 1.02 } : {}}
+                whileTap={!isOutOfStock ? { scale: 0.98 } : {}}
+                onClick={handleAddToCart}
+                disabled={isOutOfStock}
+                className={`w-full flex items-center justify-center gap-2 h-14 px-8 rounded-full font-bold tracking-wide transition-all shadow-lg
+                  ${isOutOfStock
+                    ? "bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700"
+                    : "bg-white hover:bg-slate-100 text-slate-950 shadow-white/10"
+                  }
                 `}
               >
-                +
-              </button>
-
-              <motion.button
-                whileHover={{ scale: 1.08 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => router.push("/cart")}
-                className="ml-4 bg-emerald-400 text-black px-6 py-2 rounded-xl font-semibold shadow-lg"
-              >
-                View Cart
+                {!isOutOfStock && <ShoppingCartIcon size={20} />}
+                {isOutOfStock ? "Out of Stock" : "Add to Cart"}
               </motion.button>
-            </div>
-          ) : (
-            <motion.button
-              whileHover={!isOutOfStock ? { scale: 1.08 } : {}}
-              whileTap={!isOutOfStock ? { scale: 0.95 } : {}}
-              onClick={handleAddToCart}
-              disabled={isOutOfStock}
-              className={`px-8 py-3 rounded-xl font-semibold shadow-lg
-                ${isOutOfStock
-                  ? "bg-slate-600 cursor-not-allowed"
-                  : "bg-cyan-400 text-black"
-                }
-              `}
-            >
-              {isOutOfStock ? "Out of Stock" : "Add to Cart"}
-            </motion.button>
-          )}
-        </div>
+            )}
+          </div>
 
-        {/* BENEFITS */}
-        <div className="flex flex-col gap-3 mt-6 text-slate-400">
-          <p className="flex items-center gap-2"><EarthIcon /> Fast shipping worldwide</p>
-          <p className="flex items-center gap-2"><CreditCardIcon /> Secure payments</p>
-          <p className="flex items-center gap-2"><UserIcon /> Trusted sellers</p>
+          {/* TRUST BENEFITS */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8 pt-8 border-t border-slate-800/80">
+            <div className="flex flex-col items-center sm:items-start gap-2 text-slate-400">
+              <EarthIcon size={24} className="text-indigo-400" />
+              <span className="text-sm font-medium text-center sm:text-left">Fast Worldwide Shipping</span>
+            </div>
+            <div className="flex flex-col items-center sm:items-start gap-2 text-slate-400">
+              <CreditCardIcon size={24} className="text-indigo-400" />
+              <span className="text-sm font-medium text-center sm:text-left">100% Secure Payments</span>
+            </div>
+            <div className="flex flex-col items-center sm:items-start gap-2 text-slate-400">
+              <UserIcon size={24} className="text-indigo-400" />
+              <span className="text-sm font-medium text-center sm:text-left">Trusted By Thousands</span>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>

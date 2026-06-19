@@ -62,7 +62,11 @@ const ProductCard = ({ product, storeIsActive }) => {
   const isLowStock = stockValue > 0 && stockValue < LOW_STOCK_LIMIT
 
   // ================= SLIDER FUNCTIONS =================
-  const paginate = (newDirection) => {
+  const paginate = (newDirection, e) => {
+    if (e) {
+      e.preventDefault()
+      e.stopPropagation() // Prevents the card's Link from triggering
+    }
     if (!hasMultiple || isOutOfStock) return
     setPage([page + newDirection, newDirection])
   }
@@ -86,11 +90,12 @@ const ProductCard = ({ product, storeIsActive }) => {
     const x = e.clientX - rect.left
     const y = e.clientY - rect.top
 
-    const rotateY = ((x / rect.width) - 0.5) * 10 // Reduced for elegance
-    const rotateX = -((y / rect.height) - 0.5) * 10
+    // Very subtle tilt for a premium feel
+    const rotateY = ((x / rect.width) - 0.5) * 6 
+    const rotateX = -((y / rect.height) - 0.5) * 6
 
     cardRef.current.style.transform = `
-      perspective(1000px)
+      perspective(1200px)
       rotateX(${rotateX}deg)
       rotateY(${rotateY}deg)
       translateZ(10px)
@@ -100,7 +105,7 @@ const ProductCard = ({ product, storeIsActive }) => {
   const resetTilt = () => {
     if (!cardRef.current || window.innerWidth < 768) return
     cardRef.current.style.transform = `
-      perspective(1000px)
+      perspective(1200px)
       rotateX(0deg)
       rotateY(0deg)
       translateZ(0px)
@@ -115,161 +120,153 @@ const ProductCard = ({ product, storeIsActive }) => {
       transition={{ duration: 0.5, ease: 'easeOut' }}
       className="group relative w-full h-full"
     >
-      <div
-        ref={cardRef}
-        onMouseMove={handleMouseMove}
-        onMouseLeave={resetTilt}
-        className={`relative flex flex-col h-full rounded-2xl overflow-hidden transition-all duration-300 ease-out will-change-transform
-        bg-white/[0.02] border border-white/10 backdrop-blur-md shadow-[0_8px_30px_rgb(0,0,0,0.12)]
-        ${!isOutOfStock && !isShopClosed ? 'hover:shadow-[0_8px_40px_rgba(34,211,238,0.1)] hover:border-white/20 hover:bg-white/[0.04]' : ''}
-        ${isOutOfStock ? 'opacity-70 grayscale-[0.5]' : ''}`}
-      >
+      {/* 
+        The entire card is now wrapped in a Link. 
+        It functions as a giant clickable area to view the product details.
+      */}
+      <Link href={`/product/${product.id}`} className="block h-full outline-none">
+        <div
+          ref={cardRef}
+          onMouseMove={handleMouseMove}
+          onMouseLeave={resetTilt}
+          className={`relative flex flex-col h-full rounded-3xl overflow-hidden transition-all duration-300 ease-out will-change-transform
+          bg-slate-900 border border-slate-800 shadow-xl shadow-black/20
+          ${!isOutOfStock && !isShopClosed ? 'hover:shadow-indigo-500/10 hover:border-indigo-500/50 hover:bg-slate-800/80' : ''}
+          ${isOutOfStock ? 'opacity-70 grayscale-[0.5]' : ''}`}
+        >
 
-        {/* SHOP CLOSED OVERLAY */}
-        {isShopClosed && (
-          <div className="absolute inset-0 z-40 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center gap-3">
-            <div className="p-3 bg-orange-500/20 rounded-full border border-orange-500/30">
-              <Ban size={24} className="text-orange-400" />
+          {/* SHOP CLOSED OVERLAY */}
+          {isShopClosed && (
+            <div className="absolute inset-0 z-40 bg-slate-950/80 backdrop-blur-sm flex flex-col items-center justify-center gap-3">
+              <div className="p-3 bg-orange-500/20 rounded-full border border-orange-500/30">
+                <Ban size={24} className="text-orange-400" />
+              </div>
+              <span className="text-xs font-bold tracking-widest text-orange-400">STORE CLOSED</span>
             </div>
-            <span className="text-xs font-bold tracking-widest text-orange-400">STORE CLOSED</span>
-          </div>
-        )}
-
-        {/* OUT OF STOCK OVERLAY */}
-        {isOutOfStock && !isShopClosed && (
-          <div className="absolute inset-0 z-40 bg-black/60 backdrop-blur-[2px] flex flex-col items-center justify-center gap-3">
-            <div className="p-3 bg-red-500/20 rounded-full border border-red-500/30">
-              <Ban size={24} className="text-red-400" />
-            </div>
-            <span className="text-xs font-bold tracking-widest text-red-400">OUT OF STOCK</span>
-          </div>
-        )}
-
-        {/* IMAGE CONTAINER (Swipeable) */}
-
-        <div className="relative w-full aspect-square md:h-[240px] bg-gradient-to-b from-white/[0.05] to-transparent 
-          p-3 md:p-6 overflow-hidden flex items-center justify-center">
-          <AnimatePresence initial={false} custom={direction}>
-            <motion.div
-              key={page}
-              custom={direction}
-              variants={sliderVariants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              transition={{ x: { type: "spring", stiffness: 300, damping: 30 }, opacity: { duration: 0.2 } }}
-              drag={hasMultiple && !isOutOfStock ? "x" : false}
-              dragConstraints={{ left: 0, right: 0 }}
-              dragElastic={1}
-              onDragEnd={handleDragEnd}
-              className="absolute inset-0 flex items-center justify-center p-6 cursor-grab active:cursor-grabbing"
-            >
-              <Image
-                src={currentImage}
-                alt={product.name || 'Product image'}
-                fill
-                sizes="(max-width: 768px) 100vw, 300px"
-                className="object-contain drop-shadow-xl pointer-events-none p-2 md:p-6"
-                priority
-              />
-            </motion.div>
-          </AnimatePresence>
-
-          {/* DESKTOP ARROWS */}
-          {hasMultiple && !isOutOfStock && (
-            <>
-              <button
-                onClick={(e) => { e.preventDefault(); paginate(-1); }}
-                className="hidden md:flex absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/40 border border-white/10 text-white items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-black/60 z-20 backdrop-blur-md"
-              >
-                <ChevronLeft size={16} />
-              </button>
-              <button
-                onClick={(e) => { e.preventDefault(); paginate(1); }}
-                className="hidden md:flex absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/40 border border-white/10 text-white items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-black/60 z-20 backdrop-blur-md"
-              >
-                <ChevronRight size={16} />
-              </button>
-            </>
           )}
 
-          {/* PAGINATION DOTS (Mobile Friendly) */}
-          {hasMultiple && (
-            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-20">
-              {images.map((_, i) => (
-                <div
-                  key={i}
-                  className={`h-1 rounded-full transition-all duration-300 ${i === imageIndex ? 'w-4 bg-cyan-400' : 'w-1.5 bg-white/30'}`}
+          {/* OUT OF STOCK OVERLAY */}
+          {isOutOfStock && !isShopClosed && (
+            <div className="absolute inset-0 z-40 bg-slate-950/80 backdrop-blur-[2px] flex flex-col items-center justify-center gap-3">
+              <div className="p-3 bg-red-500/20 rounded-full border border-red-500/30">
+                <Ban size={24} className="text-red-400" />
+              </div>
+              <span className="text-xs font-bold tracking-widest text-red-400">OUT OF STOCK</span>
+            </div>
+          )}
+
+          {/* IMAGE CONTAINER */}
+          <div className="relative w-full aspect-square sm:h-[260px] bg-gradient-to-br from-slate-800/40 to-slate-900/40 p-4 md:p-6 overflow-hidden flex items-center justify-center">
+            <AnimatePresence initial={false} custom={direction}>
+              <motion.div
+                key={page}
+                custom={direction}
+                variants={sliderVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{ x: { type: "spring", stiffness: 300, damping: 30 }, opacity: { duration: 0.2 } }}
+                drag={hasMultiple && !isOutOfStock ? "x" : false}
+                dragConstraints={{ left: 0, right: 0 }}
+                dragElastic={1}
+                onDragEnd={handleDragEnd}
+                // Stop propagation on drag start so it doesn't trigger the link click immediately
+                onPointerDownCapture={(e) => e.stopPropagation()}
+                className="absolute inset-0 flex items-center justify-center p-6 cursor-grab active:cursor-grabbing"
+              >
+                <Image
+                  src={currentImage}
+                  alt={product.name || 'Product image'}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 300px"
+                  className="object-contain drop-shadow-2xl pointer-events-none p-4"
+                  priority
                 />
-              ))}
-            </div>
-          )}
+              </motion.div>
+            </AnimatePresence>
 
-          {/* DESKTOP QUICK VIEW HOVER OVERLAY */}
-          {!isOutOfStock && !isShopClosed && (
-            <div className="hidden md:flex absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out z-30">
-              <Link
-                href={`/product/${product.id}`}
-                className="w-full py-2.5 bg-white/10 backdrop-blur-lg border border-white/20 text-white text-sm font-semibold rounded-xl flex items-center justify-center gap-2 hover:bg-cyan-500 hover:border-cyan-400 hover:text-black transition-all shadow-lg"
-              >
-                <ShoppingBag size={16} />
-                View Details
-              </Link>
-            </div>
-          )}
-        </div>
+            {/* DESKTOP ARROWS */}
+            {hasMultiple && !isOutOfStock && (
+              <>
+                <button
+                  onClick={(e) => paginate(-1, e)}
+                  className="hidden md:flex absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-slate-900/60 border border-slate-700 text-white items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-slate-800 hover:scale-110 z-20 backdrop-blur-md"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+                <button
+                  onClick={(e) => paginate(1, e)}
+                  className="hidden md:flex absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-slate-900/60 border border-slate-700 text-white items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-slate-800 hover:scale-110 z-20 backdrop-blur-md"
+                >
+                  <ChevronRight size={16} />
+                </button>
+              </>
+            )}
 
-        {/* CONTENT */}
-        <div className="p-3 md:p-5 flex flex-col flex-grow bg-black/20 relative z-10">
-
-          <div className="flex justify-between items-start mb-2">
-            <span className="text-[9px] sm:text-[10px] uppercase tracking-[0.2em] text-cyan-400 font-bold">
-              {product.category || 'Gear'}
-            </span>
-            {rating > 0 && (
-              <div className="flex items-center gap-1 bg-white/5 px-2 py-0.5 rounded-full border border-white/10">
-                <StarIcon size={10} className="text-yellow-400 fill-yellow-400" />
-                <span className="text-[10px] text-white/80 font-medium">{rating}.0</span>
+            {/* PAGINATION DOTS */}
+            {hasMultiple && (
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 z-20">
+                {images.map((_, i) => (
+                  <div
+                    key={i}
+                    className={`h-1.5 rounded-full transition-all duration-300 ${i === imageIndex ? 'w-5 bg-indigo-500' : 'w-1.5 bg-slate-600'}`}
+                  />
+                ))}
               </div>
             )}
           </div>
 
-          <Link href={`/product/${product.id}`} className="block group/link mb-3">
-            <h3 className="text-xs sm:text-sm md:text-base font-medium text-white/90 
-            group-hover/link:text-cyan-400 transition-colors line-clamp-2 leading-tight">
+          {/* CONTENT */}
+          <div className="p-4 md:p-5 flex flex-col flex-grow relative z-10 border-t border-slate-800/80">
+
+            <div className="flex justify-between items-start mb-2.5">
+              <span className="text-[10px] uppercase tracking-wider text-indigo-400 font-bold">
+                {product.category || 'Premium'}
+              </span>
+              {rating > 0 && (
+                <div className="flex items-center gap-1">
+                  <StarIcon size={12} className="text-yellow-400 fill-yellow-400" />
+                  <span className="text-xs text-slate-300 font-medium">{rating}.0</span>
+                </div>
+              )}
+            </div>
+
+            <h3 className="text-sm md:text-base font-semibold text-slate-200 group-hover:text-indigo-400 transition-colors line-clamp-2 leading-snug mb-4">
               {product.name}
             </h3>
-          </Link>
 
-          <div className="mt-auto flex items-end justify-between">
-            <div className="flex flex-col">
-              {product.mrp && product.mrp > product.price && (
-                <span className="text-[11px] text-white/30 line-through mb-0.5">
-                  {currency}{Number(product.mrp).toLocaleString()}
-                </span>
-              )}
+            <div className="mt-auto flex items-end justify-between">
+              <div className="flex flex-col">
+                {product.mrp && product.mrp > product.price && (
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xs text-slate-500 line-through">
+                      {currency}{Number(product.mrp).toLocaleString()}
+                    </span>
+                    <span className="text-emerald-400 text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-400/10 border border-emerald-400/20">
+                      {Math.round(((product.mrp - product.price) / product.mrp) * 100)}% OFF
+                    </span>
+                  </div>
+                )}
 
-              <p className={`text-sm sm:text-base md:text-lg font-bold tracking-tight ${isOutOfStock ? 'text-white/40' : 'text-white'}`}>
-                {currency}{Number(product.price).toLocaleString()}
-              </p>
+                <p className={`text-lg md:text-xl font-black tracking-tight ${isOutOfStock ? 'text-slate-500' : 'text-white'}`}>
+                  {currency}{Number(product.price).toLocaleString()}
+                </p>
+              </div>
 
-              {product.mrp && product.mrp > product.price && (
-                <span className="text-green-400 text-[11px] font-semibold">
-                  {Math.round(((product.mrp - product.price) / product.mrp) * 100)}% OFF
-                </span>
+              {/* Status Indicator inside Content Area */}
+              {isLowStock && !isOutOfStock && (
+                <div className="flex flex-col items-end">
+                  <div className="flex items-center gap-1 text-amber-400">
+                    <AlertCircle size={14} />
+                    <span className="text-[10px] font-bold uppercase tracking-wide">Low Stock</span>
+                  </div>
+                </div>
               )}
             </div>
-
-            {isLowStock && (
-              <div className="flex items-center gap-1 text-orange-400 bg-orange-400/10 px-2 py-1 rounded-md border border-orange-400/20">
-                <AlertCircle size={12} />
-                <span className="text-[10px] font-semibold">Only {stockValue} left</span>
-              </div>
-            )}
           </div>
+          
         </div>
-
-      </div>
+      </Link>
     </motion.div>
   )
 }
