@@ -72,6 +72,24 @@ export async function POST(request) {
                     isAvailable: true
                 }
             })
+
+            try {
+
+                await fetch(
+                    `${process.env.NEXT_PUBLIC_APP_URL}/api/driver/assign-pending-orders`,
+                    {
+                        method: "POST"
+                    }
+                )
+
+            } catch (err) {
+
+                console.log(
+                    "Failed to trigger assignment",
+                    err
+                )
+
+            }
         }
         return NextResponse.json({
             success: true,
