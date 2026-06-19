@@ -9,21 +9,21 @@ const Footer = () => {
 
   const linkSections = [
     {
-      title: "Products",
+      title: "For Local Shops",
       links: [
-        { text: "Earphones", path: "/shop" },
-        { text: "Headphones", path: "/shop" },
-        { text: "Smartphones", path: "/shop" },
-        { text: "Laptops", path: "/shop" },
+        { text: "Register Your Shop", path: "/create-store" },
+        { text: "Seller Dashboard", path: "/seller" },
+        { text: "Membership Plans", path: "/pricing" },
+        { text: "Seller Guidelines", path: "/guidelines" },
       ],
     },
     {
-      title: "Company",
+      title: "Support & Legal",
       links: [
-        { text: "About Us", path: "/about" },
-        { text: "Become a Member", path: "/pricing" },
-        { text: "Create Store", path: "/create-store" },
-        { text: "Terms & Privacy", path: "/privacy" },
+        { text: "Help Center", path: "/help" },
+        { text: "Contact Support", path: "/contact" },
+        { text: "Terms of Service", path: "/terms" },
+        { text: "Privacy Policy", path: "/privacy" },
       ],
     },
   ]
@@ -48,12 +48,12 @@ const Footer = () => {
           {/* Brand */}
           <div className="lg:col-span-4 space-y-6">
             <Link href="/" className="text-3xl font-black tracking-tighter group">
-              She<span className="text-cyan-400 group-hover:text-emerald-400 transition-colors">Kart</span>
+              Nandurbar<span className="text-cyan-400 group-hover:text-emerald-400 transition-colors">Bazar</span>
               <span className="text-emerald-400">.</span>
             </Link>
 
             <p className="text-white/40 text-sm leading-relaxed max-w-xs">
-              Curating the world’s most advanced hardware for the modern pioneer. Built for performance, designed for life.
+              Your trusted local marketplace. Connecting the community with the best local shops and everyday essentials right here in Nandurbar.
             </p>
 
             <div className="flex gap-3">
@@ -111,7 +111,7 @@ const Footer = () => {
                   </div>
                   <div>
                     <p className="text-[10px] uppercase text-white/30 font-bold">Email Us</p>
-                    <p className="text-sm text-white/80">hello@shekart.com</p>
+                    <p className="text-sm text-white/80">hello@nandurbarbazar.com</p>
                   </div>
                 </div>
 
@@ -131,7 +131,7 @@ const Footer = () => {
                   </div>
                   <div>
                     <p className="text-[10px] uppercase text-white/30 font-bold">Location</p>
-                    <p className="text-sm text-white/80">Nandurbar, India</p>
+                    <p className="text-sm text-white/80">Nandurbar, Maharashtra</p>
                   </div>
                 </div>
               </div>
@@ -143,7 +143,7 @@ const Footer = () => {
         {/* BOTTOM BAR */}
         <div className="mt-16 pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-xs text-white/30 font-mono">
-            &copy; {currentYear}  SheKart CO. ALL RIGHTS RESERVED.
+            &copy; {currentYear} Nandurbar Bazar. ALL RIGHTS RESERVED.
           </p>
 
           <div className="flex gap-6">
