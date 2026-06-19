@@ -2,7 +2,7 @@
 
 import { Suspense, useState, useMemo, useEffect } from 'react'
 import ProductCard from '@/components/ProductCard'
-import { SlidersHorizontal, X, Search } from 'lucide-react'
+import { SlidersHorizontal, X, Search, ChevronRight } from 'lucide-react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useSelector } from 'react-redux'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -25,6 +25,7 @@ function ShopContent() {
   const products = useSelector((state) => state.product.list || [])
 
   const [category, setCategory] = useState(categoryFromURL || 'all')
+  const [subCategory, setSubCategory] = useState('all') // ✅ Added Subcategory state
   const [sort, setSort] = useState('')
   const [priceRange, setPriceRange] = useState('ALL')
   const [showMobileFilter, setShowMobileFilter] = useState(false)
@@ -34,6 +35,7 @@ function ShopContent() {
   useEffect(() => {
     if (categoryFromURL) {
       setCategory(categoryFromURL)
+      setSubCategory('all') // Reset subcategory when URL category changes
     }
   }, [categoryFromURL])
 
@@ -41,7 +43,7 @@ function ShopContent() {
   useEffect(() => {
     const delay = setTimeout(() => {
       if (searchInput.trim() === '') {
-        router.push('/product') 
+        router.push('/product')
       } else {
         router.push(`/product?search=${encodeURIComponent(searchInput)}`)
       }
@@ -49,6 +51,29 @@ function ShopContent() {
 
     return () => clearTimeout(delay)
   }, [searchInput, router])
+
+  /* ✅ DYNAMIC CATEGORIES (Only Available Ones) */
+  const allCategories = useMemo(() => {
+    const productCategories = products
+      .map((p) => p.category?.trim())
+      .filter(Boolean)
+
+    const uniqueCategories = Array.from(new Set(productCategories))
+    return ['all', ...uniqueCategories]
+  }, [products])
+
+  /* ✅ DYNAMIC SUB-CATEGORIES (Based on selected category) */
+  const availableSubCategories = useMemo(() => {
+    if (category === 'all') return []
+
+    const subCats = products
+      .filter((p) => p.category?.toLowerCase() === category.toLowerCase())
+      .map((p) => p.subCategory?.trim())
+      .filter(Boolean)
+
+    const uniqueSubCats = Array.from(new Set(subCats))
+    return uniqueSubCats.length > 0 ? ['all', ...uniqueSubCats] : []
+  }, [products, category])
 
   /* 🔥 FILTER + SORT */
   const filteredProducts = useMemo(() => {
@@ -63,20 +88,19 @@ function ShopContent() {
           ? true
           : p.category?.toLowerCase() === category.toLowerCase()
       )
+      .filter((p) =>
+        subCategory === 'all'
+          ? true
+          : p.subCategory?.toLowerCase() === subCategory.toLowerCase()
+      )
       .filter((p) => {
         const price = Number(p.price) || 0
-
         switch (priceRange) {
-          case 'UNDER_500':
-            return price < 500
-          case '500_5K':
-            return price >= 500 && price <= 5000
-          case '5K_10K':
-            return price > 5000 && price <= 10000
-          case 'ABOVE_10K':
-            return price > 10000
-          default:
-            return true
+          case 'UNDER_500': return price < 500
+          case '500_5K': return price >= 500 && price <= 5000
+          case '5K_10K': return price > 5000 && price <= 10000
+          case 'ABOVE_10K': return price > 10000
+          default: return true
         }
       })
       .sort((a, b) => {
@@ -84,21 +108,13 @@ function ShopContent() {
         if (sort === 'high-low') return Number(b.price) - Number(a.price)
         return 0
       })
-  }, [products, search, category, priceRange, sort])
+  }, [products, search, category, subCategory, priceRange, sort])
 
-  /* ✅ DYNAMIC CATEGORIES (Only Available Ones) */
-  const allCategories = useMemo(() => {
-    // 1. Extract categories from available products
-    const productCategories = products
-      .map((p) => p.category?.trim())
-      .filter(Boolean) // Remove null/undefined
-
-    // 2. Create a Set to remove duplicates, then convert back to array
-    const uniqueCategories = Array.from(new Set(productCategories))
-
-    // 3. Add 'all' to the beginning of the list
-    return ['all', ...uniqueCategories]
-  }, [products])
+  // Custom handler for Category selection
+  const handleCategoryChange = (newCat) => {
+    setCategory(newCat)
+    setSubCategory('all') // Reset subcategory when changing main category
+  }
 
   return (
     <section className="min-h-screen bg-slate-950 text-slate-200">
@@ -159,10 +175,10 @@ function ShopContent() {
                 {allCategories.map((cat) => (
                   <button
                     key={cat}
-                    onClick={() => setCategory(cat)}
+                    onClick={() => handleCategoryChange(cat)}
                     className={`text-left text-sm py-1.5 transition-all duration-200 capitalize ${category === cat
-                        ? 'text-indigo-400 font-bold -translate-x-1'
-                        : 'text-slate-400 hover:text-white'
+                      ? 'text-indigo-400 font-bold -translate-x-1'
+                      : 'text-slate-400 hover:text-white'
                       }`}
                   >
                     {cat}
@@ -170,6 +186,37 @@ function ShopContent() {
                 ))}
               </div>
             </div>
+
+            {/* SUB-CATEGORIES (Contextual) */}
+            <AnimatePresence>
+              {availableSubCategories.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="overflow-hidden"
+                >
+                  <h3 className="text-xs font-bold tracking-widest text-slate-500 uppercase mb-5">
+                    Subcategories
+                  </h3>
+                  <div className="flex flex-col gap-1.5 border-l border-indigo-500/30 pl-4 ml-2">
+                    {availableSubCategories.map((subCat) => (
+                      <button
+                        key={subCat}
+                        onClick={() => setSubCategory(subCat)}
+                        className={`text-left text-sm py-1 transition-all duration-200 capitalize flex items-center gap-2 ${subCategory === subCat
+                          ? 'text-indigo-400 font-bold -translate-x-1'
+                          : 'text-slate-400 hover:text-white'
+                          }`}
+                      >
+                        {subCategory === subCat && <ChevronRight size={14} className="text-indigo-400" />}
+                        {subCat === 'all' ? `All ${category}` : subCat}
+                      </button>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* PRICE RANGE */}
             <div>
@@ -182,8 +229,8 @@ function ShopContent() {
                     key={range.value}
                     onClick={() => setPriceRange(range.value)}
                     className={`text-left text-sm py-1.5 transition-all duration-200 ${priceRange === range.value
-                        ? 'text-indigo-400 font-bold -translate-x-1'
-                        : 'text-slate-400 hover:text-white'
+                      ? 'text-indigo-400 font-bold -translate-x-1'
+                      : 'text-slate-400 hover:text-white'
                       }`}
                   >
                     {range.label}
@@ -250,7 +297,7 @@ function ShopContent() {
                 <h3 className="text-xl font-bold text-white mb-2">No products found</h3>
                 <p className="text-slate-400">Try adjusting your filters or search query.</p>
                 <button
-                  onClick={() => { setCategory('all'); setPriceRange('ALL'); setSearchInput(''); }}
+                  onClick={() => { handleCategoryChange('all'); setPriceRange('ALL'); setSearchInput(''); }}
                   className="mt-6 text-indigo-400 font-semibold hover:text-indigo-300 transition-colors"
                 >
                   Clear all filters
@@ -301,13 +348,10 @@ function ShopContent() {
                     {allCategories.map((cat) => (
                       <button
                         key={cat}
-                        onClick={() => {
-                          setCategory(cat)
-                          setShowMobileFilter(false)
-                        }}
+                        onClick={() => handleCategoryChange(cat)}
                         className={`px-4 py-2 rounded-full text-xs font-semibold capitalize transition border ${category === cat
-                            ? 'bg-indigo-500/20 border-indigo-500 text-indigo-300'
-                            : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-600'
+                          ? 'bg-indigo-500/20 border-indigo-500 text-indigo-300'
+                          : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-600'
                           }`}
                       >
                         {cat}
@@ -315,6 +359,39 @@ function ShopContent() {
                     ))}
                   </div>
                 </div>
+
+                {/* SUBCATEGORIES (Mobile Contextual) */}
+                <AnimatePresence>
+                  {availableSubCategories.length > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-2 mb-4">
+                        Subcategories
+                      </h3>
+                      <div className="flex flex-wrap gap-2.5 bg-slate-950 p-4 rounded-2xl border border-indigo-500/20">
+                        {availableSubCategories.map((subCat) => (
+                          <button
+                            key={subCat}
+                            onClick={() => {
+                              setSubCategory(subCat)
+                              setShowMobileFilter(false)
+                            }}
+                            className={`px-4 py-2 rounded-full text-xs font-semibold capitalize transition border ${subCategory === subCat
+                              ? 'bg-indigo-500 text-white border-indigo-400'
+                              : 'bg-slate-900 border-slate-700 text-slate-300 hover:border-slate-500'
+                              }`}
+                          >
+                            {subCat === 'all' ? `All ${category}` : subCat}
+                          </button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
                 {/* PRICE RANGE */}
                 <div>
@@ -330,8 +407,8 @@ function ShopContent() {
                           setShowMobileFilter(false)
                         }}
                         className={`px-4 py-2 rounded-full text-xs font-semibold transition border ${priceRange === range.value
-                            ? 'bg-indigo-500/20 border-indigo-500 text-indigo-300'
-                            : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-600'
+                          ? 'bg-indigo-500/20 border-indigo-500 text-indigo-300'
+                          : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-600'
                           }`}
                       >
                         {range.label}

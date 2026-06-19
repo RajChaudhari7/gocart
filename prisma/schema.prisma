@@ -40,6 +40,7 @@ model Product {
   weight      String? // for grocery
   warranty    String? // for electronics
   attributes  Json? // for future dynamic fields
+  subCategory String?
 
   store      Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
   orderItems OrderItem[]

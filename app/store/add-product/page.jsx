@@ -21,6 +21,20 @@ export default function StoreAddProduct() {
         'Food & Drink', 'Hobbies & Crafts', 'Others'
     ]
 
+    // Mapping main categories to their respective sub-categories
+    const subCategoriesMap = {
+        'Electronics': ['Mobiles', 'Laptops', 'Audio', 'Wearables', 'Accessories', 'Appliances'],
+        'Clothing': ['Men\'s Wear', 'Women\'s Wear', 'Kid\'s Wear', 'Shoes', 'Accessories'],
+        'Home & Kitchen': ['Furniture', 'Decor', 'Kitchenware', 'Bedding', 'Lighting'],
+        'Beauty & Health': ['Skincare', 'Makeup', 'Haircare', 'Fragrances', 'Supplements'],
+        'Toys & Games': ['Action Figures', 'Board Games', 'Puzzles', 'Video Games', 'Soft Toys'],
+        'Sports & Outdoors': ['Fitness Equipment', 'Outdoor Gear', 'Team Sports', 'Sportswear'],
+        'Books & Media': ['Fiction', 'Non-Fiction', 'Educational', 'Comics', 'Music & Movies'],
+        'Food & Drink': ['Snacks', 'Beverages', 'Groceries', 'Fresh Produce', 'Packaged Food'],
+        'Hobbies & Crafts': ['Art Supplies', 'DIY Kits', 'Collectibles', 'Musical Instruments'],
+        'Others': ['Miscellaneous']
+    }
+
     const [images, setImages] = useState({ 1: null, 2: null, 3: null, 4: null })
 
     const [productInfo, setProductInfo] = useState({
@@ -30,6 +44,7 @@ export default function StoreAddProduct() {
         price: 0,
         quantity: 0,
         category: "",
+        subCategory: "", // Added subCategory state
         barcode: "",
     })
 
@@ -65,7 +80,7 @@ export default function StoreAddProduct() {
 
         if (
             barcodeExists &&
-            ["name", "description", "mrp", "price", "category"].includes(name)
+            ["name", "description", "mrp", "price", "category", "subCategory"].includes(name)
         ) return
 
         if (name === "price" && Number(value) > Number(productInfo.mrp)) {
@@ -135,6 +150,7 @@ export default function StoreAddProduct() {
                                     mrp: data.mrp,
                                     price: data.price,
                                     category: data.category,
+                                    subCategory: data.subCategory || prev.subCategory,
                                     quantity: data.quantity ?? prev.quantity
                                 }))
                                 setAiUsed(true)
@@ -172,6 +188,7 @@ export default function StoreAddProduct() {
                     name: data.product.name,
                     description: data.product.description,
                     category: data.product.category,
+                    subCategory: data.product.subCategory || "",
                     mrp: data.product.mrp,
                     price: data.product.price,
                     quantity: "",
@@ -271,6 +288,7 @@ export default function StoreAddProduct() {
                 : productInfo.category
 
         if (!finalCategory) return toast.error("Please enter a category")
+        if (!productInfo.subCategory) return toast.error("Please enter a sub-category")
         if (productInfo.quantity === 0) return toast.error("Product is out of stock")
 
         if (
@@ -294,6 +312,7 @@ export default function StoreAddProduct() {
             formData.append('price', productInfo.price)
             formData.append('quantity', productInfo.quantity)
             formData.append('category', finalCategory)
+            formData.append('subCategory', productInfo.subCategory) // Added subCategory to FormData
             formData.append("size", extraFields.size)
             formData.append("weight", extraFields.weight)
             formData.append("warranty", extraFields.warranty)
@@ -322,6 +341,7 @@ export default function StoreAddProduct() {
                 price: 0,
                 quantity: 0,
                 category: "",
+                subCategory: "",
                 barcode: ""
             })
 
@@ -504,7 +524,6 @@ export default function StoreAddProduct() {
                 </div>
 
                 {/* Dynamic Fields Based on Store Category */}
-
                 {storeCategory === "Clothing" && (
                     <div>
                         <label className="block text-sm font-medium">Size</label>
@@ -548,23 +567,56 @@ export default function StoreAddProduct() {
                     </div>
                 )}
 
-                {/* Category */}
-                <div>
-                    <label className="block text-sm font-medium text-slate-700">
-                        Category
-                    </label>
+                {/* Categories Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Main Category */}
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700">
+                            Category
+                        </label>
 
-                    <select
-                        className="w-full mt-1 p-3 border rounded-lg"
-                        value={productInfo.category}
-                        onChange={e => setProductInfo({ ...productInfo, category: e.target.value })}
-                        required
-                    >
-                        <option value="">Select category</option>
-                        {categories.map(cat => (
-                            <option key={cat} value={cat}>{cat}</option>
-                        ))}
-                    </select>
+                        <select
+                            className="w-full mt-1 p-3 border rounded-lg"
+                            value={productInfo.category}
+                            onChange={e => {
+                                setProductInfo({
+                                    ...productInfo,
+                                    category: e.target.value,
+                                    subCategory: "" // Reset sub-category when main category changes
+                                })
+                            }}
+                            required
+                        >
+                            <option value="">Select category</option>
+                            {categories.map(cat => (
+                                <option key={cat} value={cat}>{cat}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {/* Sub Category */}
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700">
+                            Sub Category
+                        </label>
+
+                        <select
+                            className="w-full mt-1 p-3 border rounded-lg disabled:bg-gray-100 disabled:cursor-not-allowed"
+                            value={productInfo.subCategory}
+                            onChange={e => setProductInfo({ ...productInfo, subCategory: e.target.value })}
+                            required
+                            disabled={!productInfo.category || productInfo.category === "Others"}
+                        >
+                            <option value="">Select sub-category</option>
+                            {productInfo.category && subCategoriesMap[productInfo.category]?.map(subCat => (
+                                <option key={subCat} value={subCat}>{subCat}</option>
+                            ))}
+                            {/* Fallback for categories without a specific map */}
+                            {!subCategoriesMap[productInfo.category] && productInfo.category && (
+                                <option value="General">General</option>
+                            )}
+                        </select>
+                    </div>
                 </div>
 
                 {/* Custom Category */}
@@ -577,7 +629,10 @@ export default function StoreAddProduct() {
                             type="text"
                             placeholder="Enter custom category"
                             value={customCategory}
-                            onChange={(e) => setCustomCategory(e.target.value)}
+                            onChange={(e) => {
+                                setCustomCategory(e.target.value);
+                                setProductInfo(prev => ({ ...prev, subCategory: e.target.value })); // Map custom category to subCategory as well
+                            }}
                             className="w-full mt-1 p-3 border rounded-lg"
                             required
                         />
@@ -587,7 +642,7 @@ export default function StoreAddProduct() {
                 {/* Submit */}
                 <button
                     disabled={loading}
-                    className="w-full bg-slate-900 text-white py-3 rounded-xl"
+                    className="w-full bg-slate-900 text-white py-3 rounded-xl disabled:bg-slate-700 disabled:cursor-not-allowed"
                 >
                     {loading ? "Adding Product..." : "Add Product"}
                 </button>
