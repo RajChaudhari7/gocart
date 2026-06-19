@@ -32,7 +32,7 @@ export default function StoreAddProduct() {
         'Books & Media': ['Fiction', 'Non-Fiction', 'Educational', 'Comics', 'Music & Movies'],
         'Food & Drink': ['Snacks', 'Beverages', 'Groceries', 'Fresh Produce', 'Packaged Food'],
         'Hobbies & Crafts': ['Art Supplies', 'DIY Kits', 'Collectibles', 'Musical Instruments'],
-        'Others': ['Miscellaneous']
+        'Others': []
     }
 
     const [images, setImages] = useState({ 1: null, 2: null, 3: null, 4: null })
@@ -44,13 +44,14 @@ export default function StoreAddProduct() {
         price: 0,
         quantity: 0,
         category: "",
-        subCategory: "", // Added subCategory state
+        subCategory: "",
         barcode: "",
     })
 
     const [loading, setLoading] = useState(false)
     const [aiUsed, setAiUsed] = useState(false)
     const [customCategory, setCustomCategory] = useState("")
+    const [customSubCategory, setCustomSubCategory] = useState("") // ✅ Added custom sub-category state
     const [discount, setDiscount] = useState(0)
     const [barcodeExists, setBarcodeExists] = useState(false)
     const [scanning, setScanning] = useState(false)
@@ -282,13 +283,17 @@ export default function StoreAddProduct() {
     const onSubmitHandler = async (e) => {
         e.preventDefault()
 
-        const finalCategory =
-            productInfo.category === "Others"
-                ? customCategory.trim()
-                : productInfo.category
+        // ✅ Handle Custom Category and Custom Sub Category logic
+        const finalCategory = productInfo.category === "Others"
+            ? customCategory.trim()
+            : productInfo.category;
+
+        const finalSubCategory = (productInfo.category === "Others" || productInfo.subCategory === "Others")
+            ? customSubCategory.trim()
+            : productInfo.subCategory;
 
         if (!finalCategory) return toast.error("Please enter a category")
-        if (!productInfo.subCategory) return toast.error("Please enter a sub-category")
+        if (!finalSubCategory) return toast.error("Please enter a sub-category")
         if (productInfo.quantity === 0) return toast.error("Product is out of stock")
 
         if (
@@ -312,7 +317,7 @@ export default function StoreAddProduct() {
             formData.append('price', productInfo.price)
             formData.append('quantity', productInfo.quantity)
             formData.append('category', finalCategory)
-            formData.append('subCategory', productInfo.subCategory) // Added subCategory to FormData
+            formData.append('subCategory', finalSubCategory) // ✅ Uses final customized sub category
             formData.append("size", extraFields.size)
             formData.append("weight", extraFields.weight)
             formData.append("warranty", extraFields.warranty)
@@ -348,6 +353,7 @@ export default function StoreAddProduct() {
             setImages({ 1: null, 2: null, 3: null, 4: null })
             setDiscount(0)
             setCustomCategory("")
+            setCustomSubCategory("")
             setBarcodeExists(false)
 
         } catch (error) {
@@ -376,7 +382,7 @@ export default function StoreAddProduct() {
 
                     <div className="grid grid-cols-4 gap-4">
                         {Object.keys(images).map(key => (
-                            <label key={key} className="border rounded-xl p-2 cursor-pointer">
+                            <label key={key} className="border rounded-xl p-2 cursor-pointer hover:bg-slate-50 transition">
                                 <Image
                                     width={300}
                                     height={300}
@@ -419,13 +425,13 @@ export default function StoreAddProduct() {
                                 }
                             }}
                             placeholder="Enter or scan barcode"
-                            className="flex-1 p-3 border rounded-lg"
+                            className="flex-1 p-3 border rounded-lg focus:ring-2 focus:ring-slate-900 outline-none"
                         />
 
                         <button
                             type="button"
                             onClick={startBarcodeScan}
-                            className="px-4 rounded-lg bg-slate-900 text-white text-sm"
+                            className="px-4 rounded-lg bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 transition"
                         >
                             📷 Scan
                         </button>
@@ -453,7 +459,7 @@ export default function StoreAddProduct() {
                         value={productInfo.name}
                         onChange={onChangeHandler}
                         placeholder="Enter product name"
-                        className="w-full mt-1 p-3 border rounded-lg"
+                        className="w-full mt-1 p-3 border rounded-lg focus:ring-2 focus:ring-slate-900 outline-none"
                         required
                     />
                 </div>
@@ -469,7 +475,7 @@ export default function StoreAddProduct() {
                         value={productInfo.description}
                         onChange={onChangeHandler}
                         placeholder="Enter product description"
-                        className="w-full mt-1 p-3 border rounded-lg"
+                        className="w-full mt-1 p-3 border rounded-lg focus:ring-2 focus:ring-slate-900 outline-none"
                         required
                     />
                 </div>
@@ -486,7 +492,7 @@ export default function StoreAddProduct() {
                             value={productInfo.mrp}
                             onChange={onChangeHandler}
                             placeholder="Enter MRP"
-                            className="w-full mt-1 p-3 border rounded-lg"
+                            className="w-full mt-1 p-3 border rounded-lg focus:ring-2 focus:ring-slate-900 outline-none"
                             required
                         />
                     </div>
@@ -501,7 +507,7 @@ export default function StoreAddProduct() {
                             value={productInfo.price}
                             onChange={onChangeHandler}
                             placeholder="Enter offer price"
-                            className="w-full mt-1 p-3 border rounded-lg"
+                            className="w-full mt-1 p-3 border rounded-lg focus:ring-2 focus:ring-slate-900 outline-none"
                             required
                         />
                     </div>
@@ -517,7 +523,7 @@ export default function StoreAddProduct() {
                             value={productInfo.quantity}
                             onChange={onChangeHandler}
                             placeholder="Enter quantity"
-                            className="w-full mt-1 p-3 border rounded-lg"
+                            className="w-full mt-1 p-3 border rounded-lg focus:ring-2 focus:ring-slate-900 outline-none"
                             required
                         />
                     </div>
@@ -528,7 +534,7 @@ export default function StoreAddProduct() {
                     <div>
                         <label className="block text-sm font-medium">Size</label>
                         <select
-                            className="w-full mt-1 p-3 border rounded-lg"
+                            className="w-full mt-1 p-3 border rounded-lg focus:ring-2 focus:ring-slate-900 outline-none"
                             value={extraFields.size}
                             onChange={(e) => setExtraFields({ ...extraFields, size: e.target.value })}
                         >
@@ -549,7 +555,7 @@ export default function StoreAddProduct() {
                             placeholder="e.g. 1kg, 500g"
                             value={extraFields.weight}
                             onChange={(e) => setExtraFields({ ...extraFields, weight: e.target.value })}
-                            className="w-full mt-1 p-3 border rounded-lg"
+                            className="w-full mt-1 p-3 border rounded-lg focus:ring-2 focus:ring-slate-900 outline-none"
                         />
                     </div>
                 )}
@@ -562,21 +568,21 @@ export default function StoreAddProduct() {
                             placeholder="e.g. 1 Year"
                             value={extraFields.warranty}
                             onChange={(e) => setExtraFields({ ...extraFields, warranty: e.target.value })}
-                            className="w-full mt-1 p-3 border rounded-lg"
+                            className="w-full mt-1 p-3 border rounded-lg focus:ring-2 focus:ring-slate-900 outline-none"
                         />
                     </div>
                 )}
 
                 {/* Categories Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
                     {/* Main Category */}
                     <div>
                         <label className="block text-sm font-medium text-slate-700">
                             Category
                         </label>
-
                         <select
-                            className="w-full mt-1 p-3 border rounded-lg"
+                            className="w-full mt-1 p-3 border rounded-lg focus:ring-2 focus:ring-slate-900 outline-none"
                             value={productInfo.category}
                             onChange={e => {
                                 setProductInfo({
@@ -584,6 +590,8 @@ export default function StoreAddProduct() {
                                     category: e.target.value,
                                     subCategory: "" // Reset sub-category when main category changes
                                 })
+                                setCustomCategory("")
+                                setCustomSubCategory("")
                             }}
                             required
                         >
@@ -599,50 +607,80 @@ export default function StoreAddProduct() {
                         <label className="block text-sm font-medium text-slate-700">
                             Sub Category
                         </label>
-
                         <select
-                            className="w-full mt-1 p-3 border rounded-lg disabled:bg-gray-100 disabled:cursor-not-allowed"
-                            value={productInfo.subCategory}
-                            onChange={e => setProductInfo({ ...productInfo, subCategory: e.target.value })}
-                            required
+                            className="w-full mt-1 p-3 border rounded-lg disabled:bg-gray-100 disabled:cursor-not-allowed focus:ring-2 focus:ring-slate-900 outline-none"
+                            value={productInfo.category === "Others" ? "" : productInfo.subCategory}
+                            onChange={e => {
+                                setProductInfo({ ...productInfo, subCategory: e.target.value })
+                                setCustomSubCategory("")
+                            }}
+                            required={productInfo.category !== "Others"}
                             disabled={!productInfo.category || productInfo.category === "Others"}
                         >
                             <option value="">Select sub-category</option>
-                            {productInfo.category && subCategoriesMap[productInfo.category]?.map(subCat => (
+
+                            {/* Standard Sub Categories */}
+                            {productInfo.category && productInfo.category !== "Others" && subCategoriesMap[productInfo.category]?.map(subCat => (
                                 <option key={subCat} value={subCat}>{subCat}</option>
                             ))}
-                            {/* Fallback for categories without a specific map */}
-                            {!subCategoriesMap[productInfo.category] && productInfo.category && (
+
+                            {/* Fallback for standard categories with no map */}
+                            {!subCategoriesMap[productInfo.category] && productInfo.category && productInfo.category !== "Others" && (
                                 <option value="General">General</option>
+                            )}
+
+                            {/* Custom Addition Option */}
+                            {productInfo.category && productInfo.category !== "Others" && (
+                                <option value="Others" className="font-semibold text-slate-700">+ Add Custom Subcategory</option>
                             )}
                         </select>
                     </div>
                 </div>
 
-                {/* Custom Category */}
-                {productInfo.category === "Others" && (
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700">
-                            Custom Category
-                        </label>
-                        <input
-                            type="text"
-                            placeholder="Enter custom category"
-                            value={customCategory}
-                            onChange={(e) => {
-                                setCustomCategory(e.target.value);
-                                setProductInfo(prev => ({ ...prev, subCategory: e.target.value })); // Map custom category to subCategory as well
-                            }}
-                            className="w-full mt-1 p-3 border rounded-lg"
-                            required
-                        />
+                {/* ✅ Custom Category / SubCategory Inputs */}
+                {(productInfo.category === "Others" || productInfo.subCategory === "Others") && (
+                    <div className={`grid grid-cols-1 ${productInfo.category === "Others" ? 'md:grid-cols-2' : ''} gap-4 p-4 bg-slate-50 border border-slate-200 rounded-xl`}>
+
+                        {/* Custom Main Category Input */}
+                        {productInfo.category === "Others" && (
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700">
+                                    Custom Category Name
+                                </label>
+                                <input
+                                    type="text"
+                                    placeholder="e.g. Pet Supplies"
+                                    value={customCategory}
+                                    onChange={(e) => setCustomCategory(e.target.value)}
+                                    className="w-full mt-1 p-3 border rounded-lg focus:ring-2 focus:ring-slate-900 outline-none bg-white"
+                                    required
+                                />
+                            </div>
+                        )}
+
+                        {/* Custom Sub Category Input */}
+                        {(productInfo.category === "Others" || productInfo.subCategory === "Others") && (
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700">
+                                    Custom Sub Category Name
+                                </label>
+                                <input
+                                    type="text"
+                                    placeholder="e.g. Dog Food"
+                                    value={customSubCategory}
+                                    onChange={(e) => setCustomSubCategory(e.target.value)}
+                                    className="w-full mt-1 p-3 border rounded-lg focus:ring-2 focus:ring-slate-900 outline-none bg-white"
+                                    required
+                                />
+                            </div>
+                        )}
                     </div>
                 )}
 
                 {/* Submit */}
                 <button
                     disabled={loading}
-                    className="w-full bg-slate-900 text-white py-3 rounded-xl disabled:bg-slate-700 disabled:cursor-not-allowed"
+                    className="w-full bg-slate-900 text-white font-bold py-3.5 rounded-xl disabled:bg-slate-700 disabled:cursor-not-allowed hover:bg-slate-800 transition"
                 >
                     {loading ? "Adding Product..." : "Add Product"}
                 </button>
