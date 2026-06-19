@@ -7,12 +7,9 @@ import { sendEmail } from "@/lib/sendEmail"
 
 const LOW_STOCK_LIMIT = 10;
 
-
 // ================= ADD PRODUCT =================
 export async function POST(request) {
-
   try {
-
     const { userId } = getAuth(request)
     const storeId = await authSeller(userId)
 
@@ -28,6 +25,7 @@ export async function POST(request) {
     const price = Number(formData.get("price"))
     const quantity = Math.max(0, Number(formData.get("quantity")) || 0)
     const category = formData.get("category")
+    const subCategory = formData.get("subCategory") || null // ✅ Added subCategory
 
     const barcode = formData.get("barcode")?.trim() || null
     const images = formData.getAll("images")
@@ -42,10 +40,8 @@ export async function POST(request) {
       )
     }
 
-
     // ================= BARCODE LOGIC =================
     if (barcode) {
-
       const existingProduct = await prisma.product.findFirst({
         where: {
           barcode,
@@ -54,11 +50,11 @@ export async function POST(request) {
       })
 
       if (existingProduct) {
-
         await prisma.product.update({
           where: { id: existingProduct.id },
           data: {
-            quantity: { increment: quantity > 0 ? quantity : 1 }
+            quantity: { increment: quantity > 0 ? quantity : 1 },
+            isArchived: false // Un-archive if it was previously deleted
           }
         })
 
@@ -67,9 +63,7 @@ export async function POST(request) {
           mode: "INCREMENT"
         })
       }
-
     }
-
 
     // ================= NEW PRODUCT VALIDATION =================
     if (
@@ -86,11 +80,9 @@ export async function POST(request) {
       )
     }
 
-
     // ================= IMAGE UPLOAD =================
     const imagesUrl = await Promise.all(
       images.map(async (image) => {
-
         const buffer = Buffer.from(await image.arrayBuffer())
 
         const upload = await imagekit.upload({
@@ -107,10 +99,8 @@ export async function POST(request) {
             { width: "1024" }
           ]
         })
-
       })
     )
-
 
     // ================= CREATE PRODUCT =================
     await prisma.product.create({
@@ -121,6 +111,7 @@ export async function POST(request) {
         price,
         quantity: quantity > 0 ? quantity : 1,
         category,
+        subCategory, // ✅ Saved to database
         images: imagesUrl,
         storeId,
         barcode,
@@ -130,32 +121,23 @@ export async function POST(request) {
       }
     })
 
-
     return NextResponse.json({
       message: "New product added successfully 🎉",
       mode: "CREATE"
     })
 
   } catch (error) {
-
     console.error(error)
-
     return NextResponse.json(
       { error: error.message },
       { status: 400 }
     )
-
   }
-
 }
-
-
 
 // ================= GET SELLER PRODUCTS =================
 export async function GET(request) {
-
   try {
-
     const { userId } = getAuth(request)
     const storeId = await authSeller(userId)
 
@@ -164,7 +146,10 @@ export async function GET(request) {
     }
 
     const products = await prisma.product.findMany({
-      where: { storeId },
+      where: { 
+        storeId,
+        isArchived: false // ✅ Filter out soft-deleted products
+      },
       include: {
         store: {
           select: {
@@ -175,7 +160,6 @@ export async function GET(request) {
       orderBy: { createdAt: "desc" }
     })
 
-
     const formattedProducts = products.map((product) => ({
       ...product,
       lowStock:
@@ -184,23 +168,16 @@ export async function GET(request) {
       isOutOfStock: product.quantity <= 0
     }))
 
-
     return NextResponse.json({ products: formattedProducts })
 
   } catch (error) {
-
     console.error(error)
-
     return NextResponse.json(
       { error: error.message },
       { status: 400 }
     )
-
   }
-
 }
-
-
 
 // ================= UPDATE PRODUCT =================
 export async function PUT(request) {
@@ -221,7 +198,6 @@ export async function PUT(request) {
       )
     }
 
-    // ✅ Get product + store + email
     const product = await prisma.product.findUnique({
       where: { id: productId },
       include: {
@@ -239,7 +215,6 @@ export async function PUT(request) {
 
     const oldQty = product.quantity
 
-    // ✅ Update product
     await prisma.product.update({
       where: { id: productId },
       data: { price, quantity }
@@ -299,13 +274,9 @@ export async function PUT(request) {
   }
 }
 
-
-
 // ================= DELETE PRODUCT =================
 export async function DELETE(request) {
-
   try {
-
     const { userId } = getAuth(request)
     const storeId = await authSeller(userId)
 
@@ -315,8 +286,13 @@ export async function DELETE(request) {
 
     const { productId } = await request.json()
 
-    await prisma.product.delete({
-      where: { id: productId }
+    // ✅ Soft delete to prevent breaking historical orders
+    await prisma.product.update({
+      where: { id: productId },
+      data: { 
+        isArchived: true,
+        quantity: 0 // Prevents accidental purchases if something bypasses the filter
+      }
     })
 
     return NextResponse.json({
@@ -324,14 +300,10 @@ export async function DELETE(request) {
     })
 
   } catch (error) {
-
     console.error(error)
-
     return NextResponse.json(
       { error: error.message },
       { status: 400 }
     )
-
   }
-
 }

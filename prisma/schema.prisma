@@ -41,6 +41,7 @@ model Product {
   warranty    String? // for electronics
   attributes  Json? // for future dynamic fields
   subCategory String?
+  isArchived  Boolean  @default(false)
 
   store      Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
   orderItems OrderItem[]
