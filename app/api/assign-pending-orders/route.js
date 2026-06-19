@@ -137,6 +137,15 @@ export async function POST() {
                 }
             })
 
+            await prisma.driver.update({
+                where: {
+                    id: nearestDriver.id
+                },
+                data: {
+                    isAvailable: false
+                }
+            })
+
             assignedCount++
         }
 

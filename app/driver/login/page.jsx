@@ -70,49 +70,52 @@ export default function DriverLogin() {
 
     }
 
-    const requestLocation = async (driver) => {
+    const requestLocation = (driver) => {
 
-        if (!navigator.geolocation) {
-            toast.error("Location not supported")
-            return
-        }
+        return new Promise((resolve, reject) => {
 
-        navigator.geolocation.getCurrentPosition(
-
-            async (position) => {
-
-                try {
-
-                    await axios.post(
-                        "/api/driver/update-location",
-                        {
-                            driverId: driver.id,
-                            latitude: position.coords.latitude,
-                            longitude: position.coords.longitude
-                        }
-                    )
-
-                    await axios.post(
-                        "/api/driver/assign-pending-orders"
-                    )
-
-                } catch (error) {
-
-                    toast.error("Failed to save location")
-
-                }
-
-            },
-
-            () => {
-
-                toast.error(
-                    "Location permission is required"
-                )
-
+            if (!navigator.geolocation) {
+                reject(new Error("Location not supported"))
+                return
             }
 
-        )
+            navigator.geolocation.getCurrentPosition(
+
+                async (position) => {
+
+                    try {
+
+                        await axios.post(
+                            "/api/driver/update-location",
+                            {
+                                driverId: driver.id,
+                                latitude: position.coords.latitude,
+                                longitude: position.coords.longitude
+                            }
+                        )
+
+                        resolve(true)
+
+                    } catch (error) {
+
+                        reject(error)
+
+                    }
+
+                },
+
+                (error) => {
+
+                    reject(error)
+
+                },
+
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000
+                }
+            )
+        })
     }
     return (
         <div className="min-h-screen flex items-center justify-center bg-slate-100">
