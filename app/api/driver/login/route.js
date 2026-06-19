@@ -44,9 +44,62 @@ export async function POST(request) {
             )
         }
 
+        const updatedDriver =
+            await prisma.driver.update({
+                where: {
+                    id: driver.id
+                },
+                data: {
+                    isOnline: true,
+                    isAvailable: true
+                }
+            })
+
+        // Find active order
+        const activeOrder =
+            await prisma.order.findFirst({
+                where: {
+                    driverId: driver.id,
+                    status: {
+                        in: [
+                            "DRIVER_ASSIGNED",
+                            "REACHED_SHOP",
+                            "PICKED_UP",
+                            "OUT_FOR_DELIVERY",
+                            "DELIVERY_INITIATED"
+                        ]
+                    }
+                }
+            })
+
+        // Driver already has an order
+        if (activeOrder) {
+
+            await prisma.driver.update({
+                where: {
+                    id: driver.id
+                },
+                data: {
+                    isAvailable: false
+                }
+            })
+
+        } else {
+
+            await prisma.driver.update({
+                where: {
+                    id: driver.id
+                },
+                data: {
+                    isAvailable: true
+                }
+            })
+
+        }
+
         return NextResponse.json({
             success: true,
-            driver
+            driver: updatedDriver
         })
 
     } catch (error) {
@@ -61,5 +114,4 @@ export async function POST(request) {
         )
 
     }
-
 }

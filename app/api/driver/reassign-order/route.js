@@ -32,25 +32,39 @@ export async function POST(request) {
             )
         }
 
-        const drivers =
-            await prisma.driver.findMany({
-                where: {
-                    isOnline: true,
-                    isActive: true,
+        const drivers = await prisma.driver.findMany({
+            where: {
+                isOnline: true,
+                isActive: true,
+                isAvailable: true,
 
-                    id: {
-                        not: currentDriverId
-                    },
+                id: {
+                    not: currentDriverId
+                },
 
-                    latitude: {
-                        not: null
-                    },
+                latitude: {
+                    not: null
+                },
 
-                    longitude: {
-                        not: null
+                longitude: {
+                    not: null
+                },
+
+                orders: {
+                    none: {
+                        status: {
+                            in: [
+                                "DRIVER_ASSIGNED",
+                                "REACHED_SHOP",
+                                "PICKED_UP",
+                                "OUT_FOR_DELIVERY",
+                                "DELIVERY_INITIATED"
+                            ]
+                        }
                     }
                 }
-            })
+            }
+        })
 
         if (!drivers.length) {
 

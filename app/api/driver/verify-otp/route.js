@@ -62,6 +62,17 @@ export async function POST(request) {
             }
         })
 
+        // Driver becomes available again
+        if (order.driverId) {
+            await prisma.driver.update({
+                where: {
+                    id: order.driverId
+                },
+                data: {
+                    isAvailable: true
+                }
+            })
+        }
         return NextResponse.json({
             success: true,
             message: "Order Delivered"

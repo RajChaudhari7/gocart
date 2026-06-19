@@ -41,6 +41,16 @@ export default function DriverLogin() {
 
             await requestLocation(data.driver)
 
+            try {
+
+                await axios.post(
+                    "/api/driver/assign-pending-orders"
+                )
+
+            } catch (err) {
+                console.log(err)
+            }
+
             toast.success("Login Successful")
 
             router.push("/driver")
@@ -80,6 +90,10 @@ export default function DriverLogin() {
                             latitude: position.coords.latitude,
                             longitude: position.coords.longitude
                         }
+                    )
+
+                    await axios.post(
+                        "/api/driver/assign-pending-orders"
                     )
 
                 } catch (error) {

@@ -25,6 +25,9 @@ export async function POST(request) {
             await prisma.order.findFirst({
                 where: {
                     driverId: order.driverId,
+                    id: {
+                        not: orderId
+                    },
                     status: {
                         in: [
                             "DRIVER_ASSIGNED",
