@@ -59,7 +59,6 @@ const ProductDetails = ({ product }) => {
   const x = useMotionValue(0)
   const y = useMotionValue(0)
 
-  // Softened the rotation for a more premium, subtle effect
   const rotateX = useTransform(y, [-100, 100], [8, -8])
   const rotateY = useTransform(x, [-100, 100], [-8, 8])
 
@@ -125,24 +124,29 @@ const ProductDetails = ({ product }) => {
 
   return (
     <div className="max-w-7xl mx-auto my-8">
-      <div className="flex flex-col lg:flex-row gap-12 p-6 lg:p-10 bg-slate-950 border border-slate-800 text-slate-200 rounded-[2.5rem] shadow-2xl shadow-black/50">
+      <div className="flex flex-col lg:flex-row gap-10 p-6 lg:p-10 bg-slate-950 border border-slate-800 text-slate-200 rounded-[2.5rem] shadow-2xl shadow-black/50">
 
         {/* ---------------- IMAGE GALLERY ---------------- */}
-        <div className="flex flex-col lg:flex-row gap-6 w-full lg:w-[55%]">
+        <div className="flex flex-col lg:flex-row gap-4 w-full lg:w-1/2">
 
           {/* THUMBNAILS */}
-          <div className="order-2 lg:order-1 flex lg:flex-col gap-4 justify-center overflow-x-auto pb-2 lg:pb-0 scrollbar-hide">
+          <div className="order-2 lg:order-1 flex lg:flex-col gap-3 overflow-x-auto lg:overflow-y-auto lg:max-h-[500px] pb-2 lg:pb-0 scrollbar-hide w-full lg:w-24 shrink-0">
             {product.images.map((img, i) => (
               <button
                 key={i}
                 onClick={() => setActiveIndex(i)}
-                className={`relative shrink-0 w-16 h-16 lg:w-20 lg:h-20 rounded-2xl overflow-hidden transition-all duration-300
+                className={`relative shrink-0 w-16 h-16 lg:w-full lg:h-24 rounded-2xl overflow-hidden transition-all duration-300
                   ${activeIndex === i
-                    ? "ring-2 ring-indigo-500 ring-offset-2 ring-offset-slate-950 opacity-100"
-                    : "opacity-60 hover:opacity-100 border border-slate-800 bg-slate-900"
+                    ? "ring-2 ring-indigo-500 ring-offset-2 ring-offset-slate-950 opacity-100 bg-slate-800"
+                    : "opacity-60 hover:opacity-100 border border-slate-800 bg-slate-900/80"
                   }`}
               >
-                <Image src={img} alt={`Thumbnail ${i + 1}`} fill className="object-cover" />
+                <Image
+                  src={img}
+                  alt={`Thumbnail ${i + 1}`}
+                  fill
+                  className="object-contain p-2"
+                />
               </button>
             ))}
           </div>
@@ -161,7 +165,7 @@ const ProductDetails = ({ product }) => {
             }}
             whileHover={{ scale: 1.02 }}
             transition={{ type: "spring", stiffness: 200, damping: 20 }}
-            className="order-1 lg:order-2 relative flex justify-center items-center bg-gradient-to-br from-slate-800/40 to-slate-900/40 border border-slate-800/50 rounded-3xl w-full aspect-square overflow-hidden perspective-[1200px]"
+            className="order-1 lg:order-2 relative flex justify-center items-center bg-gradient-to-br from-slate-800/40 to-slate-900/40 border border-slate-800/50 rounded-3xl w-full max-w-md mx-auto aspect-square max-h-[500px] overflow-hidden perspective-[1200px]"
           >
             {/* Subtle glow behind the image */}
             <div className="absolute inset-0 bg-indigo-500/10 blur-[100px] rounded-full" />
@@ -170,7 +174,7 @@ const ProductDetails = ({ product }) => {
               drag="x"
               dragConstraints={{ left: 0, right: 0 }}
               onDragEnd={handleSwipe}
-              className="relative z-10 w-full h-full flex items-center justify-center cursor-grab active:cursor-grabbing"
+              className="relative z-10 w-full h-full flex items-center justify-center cursor-grab active:cursor-grabbing p-8 lg:p-12"
             >
               <AnimatePresence mode="wait">
                 <motion.div
@@ -179,16 +183,17 @@ const ProductDetails = ({ product }) => {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.3, ease: "easeOut" }}
+                  className="w-full h-full relative"
                 >
                   <Image
                     src={product.images[activeIndex]}
                     alt={product.name}
-                    width={500}
-                    height={500}
+                    fill
                     priority
+                    sizes="(max-width: 768px) 100vw, 500px"
                     placeholder="blur"
                     blurDataURL={`data:image/svg+xml;base64,${toBase64(shimmer(500, 500))}`}
-                    className="object-contain drop-shadow-2xl"
+                    className="object-contain drop-shadow-2xl pointer-events-none"
                   />
                 </motion.div>
               </AnimatePresence>
@@ -198,14 +203,14 @@ const ProductDetails = ({ product }) => {
         </div>
 
         {/* ---------------- DETAILS ---------------- */}
-        <div className="flex-1 flex flex-col justify-center">
+        <div className="flex-1 flex flex-col justify-center lg:pl-6">
 
-          {/* Brand/Category Tag (Optional) */}
+          {/* Brand/Category Tag */}
           <span className="text-indigo-400 font-semibold tracking-wider text-sm uppercase mb-3">
             {product.category || "Premium Product"}
           </span>
 
-          <h1 className="text-4xl lg:text-5xl font-extrabold tracking-tight text-white mb-4 leading-tight">
+          <h1 className="text-3xl lg:text-5xl font-extrabold tracking-tight text-white mb-4 leading-tight">
             {product.name}
           </h1>
 
@@ -282,7 +287,6 @@ const ProductDetails = ({ product }) => {
             {inCart ? (
               <div className="flex flex-col sm:flex-row items-center gap-4">
 
-                {/* Custom Styled Quantity Pill */}
                 <div className="flex items-center justify-between bg-slate-900 border border-slate-700 rounded-full w-full sm:w-40 h-14 px-2">
                   <button
                     onClick={() => handleQuantityChange(quantity - 1)}
@@ -295,8 +299,8 @@ const ProductDetails = ({ product }) => {
                     disabled={isAtMaxStock}
                     onClick={() => handleQuantityChange(quantity + 1)}
                     className={`p-2 rounded-full transition-colors ${isAtMaxStock
-                        ? "text-slate-700 cursor-not-allowed"
-                        : "text-slate-400 hover:text-white hover:bg-slate-800"
+                      ? "text-slate-700 cursor-not-allowed"
+                      : "text-slate-400 hover:text-white hover:bg-slate-800"
                       }`}
                   >
                     <PlusIcon size={20} />
