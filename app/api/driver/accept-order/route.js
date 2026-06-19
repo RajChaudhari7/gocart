@@ -67,6 +67,14 @@ export async function POST(request) {
             }
         })
 
+        await prisma.driver.update({
+            where: {
+                id: order.driverId
+            },
+            data: {
+                isAvailable: false
+            }
+        })
         return NextResponse.json({
             success: true
         })
