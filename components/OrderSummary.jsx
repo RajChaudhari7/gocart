@@ -1,6 +1,6 @@
 'use client'
 
-import { PlusIcon, SquarePenIcon, XIcon } from 'lucide-react'
+import { PlusIcon, MapPinIcon, CheckCircle2Icon, TagIcon, XIcon, CreditCardIcon, BanknoteIcon } from 'lucide-react'
 import React, { useState } from 'react'
 import AddressModal from './AddressModal'
 import { useDispatch, useSelector } from 'react-redux'
@@ -24,6 +24,7 @@ const OrderSummary = ({ totalPrice, items }) => {
   const [showAddressModal, setShowAddressModal] = useState(false)
   const [couponCodeInput, setCouponCodeInput] = useState('')
   const [coupon, setCoupon] = useState(null)
+  const [isProcessing, setIsProcessing] = useState(false)
 
   const shippingCost = 50
   const discount = coupon ? (coupon.discount / 100) * totalPrice : 0
@@ -32,6 +33,7 @@ const OrderSummary = ({ totalPrice, items }) => {
   /* ---------------- COUPON ---------------- */
   const handleCouponCode = async (e) => {
     e.preventDefault()
+    if (!couponCodeInput.trim()) return
 
     try {
       if (!user) return toast.error('Please login to apply coupon')
@@ -39,14 +41,14 @@ const OrderSummary = ({ totalPrice, items }) => {
       const token = await getToken()
       const { data } = await axios.post(
         '/api/coupon',
-        { code: couponCodeInput },
+        { code: couponCodeInput.toUpperCase() },
         { headers: { Authorization: `Bearer ${token}` } }
       )
 
       setCoupon(data.coupon)
-      toast.success('Coupon applied')
+      toast.success('Coupon applied successfully!')
     } catch (err) {
-      toast.error(err?.response?.data?.error || err.message)
+      toast.error(err?.response?.data?.error || 'Invalid coupon code')
     }
   }
 
@@ -56,196 +58,212 @@ const OrderSummary = ({ totalPrice, items }) => {
 
     try {
       if (!user) return toast.error('Please login to place order')
-      if (!selectedAddress) return toast.error('Please select delivery address')
+      if (!selectedAddress) return toast.error('Please select a delivery address')
 
+      setIsProcessing(true)
       const token = await getToken()
 
       const orderData = {
         addressId: selectedAddress.id,
         items,
         paymentMethod,
-        couponCode: coupon?.code, // ✅ KEEP COUPON
+        couponCode: coupon?.code,
       }
 
       const { data } = await axios.post('/api/orders', orderData, {
         headers: { Authorization: `Bearer ${token}` },
       })
 
-      // ================= STRIPE =================
+      // Stripe Redirect
       if (paymentMethod === 'STRIPE') {
         window.location.href = data.session.url
         return
       }
 
-      // ================= COD =================
-      toast.success(data.message || 'Order placed successfully')
-
-      // 🔥 CLEAR SERVER CART
+      // COD Flow
+      toast.success(data.message || 'Order placed successfully! 🎉')
       await axios.delete('/api/cart', {
         headers: { Authorization: `Bearer ${token}` },
       })
-
-      // 🔥 CLEAR REDUX CART
       dispatch(clearCart())
-
-      // 🔥 REDIRECT TO ORDERS
       router.push('/orders')
 
     } catch (err) {
       toast.error(err?.response?.data?.error || err.message)
+      setIsProcessing(false)
     }
   }
 
   return (
-    <div
-      className="
-        w-full max-w-lg lg:max-w-[360px]
-        bg-white dark:bg-slate-900
-        border border-slate-200 dark:border-slate-700
-        rounded-2xl p-6
-        shadow-lg
-        text-slate-800 dark:text-slate-200
-      "
-    >
-      {/* TITLE */}
-      <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
-        Payment Summary
+    <div className="bg-slate-900 border border-slate-800 rounded-[2rem] p-6 shadow-xl text-slate-200">
+
+      <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+        Order Summary
       </h2>
 
       {/* PAYMENT METHOD */}
-      <div className="mt-5 space-y-2">
-        <p className="text-sm font-medium">Payment Method</p>
+      <div className="mb-6">
+        <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Payment Method</p>
+        <div className="grid grid-cols-2 gap-3">
 
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input
-            type="radio"
-            name="paymentMethod"
-            checked={paymentMethod === 'COD'}
-            onChange={() => setPaymentMethod('COD')}
-          />
-          Cash on Delivery
-        </label>
+          <div
+            onClick={() => setPaymentMethod('COD')}
+            className={`cursor-pointer rounded-xl border p-3 flex flex-col items-center gap-2 transition-all ${paymentMethod === 'COD'
+                ? 'bg-indigo-500/10 border-indigo-500 text-indigo-400'
+                : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-600'
+              }`}
+          >
+            <BanknoteIcon size={24} />
+            <span className="text-xs font-semibold">COD</span>
+          </div>
 
-        <label
-          className="flex items-center gap-2 cursor-not-allowed opacity-50"
-          onClick={() => toast.error('Stripe service is currently unavailable')}
-        >
-          <input
-            type="radio"
-            name="paymentMethod"
-            disabled
-          />
-          Stripe Payment (Unavailable)
-        </label>
+          <div
+            onClick={() => toast.error('Stripe service is currently unavailable')}
+            className={`cursor-not-allowed opacity-50 rounded-xl border p-3 flex flex-col items-center gap-2 transition-all ${paymentMethod === 'STRIPE'
+                ? 'bg-indigo-500/10 border-indigo-500 text-indigo-400'
+                : 'bg-slate-950 border-slate-800 text-slate-500'
+              }`}
+          >
+            <CreditCardIcon size={24} />
+            <span className="text-xs font-semibold">Card</span>
+          </div>
+
+        </div>
       </div>
 
-      {/* ADDRESS */}
-      <div className="mt-6 border-t pt-4">
-        <p className="text-sm font-medium mb-2">Delivery Address</p>
+      {/* ADDRESS SECTION */}
+      <div className="mb-6 pt-6 border-t border-slate-800/80">
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Delivery Address</p>
+          <button
+            onClick={() => setShowAddressModal(true)}
+            className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 flex items-center gap-1 transition-colors"
+          >
+            <PlusIcon size={14} /> Add New
+          </button>
+        </div>
 
         {selectedAddress ? (
-          <div className="flex items-start justify-between gap-2">
-            <p className="text-sm">
-              {selectedAddress.name}, {selectedAddress.city},{' '}
-              {selectedAddress.state} - {selectedAddress.zip}
-            </p>
-            <SquarePenIcon
-              size={18}
-              className="cursor-pointer"
+          <div className="bg-slate-950 border border-indigo-500/30 rounded-xl p-4 relative group">
+            <div className="flex gap-3">
+              <MapPinIcon size={18} className="text-indigo-400 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-bold text-white mb-1">{selectedAddress.name}</p>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  {selectedAddress.city}, {selectedAddress.state} <br /> {selectedAddress.zip}
+                </p>
+              </div>
+            </div>
+            <button
               onClick={() => setSelectedAddress(null)}
-            />
+              className="absolute top-3 right-3 text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-1 rounded transition-colors"
+            >
+              Change
+            </button>
           </div>
         ) : (
-          <>
-            {addressList.length > 0 && (
-              <select
-                className="w-full mt-2 p-2 rounded border"
-                onChange={e => {
-                  const index = e.target.value
-                  if (index !== '') {
-                    setSelectedAddress(addressList[index])
-                  }
-                }}
-              >
-                <option value="">Select Address</option>
-                {addressList.map((addr, i) => (
-                  <option key={i} value={i}>
-                    {addr.name}, {addr.city}
-                  </option>
-                ))}
-              </select>
-            )}
-
-            <button
-              onClick={() => setShowAddressModal(true)}
-              className="flex items-center gap-1 text-sm mt-2"
+          <div className="relative">
+            {/* FIXED SELECT DROPDOWN */}
+            <select
+              className="w-full bg-slate-950 text-white text-sm border border-slate-700 hover:border-slate-600 rounded-xl p-3.5 appearance-none outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all cursor-pointer"
+              onChange={e => {
+                const index = e.target.value
+                if (index !== '') setSelectedAddress(addressList[index])
+              }}
+              defaultValue=""
             >
-              Add Address <PlusIcon size={16} />
-            </button>
-          </>
+              <option value="" disabled className="bg-slate-900 text-slate-400">Choose an address...</option>
+              {addressList.map((addr, i) => (
+                <option key={i} value={i} className="bg-slate-900 text-white">
+                  {addr.name} — {addr.city}
+                </option>
+              ))}
+            </select>
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">
+              ▼
+            </div>
+          </div>
         )}
       </div>
 
-      {/* PRICE BREAKDOWN */}
-      <div className="mt-6 border-t pt-4 space-y-2 text-sm">
-        <div className="flex justify-between">
-          <span>Subtotal</span>
-          <span>{currency}{totalPrice.toLocaleString()}</span>
-        </div>
-
-        <div className="flex justify-between">
-          <span>Shipping</span>
-          <Protect plan="prime" fallback={`${currency}${shippingCost}`}>
-            Free
-          </Protect>
-        </div>
-
-        {coupon && (
-          <div className="flex justify-between text-green-600">
-            <span>Coupon</span>
-            <span>-{currency}{discount.toFixed(2)}</span>
-          </div>
-        )}
-
-        {/* COUPON INPUT */}
+      {/* COUPON SECTION */}
+      <div className="mb-6 pt-6 border-t border-slate-800/80">
         {!coupon ? (
-          <form onSubmit={handleCouponCode} className="flex gap-2 mt-3">
+          <form onSubmit={handleCouponCode} className="relative flex items-center">
+            <TagIcon size={18} className="absolute left-3.5 text-slate-500" />
             <input
               value={couponCodeInput}
               onChange={e => setCouponCodeInput(e.target.value)}
-              placeholder="Coupon Code"
-              className="flex-1 p-2 rounded border"
+              placeholder="Have a promo code?"
+              className="w-full bg-slate-950 border border-slate-800 rounded-xl py-3 pl-10 pr-24 text-sm text-white placeholder-slate-500 outline-none focus:border-indigo-500 transition-colors uppercase"
             />
-            <button className="bg-slate-800 text-white px-4 rounded">
+            <button
+              type="submit"
+              disabled={!couponCodeInput.trim()}
+              className="absolute right-2 top-2 bottom-2 bg-slate-800 hover:bg-indigo-600 disabled:bg-slate-800 disabled:text-slate-600 text-white text-xs font-bold px-4 rounded-lg transition-colors"
+            >
               Apply
             </button>
           </form>
         ) : (
-          <div className="flex items-center justify-between mt-2 text-xs">
-            <span className="font-medium">
-              {coupon.code.toUpperCase()}
-            </span>
-            <XIcon
-              size={16}
-              className="cursor-pointer hover:text-red-500"
-              onClick={() => setCoupon(null)}
-            />
+          <div className="flex items-center justify-between bg-emerald-500/10 border border-emerald-500/20 p-3 rounded-xl">
+            <div className="flex items-center gap-2">
+              <CheckCircle2Icon size={18} className="text-emerald-400" />
+              <span className="text-sm font-bold text-emerald-400 uppercase tracking-wide">
+                {coupon.code}
+              </span>
+            </div>
+            <button
+              onClick={() => { setCoupon(null); setCouponCodeInput(''); }}
+              className="text-emerald-400 hover:text-emerald-300 p-1 bg-emerald-500/10 rounded-md transition-colors"
+            >
+              <XIcon size={14} />
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* PRICE BREAKDOWN */}
+      <div className="pt-6 border-t border-slate-800/80 space-y-3">
+        <div className="flex justify-between text-sm text-slate-400">
+          <span>Subtotal</span>
+          <span className="font-medium text-white">{currency}{totalPrice.toLocaleString()}</span>
+        </div>
+
+        <div className="flex justify-between text-sm text-slate-400">
+          <span>Shipping</span>
+          <Protect plan="prime" fallback={
+            <span className="font-medium text-white">{currency}{shippingCost}</span>
+          }>
+            <span className="font-bold text-emerald-400">Free</span>
+          </Protect>
+        </div>
+
+        {coupon && (
+          <div className="flex justify-between text-sm text-emerald-400 font-medium">
+            <span>Discount ({coupon.discount}%)</span>
+            <span>-{currency}{discount.toFixed(2)}</span>
           </div>
         )}
       </div>
 
       {/* TOTAL */}
-      <div className="flex justify-between items-center mt-6 text-lg font-semibold">
-        <span>Total</span>
-        <span>{currency}{finalTotal.toFixed(2)}</span>
+      <div className="flex justify-between items-center mt-6 pt-6 border-t border-slate-700 border-dashed">
+        <span className="text-base text-slate-400">Total</span>
+        <span className="text-3xl font-black text-white">{currency}{finalTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
       </div>
 
-      {/* PLACE ORDER */}
+      {/* PLACE ORDER BUTTON */}
       <button
         onClick={handlePlaceOrder}
-        className="w-full mt-6 py-3 rounded-xl bg-slate-900 text-white"
+        disabled={isProcessing || !selectedAddress}
+        className={`w-full mt-8 py-4 rounded-xl font-bold tracking-wide transition-all shadow-lg flex items-center justify-center gap-2
+          ${isProcessing || !selectedAddress
+            ? 'bg-slate-800 text-slate-500 cursor-not-allowed shadow-none'
+            : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-500/25 active:scale-[0.98]'
+          }`}
       >
-        Place Order
+        {isProcessing ? 'Processing...' : 'Complete Checkout'}
       </button>
 
       {showAddressModal && (
