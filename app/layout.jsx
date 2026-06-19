@@ -32,7 +32,7 @@ export default function RootLayout({ children }) {
   return (
     <ClerkProvider>
       <html lang="en">
-        <body className={`${outfit.className} antialiased bg-white text-slate-900`}>
+        <body className={`${outfit.className} antialiased bg-slate-50 text-slate-900`}>
           <StoreProvider>
             {children}
             <Toaster />
