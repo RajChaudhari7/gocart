@@ -125,12 +125,11 @@ export default function TrackingModal({ order, onClose }) {
           animate={{ scale: 1, y: 0, opacity: 1 }}
           exit={{ scale: 0.95, y: 40, opacity: 0 }}
           transition={{ type: "spring", stiffness: 180, damping: 18 }}
-
           className="w-full max-w-2xl 
-    max-h-[90vh] overflow-hidden 
-    bg-gradient-to-br from-[#020617] via-[#020617]/95 to-black
-    border border-white/10 
-    rounded-2xl shadow-2xl text-white flex flex-col"
+            max-h-[90vh] overflow-hidden 
+            bg-gradient-to-br from-[#020617] via-[#020617]/95 to-black
+            border border-white/10 
+            rounded-2xl shadow-2xl text-white flex flex-col"
         >
 
           {/* 🔝 HEADER (sticky feel) */}
@@ -191,8 +190,8 @@ export default function TrackingModal({ order, onClose }) {
               </span>
             </div>
 
-            {/* 🚚 DRIVER */}
-            {order.driver && (
+            {/* 🚚 DRIVER - Only shows if driver exists AND has accepted the order */}
+            {order.driver && order.driverAccepted && (
               <div className="p-4 rounded-xl bg-white/5 border border-white/10 backdrop-blur">
                 <p className="text-xs text-white/50 mb-2">Delivery Partner</p>
 
@@ -242,10 +241,10 @@ export default function TrackingModal({ order, onClose }) {
                     {/* ICON */}
                     <div
                       className={`
-                  w-9 h-9 flex items-center justify-center rounded-full border
+                  w-9 h-9 flex items-center justify-center rounded-full border relative z-10
                   ${isCompleted && "bg-emerald-500 border-emerald-500"}
                   ${isActive && "bg-indigo-500 border-indigo-500 animate-pulse"}
-                  ${!isCompleted && !isActive && "bg-white/10 border-white/20"}
+                  ${!isCompleted && !isActive && "bg-[#020617] border-white/20"}
                 `}
                     >
                       <Icon size={16} />
