@@ -25,7 +25,7 @@ function ShopContent() {
   const products = useSelector((state) => state.product.list || [])
 
   const [category, setCategory] = useState(categoryFromURL || 'all')
-  const [subCategory, setSubCategory] = useState('all') // ✅ Added Subcategory state
+  const [subCategory, setSubCategory] = useState('all')
   const [sort, setSort] = useState('')
   const [priceRange, setPriceRange] = useState('ALL')
   const [showMobileFilter, setShowMobileFilter] = useState(false)
@@ -52,7 +52,7 @@ function ShopContent() {
     return () => clearTimeout(delay)
   }, [searchInput, router])
 
-  /* ✅ DYNAMIC CATEGORIES (Only Available Ones) */
+  /* ✅ DYNAMIC CATEGORIES */
   const allCategories = useMemo(() => {
     const productCategories = products
       .map((p) => p.category?.trim())
@@ -62,14 +62,15 @@ function ShopContent() {
     return ['all', ...uniqueCategories]
   }, [products])
 
-  /* ✅ DYNAMIC SUB-CATEGORIES (Based on selected category) */
+  /* ✅ DYNAMIC SUB-CATEGORIES (Contextual & Robust) */
   const availableSubCategories = useMemo(() => {
     if (category === 'all') return []
 
     const subCats = products
-      .filter((p) => p.category?.toLowerCase() === category.toLowerCase())
+      // Make sure spaces and casing don't break the match
+      .filter((p) => p.category?.trim().toLowerCase() === category.trim().toLowerCase())
       .map((p) => p.subCategory?.trim())
-      .filter(Boolean)
+      .filter(Boolean) // This removes null, undefined, or empty strings
 
     const uniqueSubCats = Array.from(new Set(subCats))
     return uniqueSubCats.length > 0 ? ['all', ...uniqueSubCats] : []
@@ -86,12 +87,12 @@ function ShopContent() {
       .filter((p) =>
         category === 'all'
           ? true
-          : p.category?.toLowerCase() === category.toLowerCase()
+          : p.category?.trim().toLowerCase() === category.trim().toLowerCase()
       )
       .filter((p) =>
         subCategory === 'all'
           ? true
-          : p.subCategory?.toLowerCase() === subCategory.toLowerCase()
+          : p.subCategory?.trim().toLowerCase() === subCategory.trim().toLowerCase()
       )
       .filter((p) => {
         const price = Number(p.price) || 0
@@ -191,6 +192,7 @@ function ShopContent() {
             <AnimatePresence>
               {availableSubCategories.length > 0 && (
                 <motion.div
+                  key="subcategories-desktop" // ✅ CRITICAL: Required for Framer Motion to work
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
                   exit={{ opacity: 0, height: 0 }}
@@ -364,6 +366,7 @@ function ShopContent() {
                 <AnimatePresence>
                   {availableSubCategories.length > 0 && (
                     <motion.div
+                      key="subcategories-mobile" // ✅ CRITICAL: Required for Framer Motion to work
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: 'auto' }}
                       exit={{ opacity: 0, height: 0 }}
