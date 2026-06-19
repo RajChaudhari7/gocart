@@ -3,12 +3,12 @@
 import { useState, useEffect } from "react"
 import { useDispatch, useSelector } from "react-redux"
 import Image from "next/image"
-import { 
-  StarIcon, 
-  EarthIcon, 
-  CreditCardIcon, 
-  UserIcon, 
-  MinusIcon, 
+import {
+  StarIcon,
+  EarthIcon,
+  CreditCardIcon,
+  UserIcon,
+  MinusIcon,
   PlusIcon,
   ShoppingCartIcon,
   AlertCircleIcon
@@ -165,7 +165,7 @@ const ProductDetails = ({ product }) => {
           >
             {/* Subtle glow behind the image */}
             <div className="absolute inset-0 bg-indigo-500/10 blur-[100px] rounded-full" />
-            
+
             <motion.div
               drag="x"
               dragConstraints={{ left: 0, right: 0 }}
@@ -199,12 +199,12 @@ const ProductDetails = ({ product }) => {
 
         {/* ---------------- DETAILS ---------------- */}
         <div className="flex-1 flex flex-col justify-center">
-          
+
           {/* Brand/Category Tag (Optional) */}
           <span className="text-indigo-400 font-semibold tracking-wider text-sm uppercase mb-3">
             {product.category || "Premium Product"}
           </span>
-          
+
           <h1 className="text-4xl lg:text-5xl font-extrabold tracking-tight text-white mb-4 leading-tight">
             {product.name}
           </h1>
@@ -281,7 +281,7 @@ const ProductDetails = ({ product }) => {
           <div className="mt-auto pt-6 border-t border-slate-800/80">
             {inCart ? (
               <div className="flex flex-col sm:flex-row items-center gap-4">
-                
+
                 {/* Custom Styled Quantity Pill */}
                 <div className="flex items-center justify-between bg-slate-900 border border-slate-700 rounded-full w-full sm:w-40 h-14 px-2">
                   <button
@@ -294,11 +294,10 @@ const ProductDetails = ({ product }) => {
                   <button
                     disabled={isAtMaxStock}
                     onClick={() => handleQuantityChange(quantity + 1)}
-                    className={`p-2 rounded-full transition-colors ${
-                      isAtMaxStock 
-                        ? "text-slate-700 cursor-not-allowed" 
+                    className={`p-2 rounded-full transition-colors ${isAtMaxStock
+                        ? "text-slate-700 cursor-not-allowed"
                         : "text-slate-400 hover:text-white hover:bg-slate-800"
-                    }`}
+                      }`}
                   >
                     <PlusIcon size={20} />
                   </button>
