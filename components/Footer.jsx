@@ -12,15 +12,13 @@ const Footer = () => {
       title: "For Local Shops",
       links: [
         { text: "Register Your Shop", path: "/create-store" },
-        { text: "Seller Dashboard", path: "/seller" },
-        { text: "Membership Plans", path: "/pricing" },
+        { text: "Seller Dashboard", path: "/store" },       
         { text: "Seller Guidelines", path: "/guidelines" },
       ],
     },
     {
       title: "Support & Legal",
       links: [
-        { text: "Help Center", path: "/help" },
         { text: "Contact Support", path: "/contact" },
         { text: "Terms of Service", path: "/terms" },
         { text: "Privacy Policy", path: "/privacy" },
