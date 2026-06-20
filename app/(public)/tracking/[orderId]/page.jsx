@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import axios from "axios";
 import { useAuth } from "@clerk/nextjs";
 import toast from "react-hot-toast";
@@ -55,6 +56,11 @@ const formatDateTime = (dateStr) => {
         minute: "2-digit",
     });
 };
+
+const LiveMap = dynamic(() => import("@/components/LiveMap"), {
+    ssr: false,
+    loading: () => <div className="h-full w-full flex items-center justify-center text-white/50 bg-white/5 animate-pulse">Loading Live Map...</div>
+});
 
 export default function TrackingPage() {
     const { orderId } = useParams();
@@ -226,28 +232,25 @@ export default function TrackingPage() {
                     <div className="lg:col-span-2 space-y-6">
 
                         {/* LIVE MAP WIDGET */}
+                        {/* LIVE MAP WIDGET */}
                         {driverLocation && (
-                            <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden backdrop-blur-xl shadow-2xl h-[300px] relative">
-                                {/* CSS Invert trick to make OpenStreetMap dark themed! */}
-                                <iframe
-                                    width="100%"
-                                    height="100%"
-                                    frameBorder="0"
-                                    scrolling="no"
-                                    marginHeight="0"
-                                    marginWidth="0"
-                                    style={{ filter: "invert(100%) hue-rotate(180deg) contrast(90%)" }}
-                                    src={`https://www.openstreetmap.org/export/embed.html?bbox=${driverLocation.lng - 0.008},${driverLocation.lat - 0.008},${driverLocation.lng + 0.008},${driverLocation.lat + 0.008}&layer=mapnik&marker=${driverLocation.lat},${driverLocation.lng}`}
-                                ></iframe>
+                            <div className="bg-white/5 border border-white/10 rounded-2xl p-1 overflow-hidden backdrop-blur-xl shadow-2xl h-[350px] relative z-0">
+
+                                <LiveMap
+                                    driverLocation={driverLocation}
+                                    customerLocation={{
+                                        lat: order.address?.latitude || order.store?.latitude,
+                                        lng: order.address?.longitude || order.store?.longitude
+                                    }}
+                                />
 
                                 {/* Floating Status Badge */}
-                                <div className="absolute top-4 left-4 bg-black/80 text-emerald-400 px-4 py-2 rounded-full text-xs font-semibold backdrop-blur-md border border-white/10 flex items-center gap-2 shadow-lg">
+                                <div className="absolute top-5 left-5 bg-black/80 text-emerald-400 px-4 py-2 rounded-full text-xs font-semibold backdrop-blur-md border border-white/10 flex items-center gap-2 shadow-lg z-[1000]">
                                     <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                                    Live Location
+                                    Live Navigation
                                 </div>
                             </div>
                         )}
-
                         {/* TIMELINE */}
                         <div className="bg-white/5 border border-white/10 rounded-2xl p-8 backdrop-blur-xl shadow-2xl relative">
                             <h2 className="text-lg font-semibold mb-8 border-b border-white/10 pb-4">Tracking Timeline</h2>
@@ -289,11 +292,11 @@ export default function TrackingPage() {
                                             {/* Text Context */}
                                             <div className="pt-2">
                                                 <p className={`text-base font-semibold tracking-wide
-                          ${isCompleted || isActive ? "text-white" : "text-white/40"}`}>
+                                                    ${isCompleted || isActive ? "text-white" : "text-white/40"}`}>
                                                     {step.label}
                                                 </p>
                                                 <p className={`text-sm mt-1 ${isCompleted || isActive ? "text-white/60" : "text-white/30"}`}>
-                                                    {formattedDate || "Pending update..."}
+                                                    {formattedDate || (isCompleted ? "Completed" : isActive ? "In Progress..." : "Pending update...")}
                                                 </p>
                                             </div>
                                         </div>
