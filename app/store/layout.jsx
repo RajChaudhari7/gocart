@@ -1,21 +1,21 @@
 import StoreLayout from "@/components/store/StoreLayout";
 import { SignedIn, SignedOut, SignIn } from "@clerk/nextjs";
 
-export const metadata = {
-  title: "Nandurbar Bazar Seller",
-  manifest: "/store-manifest.json",
+// export const metadata = {
+//   title: "Nandurbar Bazar Seller",
+//   manifest: "/store-manifest.json",
 
-  icons: {
-    icon: "/seller-192.png",
-    apple: "/seller-192.png"
-  },
+//   icons: {
+//     icon: "/seller-192.png",
+//     apple: "/seller-192.png"
+//   },
 
-  appleWebApp: {
-    capable: true,
-    title: "NB Seller",
-    statusBarStyle: "black-translucent"
-  }
-};
+//   appleWebApp: {
+//     capable: true,
+//     title: "NB Seller",
+//     statusBarStyle: "black-translucent"
+//   }
+// };
 
 export default function RootAdminLayout({ children }) {
   return (

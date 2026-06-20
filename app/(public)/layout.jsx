@@ -9,24 +9,6 @@ import { fetchCart, uploadCart } from "@/lib/features/cart/cartSlice";
 import { fetchAddress } from "@/lib/features/address/addressSlice";
 import { fetchUserRatings } from "@/lib/features/rating/ratingSlice";
 
-export const metadata = {
-    title: "Nandurbar Bazar - Shop smarter",
-    description: "Nandurbar Bazar - Shop smarter",
-    manifest: "/manifest.json",
-
-    themeColor: "#06b6d4",
-
-    icons: {
-        icon: "/icon-192.png",
-        apple: "/icon-192.png",
-    },
-
-    appleWebApp: {
-        capable: true,
-        statusBarStyle: "default",
-        title: "Nandurbar Bazar",
-    },
-}
 
 export default function PublicLayout({ children }) {
 
