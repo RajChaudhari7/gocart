@@ -298,6 +298,21 @@ export default function StoreOrders() {
         setIsModalOpen(false)
     }
 
+    // Helper to highlight the last 4 digits of the order ID
+    const HighlightOrderId = ({ id }) => {
+        if (!id) return null;
+        const start = id.slice(0, -4);
+        const end = id.slice(-4);
+        return (
+            <div className="flex items-center text-sm font-mono text-gray-500 bg-gray-50 px-2 py-1 rounded w-fit border border-gray-200 mb-3 shadow-sm">
+                <span>#{start}</span>
+                <span className="text-indigo-700 font-bold text-base tracking-widest bg-indigo-100 px-1 rounded ml-[1px]">
+                    {end}
+                </span>
+            </div>
+        );
+    }
+
     if (loading) return <Loading />
 
     return (
@@ -405,7 +420,7 @@ export default function StoreOrders() {
                                 onClick={() => openModal(order)}
                                 className="bg-white rounded-xl shadow-sm border p-5 hover:shadow-md transition cursor-pointer border-l-4 border-indigo-500"
                             >
-                                <div className="flex justify-between items-center mb-3">
+                                <div className="flex justify-between items-start mb-2">
                                     <h2 className="text-lg font-medium">{order.user?.name}</h2>
                                     <span className={`px-3 py-1 rounded-full text-xs font-semibold
                                         ${order.status === "DELIVERED" ? "bg-green-100 text-green-800"
@@ -417,7 +432,10 @@ export default function StoreOrders() {
                                     </span>
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-3 text-gray-600 text-sm">
+                                {/* Inserted Highlighted Order ID here */}
+                                <HighlightOrderId id={order.id} />
+
+                                <div className="grid grid-cols-2 gap-3 text-gray-600 text-sm mt-4">
                                     <div><b className="text-gray-800">Your Earnings:</b> <span className="text-emerald-600 font-semibold">₹{finances.sellerEarnings.toFixed(2)}</span></div>
                                     <div><b className="text-gray-800">Payment:</b> {order.paymentMethod}</div>
                                     <div><b className="text-gray-800">Date:</b> {new Date(order.createdAt).toLocaleString()}</div>
@@ -474,7 +492,10 @@ export default function StoreOrders() {
             {isModalOpen && selectedOrder && (
                 <div onClick={closeModal} className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                     <div onClick={e => e.stopPropagation()} className="bg-white rounded-2xl p-6 max-w-2xl w-full shadow-2xl max-h-[90vh] overflow-y-auto">
-                        <h2 className="text-xl font-bold mb-6 text-gray-800">Order Finances & Details</h2>
+                        <div className="mb-6">
+                            <h2 className="text-xl font-bold text-gray-800 mb-2">Order Finances & Details</h2>
+                            <HighlightOrderId id={selectedOrder.id} />
+                        </div>
 
                         {/* FINANCIAL BREAKDOWN */}
                         {(() => {

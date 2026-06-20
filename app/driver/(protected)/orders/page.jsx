@@ -16,7 +16,6 @@ export default function DriverOrders() {
     const [countdown, setCountdown] = useState(60)
 
     const ignoredOrdersRef = useRef([])
-
     const router = useRouter()
 
     const getDriverId = () => {
@@ -25,119 +24,74 @@ export default function DriverOrders() {
     }
 
     const handleAccept = async () => {
-
         if (!incomingOrder) return
-
         try {
-
             await axios.post(
                 "/api/driver/accept-order",
-                {
-                    orderId: incomingOrder.id
-                }
+                { orderId: incomingOrder.id }
             )
-
-            setIgnoredOrders(prev =>
-                prev.filter(id => id !== incomingOrder.id)
-            )
-
+            setIgnoredOrders(prev => prev.filter(id => id !== incomingOrder.id))
             setIncomingOrder(null)
-
             await fetchOrders()
-
             toast.success("Order accepted")
-
-
         } catch (error) {
-
-            toast.error(
-                error?.response?.data?.error ||
-                "Failed to accept order"
-            )
+            toast.error(error?.response?.data?.error || "Failed to accept order")
         }
     }
 
     const handleDecline = async () => {
-
         if (!incomingOrder) return
-
         const orderId = incomingOrder.id
         const driverId = incomingOrder.driverId
-
         setIncomingOrder(null)
         setCountdown(60)
 
         try {
-
             await axios.post(
                 "/api/driver/reassign-order",
-                {
-                    orderId,
-                    currentDriverId: driverId
-                }
+                { orderId, currentDriverId: driverId }
             )
-
             toast.success("Order reassigned")
-
         } catch (error) {
-
-            toast.error(
-                error?.response?.data?.error ||
-                "Failed to reassign"
-            )
+            toast.error(error?.response?.data?.error || "Failed to reassign")
         }
     }
 
     useEffect(() => {
-
         const driverId = getDriverId()
-
         if (!driverId) return
 
-        const watchId =
-            navigator.geolocation.watchPosition(
-
-                async (position) => {
-
-                    try {
-
-                        await axios.post(
-                            "/api/driver/update-location",
-                            {
-                                driverId,
-                                latitude:
-                                    position.coords.latitude,
-                                longitude:
-                                    position.coords.longitude
-                            }
-                        )
-
-                    } catch (error) {
-                        console.error(error)
-                    }
-
-                },
-
-                (error) => {
+        const watchId = navigator.geolocation.watchPosition(
+            async (position) => {
+                try {
+                    await axios.post(
+                        "/api/driver/update-location",
+                        {
+                            driverId,
+                            latitude: position.coords.latitude,
+                            longitude: position.coords.longitude
+                        }
+                    )
+                } catch (error) {
                     console.error(error)
-                },
-
-                {
-                    enableHighAccuracy: true,
-                    maximumAge: 5000,
-                    timeout: 10000
                 }
-            )
+            },
+            (error) => {
+                console.error(error)
+            },
+            {
+                enableHighAccuracy: true,
+                maximumAge: 5000,
+                timeout: 10000
+            }
+        )
 
-        return () =>
-            navigator.geolocation.clearWatch(watchId)
-
+        return () => navigator.geolocation.clearWatch(watchId)
     }, [])
 
     const fetchOrders = async () => {
         try {
             const driverId = getDriverId()
-
             if (!driverId) {
                 toast.error("Driver not logged in")
                 setIsLoading(false)
@@ -156,93 +110,50 @@ export default function DriverOrders() {
 
     useEffect(() => {
         fetchOrders()
-        // Optional: Set up an interval to poll for new orders every 30 seconds
         const interval = setInterval(fetchOrders, 30000)
         return () => clearInterval(interval)
     }, [])
 
     useEffect(() => {
+        const interval = setInterval(async () => {
+            const driver = JSON.parse(localStorage.getItem("driver"))
+            if (!driver?.id) return
 
-        const interval = setInterval(
-            async () => {
+            ignoredOrdersRef.current = ignoredOrders
 
-                const driver =
-                    JSON.parse(
-                        localStorage.getItem("driver")
-                    )
+            try {
+                const { data } = await axios.get(`/api/driver/pending-order?driverId=${driver.id}`)
 
-                if (!driver?.id) return
-
-                ignoredOrdersRef.current = ignoredOrders
-
-                try {
-
-                    const { data } =
-                        await axios.get(
-                            `/api/driver/pending-order?driverId=${driver.id}`
-                        )
-
-                    if (
-                        data.order &&
-                        !incomingOrder &&
-                        !ignoredOrders.includes(data.order.id)
-                    ) {
-
-                        setIncomingOrder(data.order)
-
-                        setIgnoredOrders(prev => [
-                            ...prev,
-                            data.order.id
-                        ])
-
-                        setCountdown(60)
-
-                        toast.success(
-                            "New Delivery Request"
-                        )
-                    }
-
-                } catch (error) {
-                    console.error(error)
+                if (data.order && !incomingOrder && !ignoredOrders.includes(data.order.id)) {
+                    setIncomingOrder(data.order)
+                    setIgnoredOrders(prev => [...prev, data.order.id])
+                    setCountdown(60)
+                    toast.success("New Delivery Request")
                 }
-
-            },
-            2000
-        )
+            } catch (error) {
+                console.error(error)
+            }
+        }, 2000)
 
         return () => clearInterval(interval)
-
     }, [ignoredOrders, incomingOrder])
 
     useEffect(() => {
-
         if (!incomingOrder) return
 
         const timer = setInterval(() => {
-
             setCountdown(prev => {
-
                 if (prev <= 1) {
-
                     clearInterval(timer)
-
-                    toast.error(
-                        "Order request expired"
-                    )
-
+                    toast.error("Order request expired")
                     handleDecline()
-
                     return 0
                 }
-
                 return prev - 1
-
             })
-
         }, 1000)
 
         return () => clearInterval(timer)
-
     }, [incomingOrder])
 
     const verifyOtp = async () => {
@@ -271,7 +182,6 @@ export default function DriverOrders() {
     const updateStatus = async (orderId, status) => {
         try {
             const driverId = getDriverId()
-
             await axios.post("/api/driver/update-order-status", {
                 orderId,
                 status,
@@ -293,63 +203,34 @@ export default function DriverOrders() {
     }
 
     const canReachShop = async (order) => {
-
         return new Promise((resolve) => {
-
             navigator.geolocation.getCurrentPosition(
-
                 (position) => {
-
                     const lat1 = position.coords.latitude
                     const lon1 = position.coords.longitude
-
                     const lat2 = order.store.latitude
                     const lon2 = order.store.longitude
-
                     const R = 6371e3
-
                     const φ1 = lat1 * Math.PI / 180
                     const φ2 = lat2 * Math.PI / 180
-
-                    const Δφ =
-                        (lat2 - lat1) *
-                        Math.PI / 180
-
-                    const Δλ =
-                        (lon2 - lon1) *
-                        Math.PI / 180
+                    const Δφ = (lat2 - lat1) * Math.PI / 180
+                    const Δλ = (lon2 - lon1) * Math.PI / 180
 
                     const a =
-                        Math.sin(Δφ / 2) *
-                        Math.sin(Δφ / 2) +
-                        Math.cos(φ1) *
-                        Math.cos(φ2) *
-                        Math.sin(Δλ / 2) *
-                        Math.sin(Δλ / 2)
+                        Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+                        Math.cos(φ1) * Math.cos(φ2) *
+                        Math.sin(Δλ / 2) * Math.sin(Δλ / 2)
 
-                    const c =
-                        2 *
-                        Math.atan2(
-                            Math.sqrt(a),
-                            Math.sqrt(1 - a)
-                        )
-
-                    const distance =
-                        R * c
+                    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+                    const distance = R * c
 
                     resolve(distance <= 100)
-
                 },
-
                 () => resolve(false)
-
             )
-
         })
-
     }
 
-    // Helper component for styled status badges
     const StatusBadge = ({ status }) => {
         const styles = {
             DRIVER_ASSIGNED: "bg-blue-100 text-blue-700 border-blue-200",
@@ -358,14 +239,27 @@ export default function DriverOrders() {
             OUT_FOR_DELIVERY: "bg-yellow-100 text-yellow-700 border-yellow-200",
             DELIVERY_INITIATED: "bg-green-100 text-green-700 border-green-200",
         }
-
         const formatStatus = (s) => s.replace(/_/g, ' ')
-
         return (
             <span className={`px-3 py-1 text-xs font-semibold rounded-full border ${styles[status] || "bg-gray-100 text-gray-700 border-gray-200"}`}>
                 {formatStatus(status)}
             </span>
         )
+    }
+
+    // NEW: Helper to highlight the last 4 digits of the order ID
+    const HighlightOrderId = ({ id }) => {
+        if (!id) return null;
+        const start = id.slice(0, -4);
+        const end = id.slice(-4);
+        return (
+            <div className="flex items-center text-sm font-mono text-gray-500 bg-gray-100 px-2 py-1 rounded w-fit border border-gray-200 mb-4 shadow-sm">
+                <span>#{start}</span>
+                <span className="text-indigo-700 font-bold text-base tracking-widest bg-indigo-100 px-1 rounded ml-[1px]">
+                    {end}
+                </span>
+            </div>
+        );
     }
 
     return (
@@ -379,7 +273,6 @@ export default function DriverOrders() {
                             </h1>
                             <p className="text-gray-500 text-sm mt-1">Manage your active assignments</p>
                         </div>
-                        {/* Optional: Add a refresh button */}
                         <button
                             onClick={fetchOrders}
                             className="p-2 bg-white border shadow-sm rounded-full hover:bg-gray-50 transition"
@@ -391,7 +284,7 @@ export default function DriverOrders() {
 
                     {incomingOrder && (
                         <div className="fixed top-6 right-6 z-50 bg-white shadow-2xl border border-gray-100 rounded-2xl p-5 w-80 animate-in slide-in-from-top-4 duration-300">
-                            <div className="flex items-center gap-3 mb-4">
+                            <div className="flex items-center gap-3 mb-2">
                                 <div className="bg-blue-100 p-2 rounded-full">
                                     <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
                                 </div>
@@ -399,6 +292,9 @@ export default function DriverOrders() {
                                     New Delivery Request
                                 </h2>
                             </div>
+                            
+                            {/* Inserted Highlighted Order ID here */}
+                            <HighlightOrderId id={incomingOrder.id} />
 
                             <div className="space-y-3 mb-5">
                                 <div className="flex justify-between items-center text-sm">
@@ -452,7 +348,6 @@ export default function DriverOrders() {
                     )}
 
                     <div className="space-y-6">
-                        {/* Loading State */}
                         {isLoading && (
                             <div className="flex flex-col items-center justify-center py-20">
                                 <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
@@ -460,7 +355,6 @@ export default function DriverOrders() {
                             </div>
                         )}
 
-                        {/* Empty State: Searching for orders */}
                         {!isLoading && orders.length === 0 && (
                             <div className="flex flex-col items-center justify-center py-24 px-4 text-center bg-white rounded-2xl border border-dashed border-gray-300">
                                 <div className="relative flex justify-center items-center w-20 h-20 mb-6">
@@ -474,72 +368,62 @@ export default function DriverOrders() {
                             </div>
                         )}
 
-                        {/* Orders List */}
                         {!isLoading && orders.map(order => (
                             <div key={order.id} className="bg-white border border-gray-100 shadow-sm hover:shadow-md transition-shadow rounded-2xl p-5 md:p-6">
                                 <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-6">
                                     <div>
-                                        <div className="flex items-center gap-3 mb-2">
+                                        <div className="flex items-center gap-3 mb-3">
                                             <h2 className="text-lg font-bold text-gray-900">{order.user?.name}</h2>
                                             <StatusBadge status={order.status} />
                                         </div>
+                                        
+                                        {/* Inserted Highlighted Order ID here */}
+                                        <HighlightOrderId id={order.id} />
+
                                         <p className="text-xl font-bold text-gray-900 mb-4">₹{order.total}</p>
 
                                         <div className="flex items-start gap-2 text-gray-600 text-sm bg-gray-50 p-3 rounded-lg">
                                             <svg className="w-5 h-5 text-gray-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.243-4.243a8 8 0 1111.314 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                                             <div>
-
                                                 {["DRIVER_ASSIGNED", "REACHED_SHOP"].includes(order.status) ? (
-
                                                     <>
                                                         <p className="font-medium text-gray-900">
                                                             Store: {order.store?.name}
                                                         </p>
-
                                                         <p>
                                                             {order.store?.address}
                                                         </p>
-
                                                         <p className="text-blue-600 font-semibold">
                                                             {order.distanceToStore
                                                                 ? `${order.distanceToStore.toFixed(2)} km away`
                                                                 : "Calculating distance..."}
                                                         </p>
                                                     </>
-
                                                 ) : (
-
                                                     <>
                                                         <p className="font-medium text-gray-900">
                                                             {order.address?.street}
                                                         </p>
-
                                                         <p>
                                                             {order.address?.city},
                                                             {order.address?.state}
                                                         </p>
-
                                                         <p className="text-blue-600 font-semibold">
                                                             {order.distanceToCustomer
                                                                 ? `${order.distanceToCustomer.toFixed(2)} km away`
                                                                 : "Calculating distance..."}
                                                         </p>
-
                                                         <p className="mt-1 font-medium text-blue-600">
                                                             {order.address?.phone}
                                                         </p>
                                                     </>
-
                                                 )}
-
                                             </div>
                                         </div>
                                     </div>
                                 </div>
 
                                 <div className="pt-4 border-t border-gray-100 flex flex-wrap gap-3">
-
-                                    {/* Show ONLY when Driver is assigned and heading to shop */}
                                     {order.status === "DRIVER_ASSIGNED" && (
                                         <div className="flex gap-3 w-full">
                                             <a
@@ -552,24 +436,18 @@ export default function DriverOrders() {
                                             </a>
 
                                             <button
-                                                disabled={
-                                                    !order.distanceToStore ||
-                                                    order.distanceToStore > 0.1
-                                                }
-                                                onClick={() =>
-                                                    updateStatus(order.id, "REACHED_SHOP")
-                                                }
+                                                disabled={!order.distanceToStore || order.distanceToStore > 0.1}
+                                                onClick={() => updateStatus(order.id, "REACHED_SHOP")}
                                                 className={`flex-1 py-2.5 rounded-xl text-white font-medium transition-colors ${order.distanceToStore <= 0.1
-                                                        ? "bg-blue-600 hover:bg-blue-700 shadow-sm shadow-blue-200"
-                                                        : "bg-gray-400 cursor-not-allowed"
-                                                    }`}
+                                                    ? "bg-blue-600 hover:bg-blue-700 shadow-sm shadow-blue-200"
+                                                    : "bg-gray-400 cursor-not-allowed"
+                                                }`}
                                             >
                                                 Reached Shop
                                             </button>
                                         </div>
                                     )}
 
-                                    {/* Show ONLY when Driver has reached the shop */}
                                     {order.status === "REACHED_SHOP" && (
                                         <button
                                             onClick={() => updateStatus(order.id, "PICKED_UP")}
@@ -579,7 +457,6 @@ export default function DriverOrders() {
                                         </button>
                                     )}
 
-                                    {/* Show ONLY when Driver has picked up the order */}
                                     {order.status === "PICKED_UP" && (
                                         <button
                                             onClick={() => updateStatus(order.id, "OUT_FOR_DELIVERY")}
@@ -589,7 +466,6 @@ export default function DriverOrders() {
                                         </button>
                                     )}
 
-                                    {/* Show ONLY when Driver is heading to the customer */}
                                     {order.status === "OUT_FOR_DELIVERY" && (
                                         <div className="flex flex-col sm:flex-row gap-3 w-full">
                                             <a
@@ -602,12 +478,7 @@ export default function DriverOrders() {
                                             </a>
 
                                             <button
-                                                onClick={() =>
-                                                    updateStatus(
-                                                        order.id,
-                                                        "DELIVERY_INITIATED"
-                                                    )
-                                                }
+                                                onClick={() => updateStatus(order.id, "DELIVERY_INITIATED")}
                                                 className="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium px-4 py-2.5 rounded-xl transition shadow-sm shadow-green-200"
                                             >
                                                 Arrived At Location
@@ -615,7 +486,6 @@ export default function DriverOrders() {
                                         </div>
                                     )}
 
-                                    {/* Show ONLY when Driver has arrived and needs OTP */}
                                     {order.status === "DELIVERY_INITIATED" && (
                                         <div className="flex flex-col sm:flex-row w-full gap-3">
                                             <a
@@ -653,7 +523,6 @@ export default function DriverOrders() {
                         ))}
                     </div>
 
-                    {/* OTP Modal */}
                     {showOtpModal && otpOrder && (
                         <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                             <div className="bg-white p-6 md:p-8 rounded-2xl w-full max-w-sm shadow-2xl animate-in fade-in zoom-in-95 duration-200">
