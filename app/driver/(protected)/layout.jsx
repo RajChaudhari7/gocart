@@ -1,9 +1,9 @@
 import DriverLayout from "@/components/driver/DriverLayout"
 
 export const metadata = {
-    title: "Driver Dashboard",
+    title: "Nandurbar Bazar Driver",
+    manifest: "/driver-manifest.json",
 }
-
 
 export default function Layout({ children }) {
     return (
