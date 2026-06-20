@@ -538,56 +538,65 @@ export default function DriverOrders() {
                                 </div>
 
                                 <div className="pt-4 border-t border-gray-100 flex flex-wrap gap-3">
-                                    <div className="flex gap-3 w-full">
 
-                                        <a
-                                            href={`https://maps.google.com/?q=${order.store?.latitude},${order.store?.longitude}`}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="flex-1 bg-purple-100 text-purple-700 py-2.5 rounded-xl text-center font-medium"
-                                        >
-                                            Navigate
-                                        </a>
+                                    {/* Show ONLY when Driver is assigned and heading to shop */}
+                                    {order.status === "DRIVER_ASSIGNED" && (
+                                        <div className="flex gap-3 w-full">
+                                            <a
+                                                href={`https://maps.google.com/?q=${order.store?.latitude},${order.store?.longitude}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="flex-1 bg-purple-50 hover:bg-purple-100 text-purple-700 py-2.5 rounded-xl text-center font-medium transition-colors"
+                                            >
+                                                Navigate
+                                            </a>
 
-                                        <button
-                                            disabled={
-                                                !order.distanceToStore ||
-                                                order.distanceToStore > 0.1
-                                            }
-                                            onClick={() =>
-                                                updateStatus(order.id, "REACHED_SHOP")
-                                            }
-                                            className={`flex-1 py-2.5 rounded-xl text-white font-medium ${order.distanceToStore <= 0.1
-                                                ? "bg-blue-600"
-                                                : "bg-gray-400 cursor-not-allowed"
-                                                }`}
-                                        >
-                                            Reached Shop
-                                        </button>
+                                            <button
+                                                disabled={
+                                                    !order.distanceToStore ||
+                                                    order.distanceToStore > 0.1
+                                                }
+                                                onClick={() =>
+                                                    updateStatus(order.id, "REACHED_SHOP")
+                                                }
+                                                className={`flex-1 py-2.5 rounded-xl text-white font-medium transition-colors ${order.distanceToStore <= 0.1
+                                                        ? "bg-blue-600 hover:bg-blue-700 shadow-sm shadow-blue-200"
+                                                        : "bg-gray-400 cursor-not-allowed"
+                                                    }`}
+                                            >
+                                                Reached Shop
+                                            </button>
+                                        </div>
+                                    )}
 
-                                    </div>
-
+                                    {/* Show ONLY when Driver has reached the shop */}
                                     {order.status === "REACHED_SHOP" && (
-                                        <button onClick={() => updateStatus(order.id, "PICKED_UP")} className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2.5 rounded-xl transition">
+                                        <button
+                                            onClick={() => updateStatus(order.id, "PICKED_UP")}
+                                            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2.5 rounded-xl transition shadow-sm shadow-indigo-200"
+                                        >
                                             Confirm Pick Up
                                         </button>
                                     )}
 
+                                    {/* Show ONLY when Driver has picked up the order */}
                                     {order.status === "PICKED_UP" && (
-                                        <button onClick={() => updateStatus(order.id, "OUT_FOR_DELIVERY")} className="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-medium px-4 py-2.5 rounded-xl transition">
+                                        <button
+                                            onClick={() => updateStatus(order.id, "OUT_FOR_DELIVERY")}
+                                            className="w-full bg-orange-600 hover:bg-orange-700 text-white font-medium px-4 py-2.5 rounded-xl transition shadow-sm shadow-orange-200"
+                                        >
                                             Start Journey
                                         </button>
                                     )}
 
+                                    {/* Show ONLY when Driver is heading to the customer */}
                                     {order.status === "OUT_FOR_DELIVERY" && (
-
                                         <div className="flex flex-col sm:flex-row gap-3 w-full">
-
                                             <a
                                                 href={`https://maps.google.com/?q=${order.address?.latitude},${order.address?.longitude}`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                className="flex-1 flex items-center justify-center gap-2 bg-purple-100 hover:bg-purple-200 text-purple-700 font-medium px-4 py-2.5 rounded-xl transition"
+                                                className="flex-1 flex items-center justify-center gap-2 bg-purple-50 hover:bg-purple-100 text-purple-700 font-medium px-4 py-2.5 rounded-xl transition-colors"
                                             >
                                                 Navigate
                                             </a>
@@ -599,27 +608,29 @@ export default function DriverOrders() {
                                                         "DELIVERY_INITIATED"
                                                     )
                                                 }
-                                                className="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium px-4 py-2.5 rounded-xl transition"
+                                                className="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium px-4 py-2.5 rounded-xl transition shadow-sm shadow-green-200"
                                             >
                                                 Arrived At Location
                                             </button>
-
                                         </div>
-
                                     )}
 
+                                    {/* Show ONLY when Driver has arrived and needs OTP */}
                                     {order.status === "DELIVERY_INITIATED" && (
                                         <div className="flex flex-col sm:flex-row w-full gap-3">
                                             <a
                                                 href={`https://maps.google.com/?q=${order.address?.latitude},${order.address?.longitude}`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                className="flex-1 flex items-center justify-center gap-2 bg-purple-100 hover:bg-purple-200 text-purple-700 font-medium px-4 py-2.5 rounded-xl transition"
+                                                className="flex-1 flex items-center justify-center gap-2 bg-purple-50 hover:bg-purple-100 text-purple-700 font-medium px-4 py-2.5 rounded-xl transition-colors"
                                             >
                                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg>
                                                 Navigate
                                             </a>
-                                            <button onClick={() => { setOtpOrder(order); setShowOtpModal(true); }} className="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium px-4 py-2.5 rounded-xl transition shadow-sm shadow-green-200">
+                                            <button
+                                                onClick={() => { setOtpOrder(order); setShowOtpModal(true); }}
+                                                className="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium px-4 py-2.5 rounded-xl transition shadow-sm shadow-green-200"
+                                            >
                                                 Verify Delivery OTP
                                             </button>
                                             <button
