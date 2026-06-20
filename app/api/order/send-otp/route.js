@@ -1,5 +1,5 @@
 import prisma from "@/lib/prisma"
-import { generateOtp, hashOtp } from "@/lib/otp"
+import { generateOtp } from "@/lib/otp" // Notice: hashOtp is removed
 import { sendEmail } from "@/lib/sendEmail"
 import { NextResponse } from "next/server"
 
@@ -30,14 +30,17 @@ export async function POST(request) {
             )
         }
 
+        // Generate the 6-digit OTP
         const otp = generateOtp()
 
+        // Store the PLAIN OTP in the database so the tracking page can display it
+        // and the driver app can verify it.
         await prisma.order.update({
             where: {
                 id: orderId
             },
             data: {
-                deliveryOtp: hashOtp(otp),
+                deliveryOtp: String(otp), // Saving as plain string
                 deliveryOtpExpiry: new Date(
                     Date.now() + 10 * 60 * 1000
                 ),
