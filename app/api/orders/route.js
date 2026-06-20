@@ -4,6 +4,10 @@ import { PaymentMethod } from "@prisma/client";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
+const generateNumericOrderId = () => {
+  return Math.floor(1000000000 + Math.random() * 9000000000).toString();
+};
+
 export async function POST(request) {
   try {
     const { userId, has } = getAuth(request);
@@ -89,8 +93,11 @@ export async function POST(request) {
         fullAmount += total;
         const now = new Date();
 
+        const numericOrderId = generateNumericOrderId();
+
         const order = await tx.order.create({
           data: {
+            id: numericOrderId,
             userId,
             storeId,
             addressId,
