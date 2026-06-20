@@ -21,6 +21,16 @@ import { Sun, Moon } from "lucide-react"
 import jsPDF from "jspdf"
 import html2canvas from "html2canvas"
 
+// Helper to calculate financials
+const getOrderFinances = (orderItems) => {
+  const productTotal = orderItems?.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0
+  ) || 0;
+
+  const sellerEarnings = productTotal * 0.90;
+  return { productTotal, sellerEarnings };
+};
 
 export default function Dashboard() {
   const { getToken } = useAuth()
@@ -42,22 +52,9 @@ export default function Dashboard() {
     orders: [],
     topProducts: [],
     storeName: "",
-    storeLogo: ""
+    storeLogo: "",
+    monthlyReport: {}
   })
-
-  const card = (bg) => ({
-    background: bg,
-    padding: "12px",
-    borderRadius: "10px",
-    fontSize: "14px"
-  })
-
-  const box = {
-    background: "white",
-    padding: "15px",
-    borderRadius: "10px",
-    boxShadow: "0 4px 10px rgba(0,0,0,0.05)"
-  }
 
   /* ---------------- YEAR + MONTH FILTER ---------------- */
   const currentYear = new Date().getFullYear()
@@ -65,14 +62,13 @@ export default function Dashboard() {
 
   const [filterYear, setFilterYear] = useState(currentYear)
   const [filterMonth, setFilterMonth] = useState(new Date().getMonth())
-  const [storeActive, setStoreActive] = useState(dashboardData.storeIsActive)
+  const [storeActive, setStoreActive] = useState(false)
   const [toggling, setToggling] = useState(false)
 
   const monthOptions = [
     "Jan", "Feb", "Mar", "Apr", "May", "Jun",
     "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
   ]
-
 
   /* -------------------- FETCH -------------------- */
   const fetchDashboardData = async () => {
@@ -83,6 +79,7 @@ export default function Dashboard() {
         { headers: { Authorization: `Bearer ${token}` } }
       )
       setDashboardData(data.dashboardData)
+      setStoreActive(data.dashboardData.storeIsActive)
     } catch (error) {
       toast.error(error?.response?.data?.error || error.message)
     } finally {
@@ -90,14 +87,10 @@ export default function Dashboard() {
     }
   }
 
-
   useEffect(() => {
-
     navigator.geolocation.getCurrentPosition(
       async (position) => {
-
         const token = await getToken()
-
         await axios.post(
           "/api/store/location",
           {
@@ -112,24 +105,17 @@ export default function Dashboard() {
         )
       }
     )
-
-  }, [])
+  }, [getToken])
 
   useEffect(() => {
     fetchDashboardData()
   }, [filterYear, filterMonth])
 
-  useEffect(() => {
-    setStoreActive(dashboardData.storeIsActive)
-  }, [dashboardData.storeIsActive])
-
   const handleDownloadPDF = async () => {
     const element = document.getElementById("pdf-report")
     if (!element) return
 
-    // FORCE LIGHT MODE + REMOVE TAILWIND EFFECTS
     document.body.style.background = "#ffffff"
-
     await new Promise((resolve) => setTimeout(resolve, 500))
 
     const canvas = await html2canvas(element, {
@@ -139,18 +125,13 @@ export default function Dashboard() {
     })
 
     const imgData = canvas.toDataURL("image/png")
-
     const pdf = new jsPDF("p", "mm", "a4")
-
     const imgWidth = 210
     const imgHeight = (canvas.height * imgWidth) / canvas.width
 
     pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight)
-
     pdf.save(`Report-${filterYear}-${filterMonth + 1}.pdf`)
   }
-
-  /** -------Store Close and Open */
 
   const toggleStore = async () => {
     if (toggling) return
@@ -165,7 +146,6 @@ export default function Dashboard() {
       )
 
       setStoreActive(data.isActive)
-
       toast.success(
         data.isActive ? "Shop is now OPEN 🌞" : "Shop is now CLOSED 🌙"
       )
@@ -176,35 +156,35 @@ export default function Dashboard() {
     }
   }
 
+  /* -------------------- FINANCIAL KPIs -------------------- */
+  const filteredOrders = dashboardData.orders || []
 
-
-  /* -------------------- FILTERED ORDERS (KPIs) -------------------- */
-  const filteredOrders = dashboardData.orders
-
-  const filteredEarnings = useMemo(() => {
+  // Net Earnings (90% of product total, ignoring delivery fees)
+  const netEarnings = useMemo(() => {
     return filteredOrders
       .filter(o => o.status !== "CANCELLED" && o.status !== "RETURNED")
-      .reduce((sum, o) => sum + o.total, 0)
+      .reduce((sum, o) => sum + getOrderFinances(o.orderItems).sellerEarnings, 0)
   }, [filteredOrders])
 
-  const filteredCanceled = useMemo(() => {
-    return filteredOrders.filter(o => o.status === "CANCELLED").length
-  }, [filteredOrders])
+  // Lost Revenue from Cancelled Orders (Product total only)
+  const cancelledRevenueLoss = useMemo(() => {
+    return dashboardData.monthlyReport?.cancelledDetails?.reduce((a, c) => a + (c.price * c.quantity), 0) || 0
+  }, [dashboardData.monthlyReport])
 
-  const totalCanceledOrders = filteredOrders.filter(
-    o => o.status === "CANCELLED"
-  ).length
+  // Lost Revenue from Returned Orders (Product total only)
+  const returnedRevenueLoss = useMemo(() => {
+    return dashboardData.monthlyReport?.returnedDetails?.reduce((a, c) => a + (c.price * c.quantity), 0) || 0
+  }, [dashboardData.monthlyReport])
+
+  const filteredCanceled = filteredOrders.filter(o => o.status === "CANCELLED").length
+  const totalCanceledOrders = filteredCanceled
 
   const productsSoldPercent = filteredOrders.length
-    ? ((filteredOrders.length / dashboardData.totalOrders) * 100).toFixed(1)
-    : 0
-
-  const earningsPercent = filteredEarnings
-    ? ((filteredEarnings / dashboardData.totalEarnings) * 100).toFixed(1)
+    ? ((filteredOrders.length / (dashboardData.totalOrders || 1)) * 100).toFixed(1)
     : 0
 
   const canceledPercent = totalCanceledOrders
-    ? ((filteredCanceled / totalCanceledOrders) * 100).toFixed(1)
+    ? ((filteredCanceled / (totalCanceledOrders || 1)) * 100).toFixed(1)
     : 0
 
   const avgRating = dashboardData.ratings.length
@@ -217,11 +197,8 @@ export default function Dashboard() {
   const stats = [
     { title: "Products", value: dashboardData.totalProducts, icon: ShoppingBasketIcon },
     {
-      title: "Earnings",
-      value:
-        currency +
-        dashboardData.totalEarnings +
-        ` (${earningsPercent}%)`,
+      title: "Net Earnings (90%)",
+      value: currency + netEarnings.toFixed(2),
       icon: CircleDollarSignIcon
     },
     { title: "Orders", value: dashboardData.totalOrders + ` (${productsSoldPercent}%)`, icon: TagsIcon },
@@ -232,12 +209,12 @@ export default function Dashboard() {
     },
     { title: "Avg Rating", value: avgRating + " ⭐", icon: StarIcon },
     { title: "Canceled", value: totalCanceledOrders + ` (${canceledPercent}%)`, icon: XCircleIcon },
-
   ]
 
   /* -------------------- CHART DATA -------------------- */
+  // Scale charts down to 90% logic (optional, assuming chart data is raw totals)
   const earningsData = useMemo(
-    () => dashboardData.earningsChart.map(i => ({ name: i.name, value: i.value || 0 })),
+    () => dashboardData.earningsChart.map(i => ({ name: i.name, value: (i.value || 0) * 0.90 })),
     [dashboardData.earningsChart]
   )
 
@@ -268,7 +245,6 @@ export default function Dashboard() {
         Download Premium Report
       </button>
 
-
       <motion.button
         onClick={toggleStore}
         whileTap={{ scale: 0.9 }}
@@ -294,8 +270,6 @@ export default function Dashboard() {
         {storeActive ? "Shop Open" : "Shop Closed"}
       </span>
 
-
-
       {/* Header + Year Selector */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <motion.div
@@ -310,7 +284,6 @@ export default function Dashboard() {
         </motion.div>
 
         <div className="flex items-center gap-4">
-          {/* YEAR */}
           <div className="flex items-center gap-2">
             <span className="text-sm text-slate-500">Year:</span>
             <select
@@ -324,7 +297,6 @@ export default function Dashboard() {
             </select>
           </div>
 
-          {/* MONTH */}
           <div className="flex items-center gap-2">
             <span className="text-sm text-slate-500">Month:</span>
             <select
@@ -386,7 +358,7 @@ export default function Dashboard() {
           <h3 className="text-sm font-semibold">Insights</h3>
         </div>
         <ul className="text-sm text-slate-600 space-y-1">
-          <li>📈 Earnings for {filterYear}: {currency}{dashboardData.totalEarnings}</li>
+          <li>📈 Net Earnings for {filterYear}: {currency}{netEarnings.toFixed(2)}</li>
           <li>⭐ Average rating: {avgRating}</li>
           <li>❌ {totalCanceledOrders} total canceled orders</li>
         </ul>
@@ -411,7 +383,6 @@ export default function Dashboard() {
             variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
           >
             <div className="flex justify-between gap-6">
-              {/* LEFT */}
               <div className="flex gap-4">
                 {review.user?.image ? (
                   <Image
@@ -440,7 +411,6 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              {/* RIGHT */}
               <div className="text-right">
                 <p className="text-xs text-slate-500">{review.product?.category}</p>
                 <p className="text-sm font-semibold">{review.product?.name}</p>
@@ -535,7 +505,7 @@ export default function Dashboard() {
           marginBottom: "30px"
         }}>
           {[
-            { label: "Net Earnings", value: `${currency}${dashboardData.totalEarnings}`, color: "#0ea5e9", bg: "#f0f9ff", border: "#bae6fd" },
+            { label: "Net Earnings", value: `${currency}${netEarnings.toFixed(2)}`, color: "#0ea5e9", bg: "#f0f9ff", border: "#bae6fd" },
             { label: "Total Orders", value: dashboardData.totalOrders, color: "#10b981", bg: "#ecfdf5", border: "#a7f3d0" },
             { label: "Cancelled", value: dashboardData.monthlyReport?.cancelledOrders || 0, color: "#ef4444", bg: "#fef2f2", border: "#fecaca" },
             { label: "Returned", value: dashboardData.returnedProducts || 0, color: "#f59e0b", bg: "#fffbeb", border: "#fde68a" }
@@ -568,21 +538,21 @@ export default function Dashboard() {
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "14px" }}>
               <tbody>
                 <tr style={{ borderBottom: "1px solid #f1f5f9" }}>
-                  <td style={{ padding: "10px 0", color: "#475569" }}>Net Earnings</td>
+                  <td style={{ padding: "10px 0", color: "#475569" }}>Net Earnings (90%)</td>
                   <td style={{ padding: "10px 0", textAlign: "right", fontWeight: "bold", color: "#0f172a" }}>
-                    {currency}{dashboardData.totalEarnings}
+                    {currency}{netEarnings.toFixed(2)}
                   </td>
                 </tr>
                 <tr style={{ borderBottom: "1px solid #f1f5f9" }}>
                   <td style={{ padding: "10px 0", color: "#475569" }}>Cancelled Revenue Loss</td>
                   <td style={{ padding: "10px 0", textAlign: "right", fontWeight: "bold", color: "#ef4444" }}>
-                    {currency}{dashboardData.monthlyReport?.cancelledDetails?.reduce((a, c) => a + (c.price * c.quantity), 0) || 0}
+                    {currency}{cancelledRevenueLoss.toFixed(2)}
                   </td>
                 </tr>
                 <tr>
                   <td style={{ padding: "10px 0", color: "#475569" }}>Returned Revenue Loss</td>
                   <td style={{ padding: "10px 0", textAlign: "right", fontWeight: "bold", color: "#f59e0b" }}>
-                    {currency}{dashboardData.returnedAmount || 0}
+                    {currency}{returnedRevenueLoss.toFixed(2)}
                   </td>
                 </tr>
               </tbody>
@@ -667,7 +637,5 @@ export default function Dashboard() {
         </div>
       </div>
     </div>
-
-
   )
 }
