@@ -169,6 +169,20 @@ export default function TrackingPage() {
                     {/* LEFT COLUMN: Order Details & Driver */}
                     <div className="lg:col-span-1 space-y-6">
 
+                        {/* OTP Block - Visible ONLY when Delivery is Initiated */}
+                        {order.status === "DELIVERY_INITIATED" && (
+                            <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-6 backdrop-blur-xl shadow-2xl text-center relative overflow-hidden">
+                                <div className="absolute top-0 left-0 w-full h-1 bg-emerald-500 animate-pulse"></div>
+                                <p className="text-xs text-emerald-300/70 mb-2 uppercase tracking-wider font-semibold">Delivery Verification Code</p>
+
+                                <div className="text-3xl md:text-4xl font-bold tracking-[0.25em] text-white bg-black/40 py-4 rounded-xl border border-emerald-500/30">
+                                    {order.deliveryOtp?.length === 6 ? order.deliveryOtp : "CHECK EMAIL"}
+                                </div>
+
+                                <p className="text-xs text-white/50 mt-3">Share this code with the driver to receive your package.</p>
+                            </div>
+                        )}
+
                         {/* Products Card */}
                         <div className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-xl shadow-2xl">
                             <h2 className="text-lg font-semibold mb-4 border-b border-white/10 pb-4">Items</h2>
@@ -231,7 +245,6 @@ export default function TrackingPage() {
                     {/* RIGHT COLUMN: Map & Timeline */}
                     <div className="lg:col-span-2 space-y-6">
 
-                        {/* LIVE MAP WIDGET */}
                         {/* LIVE MAP WIDGET */}
                         {driverLocation && (
                             <div className="bg-white/5 border border-white/10 rounded-2xl p-1 overflow-hidden backdrop-blur-xl shadow-2xl h-[350px] relative z-0">
