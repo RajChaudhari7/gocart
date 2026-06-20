@@ -1,10 +1,10 @@
 'use client'
 
 import { motion } from 'framer-motion'
+import Image from 'next/image'
 
 export default function Loading() {
   return (
-    // Fixed overlay ensures it covers the whole screen perfectly
     <div className="fixed inset-0 z-[999] flex items-center justify-center min-h-screen bg-[#020617]/90 backdrop-blur-xl overflow-hidden">
 
       {/* Subtle Ambient Background Glows */}
@@ -13,8 +13,8 @@ export default function Loading() {
 
       <div className="relative flex flex-col items-center gap-8 p-12 rounded-3xl bg-white/5 border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
 
-        {/* Orbital Loader */}
-        <div className="relative w-24 h-24 flex items-center justify-center">
+        {/* Orbital Loader with Image Core */}
+        <div className="relative w-32 h-32 flex items-center justify-center">
 
           {/* Outer Indigo Ring */}
           <motion.div
@@ -30,15 +30,23 @@ export default function Loading() {
             className="absolute inset-3 rounded-full border-[3px] border-white/5 border-b-emerald-400 shadow-[0_0_15px_rgba(52,211,153,0.3)]"
           />
 
-          {/* Inner Pulsing Core */}
+          {/* Inner Pulsing Brand Image */}
           <motion.div
             animate={{
-              scale: [0.8, 1.2, 0.8],
-              opacity: [0.5, 1, 0.5]
+              scale: [0.95, 1.05, 0.95],
+              opacity: [0.8, 1, 0.8]
             }}
-            transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-            className="w-6 h-6 bg-gradient-to-tr from-indigo-500 to-emerald-400 rounded-full shadow-[0_0_20px_rgba(99,102,241,0.8)]"
-          />
+            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+            className="relative w-16 h-16 rounded-full overflow-hidden bg-white/5 shadow-[0_0_20px_rgba(99,102,241,0.2)] flex items-center justify-center p-2 border border-white/10 backdrop-blur-sm"
+          >
+            <Image
+              src="/logo.png"
+              alt="Loading"
+              fill
+              className="object-contain p-2 drop-shadow-md"
+            />
+          </motion.div>
+
         </div>
 
         {/* Elegant Typography */}
