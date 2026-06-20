@@ -1,20 +1,15 @@
 import prisma from "@/lib/prisma"
-import { verifyOtp } from "@/lib/otp"
 import { NextResponse } from "next/server"
 
 export async function POST(request) {
-
     try {
+        const { orderId, otp } = await request.json()
 
-        const { orderId, otp } =
-            await request.json()
-
-        const order =
-            await prisma.order.findUnique({
-                where: {
-                    id: orderId
-                }
-            })
+        const order = await prisma.order.findUnique({
+            where: {
+                id: orderId
+            }
+        })
 
         if (!order) {
             return NextResponse.json(
@@ -23,12 +18,18 @@ export async function POST(request) {
             )
         }
 
-        const valid = verifyOtp(
-            otp,
-            order.deliveryOtp
-        )
-        if (!valid) {
+        // 1. Check if OTP has expired (10 minute limit)
+        if (order.deliveryOtpExpiry && new Date() > new Date(order.deliveryOtpExpiry)) {
+            return NextResponse.json(
+                { error: "OTP has expired. Please request a new one." },
+                { status: 400 }
+            )
+        }
 
+        // 2. Direct string comparison (since we are storing plain text now)
+        const valid = String(otp) === String(order.deliveryOtp)
+
+        if (!valid) {
             await prisma.order.update({
                 where: {
                     id: orderId
@@ -46,6 +47,7 @@ export async function POST(request) {
             )
         }
 
+        // 3. Mark as Delivered
         await prisma.order.update({
             where: {
                 id: orderId
@@ -56,13 +58,12 @@ export async function POST(request) {
                 status: "DELIVERED",
                 statusHistory: {
                     ...(order.statusHistory || {}),
-                    DELIVERED:
-                        new Date().toISOString()
+                    DELIVERED: new Date().toISOString()
                 }
             }
         })
 
-        // Driver becomes available again
+        // 4. Driver becomes available again
         if (order.driverId) {
             await prisma.driver.update({
                 where: {
@@ -73,31 +74,23 @@ export async function POST(request) {
                 }
             })
 
+            // Trigger assignment for the next pending order
             try {
-
                 await fetch(
                     `${process.env.NEXT_PUBLIC_APP_URL}/api/driver/assign-pending-orders`,
-                    {
-                        method: "POST"
-                    }
+                    { method: "POST" }
                 )
-
             } catch (err) {
-
-                console.log(
-                    "Failed to trigger assignment",
-                    err
-                )
-
+                console.log("Failed to trigger assignment", err)
             }
         }
+
         return NextResponse.json({
             success: true,
             message: "Order Delivered"
         })
 
     } catch (error) {
-
         return NextResponse.json(
             { error: error.message },
             { status: 500 }
