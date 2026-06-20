@@ -5,7 +5,6 @@ import { NextResponse } from "next/server"
 
 export async function POST(request) {
     try {
-
         const { orderId } = await request.json()
 
         const order = await prisma.order.findUnique({
@@ -47,25 +46,42 @@ export async function POST(request) {
             }
         })
 
+        const customerName = order.user.name ? order.user.name.split(' ')[0] : 'Customer'
+
         await sendEmail({
             to: order.user.email,
             type: "otp",
-            subject: "Delivery OTP",
+            subject: "Your Delivery is Here! (OTP Inside)",
             html: `
-        <div style="font-family:Arial;padding:20px">
-          <h2>Delivery Verification OTP</h2>
+                <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; padding: 40px 20px; margin: 0;">
+                    <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #eaeaea;">
+                        
+                        <div style="background-color: #2563eb; padding: 24px; text-align: center;">
+                            <h2 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 600; letter-spacing: 0.5px;">GlobalMart</h2>
+                        </div>
+                        
+                        <div style="padding: 40px 30px; text-align: center;">
+                            <p style="color: #4b5563; font-size: 16px; margin-bottom: 8px;">Hello ${customerName},</p>
+                            <p style="color: #1f2937; font-size: 20px; font-weight: 600; margin-top: 0; margin-bottom: 24px;">Your driver has arrived!</p>
+                            <p style="color: #6b7280; font-size: 15px; margin-bottom: 32px; line-height: 1.5;">Please share the verification code below with your driver to receive your package safely.</p>
 
-          <p>Your OTP is:</p>
+                            <div style="background-color: #eff6ff; border: 2px dashed #93c5fd; border-radius: 8px; padding: 24px; margin: 0 auto; max-width: 280px;">
+                                <h1 style="color: #1e3a8a; font-size: 42px; letter-spacing: 12px; margin: 0; font-weight: 700; text-align: center;">${otp}</h1>
+                            </div>
 
-          <h1 style="letter-spacing:5px">
-            ${otp}
-          </h1>
-
-          <p>
-            Valid for 10 minutes.
-          </p>
-        </div>
-      `
+                            <p style="color: #ef4444; font-size: 14px; margin-top: 32px; font-weight: 500;">
+                                ⏱️ This code expires in 10 minutes.
+                            </p>
+                        </div>
+                        
+                        <div style="background-color: #f9fafb; padding: 20px; text-align: center; border-top: 1px solid #eaeaea;">
+                            <p style="color: #9ca3af; font-size: 12px; margin: 0; line-height: 1.5;">
+                                <strong>Security Notice:</strong> Never share this code with anyone over the phone. Only provide it to the driver in person.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            `
         })
 
         return NextResponse.json({
@@ -74,13 +90,10 @@ export async function POST(request) {
         })
 
     } catch (error) {
-
         console.error(error)
-
         return NextResponse.json(
             { error: error.message },
             { status: 500 }
         )
-
     }
 }

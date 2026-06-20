@@ -22,7 +22,7 @@ const LatestProducts = () => {
             ? products.length
             : displayQuantity
             } of ${products.length} products`}
-          href="/shop"
+          href="/product"
           theme="dark"
         />
 
