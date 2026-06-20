@@ -57,7 +57,7 @@ export async function POST(request) {
                     <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #eaeaea;">
                         
                         <div style="background-color: #2563eb; padding: 24px; text-align: center;">
-                            <h2 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 600; letter-spacing: 0.5px;">GlobalMart</h2>
+                            <h2 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 600; letter-spacing: 0.5px;">NandurbarBazar</h2>
                         </div>
                         
                         <div style="padding: 40px 30px; text-align: center;">
