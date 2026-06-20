@@ -390,45 +390,65 @@ export default function DriverOrders() {
                     </header>
 
                     {incomingOrder && (
+                        <div className="fixed top-6 right-6 z-50 bg-white shadow-2xl border border-gray-100 rounded-2xl p-5 w-80 animate-in slide-in-from-top-4 duration-300">
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="bg-blue-100 p-2 rounded-full">
+                                    <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                                </div>
+                                <h2 className="font-bold text-lg text-gray-900">
+                                    New Delivery Request
+                                </h2>
+                            </div>
 
-                        <div className="fixed top-6 right-6 z-50 bg-white shadow-2xl border rounded-xl p-5 w-80">
+                            <div className="space-y-3 mb-5">
+                                <div className="flex justify-between items-center text-sm">
+                                    <span className="text-gray-500">Store</span>
+                                    <span className="font-medium text-gray-900 text-right truncate max-w-[150px]" title={incomingOrder.store?.name}>
+                                        {incomingOrder.store?.name}
+                                    </span>
+                                </div>
 
-                            <h2 className="font-bold text-lg">
-                                New Delivery Request
-                            </h2>
+                                <div className="flex justify-between items-center text-sm">
+                                    <span className="text-gray-500">Distance to Store</span>
+                                    <span className="font-semibold text-blue-600">
+                                        {incomingOrder.distanceToStore
+                                            ? `${incomingOrder.distanceToStore.toFixed(1)} km`
+                                            : "Calculating..."}
+                                    </span>
+                                </div>
 
-                            <p className="mt-2">
-                                Store:
-                                {" "}
-                                {incomingOrder.store?.name}
-                            </p>
+                                <div className="flex justify-between items-center text-sm">
+                                    <span className="text-gray-500">Store to Customer</span>
+                                    <span className="font-semibold text-blue-600">
+                                        {incomingOrder.distanceToCustomer
+                                            ? `${incomingOrder.distanceToCustomer.toFixed(1)} km`
+                                            : "Calculating..."}
+                                    </span>
+                                </div>
 
-                            <p>
-                                Time Left:
-                                {" "}
-                                {countdown}s
-                            </p>
+                                <div className="pt-3 border-t border-gray-100 flex justify-between items-center">
+                                    <span className="text-sm font-medium text-gray-500">Time to Accept</span>
+                                    <span className={`font-bold ${countdown <= 10 ? 'text-red-600 animate-pulse' : 'text-gray-900'}`}>
+                                        {countdown}s
+                                    </span>
+                                </div>
+                            </div>
 
-                            <div className="flex gap-2 mt-4">
-
+                            <div className="flex gap-3 mt-4">
                                 <button
                                     onClick={handleAccept}
-                                    className="flex-1 bg-green-600 text-white py-2 rounded"
+                                    className="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium py-2.5 rounded-xl transition shadow-sm shadow-green-200"
                                 >
                                     Accept
                                 </button>
-
                                 <button
                                     onClick={handleDecline}
-                                    className="flex-1 bg-red-600 text-white py-2 rounded"
+                                    className="flex-1 bg-red-50 hover:bg-red-100 text-red-600 font-medium py-2.5 rounded-xl transition"
                                 >
                                     Decline
                                 </button>
-
                             </div>
-
                         </div>
-
                     )}
 
                     <div className="space-y-6">
@@ -538,8 +558,8 @@ export default function DriverOrders() {
                                                 updateStatus(order.id, "REACHED_SHOP")
                                             }
                                             className={`flex-1 py-2.5 rounded-xl text-white font-medium ${order.distanceToStore <= 0.1
-                                                    ? "bg-blue-600"
-                                                    : "bg-gray-400 cursor-not-allowed"
+                                                ? "bg-blue-600"
+                                                : "bg-gray-400 cursor-not-allowed"
                                                 }`}
                                         >
                                             Reached Shop
