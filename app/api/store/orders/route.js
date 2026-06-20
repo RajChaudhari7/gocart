@@ -3,9 +3,8 @@ import { authSeller } from "@/middlewares/authSeller"
 import { getAuth } from "@clerk/nextjs/server"
 import { NextResponse } from "next/server"
 import { sendEmail } from "@/lib/sendEmail"
-import { generateOtp, hashOtp } from "@/lib/otp"
+import { generateOtp } from "@/lib/otp" // Removed hashOtp import
 import { calculateDistance } from "@/lib/distance"
-
 
 const SELLER_FLOW = [
   "ORDER_PLACED",
@@ -17,7 +16,6 @@ const SELLER_FLOW = [
 // ================= UPDATE SELLER ORDER STATUS =================
 export async function POST(request) {
   try {
-
     const { userId } = getAuth(request)
     const storeId = await authSeller(userId)
 
@@ -98,27 +96,23 @@ export async function POST(request) {
     await prisma.$transaction(async (tx) => {
 
       if (status === "DELIVERY_INITIATED") {
-
+        // Generate plain OTP and save it DIRECTLY without hashing
         plainOtp = generateOtp()
-        const hashedOtp = hashOtp(plainOtp)
 
         await tx.order.update({
           where: { id: orderId },
           data: {
-            deliveryOtp: hashedOtp,
+            deliveryOtp: String(plainOtp), // Saved as plain text
             deliveryOtpExpiry: new Date(Date.now() + 10 * 60 * 1000),
             otpVerified: false,
             otpVerifyAttempts: 0,
             otpResendCount: 0
           }
         })
-
       }
 
       if (status === "CANCELLED") {
-
         for (const item of order.orderItems) {
-
           await tx.product.update({
             where: { id: item.productId },
             data: {
@@ -126,11 +120,8 @@ export async function POST(request) {
               inStock: true
             }
           })
-
         }
-
       }
-
 
       if (
         !order.store?.latitude ||
@@ -141,22 +132,16 @@ export async function POST(request) {
         )
       }
 
-
       if (status === "ORDER_PACKED") {
-
         const drivers = await tx.driver.findMany({
           where: {
             isOnline: true,
             isActive: true,
-            latitude: {
-              not: null
-            },
-            longitude: {
-              not: null
-            }
+            latitude: { not: null },
+            longitude: { not: null }
           }
         })
-        
+
         if (drivers.length === 0) {
           throw new Error("No online drivers available")
         }
@@ -165,7 +150,6 @@ export async function POST(request) {
         let shortestDistance = Infinity
 
         for (const driver of drivers) {
-
           const distance = calculateDistance(
             order.store.latitude,
             order.store.longitude,
@@ -184,36 +168,24 @@ export async function POST(request) {
         }
 
         await tx.order.update({
-          where: {
-            id: orderId
-          },
+          where: { id: orderId },
           data: {
             driverId: nearestDriver.id,
-
             driverAccepted: false,
-
             assignmentStatus: "PENDING",
-
-            assignmentExpiresAt: new Date(
-              Date.now() + 10000
-            ),
-
+            assignmentExpiresAt: new Date(Date.now() + 10000),
             assignedAt: new Date(),
-
-            // keep waiting for driver response
             status: "ORDER_PACKED",
-
             statusHistory: {
               ...(order.statusHistory || {}),
               ORDER_PACKED: new Date().toISOString()
             }
           }
         })
-
         return
       }
-
     })
+
     // ================= SEND DELIVERY OTP EMAIL =================
     if (status === "DELIVERY_INITIATED" && plainOtp) {
       try {
@@ -239,9 +211,6 @@ export async function POST(request) {
         console.error("OTP email failed:", err.message)
       }
     }
-
-
-
 
     // ================= SEND INVOICE EMAIL =================
     try {
@@ -274,7 +243,6 @@ export async function POST(request) {
         const storeName = order.store?.name || "Our Store"
         const storeLogo = order.store?.logo || null
 
-
         await sendEmail({
           to: userEmail,
           type: "order",
@@ -283,25 +251,19 @@ export async function POST(request) {
 <div style="font-family:Arial,Helvetica,sans-serif;background:#f9fafb;padding:20px;">
   <div style="max-width:600px;margin:auto;background:#ffffff;padding:24px;border-radius:8px;box-shadow:0 4px 10px rgba(0,0,0,0.05);">
 
-    <!-- STORE HEADER -->
     <div style="text-align:center;margin-bottom:20px;">
-      ${storeLogo
-              ? `<img src="${storeLogo}" alt="${storeName}" style="height:60px;margin-bottom:8px;object-fit:contain;" />`
-              : ""
-            }
+      ${storeLogo ? `<img src="${storeLogo}" alt="${storeName}" style="height:60px;margin-bottom:8px;object-fit:contain;" />` : ""}
       <h2 style="margin:0;color:#111827;">${storeName}</h2>
       <p style="margin:4px 0;color:#6b7280;font-size:14px;">Order Invoice</p>
     </div>
 
     <hr style="border:none;border-top:1px solid #e5e7eb;margin:20px 0;" />
 
-    <!-- INVOICE HEADER -->
     <div style="display:flex;justify-content:space-between;align-items:center;">
       <h3 style="margin:0;color:#111827;">INVOICE</h3>
       <span style="color:#16a34a;font-weight:600;font-size:14px;">${status}</span>
     </div>
 
-    <!-- ORDER META -->
     <p style="color:#374151;font-size:14px;margin-top:12px;">
       <b>Order ID:</b> #${orderId}<br/>
       <b>Date:</b> ${new Date().toLocaleDateString()}
@@ -309,14 +271,12 @@ export async function POST(request) {
 
     <hr style="border:none;border-top:1px solid #e5e7eb;margin:20px 0;" />
 
-    <!-- CUSTOMER INFO -->
     <p style="font-size:14px;color:#111827;">
       <b>Billed To:</b><br/>
       ${order.user?.name || "Customer"}<br/>
       ${order.user?.email}
     </p>
 
-    <!-- ORDER SUMMARY -->
     <h3 style="margin-top:24px;color:#111827;">Order Summary</h3>
 
     <table width="100%" cellspacing="0" cellpadding="8" style="border-collapse:collapse;margin-top:8px;font-size:14px;">
@@ -333,20 +293,17 @@ export async function POST(request) {
       </tbody>
     </table>
 
-    <!-- GRAND TOTAL -->
     <p style="text-align:right;font-size:16px;font-weight:600;margin-top:16px;color:#111827;">
       Grand Total: ₹${grandTotal}
     </p>
 
     <hr style="border:none;border-top:1px solid #e5e7eb;margin:20px 0;" />
 
-    <!-- STATUS MESSAGE -->
     <p style="font-size:14px;color:#374151;">
       Your order is currently <b>${status}</b>.
       You will receive updates as your order progresses.
     </p>
 
-    <!-- FOOTER -->
     <p style="margin-top:24px;font-size:14px;color:#111827;">
       Thank you for shopping with us ❤️<br/>
       <b>${storeName} Team</b>
@@ -359,7 +316,6 @@ export async function POST(request) {
   </div>
 </div>
 `
-
         })
       }
     } catch (err) {
@@ -376,9 +332,7 @@ export async function POST(request) {
 
 // ================= GET SELLER ORDERS =================
 export async function GET(request) {
-
   try {
-
     const { userId } = getAuth(request)
     const storeId = await authSeller(userId)
 
@@ -423,14 +377,10 @@ export async function GET(request) {
     })
 
   } catch (error) {
-
     console.error(error)
-
     return NextResponse.json(
       { error: error.message },
       { status: 400 }
     )
-
   }
-
 }
