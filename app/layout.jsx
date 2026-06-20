@@ -9,24 +9,24 @@ const outfit = Outfit({
   weight: ["400", "500", "600"],
 })
 
-// export const metadata = {
-//   title: "Nandurbar Bazar - Shop smarter",
-//   description: "Nandurbar Bazar - Shop smarter",
-//   manifest: "/manifest.json",
+export const metadata = {
+  title: "Nandurbar Bazar - Shop smarter",
+  description: "Nandurbar Bazar - Shop smarter",
+  manifest: "/manifest.json",
 
-//   themeColor: "#06b6d4",
+  themeColor: "#06b6d4",
 
-//   icons: {
-//     icon: "/icon-192.png",
-//     apple: "/icon-192.png",
-//   },
+  icons: {
+    icon: "/icon-192.png",
+    apple: "/icon-192.png",
+  },
 
-//   appleWebApp: {
-//     capable: true,
-//     statusBarStyle: "default",
-//     title: "Nandurbar Bazar",
-//   },
-// }
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Nandurbar Bazar",
+  },
+}
 
 export default function RootLayout({ children }) {
   return (
