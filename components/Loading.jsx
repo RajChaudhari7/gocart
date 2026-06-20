@@ -2,91 +2,59 @@
 
 import { motion } from 'framer-motion'
 
-const shapes = [
-  { color: "#10b981", shape: "circle" },
-  { color: "#3b82f6", shape: "square" },
-  { color: "#facc15", shape: "rounded" },
-  { color: "#f472b6", shape: "circle" },
-  { color: "#8b5cf6", shape: "square" },
-]
-
-const Loading = () => {
+export default function Loading() {
   return (
-    <div className="relative flex items-center justify-center min-h-screen overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+    // Fixed overlay ensures it covers the whole screen perfectly
+    <div className="fixed inset-0 z-[999] flex items-center justify-center min-h-screen bg-[#020617]/90 backdrop-blur-xl overflow-hidden">
 
-      {/* Background glow */}
-      <div className="absolute -top-32 -left-32 w-72 sm:w-96 h-72 sm:h-96 bg-green-500/20 rounded-full blur-3xl animate-pulse" />
-      <div className="absolute bottom-0 right-0 w-72 sm:w-96 h-72 sm:h-96 bg-emerald-400/20 rounded-full blur-3xl animate-pulse delay-1000" />
+      {/* Subtle Ambient Background Glows */}
+      <div className="absolute top-1/3 left-1/3 w-[500px] h-[500px] bg-indigo-600/20 rounded-full blur-[120px] animate-pulse" />
+      <div className="absolute bottom-1/3 right-1/3 w-[500px] h-[500px] bg-emerald-600/10 rounded-full blur-[120px] animate-pulse delay-1000" />
 
-      {/* DESKTOP GLASS CARD */}
-      <div className="
-        relative z-10 hidden sm:flex flex-col items-center gap-8
-        px-10 py-10 rounded-2xl
-        bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl
-      ">
-        <div className="flex items-end gap-6 h-28">
-          {shapes.map((shape, idx) => (
-            <motion.div
-              key={idx}
-              animate={{
-                y: ["0%", "-50%", "0%"],
-                rotate: [0, 180, 360],
-                scale: [1, 1.3, 1],
-                borderRadius:
-                  shape.shape === "circle"
-                    ? ["50%", "20%", "50%"]
-                    : shape.shape === "square"
-                    ? ["10%", "50%", "10%"]
-                    : ["40%", "60%", "40%"],
-                backgroundColor: [shape.color, "#22c55e", shape.color]
-              }}
-              transition={{
-                duration: 1.5,
-                repeat: Infinity,
-                delay: idx * 0.3,
-                ease: "easeInOut"
-              }}
-              className="w-14 h-14 shadow-lg"
-            />
-          ))}
+      <div className="relative flex flex-col items-center gap-8 p-12 rounded-3xl bg-white/5 border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
+
+        {/* Orbital Loader */}
+        <div className="relative w-24 h-24 flex items-center justify-center">
+
+          {/* Outer Indigo Ring */}
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+            className="absolute inset-0 rounded-full border-[3px] border-white/5 border-t-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.4)]"
+          />
+
+          {/* Middle Emerald Ring (Spins in reverse) */}
+          <motion.div
+            animate={{ rotate: -360 }}
+            transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+            className="absolute inset-3 rounded-full border-[3px] border-white/5 border-b-emerald-400 shadow-[0_0_15px_rgba(52,211,153,0.3)]"
+          />
+
+          {/* Inner Pulsing Core */}
+          <motion.div
+            animate={{
+              scale: [0.8, 1.2, 0.8],
+              opacity: [0.5, 1, 0.5]
+            }}
+            transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+            className="w-6 h-6 bg-gradient-to-tr from-indigo-500 to-emerald-400 rounded-full shadow-[0_0_20px_rgba(99,102,241,0.8)]"
+          />
         </div>
 
-        <p className="text-sm font-medium tracking-wide text-gray-200 animate-pulse">
-          Preparing…
-        </p>
-      </div>
-
-      {/* MOBILE LOADER */}
-      <div className="sm:hidden relative z-10 flex flex-col items-center gap-6">
-        <div className="flex gap-4">
-          {shapes.slice(0, 3).map((shape, idx) => (
-            <motion.div
-              key={idx}
-              animate={{
-                y: ["0%", "-35%", "0%"],
-                scale: [1, 1.15, 1],
-                borderRadius:
-                  shape.shape === "circle" ? "50%" :
-                  shape.shape === "square" ? "20%" : "40%",
-                backgroundColor: shape.color
-              }}
-              transition={{
-                duration: 1.2,
-                repeat: Infinity,
-                delay: idx * 0.25,
-                ease: "easeInOut"
-              }}
-              className="w-9 h-9 shadow-md"
-            />
-          ))}
+        {/* Elegant Typography */}
+        <div className="flex flex-col items-center gap-2">
+          <motion.h3
+            animate={{ opacity: [0.5, 1, 0.5] }}
+            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+            className="text-lg font-bold tracking-[0.3em] text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-emerald-400 uppercase"
+          >
+            Processing
+          </motion.h3>
+          <p className="text-xs text-slate-400 tracking-wider font-medium uppercase">
+            Please wait a moment
+          </p>
         </div>
-
-        <p className="text-xs tracking-wide text-gray-300 animate-pulse">
-          Preparing…
-        </p>
       </div>
     </div>
   )
 }
-
-export default Loading
