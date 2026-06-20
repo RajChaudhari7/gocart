@@ -1,8 +1,10 @@
 {
+    "id": "/driver",
     "name": "Nandurbar Bazar Driver",
     "short_name": "Driver App",
     "description": "Driver Delivery Management System",
     "start_url": "/driver",
+    "scope": "/driver/",
     "display": "standalone",
     "background_color": "#ffffff",
     "theme_color": "#16a34a",

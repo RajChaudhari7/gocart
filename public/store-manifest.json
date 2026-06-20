@@ -1,7 +1,8 @@
 {
+  "id": "/store",
   "name": "Nandurbar Bazar Seller",
   "short_name": "NB Seller",
-  "start_url": "/store/",
+  "start_url": "/store",
   "scope": "/store/",
   "display": "standalone",
   "theme_color": "#06b6d4",

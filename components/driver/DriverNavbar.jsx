@@ -1,17 +1,42 @@
 'use client'
 
 import { useEffect, useState } from "react"
-import { LogOut, Truck } from "lucide-react"
+import { LogOut, Truck, Download } from "lucide-react"
 import toast from "react-hot-toast"
 import { useRouter } from "next/navigation"
 import axios from "axios"
-import InstallButton from "../InstallButton"
+
 
 export default function DriverNavbar() {
 
     const [driver, setDriver] = useState(null)
     const [isOnline, setIsOnline] = useState(false)
+    const [installPrompt, setInstallPrompt] = useState(null)
     const router = useRouter()
+
+    useEffect(() => {
+
+        const handler = (e) => {
+
+            e.preventDefault()
+
+            setInstallPrompt(e)
+        }
+
+        window.addEventListener(
+            "beforeinstallprompt",
+            handler
+        )
+
+        return () => {
+
+            window.removeEventListener(
+                "beforeinstallprompt",
+                handler
+            )
+        }
+
+    }, [])
 
     useEffect(() => {
 
@@ -167,6 +192,31 @@ export default function DriverNavbar() {
 
     }
 
+    const installApp = async () => {
+
+        if (!installPrompt) {
+
+            toast.error("Install not available")
+            return
+        }
+
+        installPrompt.prompt()
+
+        const { outcome } =
+            await installPrompt.userChoice
+
+        if (outcome === "accepted") {
+
+            toast.success("App Installed")
+
+        } else {
+
+            toast.error("Installation Cancelled")
+        }
+
+        setInstallPrompt(null)
+    }
+
     const firstName =
         driver?.name?.split(" ")[0] || "Driver"
 
@@ -198,6 +248,23 @@ export default function DriverNavbar() {
 
                     {/* RIGHT */}
                     <div className="flex items-center gap-4">
+
+                        {
+                            installPrompt && (
+
+                                <button
+                                    onClick={installApp}
+                                    className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition shadow-sm"
+                                >
+                                    <Download size={16} />
+
+                                    <span className="hidden sm:block">
+                                        Install
+                                    </span>
+
+                                </button>
+                            )
+                        }
 
                         {/* Online Badge */}
                         <button
@@ -243,10 +310,6 @@ export default function DriverNavbar() {
                             </div>
 
                         </div>
-
-                        {/* Install App */}
-                        <InstallButton />
-
 
                         {/* Logout */}
                         <button
