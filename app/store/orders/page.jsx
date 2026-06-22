@@ -44,6 +44,8 @@ export default function StoreOrders() {
     const [orderQueue, setOrderQueue] = useState([]);
     const [activeNotification, setActiveNotification] = useState(null);
 
+    const timerRef = useRef(null);
+
     const currentDate = new Date()
 
     const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth())
@@ -97,22 +99,44 @@ export default function StoreOrders() {
         }
     }, [orderQueue, activeNotification]);
 
+    /* ================= ORDER ACTIONS ================= */
     const handleOrderAction = async (action, order) => {
-        const endpoint = action === 'ACCEPT' ? '/api/store/accept-order' : '/api/store/decline-order';
-        await axios.post(endpoint, { orderId: order.id });
+        // Add toast loading state
+        const loadingToast = toast.loading(`Processing ${action.toLowerCase()}...`);
 
-        // Remove from queue and clear notification to trigger next one
-        setOrderQueue(prev => prev.filter(q => q.id !== order.id));
-        setActiveNotification(null);
-        fetchOrders(); // Sync UI
+        try {
+            const endpoint = action === 'ACCEPT' ? '/api/store/accept-order' : '/api/store/decline-order';
+            const token = await getToken();
+
+            await axios.post(endpoint,
+                { orderId: order.id },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            // Update local state immediately
+            setOrderQueue(prev => prev.filter(q => q.id !== order.id));
+            setActiveNotification(null);
+            await fetchOrders(); // Re-sync with DB
+
+            toast.dismiss(loadingToast);
+            toast.success(`Order ${action === 'ACCEPT' ? 'confirmed' : 'cancelled'}`);
+        } catch (error) {
+            toast.dismiss(loadingToast);
+            toast.error(error?.response?.data?.error || "Failed to process order");
+        }
     };
 
     useEffect(() => {
-        if (!activeNotification) return;
-        const timer = setTimeout(() => {
-            handleOrderAction('DECLINE', activeNotification);
-        }, 30000);
-        return () => clearTimeout(timer);
+        // Clear existing timer if activeNotification changes
+        if (timerRef.current) clearInterval(timerRef.current);
+
+        if (activeNotification) {
+            timerRef.current = setTimeout(() => {
+                handleOrderAction('DECLINE', activeNotification);
+            }, 30000); // 30 seconds
+        }
+
+        return () => clearInterval(timerRef.current);
     }, [activeNotification]);
 
     const filteredOrders = orders.filter(order => {
@@ -337,11 +361,43 @@ export default function StoreOrders() {
         pdf.save(`Earnings-Report-${Date.now()}.pdf`)
         document.body.removeChild(reportDiv)
     }
-
+    /* ================= PDF INVOICE ================= */
     const downloadInvoicePDF = async (order) => {
-        // Customer invoice code remains the same because the customer 
-        // pays the full total including shipping.
-        // ... (Keep your existing downloadInvoicePDF code here) ...
+        const doc = new jsPDF();
+
+        // Header
+        doc.setFontSize(20);
+        doc.text("INVOICE", 105, 20, { align: 'center' });
+        doc.setFontSize(10);
+        doc.text(`Order ID: ${order.id}`, 20, 40);
+        doc.text(`Date: ${new Date(order.createdAt).toLocaleDateString()}`, 20, 45);
+
+        // Customer Info
+        doc.text(`Customer: ${order.user?.name}`, 20, 60);
+        doc.text(`Address: ${order.address?.street || ''}, ${order.address?.city || ''}`, 20, 65);
+
+        // Table Header
+        doc.line(20, 75, 190, 75);
+        doc.text("Product", 20, 80);
+        doc.text("Qty", 140, 80);
+        doc.text("Price", 170, 80);
+        doc.line(20, 85, 190, 85);
+
+        // Items
+        let y = 95;
+        order.orderItems.forEach((item) => {
+            doc.text(item.product?.name || "Product", 20, y);
+            doc.text(item.quantity.toString(), 145, y);
+            doc.text(`₹${(item.price * item.quantity).toFixed(2)}`, 170, y);
+            y += 10;
+        });
+
+        // Total
+        doc.line(20, y, 190, y);
+        doc.setFontSize(12);
+        doc.text(`Total: ₹${order.total}`, 170, y + 10);
+
+        doc.save(`Invoice-${order.id.slice(-4)}.pdf`);
     };
 
     const openModal = (order) => {
@@ -375,29 +431,46 @@ export default function StoreOrders() {
         <>
 
             {activeNotification && (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl border-l-4 border-indigo-600">
-                        <h2 className="text-xl font-bold mb-4">New Order Received!</h2>
-                        <div className="text-sm text-gray-600 mb-4 font-mono">ID: #{activeNotification.id.slice(-4)}</div>
-                        <p className="font-semibold">{activeNotification.user?.name}</p>
-                        <div className="my-4 border-y py-2">
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                    {/* Inner container with stopPropagation to keep the modal stable */}
+                    <div
+                        onClick={(e) => e.stopPropagation()}
+                        className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl border-l-8 border-indigo-600 animate-in zoom-in-95 duration-200"
+                    >
+                        <h2 className="text-xl font-bold text-gray-800 mb-1">New Order!</h2>
+                        <div className="text-xs font-mono text-gray-500 mb-4 bg-gray-100 p-1 rounded inline-block">
+                            ID: #{activeNotification.id.slice(-4)}
+                        </div>
+
+                        <p className="font-semibold text-lg text-gray-700">{activeNotification.user?.name}</p>
+
+                        <div className="my-4 border-y border-gray-100 py-3 space-y-1">
                             {activeNotification.orderItems.map(item => (
-                                <div key={item.id} className="flex justify-between">
-                                    <span>{item.product?.name} x {item.quantity}</span>
+                                <div key={item.id} className="flex justify-between text-sm text-gray-600">
+                                    <span>{item.product?.name}</span>
+                                    <span className="font-medium">x {item.quantity}</span>
                                 </div>
                             ))}
                         </div>
+
                         <div className="flex gap-3">
                             <button
                                 onClick={() => handleOrderAction('ACCEPT', activeNotification)}
-                                className="flex-1 bg-green-600 text-white py-2 rounded-lg font-bold"
-                            >Accept</button>
+                                className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2.5 rounded-xl font-bold transition shadow-lg shadow-green-200"
+                            >
+                                Accept
+                            </button>
                             <button
                                 onClick={() => handleOrderAction('DECLINE', activeNotification)}
-                                className="flex-1 bg-red-600 text-white py-2 rounded-lg font-bold"
-                            >Decline</button>
+                                className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2.5 rounded-xl font-bold transition shadow-lg shadow-red-200"
+                            >
+                                Decline
+                            </button>
                         </div>
-                        <p className="text-center text-xs text-gray-400 mt-4">Auto-declining in 30s...</p>
+
+                        <div className="text-center text-xs text-gray-400 mt-4 font-medium tracking-wide">
+                            Auto-declining in 30s...
+                        </div>
                     </div>
                 </div>
             )}
@@ -407,6 +480,7 @@ export default function StoreOrders() {
                     Enable Notifications
                 </button>
             </div>
+
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
                 <h1 className="text-3xl text-slate-700 font-semibold">Store Orders</h1>
                 <div className="flex gap-3">
