@@ -12,11 +12,35 @@ export default function DriverDashboard() {
     const [incomingOrder, setIncomingOrder] = useState(null)
     const [ignoredOrders, setIgnoredOrders] = useState([])
 
-    const [countdown, setCountdown] = useState(10)
+    const [countdown, setCountdown] = useState(60)
+    const audioRef = useRef(null)
     const ignoredOrdersRef = useRef([])
-
-
     const router = useRouter()
+
+    // Initialize Audio
+    useEffect(() => {
+        audioRef.current = new Audio("/sounds/delivery.mp3")
+        return () => {
+            if (audioRef.current) {
+                audioRef.current.pause()
+                audioRef.current = null
+            }
+        }
+    }, [])
+
+    useEffect(() => {
+        const audio = audioRef.current
+        if (!audio) return
+
+        if (incomingOrder) {
+            audio.loop = true
+            audio.play().catch(e => console.log("Playback blocked:", e))
+        } else {
+            audio.pause()
+            audio.currentTime = 0
+            audio.loop = false
+        }
+    }, [incomingOrder])
 
     const handleAccept = async () => {
         try {
@@ -111,7 +135,7 @@ export default function DriverDashboard() {
                             ...prev,
                             data.order.id
                         ])
-                        setCountdown(10)
+                        setCountdown(60)
 
                         toast.success(
                             "New Delivery Request"
