@@ -41,6 +41,8 @@ export default function StoreOrders() {
     const [loading, setLoading] = useState(true)
     const [selectedOrder, setSelectedOrder] = useState(null)
     const [isModalOpen, setIsModalOpen] = useState(false)
+    const [orderQueue, setOrderQueue] = useState([]);
+    const [activeNotification, setActiveNotification] = useState(null);
 
     const currentDate = new Date()
 
@@ -71,22 +73,47 @@ export default function StoreOrders() {
                     headers: { Authorization: `Bearer ${token}` }
                 });
 
-                // Check if new orders arrived
-                if (data.orders.length > orders.length) {
-                    // Play sound if orders increased
-                    audioRef.current.play().catch(e => console.log("Audio play blocked:", e));
-                    toast.success("New order received!");
+                // Find orders with status 'ORDER_PLACED' that aren't in the queue or already processed
+                const newIncoming = data.orders.filter(o =>
+                    o.status === "ORDER_PLACED" &&
+                    !orderQueue.find(q => q.id === o.id)
+                );
+
+                if (newIncoming.length > 0) {
+                    audioRef.current.play();
+                    setOrderQueue(prev => [...prev, ...newIncoming]);
                 }
-
                 setOrders(data.orders);
-                setOrderCount(data.activeCount);
             } catch (error) {
-                console.error("Polling error:", error);
+                console.error(error);
             }
-        }, 5000); // Poll every 5 seconds
-
+        }, 5000);
         return () => clearInterval(pollInterval);
-    }, [orders.length]);
+    }, [getToken, orderQueue]);
+
+    useEffect(() => {
+        if (!activeNotification && orderQueue.length > 0) {
+            setActiveNotification(orderQueue[0]);
+        }
+    }, [orderQueue, activeNotification]);
+
+    const handleOrderAction = async (action, order) => {
+        const endpoint = action === 'ACCEPT' ? '/api/store/accept-order' : '/api/store/decline-order';
+        await axios.post(endpoint, { orderId: order.id });
+
+        // Remove from queue and clear notification to trigger next one
+        setOrderQueue(prev => prev.filter(q => q.id !== order.id));
+        setActiveNotification(null);
+        fetchOrders(); // Sync UI
+    };
+
+    useEffect(() => {
+        if (!activeNotification) return;
+        const timer = setTimeout(() => {
+            handleOrderAction('DECLINE', activeNotification);
+        }, 30000);
+        return () => clearTimeout(timer);
+    }, [activeNotification]);
 
     const filteredOrders = orders.filter(order => {
         const orderDate = new Date(order.createdAt)
@@ -346,6 +373,34 @@ export default function StoreOrders() {
 
     return (
         <>
+
+            {activeNotification && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl border-l-4 border-indigo-600">
+                        <h2 className="text-xl font-bold mb-4">New Order Received!</h2>
+                        <div className="text-sm text-gray-600 mb-4 font-mono">ID: #{activeNotification.id.slice(-4)}</div>
+                        <p className="font-semibold">{activeNotification.user?.name}</p>
+                        <div className="my-4 border-y py-2">
+                            {activeNotification.orderItems.map(item => (
+                                <div key={item.id} className="flex justify-between">
+                                    <span>{item.product?.name} x {item.quantity}</span>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => handleOrderAction('ACCEPT', activeNotification)}
+                                className="flex-1 bg-green-600 text-white py-2 rounded-lg font-bold"
+                            >Accept</button>
+                            <button
+                                onClick={() => handleOrderAction('DECLINE', activeNotification)}
+                                className="flex-1 bg-red-600 text-white py-2 rounded-lg font-bold"
+                            >Decline</button>
+                        </div>
+                        <p className="text-center text-xs text-gray-400 mt-4">Auto-declining in 30s...</p>
+                    </div>
+                </div>
+            )}
 
             <div className="hidden">
                 <button onClick={() => audioRef.current?.play().then(() => audioRef.current.pause())}>
