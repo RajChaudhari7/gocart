@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import Loading from "@/components/Loading"
 import { useAuth } from "@clerk/nextjs"
 import axios from "axios"
@@ -48,7 +48,7 @@ export default function StoreOrders() {
     const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear())
     const [selectedDate, setSelectedDate] = useState(null)
     const [statusFilter, setStatusFilter] = useState("ALL")
-
+    const audioRef = useRef(null);
     const months = [
         "January", "February", "March", "April",
         "May", "June", "July", "August",
@@ -58,6 +58,35 @@ export default function StoreOrders() {
     useEffect(() => {
         fetchOrders()
     }, [])
+
+    useEffect(() => {
+        audioRef.current = new Audio("/sounds/order.mp3");
+    }, []);
+
+    useEffect(() => {
+        const pollInterval = setInterval(async () => {
+            try {
+                const token = await getToken();
+                const { data } = await axios.get('/api/store/orders', {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+
+                // Check if new orders arrived
+                if (data.orders.length > orders.length) {
+                    // Play sound if orders increased
+                    audioRef.current.play().catch(e => console.log("Audio play blocked:", e));
+                    toast.success("New order received!");
+                }
+
+                setOrders(data.orders);
+                setOrderCount(data.activeCount);
+            } catch (error) {
+                console.error("Polling error:", error);
+            }
+        }, 5000); // Poll every 5 seconds
+
+        return () => clearInterval(pollInterval);
+    }, [orders.length]);
 
     const filteredOrders = orders.filter(order => {
         const orderDate = new Date(order.createdAt)
@@ -317,6 +346,12 @@ export default function StoreOrders() {
 
     return (
         <>
+
+            <div className="hidden">
+                <button onClick={() => audioRef.current?.play().then(() => audioRef.current.pause())}>
+                    Enable Notifications
+                </button>
+            </div>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
                 <h1 className="text-3xl text-slate-700 font-semibold">Store Orders</h1>
                 <div className="flex gap-3">
