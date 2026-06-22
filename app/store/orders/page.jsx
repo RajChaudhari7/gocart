@@ -101,31 +101,27 @@ export default function StoreOrders() {
 
     /* ================= ORDER ACTIONS ================= */
     const handleOrderAction = async (action, order) => {
-        // Add toast loading state
-        const loadingToast = toast.loading(`Processing ${action.toLowerCase()}...`);
-
         try {
             const endpoint = action === 'ACCEPT' ? '/api/store/accept-order' : '/api/store/decline-order';
+
+            // 1. Get the token
             const token = await getToken();
 
+            // 2. Pass it in the headers
             await axios.post(endpoint,
                 { orderId: order.id },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
 
-            // Update local state immediately
             setOrderQueue(prev => prev.filter(q => q.id !== order.id));
             setActiveNotification(null);
-            await fetchOrders(); // Re-sync with DB
-
-            toast.dismiss(loadingToast);
+            await fetchOrders();
             toast.success(`Order ${action === 'ACCEPT' ? 'confirmed' : 'cancelled'}`);
         } catch (error) {
-            toast.dismiss(loadingToast);
-            toast.error(error?.response?.data?.error || "Failed to process order");
+            console.error("Action Error:", error);
+            toast.error(error.response?.data?.error || "Unauthorized or Server Error");
         }
     };
-
     useEffect(() => {
         // Clear existing timer if activeNotification changes
         if (timerRef.current) clearInterval(timerRef.current);
