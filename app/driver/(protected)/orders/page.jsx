@@ -16,12 +16,41 @@ export default function DriverOrders() {
     const [countdown, setCountdown] = useState(60)
 
     const ignoredOrdersRef = useRef([])
+    const audioRef = useRef(null);
     const router = useRouter()
 
     const getDriverId = () => {
         const driver = JSON.parse(localStorage.getItem("driver"))
         return driver?.id || null
     }
+
+    useEffect(() => {
+        // Initialize audio object once
+        audioRef.current = new Audio("/sound/delivery.mpeg");
+
+        // Cleanup on unmount
+        return () => {
+            if (audioRef.current) {
+                audioRef.current.pause();
+                audioRef.current = null;
+            }
+        };
+    }, []);
+
+    useEffect(() => {
+        if (!audioRef.current) return;
+
+        if (incomingOrder) {
+            // Start looping sound when order arrives
+            audioRef.current.loop = true;
+            audioRef.current.play().catch(e => console.log("Audio playback failed:", e));
+        } else {
+            // Stop and reset sound when order is gone
+            audioRef.current.pause();
+            audioRef.current.currentTime = 0;
+            audioRef.current.loop = false;
+        }
+    }, [incomingOrder]);
 
     const handleAccept = async () => {
         if (!incomingOrder) return
@@ -292,7 +321,7 @@ export default function DriverOrders() {
                                     New Delivery Request
                                 </h2>
                             </div>
-                            
+
                             {/* Inserted Highlighted Order ID here */}
                             <HighlightOrderId id={incomingOrder.id} />
 
@@ -376,7 +405,7 @@ export default function DriverOrders() {
                                             <h2 className="text-lg font-bold text-gray-900">{order.user?.name}</h2>
                                             <StatusBadge status={order.status} />
                                         </div>
-                                        
+
                                         {/* Inserted Highlighted Order ID here */}
                                         <HighlightOrderId id={order.id} />
 
@@ -441,7 +470,7 @@ export default function DriverOrders() {
                                                 className={`flex-1 py-2.5 rounded-xl text-white font-medium transition-colors ${order.distanceToStore <= 0.1
                                                     ? "bg-blue-600 hover:bg-blue-700 shadow-sm shadow-blue-200"
                                                     : "bg-gray-400 cursor-not-allowed"
-                                                }`}
+                                                    }`}
                                             >
                                                 Reached Shop
                                             </button>
