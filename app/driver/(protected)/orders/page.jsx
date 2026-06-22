@@ -26,7 +26,7 @@ export default function DriverOrders() {
 
     useEffect(() => {
         // Initialize audio object once
-        audioRef.current = new Audio("/sound/delivery.mpeg");
+        audioRef.current = new Audio("/sounds/delivery.mp3");
 
         // Cleanup on unmount
         return () => {
