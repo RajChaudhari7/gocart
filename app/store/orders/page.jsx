@@ -78,11 +78,18 @@ export default function StoreOrders() {
                 // Find orders with status 'ORDER_PLACED' that aren't in the queue or already processed
                 const newIncoming = data.orders.filter(o =>
                     o.status === "ORDER_PLACED" &&
-                    !orderQueue.find(q => q.id === o.id)
+                    !orderQueue.some(q => q.id === o.id) &&
+                    activeNotification?.id !== o.id
                 );
 
                 if (newIncoming.length > 0) {
-                    audioRef.current.play();
+                    audioRef.current.currentTime = 0;
+
+                    audioRef.current
+                        .play()
+                        .catch(() => {
+                            console.log("Audio blocked")
+                        });
                     setOrderQueue(prev => [...prev, ...newIncoming]);
                 }
                 setOrders(data.orders);
@@ -113,8 +120,16 @@ export default function StoreOrders() {
                 { headers: { Authorization: `Bearer ${token}` } }
             );
 
-            setOrderQueue(prev => prev.filter(q => q.id !== order.id));
-            setActiveNotification(null);
+            setOrderQueue(prev => {
+                const updated =
+                    prev.filter(q => q.id !== order.id)
+
+                if (updated.length > 0) {
+                    setActiveNotification(updated[0])
+                }
+
+                return updated
+            })
             await fetchOrders();
             toast.success(`Order ${action === 'ACCEPT' ? 'confirmed' : 'cancelled'}`);
         } catch (error) {
@@ -127,9 +142,16 @@ export default function StoreOrders() {
         if (timerRef.current) clearInterval(timerRef.current);
 
         if (activeNotification) {
-            timerRef.current = setTimeout(() => {
-                handleOrderAction('DECLINE', activeNotification);
-            }, 30000); // 30 seconds
+            timerRef.current = setTimeout(async () => {
+
+                if (activeNotification) {
+                    await handleOrderAction(
+                        "DECLINE",
+                        activeNotification
+                    )
+                }
+
+            }, 30000)
         }
 
         return () => clearInterval(timerRef.current);
