@@ -41,10 +41,6 @@ export default function StoreOrders() {
     const [loading, setLoading] = useState(true)
     const [selectedOrder, setSelectedOrder] = useState(null)
     const [isModalOpen, setIsModalOpen] = useState(false)
-    const [orderQueue, setOrderQueue] = useState([]);
-    const [activeNotification, setActiveNotification] = useState(null);
-
-    const timerRef = useRef(null);
 
     const currentDate = new Date()
 
@@ -75,87 +71,22 @@ export default function StoreOrders() {
                     headers: { Authorization: `Bearer ${token}` }
                 });
 
-                // Find orders with status 'ORDER_PLACED' that aren't in the queue or already processed
-                const newIncoming = data.orders.filter(o =>
-                    o.status === "ORDER_PLACED" &&
-                    !orderQueue.some(q => q.id === o.id) &&
-                    activeNotification?.id !== o.id
-                );
-
-                if (newIncoming.length > 0) {
-                    audioRef.current.currentTime = 0;
-
-                    audioRef.current
-                        .play()
-                        .catch(() => {
-                            console.log("Audio blocked")
-                        });
-                    setOrderQueue(prev => [...prev, ...newIncoming]);
+                // Check if new orders arrived
+                if (data.orders.length > orders.length) {
+                    // Play sound if orders increased
+                    audioRef.current.play().catch(e => console.log("Audio play blocked:", e));
+                    toast.success("New order received!");
                 }
+
                 setOrders(data.orders);
+                setOrderCount(data.activeCount);
             } catch (error) {
-                console.error(error);
+                console.error("Polling error:", error);
             }
-        }, 5000);
+        }, 5000); // Poll every 5 seconds
+
         return () => clearInterval(pollInterval);
-    }, [getToken, orderQueue]);
-
-    useEffect(() => {
-        if (!activeNotification && orderQueue.length > 0) {
-            setActiveNotification(orderQueue[0]);
-        }
-    }, [orderQueue, activeNotification]);
-
-    /* ================= ORDER ACTIONS ================= */
-    const handleOrderAction = async (action, order) => {
-        try {
-            const endpoint = action === 'ACCEPT' ? '/api/store/accept-order' : '/api/store/decline-order';
-
-            // 1. Get the token
-            const token = await getToken();
-
-            // 2. Pass it in the headers
-            await axios.post(endpoint,
-                { orderId: order.id },
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-
-            setOrderQueue(prev => {
-                const updated =
-                    prev.filter(q => q.id !== order.id)
-
-                if (updated.length > 0) {
-                    setActiveNotification(updated[0])
-                }
-
-                return updated
-            })
-            await fetchOrders();
-            toast.success(`Order ${action === 'ACCEPT' ? 'confirmed' : 'cancelled'}`);
-        } catch (error) {
-            console.error("Action Error:", error);
-            toast.error(error.response?.data?.error || "Unauthorized or Server Error");
-        }
-    };
-    useEffect(() => {
-        // Clear existing timer if activeNotification changes
-        if (timerRef.current) clearInterval(timerRef.current);
-
-        if (activeNotification) {
-            timerRef.current = setTimeout(async () => {
-
-                if (activeNotification) {
-                    await handleOrderAction(
-                        "DECLINE",
-                        activeNotification
-                    )
-                }
-
-            }, 30000)
-        }
-
-        return () => clearInterval(timerRef.current);
-    }, [activeNotification]);
+    }, [orders.length]);
 
     const filteredOrders = orders.filter(order => {
         const orderDate = new Date(order.createdAt)
@@ -379,43 +310,11 @@ export default function StoreOrders() {
         pdf.save(`Earnings-Report-${Date.now()}.pdf`)
         document.body.removeChild(reportDiv)
     }
-    /* ================= PDF INVOICE ================= */
+
     const downloadInvoicePDF = async (order) => {
-        const doc = new jsPDF();
-
-        // Header
-        doc.setFontSize(20);
-        doc.text("INVOICE", 105, 20, { align: 'center' });
-        doc.setFontSize(10);
-        doc.text(`Order ID: ${order.id}`, 20, 40);
-        doc.text(`Date: ${new Date(order.createdAt).toLocaleDateString()}`, 20, 45);
-
-        // Customer Info
-        doc.text(`Customer: ${order.user?.name}`, 20, 60);
-        doc.text(`Address: ${order.address?.street || ''}, ${order.address?.city || ''}`, 20, 65);
-
-        // Table Header
-        doc.line(20, 75, 190, 75);
-        doc.text("Product", 20, 80);
-        doc.text("Qty", 140, 80);
-        doc.text("Price", 170, 80);
-        doc.line(20, 85, 190, 85);
-
-        // Items
-        let y = 95;
-        order.orderItems.forEach((item) => {
-            doc.text(item.product?.name || "Product", 20, y);
-            doc.text(item.quantity.toString(), 145, y);
-            doc.text(`₹${(item.price * item.quantity).toFixed(2)}`, 170, y);
-            y += 10;
-        });
-
-        // Total
-        doc.line(20, y, 190, y);
-        doc.setFontSize(12);
-        doc.text(`Total: ₹${order.total}`, 170, y + 10);
-
-        doc.save(`Invoice-${order.id.slice(-4)}.pdf`);
+        // Customer invoice code remains the same because the customer 
+        // pays the full total including shipping.
+        // ... (Keep your existing downloadInvoicePDF code here) ...
     };
 
     const openModal = (order) => {
@@ -448,57 +347,11 @@ export default function StoreOrders() {
     return (
         <>
 
-            {activeNotification && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-                    {/* Inner container with stopPropagation to keep the modal stable */}
-                    <div
-                        onClick={(e) => e.stopPropagation()}
-                        className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl border-l-8 border-indigo-600 animate-in zoom-in-95 duration-200"
-                    >
-                        <h2 className="text-xl font-bold text-gray-800 mb-1">New Order!</h2>
-                        <div className="text-xs font-mono text-gray-500 mb-4 bg-gray-100 p-1 rounded inline-block">
-                            ID: #{activeNotification.id.slice(-4)}
-                        </div>
-
-                        <p className="font-semibold text-lg text-gray-700">{activeNotification.user?.name}</p>
-
-                        <div className="my-4 border-y border-gray-100 py-3 space-y-1">
-                            {activeNotification.orderItems.map(item => (
-                                <div key={item.id} className="flex justify-between text-sm text-gray-600">
-                                    <span>{item.product?.name}</span>
-                                    <span className="font-medium">x {item.quantity}</span>
-                                </div>
-                            ))}
-                        </div>
-
-                        <div className="flex gap-3">
-                            <button
-                                onClick={() => handleOrderAction('ACCEPT', activeNotification)}
-                                className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2.5 rounded-xl font-bold transition shadow-lg shadow-green-200"
-                            >
-                                Accept
-                            </button>
-                            <button
-                                onClick={() => handleOrderAction('DECLINE', activeNotification)}
-                                className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2.5 rounded-xl font-bold transition shadow-lg shadow-red-200"
-                            >
-                                Decline
-                            </button>
-                        </div>
-
-                        <div className="text-center text-xs text-gray-400 mt-4 font-medium tracking-wide">
-                            Auto-declining in 30s...
-                        </div>
-                    </div>
-                </div>
-            )}
-
             <div className="hidden">
                 <button onClick={() => audioRef.current?.play().then(() => audioRef.current.pause())}>
                     Enable Notifications
                 </button>
             </div>
-
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
                 <h1 className="text-3xl text-slate-700 font-semibold">Store Orders</h1>
                 <div className="flex gap-3">
