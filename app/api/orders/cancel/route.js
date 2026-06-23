@@ -31,21 +31,19 @@ export async function POST(request) {
       return NextResponse.json({ error: "Order already cancelled" }, { status: 400 });
     }
 
-    // 🔥 SAFE TRANSACTION
     await prisma.$transaction(async (tx) => {
-      // 1️⃣ Restore stock safely (atomic)
+      
       for (const item of order.orderItems) {
         await tx.product.update({
           where: { id: item.productId },
           data: {
             quantity: {
-              increment: item.quantity, // ✅ SAFE
+              increment: item.quantity, 
             },
           },
         });
       }
 
-      // 2️⃣ Update order status + history
       await tx.order.update({
         where: { id: orderId },
         data: {

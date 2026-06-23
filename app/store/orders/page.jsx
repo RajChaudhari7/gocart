@@ -11,7 +11,7 @@ import { useOrderStore } from "@/hooks/use-order-store"
 
 const SELLER_STATUSES = [
     "ORDER_PLACED",
-    "ORDER_CONFIRMED",
+    "ORDER_CONFIRMED",         
     "ORDER_PACKING",
     "ORDER_PACKED"
 ]
@@ -126,12 +126,12 @@ export default function StoreOrders() {
     // 🔴 Cancelled Amount: 100% of product total (excluding delivery)
     const cancelledAmount = filteredOrders
         .filter(order => order.status === "CANCELLED")
-        .reduce((total, order) => total + getOrderFinances(order).productTotal, 0)
+        .reduce((total, order) => total + getOrderFinances(order).sellerEarnings, 0)
 
     // 🟠 Returned Amount: 100% of product total (excluding delivery)
     const returnedAmount = filteredOrders
         .filter(order => order.status === "RETURNED")
-        .reduce((total, order) => total + getOrderFinances(order).productTotal, 0)
+        .reduce((total, order) => total + getOrderFinances(order).sellerEarnings, 0)
 
 
     /* ================= FETCH & ACTIONS ================= */
@@ -419,7 +419,7 @@ export default function StoreOrders() {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                     {/* 🟢 Earnings */}
                     <div className="bg-emerald-50 p-4 rounded-lg border border-emerald-100">
-                        <p className="text-sm text-emerald-600 font-medium">Net Earnings (90%)</p>
+                        <p className="text-sm text-emerald-600 font-medium">Net Earnings</p>
                         <p className="text-2xl font-bold text-emerald-700">₹{revenue.toFixed(2)}</p>
                     </div>
 
