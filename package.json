@@ -10,6 +10,8 @@
     "postinstall": "prisma generate"
   },
   "dependencies": {
+    "@capacitor/cli": "^8.4.1",
+    "@capacitor/core": "^8.4.1",
     "@clerk/nextjs": "^6.31.10",
     "@emailjs/browser": "^4.4.1",
     "@neondatabase/serverless": "^1.0.1",
