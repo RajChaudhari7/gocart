@@ -1,4 +1,5 @@
 import DriverLayout from "@/components/driver/DriverLayout"
+import SplashWrapper from "@/components/driver/SplashWrapper"
 
 export const metadata = {
     title: "Nandurbar Bazar Driver",
@@ -7,8 +8,10 @@ export const metadata = {
 
 export default function Layout({ children }) {
     return (
-        <DriverLayout>
-            {children}
-        </DriverLayout>
+        <SplashWrapper>
+            <DriverLayout>
+                {children}
+            </DriverLayout>
+        </SplashWrapper>
     )
 }
