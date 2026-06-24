@@ -57,8 +57,11 @@ export default function DriverLogin() {
 
         } catch (error) {
 
+            console.log(error)
+
             toast.error(
                 error?.response?.data?.error ||
+                error?.message ||
                 "Login failed"
             )
 
