@@ -1,0 +1,38 @@
+[
+    {
+        "relation": [
+            "delegate_permission/common.handle_all_urls"
+        ],
+        "target": {
+            "namespace": "android_app",
+            "package_name": "com.nandurbarbazar.app",
+            "sha256_cert_fingerprints": [
+                "D8:47:FC:47:F2:82:55:00:B2:11:6A:E7:1A:70:98:A7:22:6E:60:74:DC:5F:CF:01:AA:7F:0D:13:5A:5F:3D:C1"
+            ]
+        }
+    },
+    {
+        "relation": [
+            "delegate_permission/common.handle_all_urls"
+        ],
+        "target": {
+            "namespace": "android_app",
+            "package_name": "com.nandurbarbazar.seller",
+            "sha256_cert_fingerprints": [
+                "8D:F7:E1:EB:D9:39:40:2C:5A:EB:BD:E7:50:DD:05:12:E1:1F:4F:FF:56:B5:A7:34:F4:DF:5D:4D:1C:5B:74:07"
+            ]
+        }
+    },
+    {
+        "relation": [
+            "delegate_permission/common.handle_all_urls"
+        ],
+        "target": {
+            "namespace": "android_app",
+            "package_name": "com.nandurbarbazar.driver",
+            "sha256_cert_fingerprints": [
+                "97:F4:33:34:55:85:96:E7:CD:25:7A:AE:22:43:7E:4F:BD:D1:0E:BB:9E:0F:01:91:A4:7A:92:5D:82:0F:33:B7"
+            ]
+        }
+    }
+]
