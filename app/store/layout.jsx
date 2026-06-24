@@ -1,3 +1,4 @@
+import SplashWrapper from "@/components/store/SplashWrapper";
 import StoreLayout from "@/components/store/StoreLayout";
 import { SignedIn, SignedOut, SignIn } from "@clerk/nextjs";
 
@@ -21,7 +22,11 @@ export default function RootAdminLayout({ children }) {
   return (
     <>
       <SignedIn>
-        <StoreLayout>{children}</StoreLayout>
+        <StoreLayout>
+          <SplashWrapper>
+            {children}
+          </SplashWrapper>
+        </StoreLayout>
       </SignedIn>
 
       <SignedOut>
