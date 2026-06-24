@@ -49,15 +49,20 @@ const Navbar = () => {
 
   const [deferredPrompt, setDeferredPrompt] = useState(null)
   const [isInstalled, setIsInstalled] = useState(false)
+  const [isTWA, setIsTWA] = useState(false)
 
   /* ================= PWA ================= */
   useEffect(() => {
     const checkInstalled = () => {
-      const installed =
+      const standalone =
         window.matchMedia('(display-mode: standalone)').matches ||
         window.navigator.standalone === true
 
-      setIsInstalled(installed)
+      const twa =
+        document.referrer.includes('android-app://')
+
+      setIsInstalled(standalone)
+      setIsTWA(twa || standalone)
     }
 
     checkInstalled()
@@ -160,13 +165,14 @@ const Navbar = () => {
             </div>
           </Link>
 
-          {!isInstalled && (
-            <button
-              onClick={installApp}
-              className="text-xs px-3 py-1 rounded-full bg-cyan-400 text-black"
+          {!isTWA && (
+            <a
+              href="/apk/nandurbar-bazar.apk"
+              download
+              className="text-xs px-3 py-1 rounded-full bg-cyan-400 text-black font-medium"
             >
-              Install
-            </button>
+              Download App
+            </a>
           )}
 
           {!user ? (
@@ -237,13 +243,14 @@ const Navbar = () => {
               )}
             </Link>
 
-            {!isInstalled && (
-              <button
-                onClick={installApp}
+            {!isTWA && (
+              <a
+                href="/apk/nandurbar-bazar.apk"
+                download
                 className="px-4 py-2 rounded-full bg-gradient-to-r from-cyan-400 to-emerald-400 text-black font-medium"
               >
-                Install App
-              </button>
+                Download App
+              </a>
             )}
 
             {!user ? (
@@ -267,9 +274,8 @@ const Navbar = () => {
             <Link
               key={link.id}
               href={link.href}
-              className={`flex flex-col items-center gap-1 ${
-                isActive(link.href) ? 'text-cyan-400' : 'text-white/70'
-              }`}
+              className={`flex flex-col items-center gap-1 ${isActive(link.href) ? 'text-cyan-400' : 'text-white/70'
+                }`}
             >
               {link.icon}
               {link.label}
