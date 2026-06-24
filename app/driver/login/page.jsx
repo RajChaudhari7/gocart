@@ -39,7 +39,12 @@ export default function DriverLogin() {
                 data.driver.id
             )
 
-            await requestLocation(data.driver)
+            try {
+                await requestLocation(data.driver);
+            } catch (err) {
+                console.log("Location error:", err);
+                toast.error("Unable to get location");
+            }
 
             try {
 
