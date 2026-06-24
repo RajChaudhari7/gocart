@@ -22,11 +22,11 @@ export default function RootAdminLayout({ children }) {
   return (
     <>
       <SignedIn>
-        <StoreLayout>
-          <SplashWrapper>
+        <SplashWrapper>
+          <StoreLayout>
             {children}
-          </SplashWrapper>
-        </StoreLayout>
+          </StoreLayout>
+        </SplashWrapper>
       </SignedIn>
 
       <SignedOut>
