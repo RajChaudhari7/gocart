@@ -2,6 +2,7 @@ import { Outfit } from "next/font/google"
 import { Toaster } from "react-hot-toast"
 import { ClerkProvider } from "@clerk/nextjs"
 import StoreProvider from "@/app/StoreProvider"
+import SplashWrapper from "@/components/SplashWrapper"
 import "./globals.css"
 
 const outfit = Outfit({
@@ -34,7 +35,9 @@ export default function RootLayout({ children }) {
       <html lang="en">
         <body className={`${outfit.className} antialiased bg-slate-50 text-slate-900`}>
           <StoreProvider>
-            {children}
+            <SplashWrapper>
+              {children}
+            </SplashWrapper>
             <Toaster />
           </StoreProvider>
         </body>
