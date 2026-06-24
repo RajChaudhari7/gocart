@@ -11,30 +11,19 @@ export default function DriverNavbar() {
 
     const [driver, setDriver] = useState(null)
     const [isOnline, setIsOnline] = useState(false)
-    const [installPrompt, setInstallPrompt] = useState(null)
+    const [isTWA, setIsTWA] = useState(false)
     const router = useRouter()
 
     useEffect(() => {
 
-        const handler = (e) => {
+        const standalone =
+            window.matchMedia("(display-mode: standalone)").matches ||
+            window.navigator.standalone === true
 
-            e.preventDefault()
+        const twa =
+            document.referrer.includes("android-app://")
 
-            setInstallPrompt(e)
-        }
-
-        window.addEventListener(
-            "beforeinstallprompt",
-            handler
-        )
-
-        return () => {
-
-            window.removeEventListener(
-                "beforeinstallprompt",
-                handler
-            )
-        }
+        setIsTWA(standalone || twa)
 
     }, [])
 
@@ -192,31 +181,6 @@ export default function DriverNavbar() {
 
     }
 
-    const installApp = async () => {
-
-        if (!installPrompt) {
-
-            toast.error("Install not available")
-            return
-        }
-
-        installPrompt.prompt()
-
-        const { outcome } =
-            await installPrompt.userChoice
-
-        if (outcome === "accepted") {
-
-            toast.success("App Installed")
-
-        } else {
-
-            toast.error("Installation Cancelled")
-        }
-
-        setInstallPrompt(null)
-    }
-
     const firstName =
         driver?.name?.split(" ")[0] || "Driver"
 
@@ -250,19 +214,20 @@ export default function DriverNavbar() {
                     <div className="flex items-center gap-4">
 
                         {
-                            installPrompt && (
+                            !isTWA && (
 
-                                <button
-                                    onClick={installApp}
+                                <a
+                                    href="/apk/nandurbar-bazar-driver.apk"
+                                    download
                                     className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition shadow-sm"
                                 >
                                     <Download size={16} />
 
                                     <span className="hidden sm:block">
-                                        Install
+                                        Download App
                                     </span>
 
-                                </button>
+                                </a>
                             )
                         }
 
