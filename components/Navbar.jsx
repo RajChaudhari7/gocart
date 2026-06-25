@@ -152,8 +152,8 @@ const Navbar = () => {
             <Image
               src="/app.png"
               alt="Nandurbar Bazar Logo"
-              width={60}
-              height={60}
+              width={80}
+              height={80}
               className="object-contain"
               priority
             />
