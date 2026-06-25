@@ -180,7 +180,8 @@ const Navbar = () => {
             <UserButton
               appearance={{
                 elements: {
-                  userButtonAvatarBox: "w-10 h-10 sm:w-12 sm:h-12" 
+                  // This targets the avatar box itself
+                  userButtonAvatarBox: "w-12 h-12 sm:w-16 sm:h-16 border-2 border-cyan-400/30",
                 }
               }}
             />
@@ -257,7 +258,15 @@ const Navbar = () => {
                 Login
               </button>
             ) : (
-              <UserButton />
+              <div className="ml-2">
+                <UserButton
+                  appearance={{
+                    elements: {
+                      userButtonAvatarBox: "w-12 h-12 sm:w-16 sm:h-16 border-2 border-cyan-400/30",
+                    }
+                  }}
+                />
+              </div>
             )}
           </div>
         </div>
