@@ -188,7 +188,7 @@ export default function DriverNavbar() {
         driver?.name?.split(" ")[0] || "Driver"
 
     return (
-        <nav className="sticky top-0 z-50 backdrop-blur-xl bg-white/90 border-b border-slate-200">
+        <nav className="sticky top-0 z-50 backdrop-blur-xl bg-slate-800 border-b border-slate-200">
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6">
 
@@ -201,13 +201,13 @@ export default function DriverNavbar() {
                                 initial={{ opacity: 0, scale: 0.5, rotate: -180 }}
                                 animate={{ opacity: 1, scale: 1, rotate: 0 }}
                                 transition={{ duration: 0.8, type: "spring", stiffness: 100 }}
-                                className="relative w-16 h-16 bg-slate-900 rounded-full flex items-center justify-center shadow-lg border border-slate-700"
+                                className="relative w-16 h-16"
                             >
                                 <Image
                                     src="/driver.png"
                                     alt="Driver Logo"
                                     fill
-                                    className="object-contain p-2 mix-blend-screen"
+                                    className="object-contain"
                                     priority
                                 />
                             </motion.div>
