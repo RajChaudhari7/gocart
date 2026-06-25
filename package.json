@@ -15,6 +15,7 @@
     "@clerk/nextjs": "^6.31.10",
     "@emailjs/browser": "^4.4.1",
     "@neondatabase/serverless": "^1.0.1",
+    "@next/third-parties": "^16.2.9",
     "@prisma/adapter-neon": "^6.16.0",
     "@prisma/client": "^6.16.0",
     "@prisma/config": "^7.6.0",

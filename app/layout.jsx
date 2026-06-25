@@ -3,6 +3,7 @@ import { Toaster } from "react-hot-toast"
 import { ClerkProvider } from "@clerk/nextjs"
 import StoreProvider from "@/app/StoreProvider"
 import SplashWrapper from "@/components/SplashWrapper"
+import { GoogleAnalytics } from "@next/third-parties/google"
 import "./globals.css"
 
 const outfit = Outfit({
@@ -40,6 +41,9 @@ export default function RootLayout({ children }) {
             </SplashWrapper>
             <Toaster />
           </StoreProvider>
+          <GoogleAnalytics
+            gaId={process.env.NEXT_PUBLIC_GA_ID}
+          />
         </body>
       </html>
     </ClerkProvider>
