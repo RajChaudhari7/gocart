@@ -147,22 +147,8 @@ const Navbar = () => {
       {/* MOBILE TOP NAV */}
       <nav className="sm:hidden fixed top-0 inset-x-0 z-50 bg-black/70 backdrop-blur-2xl border-b border-white/10">
         <div className="flex items-center justify-between px-4 py-3">
-
-          <Link href="/" className="group relative inline-flex items-center gap-2">
-
-            <div className="relative flex h-9 w-9 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 via-emerald-400 to-cyan-500">
-              <span className="text-black font-black text-lg">NB</span>
-            </div>
-
-            <div className="flex flex-col leading-none">
-              <span className="font-bold text-white text-[15px]">
-                <span className="text-cyan-400">Nandurbar</span>
-              </span>
-
-              <span className="uppercase tracking-[0.28em] text-[8px] text-white/70">
-                Bazar
-              </span>
-            </div>
+          <Link href="/" className="group relative inline-flex items-center">
+            <img src="/icon-512.png" alt="Logo" className="h-9 w-9 object-contain" />
           </Link>
 
           {!isTWA && (
@@ -189,27 +175,13 @@ const Navbar = () => {
       </nav>
 
       {/* DESKTOP NAV */}
+      {/* DESKTOP NAV */}
       <nav className="hidden sm:block fixed top-0 inset-x-0 z-50 bg-black/60 backdrop-blur-2xl border-b border-white/10">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-
-          <Link href="/" className="group relative inline-flex items-center gap-2">
-
-            <div className="relative flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 via-emerald-400 to-cyan-500">
-              <span className="text-black font-black">NB</span>
-            </div>
-
-            <div className="flex flex-col leading-none">
-              <span className="font-bold text-white text-[22px]">
-                <span className="text-cyan-400">Nandurbar</span>
-              </span>
-
-              <span className="uppercase tracking-[0.28em] text-[10px] text-white/70">
-                Bazar
-              </span>
-            </div>
-
+          <Link href="/" className="group relative inline-flex items-center">
+            <img src="/icon-512.png" alt="Logo" className="h-10 w-10 object-contain" />
             <Protect plan="prime">
-              <span className="absolute -top-2 -right-14 text-[10px] px-2 py-0.5 bg-cyan-400 text-black rounded-full">
+              <span className="absolute -top-2 -left-2 text-[10px] px-2 py-0.5 bg-cyan-400 text-black rounded-full">
                 prime
               </span>
             </Protect>
