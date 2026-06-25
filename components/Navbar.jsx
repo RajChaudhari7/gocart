@@ -177,7 +177,13 @@ const Navbar = () => {
               Login
             </button>
           ) : (
-            <UserButton />
+            <UserButton
+              appearance={{
+                elements: {
+                  userButtonAvatarBox: "w-10 h-10 sm:w-12 sm:h-12" 
+                }
+              }}
+            />
           )}
         </div>
       </nav>
