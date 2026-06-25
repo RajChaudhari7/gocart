@@ -5,6 +5,7 @@ import { LogOut, Truck, Download } from "lucide-react"
 import toast from "react-hot-toast"
 import { useRouter } from "next/navigation"
 import axios from "axios"
+import Link from "next/link"
 
 
 export default function DriverNavbar() {
