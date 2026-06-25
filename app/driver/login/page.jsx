@@ -153,6 +153,16 @@ export default function DriverLogin() {
                     className="w-full border p-3 rounded mb-4"
                 />
 
+                <div className="text-right mb-4">
+                    <button
+                        type="button"
+                        onClick={() => router.push("/driver/reset-password")}
+                        className="text-sm text-blue-600 hover:underline"
+                    >
+                        Forgot Password?
+                    </button>
+                </div>
+
                 <button
                     type="submit"
                     disabled={loading}
