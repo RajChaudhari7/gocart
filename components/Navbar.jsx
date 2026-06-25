@@ -181,7 +181,7 @@ const Navbar = () => {
               appearance={{
                 elements: {
                   // This targets the avatar box itself
-                  userButtonAvatarBox: "w-12 h-12 sm:w-16 sm:h-16 border-2 border-cyan-400/30",
+                  userButtonAvatarBox: "w-20 h-20 sm:w-20 sm:h-20 border-2 border-cyan-400/30",
                 }
               }}
             />
@@ -262,7 +262,7 @@ const Navbar = () => {
                 <UserButton
                   appearance={{
                     elements: {
-                      userButtonAvatarBox: "w-12 h-12 sm:w-16 sm:h-16 border-2 border-cyan-400/30",
+                      userButtonAvatarBox: "w-20 h-20 sm:w-20 sm:h-20 border-2 border-cyan-400/30",
                     }
                   }}
                 />
