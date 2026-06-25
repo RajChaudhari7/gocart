@@ -23,7 +23,7 @@ export default function SplashWrapper({ children }) {
 
         const timer = setTimeout(() => {
             setShowSplash(false)
-        }, 3200)
+        }, 3500)
 
         return () => clearTimeout(timer)
     }, [])
