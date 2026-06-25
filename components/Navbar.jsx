@@ -149,14 +149,20 @@ const Navbar = () => {
       <nav className="sm:hidden fixed top-0 inset-x-0 z-50 bg-black/70 backdrop-blur-2xl border-b border-white/10">
         <div className="flex items-center justify-between px-4 py-3">
           <Link href="/" className="flex items-center">
-            <Image
-              src="/app.png"
-              alt="Nandurbar Bazar Logo"
-              width={65}
-              height={65}
-              className="object-contain"
-              priority
-            />
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, ease: "easeOut" }}
+            >
+              <Image
+                src="/app.png"
+                alt="Nandurbar Bazar Logo"
+                width={65}
+                height={65}
+                className="object-contain"
+                priority
+              />
+            </motion.div>
           </Link>
 
           {!isTWA && (
@@ -194,7 +200,12 @@ const Navbar = () => {
       <nav className="hidden sm:block fixed top-0 inset-x-0 z-50 bg-black/60 backdrop-blur-2xl border-b border-white/10">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link href="/" className="relative flex items-center">
-            <div className="relative w-12 h-12 sm:w-16 sm:h-16">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.5, rotate: -180 }}
+              animate={{ opacity: 1, scale: 1, rotate: 0 }}
+              transition={{ duration: 0.8, type: "spring", stiffness: 100 }}
+              className="relative w-12 h-12 sm:w-16 sm:h-16"
+            >
               <Image
                 src="/app.png"
                 alt="Logo"
@@ -202,9 +213,8 @@ const Navbar = () => {
                 className="object-contain"
                 priority
               />
-            </div>
+            </motion.div>
 
-            {/* The Prime badge positioning adjusted for the larger logo */}
             <Protect plan="prime">
               <span className="absolute -top-1 -right-4 text-[10px] px-2 py-0.5 bg-cyan-400 text-black rounded-full font-bold">
                 prime
