@@ -196,22 +196,23 @@ const AddressModal = ({ setShowAddressModal }) => {
   }
 
   useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
 
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
+          setAddress(prev => ({
+            ...prev,
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude
+          }))
 
-        setAddress(prev => ({
-          ...prev,
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude
-        }))
+        },
+        (error) => {
+          console.log("Location permission denied", error)
+        }
+      )
 
-      },
-      (error) => {
-        console.log("Location permission denied", error)
-      }
-    )
-
+    }
   }, [])
 
   return (
@@ -237,7 +238,39 @@ const AddressModal = ({ setShowAddressModal }) => {
           <input name="email" type="email" value={address.email} onChange={handleAddressChange} placeholder="Email Address" required className="input" />
           <input name="street" value={address.street} onChange={handleAddressChange} placeholder="Street Address" required className="input" />
 
+          {/* PIN CODE */}
+          <div>
+            <input
+              name="zip"
+              value={address.zip}
+              onChange={handleAddressChange}
+              onBlur={handlePinBlur}
+              placeholder="PIN Code (Auto-verified)"
+              className={`input ${errors.zip ? 'error' : ''}`}
+            />
+
+            {pinLoading && (
+              <p className="text-xs text-slate-500">
+                Verifying PIN...
+              </p>
+            )}
+
+            {isPinVerified && (
+              <p className="text-xs text-green-600">
+                PIN verified ✓
+              </p>
+            )}
+
+            {errors.zip && (
+              <p className="error-text">
+                {errors.zip}
+              </p>
+            )}
+          </div>
+
+          {/* CITY + STATE */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+
             <input
               name="city"
               value={address.city}
@@ -256,58 +289,48 @@ const AddressModal = ({ setShowAddressModal }) => {
               className="input"
             >
               <option value="">
-                {loadingStates ? 'Loading states...' : 'Select State'}
+                {loadingStates
+                  ? 'Loading states...'
+                  : 'Select State'}
               </option>
+
               {states.map((s) => (
                 <option key={s.code} value={s.name}>
                   {s.name}
                 </option>
               ))}
             </select>
+
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <input
-                name="zip"
-                value={address.zip}
-                onChange={handleAddressChange}
-                onBlur={handlePinBlur}
-                placeholder="PIN Code (Auto-verified)"
-                className={`input ${errors.zip ? 'error' : ''}`}
-              />
-              {pinLoading && (
-                <p className="text-xs text-slate-500">Verifying PIN...</p>
-              )}
-              {isPinVerified && (
-                <p className="text-xs text-green-600">PIN verified ✓</p>
-              )}
-              {errors.zip && <p className="error-text">{errors.zip}</p>}
-            </div>
+          {/* COUNTRY */}
+          <select
+            value={
+              countries.find(
+                (c) => c.name === address.country
+              )?.code || ''
+            }
+            onChange={handleCountrySelect}
+            required
+            className="input"
+          >
+            <option value="">
+              Select Country
+            </option>
 
-            <select
-              value={
-                countries.find((c) => c.name === address.country)?.code || ''
-              }
-              onChange={handleCountrySelect}
-              required
-              className="input"
-            >
-              <option value="">Select Country</option>
-              {countries.map((c) => (
-                <option key={c.code} value={c.code}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
+            {countries.map((c) => (
+              <option key={c.code} value={c.code}>
+                {c.name}
+              </option>
+            ))}
+          </select>
           <div>
             <input
               name="phone"
               value={address.phone}
               onChange={handleAddressChange}
               placeholder="Phone Number"
+              required
               className={`input ${errors.phone ? 'error' : ''}`}
             />
             {errors.phone && <p className="error-text">{errors.phone}</p>}
