@@ -152,9 +152,10 @@ const Navbar = () => {
             <Image
               src="/icon-512.png"
               alt="Nandurbar Bazar Logo"
-              width={40}
-              height={40}
+              width={60}
+              height={60}
               className="object-contain"
+              priority
             />
           </Link>
 
@@ -182,20 +183,23 @@ const Navbar = () => {
       </nav>
 
       {/* DESKTOP NAV */}
-     
+
       <nav className="hidden sm:block fixed top-0 inset-x-0 z-50 bg-black/60 backdrop-blur-2xl border-b border-white/10">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link href="/" className="relative flex items-center">
-            <Image
-              src="/icon-512.png"
-              alt="Nandurbar Bazar Logo"
-              width={48}
-              height={48}
-              className="object-contain"
-            />
+            <div className="relative w-12 h-12 sm:w-16 sm:h-16">
+              <Image
+                src="/icon-512.png"
+                alt="Logo"
+                fill
+                className="object-contain"
+                priority
+              />
+            </div>
+
+            {/* The Prime badge positioning adjusted for the larger logo */}
             <Protect plan="prime">
-              {/* Adjusted positioning slightly for better alignment with just the icon */}
-              <span className="absolute -top-1 -right-8 text-[10px] px-2 py-0.5 bg-cyan-400 text-black rounded-full font-bold">
+              <span className="absolute -top-1 -right-4 text-[10px] px-2 py-0.5 bg-cyan-400 text-black rounded-full font-bold">
                 prime
               </span>
             </Protect>
