@@ -47,7 +47,7 @@ export default function AppSplash() {
           }}
         >
           <Image
-            src="/icon-512.png"
+            src="/app.png"
             alt="Nandurbar Bazar"
             width={220}
             height={220}
