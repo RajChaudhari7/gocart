@@ -196,21 +196,18 @@ export default function DriverNavbar() {
 
                     {/* LEFT */}
                     <div className="flex items-center">
-                        <Link href="/" className="flex items-center">
+                        <Link href="/driver/" className="flex items-center">
                             <motion.div
                                 initial={{ opacity: 0, scale: 0.5, rotate: -180 }}
                                 animate={{ opacity: 1, scale: 1, rotate: 0 }}
                                 transition={{ duration: 0.8, type: "spring", stiffness: 100 }}
-                                // Changed bg-white to a dark blue-grey for high contrast
-                                className="relative w-12 h-12 bg-slate-900 rounded-full flex items-center justify-center shadow-lg border border-slate-700"
+                                className="relative w-16 h-16 bg-slate-900 rounded-full flex items-center justify-center shadow-lg border border-slate-700"
                             >
                                 <Image
                                     src="/driver.png"
                                     alt="Driver Logo"
                                     fill
-                                    // Changed blend mode to 'screen' or 'lighten' 
-                                    // to make the white background of the logo transparent against dark bg
-                                    className="object-contain p-1.5 mix-blend-screen"
+                                    className="object-contain p-2 mix-blend-screen"
                                     priority
                                 />
                             </motion.div>
