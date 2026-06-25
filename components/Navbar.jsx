@@ -150,7 +150,7 @@ const Navbar = () => {
         <div className="flex items-center justify-between px-4 py-3">
           <Link href="/" className="flex items-center">
             <Image
-              src="/icon-512.png"
+              src="/app.png"
               alt="Nandurbar Bazar Logo"
               width={60}
               height={60}
@@ -189,7 +189,7 @@ const Navbar = () => {
           <Link href="/" className="relative flex items-center">
             <div className="relative w-12 h-12 sm:w-16 sm:h-16">
               <Image
-                src="/icon-512.png"
+                src="/app.png"
                 alt="Logo"
                 fill
                 className="object-contain"
