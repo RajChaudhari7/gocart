@@ -262,7 +262,7 @@ export default function DriverNavbar() {
                         {/* Driver Name */}
                         <div className="flex items-center gap-3">
 
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white flex items-center justify-center font-semibold shadow">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 text-black flex items-center justify-center font-semibold shadow">
 
                                 {firstName.charAt(0).toUpperCase()}
 

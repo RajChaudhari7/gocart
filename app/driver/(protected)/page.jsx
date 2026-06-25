@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react"
 import axios from "axios"
 import toast from "react-hot-toast"
 import { useRouter } from "next/navigation"
+import Loading from "@/components/Loading"
 
 export default function DriverDashboard() {
 
@@ -16,6 +17,7 @@ export default function DriverDashboard() {
     const audioRef = useRef(null)
     const ignoredOrdersRef = useRef([])
     const router = useRouter()
+    const [isLoading, setIsLoading] = useState(true)
 
     // Initialize Audio
     useEffect(() => {
@@ -27,6 +29,18 @@ export default function DriverDashboard() {
             }
         }
     }, [])
+
+    useEffect(() => {
+        const storedDriver = localStorage.getItem("driver")
+
+        if (!storedDriver) {
+            // If no driver found, redirect to login
+            router.replace("/driver/login")
+        } else {
+            // If driver found, stop loading and show dashboard
+            setIsLoading(false)
+        }
+    }, [router])
 
     useEffect(() => {
         const audio = audioRef.current
@@ -184,6 +198,10 @@ export default function DriverDashboard() {
         return () => clearInterval(timer)
 
     }, [incomingOrder])
+
+    if (isLoading) {
+        return <Loading /> 
+    }
 
     return (
         <div className="p-6">
