@@ -14,6 +14,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { useUser, useClerk, UserButton, Protect } from '@clerk/nextjs'
 import { motion, AnimatePresence } from 'framer-motion'
+import Image from 'next/image'
 
 /* ================= ANIMATION VARIANTS ================= */
 const cartPulse = {
@@ -147,8 +148,14 @@ const Navbar = () => {
       {/* MOBILE TOP NAV */}
       <nav className="sm:hidden fixed top-0 inset-x-0 z-50 bg-black/70 backdrop-blur-2xl border-b border-white/10">
         <div className="flex items-center justify-between px-4 py-3">
-          <Link href="/" className="group relative inline-flex items-center">
-            <img src="/icon-512.png" alt="Logo" className="h-9 w-9 object-contain" />
+          <Link href="/" className="flex items-center">
+            <Image
+              src="/icon-512.png"
+              alt="Nandurbar Bazar Logo"
+              width={40}
+              height={40}
+              className="object-contain"
+            />
           </Link>
 
           {!isTWA && (
@@ -175,13 +182,20 @@ const Navbar = () => {
       </nav>
 
       {/* DESKTOP NAV */}
-      {/* DESKTOP NAV */}
+     
       <nav className="hidden sm:block fixed top-0 inset-x-0 z-50 bg-black/60 backdrop-blur-2xl border-b border-white/10">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="group relative inline-flex items-center">
-            <img src="/icon-512.png" alt="Logo" className="h-10 w-10 object-contain" />
+          <Link href="/" className="relative flex items-center">
+            <Image
+              src="/icon-512.png"
+              alt="Nandurbar Bazar Logo"
+              width={48}
+              height={48}
+              className="object-contain"
+            />
             <Protect plan="prime">
-              <span className="absolute -top-2 -left-2 text-[10px] px-2 py-0.5 bg-cyan-400 text-black rounded-full">
+              {/* Adjusted positioning slightly for better alignment with just the icon */}
+              <span className="absolute -top-1 -right-8 text-[10px] px-2 py-0.5 bg-cyan-400 text-black rounded-full font-bold">
                 prime
               </span>
             </Protect>
