@@ -192,22 +192,23 @@ export default function DriverNavbar() {
                 <div className="h-16 flex items-center justify-between">
 
                     {/* LEFT */}
-                    <div className="flex items-center gap-3">
-
-                        <div className="w-11 h-11 rounded-xl bg-gradient-to-r from-emerald-500 to-green-600 flex items-center justify-center shadow-md">
-                            <Truck className="text-white h-6 w-6" />
-                        </div>
-
-                        <div>
-                            <h1 className="font-bold text-slate-800 text-lg leading-none">
-                                Nandurbar Bazar
-                            </h1>
-
-                            <p className="text-xs text-slate-500">
-                                Driver App
-                            </p>
-                        </div>
-
+                    <div className="flex items-center">
+                        <Link href="/" className="flex items-center">
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.5, rotate: -180 }}
+                                animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                                transition={{ duration: 0.8, type: "spring", stiffness: 100 }}
+                                className="relative w-12 h-12"
+                            >
+                                <Image
+                                    src="/driver.png"
+                                    alt="Driver Logo"
+                                    fill
+                                    className="object-contain"
+                                    priority
+                                />
+                            </motion.div>
+                        </Link>
                     </div>
 
                     {/* RIGHT */}

@@ -91,7 +91,7 @@ export default function AppSplash() {
                     }}
                 >
                     <Image
-                        src="/driver-512.png"
+                        src="/driver.png"
                         alt="Driver App"
                         width={180}
                         height={180}
