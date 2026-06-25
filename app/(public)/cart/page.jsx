@@ -57,7 +57,7 @@ export default function Cart() {
           Looks like you haven’t added anything to your cart yet. Discover our latest products and find something you love.
         </p>
         <Link
-          href="/products"
+          href="/product"
           className="px-8 py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-full shadow-lg shadow-indigo-500/25 transition-all active:scale-95"
         >
           Start Shopping
@@ -76,7 +76,7 @@ export default function Cart() {
             heading="Shopping Cart"
             text={`${cartArray.length} items in your cart`}
             linkText="Continue shopping"
-            linkHref="/products"
+            linkHref="/product"
             textColor="text-slate-400"
           />
         </div>
