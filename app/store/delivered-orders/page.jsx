@@ -14,6 +14,7 @@ export default function DeliveredOrders() {
     const [selectedOrder, setSelectedOrder] = useState(null)
     const [isModalOpen, setIsModalOpen] = useState(false)
 
+
     // Filters
     const currentDate = new Date()
     const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth())
@@ -38,6 +39,24 @@ export default function DeliveredOrders() {
         } finally {
             setLoading(false);
         }
+    };
+
+    // Helper to calculate financials
+    const getOrderFinances = (order) => {
+        // 1. Calculate actual product cost (ignores the delivery fee completely)
+        const productTotal = order.orderItems.reduce(
+            (sum, item) => sum + item.price * item.quantity,
+            0
+        );
+
+        // 2. Calculate platform commission (10%) and seller earnings (90%)
+        const platformFee = productTotal * 0.10;
+        const sellerEarnings = productTotal * 0.90;
+
+        // 3. Identify shipping fee (Customer Total - Product Total)
+        const shippingFee = Math.max(0, order.total - productTotal);
+
+        return { productTotal, platformFee, sellerEarnings, shippingFee };
     };
 
     const filteredOrders = orders.filter(order => {
