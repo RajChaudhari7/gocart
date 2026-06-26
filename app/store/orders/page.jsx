@@ -352,7 +352,6 @@ export default function StoreOrders() {
                 </div>
                 <div style="text-align: right;">
                     <h2 style="color: #0891b2; margin: 0;">OFFICIAL RECEIPT</h2>
-                    <p style="margin: 5px 0 0; font-size: 14px; font-weight: bold;">Status: ${order.status}</p>
                 </div>
             </div>
 
@@ -393,17 +392,20 @@ export default function StoreOrders() {
             </table>
 
             <!-- Summary -->
-            <div style="margin-top: 20px; float: right; width: 250px;">
-                <div style="display: flex; justify-content: space-between; padding: 5px 0;">
-                    <span>Product Total:</span> <span>₹${(order.total - (order.shippingFee || 0)).toFixed(2)}</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; padding: 5px 0;">
-                    <span>Delivery Fee:</span> <span>₹${(order.shippingFee || 0).toFixed(2)}</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; padding: 10px 0; border-top: 2px solid #0f172a; font-weight: bold; font-size: 18px;">
-                    <span>Total Paid:</span> <span>₹${order.total.toFixed(2)}</span>
-                </div>
-            </div>
+            <div style="margin-top: 20px; float: right; width: 280px;">
+    <div style="display: flex; justify-content: space-between; padding: 5px 0; color: #64748b;">
+        <span>Product Total:</span> 
+        <span>₹${productTotal.toFixed(2)}</span>
+    </div>
+    <div style="display: flex; justify-content: space-between; padding: 5px 0; color: #64748b;">
+        <span>Delivery Fee:</span> 
+        <span>₹${shippingFee.toFixed(2)}</span>
+    </div>
+    <div style="display: flex; justify-content: space-between; padding: 10px 0; border-top: 2px solid #0f172a; font-weight: bold; font-size: 18px; color: #000000;">
+        <span>Total Paid:</span> 
+        <span>₹${order.total.toFixed(2)}</span>
+    </div>
+</div>
             <div style="clear: both;"></div>
 
             <!-- Footer -->
