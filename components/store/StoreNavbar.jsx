@@ -29,24 +29,26 @@ const StoreNavbar = () => {
   return (
     <nav className="sticky top-0 z-50 w-full bg-[#050505]/85 backdrop-blur-2xl border-b border-white/5 shadow-[0_8px_30px_rgba(0,255,255,0.08)]">
       <div className="max-w-7xl mx-auto px-4 sm:px-8 py-3 flex items-center justify-between">
-        
-        {/* UPDATED BRAND LOGO */}
-        <Link href="/store/" className="group flex items-center gap-3">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.5, rotate: -180 }}
-            animate={{ opacity: 1, scale: 1, rotate: 0 }}
-            transition={{ duration: 0.8, type: "spring", stiffness: 100 }}
-            className="relative h-18 w-18 sm:h-20 sm:w-20 bg-slate-900 rounded-full flex items-center justify-center border border-white/10 shadow-lg"
-          >
-            <Image
-              src="/seller.png"
-              alt="Seller Logo"
-              fill
-              className="object-contain p-2 mix-blend-screen"
-              priority
-            />
-          </motion.div>
-        </Link>
+
+        {/* LEFT */}
+        <div className="flex items-center">
+          <Link href="/store/" className="flex items-center">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.5, rotate: -180 }}
+              animate={{ opacity: 1, scale: 1, rotate: 0 }}
+              transition={{ duration: 0.8, type: "spring", stiffness: 100 }}
+              className="relative w-16 h-16"
+            >
+              <Image
+                src="/seller.png"
+                alt="Seller Logo"
+                fill
+                className="object-contain"
+                priority
+              />
+            </motion.div>
+          </Link>
+        </div>
 
         {/* RIGHT */}
         <div className="flex items-center gap-3 sm:gap-5">
