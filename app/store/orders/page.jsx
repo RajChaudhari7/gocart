@@ -11,7 +11,7 @@ import { useOrderStore } from "@/hooks/use-order-store"
 
 const SELLER_STATUSES = [
     "ORDER_PLACED",
-    "ORDER_CONFIRMED",         
+    "ORDER_CONFIRMED",
     "ORDER_PACKING",
     "ORDER_PACKED"
 ]
@@ -89,6 +89,8 @@ export default function StoreOrders() {
     }, [orders.length]);
 
     const filteredOrders = orders.filter(order => {
+        const isFinished = ["DELIVERED", "CANCELLED", "RETURNED"].includes(order.status);
+        if (isFinished) return false;
         const orderDate = new Date(order.createdAt)
 
         if (selectedDate) {

@@ -19,12 +19,8 @@ const StoreSidebar = ({ storeInfo, pendingOrdersCount = 0 }) => {
     { name: 'Dashboard', href: '/store', icon: HomeIcon },
     { name: 'Add Product', href: '/store/add-product', icon: SquarePlusIcon },
     { name: 'Manage Products', href: '/store/manage-product', icon: SquarePenIcon },
-    {
-      name: 'Orders',
-      href: '/store/orders',
-      icon: LayoutListIcon,
-      badge: pendingOrdersCount
-    },
+    { name: 'Pending Orders', href: '/store/orders', icon: LayoutListIcon, badge: pendingOrdersCount },
+    { name: 'Delivered Orders', href: '/store/delivered-orders', icon: TruckIcon },
   ]
 
   return (
