@@ -313,66 +313,104 @@ export default function StoreOrders() {
         document.body.removeChild(reportDiv)
     }
 
-    const downloadInvoicePDF = async (order) => {
-        const invoiceDiv = document.createElement('div');
-        // Set explicit styles using solid Hex colors
-        invoiceDiv.style.position = 'fixed';
-        invoiceDiv.style.left = '-9999px';
-        invoiceDiv.style.width = '800px';
-        invoiceDiv.style.background = '#ffffff'; // Solid white
-        invoiceDiv.style.padding = '40px';
-        invoiceDiv.style.color = '#000000'; // Solid black
-        invoiceDiv.style.fontFamily = 'Arial, sans-serif';
+   const downloadInvoicePDF = async (order) => {
+    const invoiceDiv = document.createElement('div');
+    invoiceDiv.style.position = 'fixed';
+    invoiceDiv.style.left = '-9999px';
+    invoiceDiv.style.width = '800px';
+    invoiceDiv.style.background = '#ffffff';
+    invoiceDiv.style.padding = '50px';
+    invoiceDiv.style.color = '#1f2937'; // Slate 800
+    invoiceDiv.style.fontFamily = 'Helvetica, Arial, sans-serif';
 
-        invoiceDiv.innerHTML = `
-        <div style="color: #000000;">
-            <h1 style="border-bottom: 2px solid #cccccc; padding-bottom: 10px;">Invoice #${order.id.slice(-6)}</h1>
-            <p><strong>Date:</strong> ${new Date(order.createdAt).toLocaleDateString()}</p>
-            <p><strong>Customer:</strong> ${order.user?.name || 'Valued Customer'}</p>
-            <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+    invoiceDiv.innerHTML = `
+        <div style="border: 2px solid #0f172a; padding: 30px;">
+            <!-- Header -->
+            <div style="display: flex; justify-content: space-between; align-items: start; border-bottom: 2px solid #0f172a; padding-bottom: 20px;">
+                <div>
+                    <h1 style="color: #0f172a; margin: 0; font-size: 32px;">INVOICE</h1>
+                    <p style="margin: 5px 0 0; color: #64748b;">#${order.id.slice(-8).toUpperCase()}</p>
+                </div>
+                <div style="text-align: right;">
+                    <h2 style="color: #0891b2; margin: 0;">NANDURBAR BAZAR</h2>
+                    <p style="margin: 5px 0 0; font-size: 14px;">Official Seller Receipt</p>
+                </div>
+            </div>
+
+            <!-- Details -->
+            <div style="display: flex; justify-content: space-between; margin-top: 30px; font-size: 14px;">
+                <div>
+                    <h3 style="margin: 0; color: #64748b; text-transform: uppercase; font-size: 12px;">Customer Details</h3>
+                    <p style="margin: 5px 0; font-weight: bold; font-size: 16px;">${order.user?.name}</p>
+                    <p style="margin: 0;">${order.address?.street || ''}</p>
+                    <p style="margin: 0;">${order.address?.city || ''}</p>
+                </div>
+                <div style="text-align: right;">
+                    <h3 style="margin: 0; color: #64748b; text-transform: uppercase; font-size: 12px;">Order Date</h3>
+                    <p style="margin: 5px 0; font-weight: bold;">${new Date(order.createdAt).toLocaleDateString()}</p>
+                </div>
+            </div>
+
+            <!-- Table -->
+            <table style="width: 100%; border-collapse: collapse; margin-top: 30px;">
                 <thead>
-                    <tr style="background: #eeeeee;">
-                        <th style="text-align: left; padding: 10px; border: 1px solid #cccccc;">Item</th>
-                        <th style="text-align: right; padding: 10px; border: 1px solid #cccccc;">Price</th>
+                    <tr style="background: #0f172a; color: #ffffff;">
+                        <th style="padding: 12px; text-align: left;">Item Description</th>
+                        <th style="padding: 12px; text-align: center;">Qty</th>
+                        <th style="padding: 12px; text-align: right;">Price</th>
                     </tr>
                 </thead>
                 <tbody>
                     ${order.orderItems.map(item => `
-                        <tr>
-                            <td style="padding: 10px; border: 1px solid #cccccc;">${item.product?.name || 'Product'}</td>
-                            <td style="text-align: right; padding: 10px; border: 1px solid #cccccc;">₹${(item.price * item.quantity).toFixed(2)}</td>
+                        <tr style="border-bottom: 1px solid #e2e8f0;">
+                            <td style="padding: 12px;">${item.product?.name}</td>
+                            <td style="padding: 12px; text-align: center;">${item.quantity}</td>
+                            <td style="padding: 12px; text-align: right;">₹${(item.price * item.quantity).toFixed(2)}</td>
                         </tr>
                     `).join('')}
                 </tbody>
             </table>
-            <h2 style="text-align: right; margin-top: 20px;">Total: ₹${order.total.toFixed(2)}</h2>
+
+            <!-- Summary -->
+            <div style="margin-top: 20px; float: right; width: 250px;">
+                <div style="display: flex; justify-content: space-between; padding: 5px 0;">
+                    <span>Product Total:</span> <span>₹${(order.total - (order.shippingFee || 0)).toFixed(2)}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 5px 0;">
+                    <span>Delivery Fee:</span> <span>₹${(order.shippingFee || 0).toFixed(2)}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 10px 0; border-top: 2px solid #0f172a; font-weight: bold; font-size: 18px;">
+                    <span>Total Paid:</span> <span>₹${order.total.toFixed(2)}</span>
+                </div>
+            </div>
+            
+            <div style="clear: both;"></div>
+
+            <!-- Footer -->
+            <div style="margin-top: 50px; text-align: center; border-top: 1px solid #e2e8f0; padding-top: 20px;">
+                <p style="font-weight: bold; color: #0f172a;">Thank you for using Nandurbar Bazar!</p>
+                <p style="color: #64748b; font-size: 12px;">Visit again for fresh local goods.</p>
+            </div>
         </div>
     `;
 
-        document.body.appendChild(invoiceDiv);
+    document.body.appendChild(invoiceDiv);
 
-        try {
-            const canvas = await html2canvas(invoiceDiv, {
-                scale: 2,
-                useCORS: true,
-                allowTaint: true
-            });
-
-            const imgData = canvas.toDataURL('image/png');
-            const pdf = new jsPDF('p', 'pt', 'a4');
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-
-            pdf.addImage(imgData, 'PNG', 40, 40, pdfWidth - 80, pdfHeight);
-            pdf.save(`Invoice_${order.id.slice(-6)}.pdf`);
-            toast.success("Invoice downloaded!");
-        } catch (err) {
-            console.error("PDF generation error:", err);
-            toast.error("Failed to generate invoice");
-        } finally {
-            document.body.removeChild(invoiceDiv);
-        }
-    };
+    try {
+        const canvas = await html2canvas(invoiceDiv, { scale: 2, allowTaint: true, useCORS: true });
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF('p', 'pt', 'a4');
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+        pdf.addImage(imgData, 'PNG', 20, 20, pdfWidth - 40, pdfHeight);
+        pdf.save(`Invoice_${order.id.slice(-6)}.pdf`);
+        toast.success("Invoice downloaded successfully!");
+    } catch (err) {
+        toast.error("Failed to generate invoice");
+    } finally {
+        document.body.removeChild(invoiceDiv);
+    }
+};
 
     const openModal = (order) => {
         setSelectedOrder(order)
