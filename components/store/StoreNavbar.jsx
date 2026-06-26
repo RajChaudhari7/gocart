@@ -36,7 +36,7 @@ const StoreNavbar = () => {
             initial={{ opacity: 0, scale: 0.5, rotate: -180 }}
             animate={{ opacity: 1, scale: 1, rotate: 0 }}
             transition={{ duration: 0.8, type: "spring", stiffness: 100 }}
-            className="relative h-14 w-14 sm:h-16 sm:w-16 bg-slate-900 rounded-full flex items-center justify-center border border-white/10 shadow-lg"
+            className="relative h-18 w-18 sm:h-20 sm:w-20 bg-slate-900 rounded-full flex items-center justify-center border border-white/10 shadow-lg"
           >
             <Image
               src="/seller.png"
