@@ -314,26 +314,45 @@ export default function StoreOrders() {
     }
 
     const downloadInvoicePDF = async (order) => {
+        // Helper to get image as base64 to avoid CORS issues in PDF
+        const getBase64Image = async (url) => {
+            if (!url) return null;
+            try {
+                const response = await fetch(url);
+                const blob = await response.blob();
+                return new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(reader.result);
+                    reader.readAsDataURL(blob);
+                });
+            } catch (e) { return null; }
+        };
+
+        const logoBase64 = await getBase64Image(order.store?.logo);
+
         const invoiceDiv = document.createElement('div');
         invoiceDiv.style.position = 'fixed';
         invoiceDiv.style.left = '-9999px';
         invoiceDiv.style.width = '800px';
         invoiceDiv.style.background = '#ffffff';
         invoiceDiv.style.padding = '50px';
-        invoiceDiv.style.color = '#1f2937'; // Slate 800
+        invoiceDiv.style.color = '#1f2937';
         invoiceDiv.style.fontFamily = 'Helvetica, Arial, sans-serif';
 
         invoiceDiv.innerHTML = `
         <div style="border: 2px solid #0f172a; padding: 30px;">
-            <!-- Header -->
+            <!-- Header with Store Logo -->
             <div style="display: flex; justify-content: space-between; align-items: start; border-bottom: 2px solid #0f172a; padding-bottom: 20px;">
-                <div>
-                    <h1 style="color: #0f172a; margin: 0; font-size: 32px;">INVOICE</h1>
-                    <p style="margin: 5px 0 0; color: #64748b;">#${order.id.slice(-8).toUpperCase()}</p>
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    ${logoBase64 ? `<img src="${logoBase64}" style="width: 60px; height: 60px; border-radius: 50%; border: 1px solid #ddd;" />` : ''}
+                    <div>
+                        <h1 style="color: #0f172a; margin: 0; font-size: 24px;">${order.store?.name || 'Nandurbar Bazar'}</h1>
+                        <p style="margin: 5px 0 0; color: #64748b; font-size: 14px;">Invoice ID: #${order.id.slice(-8).toUpperCase()}</p>
+                    </div>
                 </div>
                 <div style="text-align: right;">
-                    <h2 style="color: #0891b2; margin: 0;">NANDURBAR BAZAR</h2>
-                    <p style="margin: 5px 0 0; font-size: 14px;">Official Seller Receipt</p>
+                    <h2 style="color: #0891b2; margin: 0;">OFFICIAL RECEIPT</h2>
+                    <p style="margin: 5px 0 0; font-size: 14px; font-weight: bold;">Status: ${order.status}</p>
                 </div>
             </div>
 
@@ -342,12 +361,13 @@ export default function StoreOrders() {
                 <div>
                     <h3 style="margin: 0; color: #64748b; text-transform: uppercase; font-size: 12px;">Customer Details</h3>
                     <p style="margin: 5px 0; font-weight: bold; font-size: 16px;">${order.user?.name}</p>
-                    <p style="margin: 0;">${order.address?.street || ''}</p>
-                    <p style="margin: 0;">${order.address?.city || ''}</p>
-                    <p style="margin: 0;">${order.user?.phone || ''}</p>
+                    <p style="margin: 0;">${order.address?.street || ''}, ${order.address?.city || ''}</p>
+                    <p style="margin: 0;">Ph: ${order.address?.phone || order.user?.phone || 'N/A'}</p>
                 </div>
                 <div style="text-align: right;">
-                    <h3 style="margin: 0; color: #64748b; text-transform: uppercase; font-size: 12px;">Order Date</h3>
+                    <h3 style="margin: 0; color: #64748b; text-transform: uppercase; font-size: 12px;">Payment Mode</h3>
+                    <p style="margin: 5px 0; font-weight: bold;">${order.paymentMethod || 'N/A'}</p>
+                    <h3 style="margin: 15px 0 0; color: #64748b; text-transform: uppercase; font-size: 12px;">Order Date</h3>
                     <p style="margin: 5px 0; font-weight: bold;">${new Date(order.createdAt).toLocaleDateString()}</p>
                 </div>
             </div>
@@ -384,13 +404,11 @@ export default function StoreOrders() {
                     <span>Total Paid:</span> <span>₹${order.total.toFixed(2)}</span>
                 </div>
             </div>
-            
             <div style="clear: both;"></div>
 
             <!-- Footer -->
             <div style="margin-top: 50px; text-align: center; border-top: 1px solid #e2e8f0; padding-top: 20px;">
                 <p style="font-weight: bold; color: #0f172a;">Thank you for using Nandurbar Bazar!</p>
-                <p style="color: #64748b; font-size: 12px;">Visit again for fresh local goods.</p>
             </div>
         </div>
     `;
@@ -405,7 +423,7 @@ export default function StoreOrders() {
             const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
             pdf.addImage(imgData, 'PNG', 20, 20, pdfWidth - 40, pdfHeight);
             pdf.save(`Invoice_${order.id.slice(-6)}.pdf`);
-            toast.success("Invoice downloaded successfully!");
+            toast.success("Invoice downloaded!");
         } catch (err) {
             toast.error("Failed to generate invoice");
         } finally {
