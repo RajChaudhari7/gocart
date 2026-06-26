@@ -313,18 +313,19 @@ export default function StoreOrders() {
         document.body.removeChild(reportDiv)
     }
 
-   const downloadInvoicePDF = async (order) => {
-    // 1. Create container
-    const invoiceDiv = document.createElement('div');
-    invoiceDiv.style.position = 'fixed';
-    invoiceDiv.style.left = '-9999px';
-    invoiceDiv.style.width = '800px';
-    invoiceDiv.style.background = '#ffffff';
-    invoiceDiv.style.padding = '40px';
-    invoiceDiv.style.color = '#000'; // Ensure text is black
-    
-    // 2. Build content (Simplified to ensure no crashes)
-    invoiceDiv.innerHTML = `
+    const downloadInvoicePDF = async (order) => {
+        // 1. Create container
+        const invoiceDiv = document.createElement('div');
+        invoiceDiv.style.position = 'fixed';
+        invoiceDiv.style.top = '0';
+        invoiceDiv.style.left = '-9999px'; // Move off-screen
+        invoiceDiv.style.width = '800px';
+        invoiceDiv.style.background = '#ffffff';
+        invoiceDiv.style.padding = '40px';
+        invoiceDiv.style.color = '#000';
+
+        // 2. Build content 
+        invoiceDiv.innerHTML = `
         <div style="font-family: sans-serif;">
             <h1 style="border-bottom: 2px solid #ccc; padding-bottom: 10px;">Invoice #${order.id.slice(-6)}</h1>
             <p><strong>Date:</strong> ${new Date(order.createdAt).toLocaleDateString()}</p>
@@ -349,32 +350,32 @@ export default function StoreOrders() {
         </div>
     `;
 
-    document.body.appendChild(invoiceDiv);
+        document.body.appendChild(invoiceDiv);
 
-    try {
-        // 3. Capture with specific settings to ignore CORS issues
-        const canvas = await html2canvas(invoiceDiv, { 
-            scale: 2, 
-            allowTaint: true, 
-            useCORS: false // Set to false to avoid cross-origin blocking
-        });
+        try {
+            // 3. Capture with specific settings
+            const canvas = await html2canvas(invoiceDiv, {
+                scale: 2,
+                useCORS: true, // Required for images
+                allowTaint: true
+            });
 
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF('p', 'pt', 'a4');
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF('p', 'pt', 'a4');
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
-        pdf.addImage(imgData, 'PNG', 40, 40, pdfWidth - 80, pdfHeight);
-        pdf.save(`Invoice_${order.id.slice(-6)}.pdf`);
-        toast.success("Invoice downloaded!");
-    } catch (err) {
-        console.error("PDF generation error:", err);
-        toast.error("Failed to generate invoice");
-    } finally {
-        // 4. Always cleanup
-        document.body.removeChild(invoiceDiv);
-    }
-};
+            pdf.addImage(imgData, 'PNG', 40, 40, pdfWidth - 80, pdfHeight);
+            pdf.save(`Invoice_${order.id.slice(-6)}.pdf`);
+            toast.success("Invoice downloaded!");
+        } catch (err) {
+            console.error("PDF generation error:", err);
+            toast.error("Failed to generate invoice");
+        } finally {
+            // 4. Always cleanup
+            document.body.removeChild(invoiceDiv);
+        }
+    };
 
     const openModal = (order) => {
         setSelectedOrder(order)
