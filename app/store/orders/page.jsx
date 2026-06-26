@@ -313,17 +313,17 @@ export default function StoreOrders() {
         document.body.removeChild(reportDiv)
     }
 
-   const downloadInvoicePDF = async (order) => {
-    const invoiceDiv = document.createElement('div');
-    invoiceDiv.style.position = 'fixed';
-    invoiceDiv.style.left = '-9999px';
-    invoiceDiv.style.width = '800px';
-    invoiceDiv.style.background = '#ffffff';
-    invoiceDiv.style.padding = '50px';
-    invoiceDiv.style.color = '#1f2937'; // Slate 800
-    invoiceDiv.style.fontFamily = 'Helvetica, Arial, sans-serif';
+    const downloadInvoicePDF = async (order) => {
+        const invoiceDiv = document.createElement('div');
+        invoiceDiv.style.position = 'fixed';
+        invoiceDiv.style.left = '-9999px';
+        invoiceDiv.style.width = '800px';
+        invoiceDiv.style.background = '#ffffff';
+        invoiceDiv.style.padding = '50px';
+        invoiceDiv.style.color = '#1f2937'; // Slate 800
+        invoiceDiv.style.fontFamily = 'Helvetica, Arial, sans-serif';
 
-    invoiceDiv.innerHTML = `
+        invoiceDiv.innerHTML = `
         <div style="border: 2px solid #0f172a; padding: 30px;">
             <!-- Header -->
             <div style="display: flex; justify-content: space-between; align-items: start; border-bottom: 2px solid #0f172a; padding-bottom: 20px;">
@@ -344,6 +344,7 @@ export default function StoreOrders() {
                     <p style="margin: 5px 0; font-weight: bold; font-size: 16px;">${order.user?.name}</p>
                     <p style="margin: 0;">${order.address?.street || ''}</p>
                     <p style="margin: 0;">${order.address?.city || ''}</p>
+                    <p style="margin: 0;">${order.user?.phone || ''}</p>
                 </div>
                 <div style="text-align: right;">
                     <h3 style="margin: 0; color: #64748b; text-transform: uppercase; font-size: 12px;">Order Date</h3>
@@ -394,23 +395,23 @@ export default function StoreOrders() {
         </div>
     `;
 
-    document.body.appendChild(invoiceDiv);
+        document.body.appendChild(invoiceDiv);
 
-    try {
-        const canvas = await html2canvas(invoiceDiv, { scale: 2, allowTaint: true, useCORS: true });
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF('p', 'pt', 'a4');
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-        pdf.addImage(imgData, 'PNG', 20, 20, pdfWidth - 40, pdfHeight);
-        pdf.save(`Invoice_${order.id.slice(-6)}.pdf`);
-        toast.success("Invoice downloaded successfully!");
-    } catch (err) {
-        toast.error("Failed to generate invoice");
-    } finally {
-        document.body.removeChild(invoiceDiv);
-    }
-};
+        try {
+            const canvas = await html2canvas(invoiceDiv, { scale: 2, allowTaint: true, useCORS: true });
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF('p', 'pt', 'a4');
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+            pdf.addImage(imgData, 'PNG', 20, 20, pdfWidth - 40, pdfHeight);
+            pdf.save(`Invoice_${order.id.slice(-6)}.pdf`);
+            toast.success("Invoice downloaded successfully!");
+        } catch (err) {
+            toast.error("Failed to generate invoice");
+        } finally {
+            document.body.removeChild(invoiceDiv);
+        }
+    };
 
     const openModal = (order) => {
         setSelectedOrder(order)
