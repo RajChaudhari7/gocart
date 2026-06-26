@@ -314,47 +314,63 @@ export default function StoreOrders() {
     }
 
     const downloadInvoicePDF = async (order) => {
-        // Create a temporary hidden container for the invoice
+        // 1. Create a container that is part of the DOM but hidden
         const invoiceDiv = document.createElement('div');
+        invoiceDiv.style.position = 'absolute';
+        invoiceDiv.style.left = '-9999px';
+        invoiceDiv.style.top = '0';
         invoiceDiv.style.width = '800px';
-        invoiceDiv.style.padding = '40px';
         invoiceDiv.style.background = '#ffffff';
+        invoiceDiv.style.padding = '40px';
         invoiceDiv.innerHTML = `
-            <h1 style="color: #333;">Invoice #${order.id.slice(-6)}</h1>
-            <p>Date: ${new Date(order.createdAt).toLocaleDateString()}</p>
-            <hr/>
+        <div style="font-family: sans-serif; color: #333;">
+            <h1 style="border-bottom: 2px solid #eee; padding-bottom: 10px;">Invoice #${order.id.slice(-6)}</h1>
+            <p><strong>Date:</strong> ${new Date(order.createdAt).toLocaleDateString()}</p>
             <h3>Customer: ${order.user?.name}</h3>
-            <table style="width: 100%; border-collapse: collapse;">
+            <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
                 <thead>
-                    <tr style="border-bottom: 2px solid #eee;">
-                        <th style="text-align: left; padding: 10px;">Item</th>
-                        <th style="text-align: right; padding: 10px;">Price</th>
+                    <tr style="background: #f4f4f4;">
+                        <th style="text-align: left; padding: 12px; border: 1px solid #ddd;">Item</th>
+                        <th style="text-align: right; padding: 12px; border: 1px solid #ddd;">Price</th>
                     </tr>
                 </thead>
                 <tbody>
                     ${order.orderItems.map(item => `
                         <tr>
-                            <td style="padding: 10px;">${item.product?.name} x ${item.quantity}</td>
-                            <td style="text-align: right; padding: 10px;">₹${(item.price * item.quantity).toFixed(2)}</td>
+                            <td style="padding: 12px; border: 1px solid #ddd;">${item.product?.name} x ${item.quantity}</td>
+                            <td style="text-align: right; padding: 12px; border: 1px solid #ddd;">₹${(item.price * item.quantity).toFixed(2)}</td>
                         </tr>
                     `).join('')}
                 </tbody>
             </table>
-            <h3 style="text-align: right;">Total: ₹${order.total.toFixed(2)}</h3>
-        `;
+            <h2 style="text-align: right; margin-top: 20px;">Total: ₹${order.total.toFixed(2)}</h2>
+        </div>
+    `;
 
         document.body.appendChild(invoiceDiv);
-        const canvas = await html2canvas(invoiceDiv, { scale: 2 });
-        const imgData = canvas.toDataURL('image/png');
 
-        const pdf = new jsPDF('p', 'pt', 'a4');
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+        try {
+            // 2. Use html2canvas to capture
+            const canvas = await html2canvas(invoiceDiv, {
+                scale: 2,
+                useCORS: true,
+                logging: false
+            });
 
-        pdf.addImage(imgData, 'PNG', 40, 40, pdfWidth - 80, pdfHeight);
-        pdf.save(`Invoice_${order.id.slice(-6)}.pdf`);
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF('p', 'pt', 'a4');
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
-        document.body.removeChild(invoiceDiv);
+            pdf.addImage(imgData, 'PNG', 40, 40, pdfWidth - 80, pdfHeight);
+            pdf.save(`Invoice_${order.id.slice(-6)}.pdf`);
+        } catch (err) {
+            console.error("PDF generation error:", err);
+            toast.error("Failed to generate invoice");
+        } finally {
+            // 3. Clean up
+            document.body.removeChild(invoiceDiv);
+        }
     };
 
     const openModal = (order) => {
