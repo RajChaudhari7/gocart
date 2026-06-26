@@ -314,9 +314,47 @@ export default function StoreOrders() {
     }
 
     const downloadInvoicePDF = async (order) => {
-        // Customer invoice code remains the same because the customer 
-        // pays the full total including shipping.
-        // ... (Keep your existing downloadInvoicePDF code here) ...
+        // Create a temporary hidden container for the invoice
+        const invoiceDiv = document.createElement('div');
+        invoiceDiv.style.width = '800px';
+        invoiceDiv.style.padding = '40px';
+        invoiceDiv.style.background = '#ffffff';
+        invoiceDiv.innerHTML = `
+            <h1 style="color: #333;">Invoice #${order.id.slice(-6)}</h1>
+            <p>Date: ${new Date(order.createdAt).toLocaleDateString()}</p>
+            <hr/>
+            <h3>Customer: ${order.user?.name}</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="border-bottom: 2px solid #eee;">
+                        <th style="text-align: left; padding: 10px;">Item</th>
+                        <th style="text-align: right; padding: 10px;">Price</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${order.orderItems.map(item => `
+                        <tr>
+                            <td style="padding: 10px;">${item.product?.name} x ${item.quantity}</td>
+                            <td style="text-align: right; padding: 10px;">₹${(item.price * item.quantity).toFixed(2)}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+            <h3 style="text-align: right;">Total: ₹${order.total.toFixed(2)}</h3>
+        `;
+
+        document.body.appendChild(invoiceDiv);
+        const canvas = await html2canvas(invoiceDiv, { scale: 2 });
+        const imgData = canvas.toDataURL('image/png');
+
+        const pdf = new jsPDF('p', 'pt', 'a4');
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+        pdf.addImage(imgData, 'PNG', 40, 40, pdfWidth - 80, pdfHeight);
+        pdf.save(`Invoice_${order.id.slice(-6)}.pdf`);
+
+        document.body.removeChild(invoiceDiv);
     };
 
     const openModal = (order) => {
