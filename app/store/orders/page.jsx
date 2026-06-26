@@ -313,32 +313,34 @@ export default function StoreOrders() {
         document.body.removeChild(reportDiv)
     }
 
-    const downloadInvoicePDF = async (order) => {
-        // 1. Create a container that is part of the DOM but hidden
-        const invoiceDiv = document.createElement('div');
-        invoiceDiv.style.position = 'absolute';
-        invoiceDiv.style.left = '-9999px';
-        invoiceDiv.style.top = '0';
-        invoiceDiv.style.width = '800px';
-        invoiceDiv.style.background = '#ffffff';
-        invoiceDiv.style.padding = '40px';
-        invoiceDiv.innerHTML = `
-        <div style="font-family: sans-serif; color: #333;">
-            <h1 style="border-bottom: 2px solid #eee; padding-bottom: 10px;">Invoice #${order.id.slice(-6)}</h1>
+   const downloadInvoicePDF = async (order) => {
+    // 1. Create container
+    const invoiceDiv = document.createElement('div');
+    invoiceDiv.style.position = 'fixed';
+    invoiceDiv.style.left = '-9999px';
+    invoiceDiv.style.width = '800px';
+    invoiceDiv.style.background = '#ffffff';
+    invoiceDiv.style.padding = '40px';
+    invoiceDiv.style.color = '#000'; // Ensure text is black
+    
+    // 2. Build content (Simplified to ensure no crashes)
+    invoiceDiv.innerHTML = `
+        <div style="font-family: sans-serif;">
+            <h1 style="border-bottom: 2px solid #ccc; padding-bottom: 10px;">Invoice #${order.id.slice(-6)}</h1>
             <p><strong>Date:</strong> ${new Date(order.createdAt).toLocaleDateString()}</p>
-            <h3>Customer: ${order.user?.name}</h3>
+            <p><strong>Customer:</strong> ${order.user?.name || 'Valued Customer'}</p>
             <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
                 <thead>
                     <tr style="background: #f4f4f4;">
-                        <th style="text-align: left; padding: 12px; border: 1px solid #ddd;">Item</th>
-                        <th style="text-align: right; padding: 12px; border: 1px solid #ddd;">Price</th>
+                        <th style="text-align: left; padding: 10px; border: 1px solid #ccc;">Item</th>
+                        <th style="text-align: right; padding: 10px; border: 1px solid #ccc;">Price</th>
                     </tr>
                 </thead>
                 <tbody>
                     ${order.orderItems.map(item => `
                         <tr>
-                            <td style="padding: 12px; border: 1px solid #ddd;">${item.product?.name} x ${item.quantity}</td>
-                            <td style="text-align: right; padding: 12px; border: 1px solid #ddd;">₹${(item.price * item.quantity).toFixed(2)}</td>
+                            <td style="padding: 10px; border: 1px solid #ccc;">${item.product?.name || 'Product'}</td>
+                            <td style="text-align: right; padding: 10px; border: 1px solid #ccc;">₹${(item.price * item.quantity).toFixed(2)}</td>
                         </tr>
                     `).join('')}
                 </tbody>
@@ -347,31 +349,32 @@ export default function StoreOrders() {
         </div>
     `;
 
-        document.body.appendChild(invoiceDiv);
+    document.body.appendChild(invoiceDiv);
 
-        try {
-            // 2. Use html2canvas to capture
-            const canvas = await html2canvas(invoiceDiv, {
-                scale: 2,
-                useCORS: true,
-                logging: false
-            });
+    try {
+        // 3. Capture with specific settings to ignore CORS issues
+        const canvas = await html2canvas(invoiceDiv, { 
+            scale: 2, 
+            allowTaint: true, 
+            useCORS: false // Set to false to avoid cross-origin blocking
+        });
 
-            const imgData = canvas.toDataURL('image/png');
-            const pdf = new jsPDF('p', 'pt', 'a4');
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF('p', 'pt', 'a4');
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
-            pdf.addImage(imgData, 'PNG', 40, 40, pdfWidth - 80, pdfHeight);
-            pdf.save(`Invoice_${order.id.slice(-6)}.pdf`);
-        } catch (err) {
-            console.error("PDF generation error:", err);
-            toast.error("Failed to generate invoice");
-        } finally {
-            // 3. Clean up
-            document.body.removeChild(invoiceDiv);
-        }
-    };
+        pdf.addImage(imgData, 'PNG', 40, 40, pdfWidth - 80, pdfHeight);
+        pdf.save(`Invoice_${order.id.slice(-6)}.pdf`);
+        toast.success("Invoice downloaded!");
+    } catch (err) {
+        console.error("PDF generation error:", err);
+        toast.error("Failed to generate invoice");
+    } finally {
+        // 4. Always cleanup
+        document.body.removeChild(invoiceDiv);
+    }
+};
 
     const openModal = (order) => {
         setSelectedOrder(order)
