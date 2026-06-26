@@ -315,7 +315,8 @@ export default function StoreOrders() {
 
     const downloadInvoicePDF = async (order) => {
 
-        const stats = getOrderFinances(selectedOrder);
+        const shippingFee = order.shippingFee || 50;
+        const productTotal = order.total - shippingFee;
         // Helper to get image as base64 to avoid CORS issues in PDF
         const getBase64Image = async (url) => {
             if (!url) return null;
@@ -397,11 +398,11 @@ export default function StoreOrders() {
             <div style="margin-top: 20px; float: right; width: 280px;">
     <div style="display: flex; justify-content: space-between; padding: 5px 0; color: #64748b;">
         <span>Product Total:</span> 
-        <span>₹${stats.productTotal.toFixed(2)}</span>
+        <span>₹${productTotal.toFixed(2)}</span>
     </div>
     <div style="display: flex; justify-content: space-between; padding: 5px 0; color: #64748b;">
         <span>Delivery Fee:</span> 
-        <span>₹${stats.shippingFee.toFixed(2)}</span>
+        <span>₹${shippingFee.toFixed(2)}</span>
     </div>
     <div style="display: flex; justify-content: space-between; padding: 10px 0; border-top: 2px solid #0f172a; font-weight: bold; font-size: 18px; color: #000000;">
         <span>Total Paid:</span> 
