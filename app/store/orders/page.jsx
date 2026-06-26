@@ -314,6 +314,9 @@ export default function StoreOrders() {
     }
 
     const downloadInvoicePDF = async (order) => {
+
+        const shippingFee = order.shippingFee || 0;
+        const productTotal = order.total - shippingFee;
         // Helper to get image as base64 to avoid CORS issues in PDF
         const getBase64Image = async (url) => {
             if (!url) return null;
