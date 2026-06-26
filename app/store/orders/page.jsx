@@ -314,34 +314,33 @@ export default function StoreOrders() {
     }
 
     const downloadInvoicePDF = async (order) => {
-        // 1. Create container
         const invoiceDiv = document.createElement('div');
+        // Set explicit styles using solid Hex colors
         invoiceDiv.style.position = 'fixed';
-        invoiceDiv.style.top = '0';
-        invoiceDiv.style.left = '-9999px'; // Move off-screen
+        invoiceDiv.style.left = '-9999px';
         invoiceDiv.style.width = '800px';
-        invoiceDiv.style.background = '#ffffff';
+        invoiceDiv.style.background = '#ffffff'; // Solid white
         invoiceDiv.style.padding = '40px';
-        invoiceDiv.style.color = '#000';
+        invoiceDiv.style.color = '#000000'; // Solid black
+        invoiceDiv.style.fontFamily = 'Arial, sans-serif';
 
-        // 2. Build content 
         invoiceDiv.innerHTML = `
-        <div style="font-family: sans-serif;">
-            <h1 style="border-bottom: 2px solid #ccc; padding-bottom: 10px;">Invoice #${order.id.slice(-6)}</h1>
+        <div style="color: #000000;">
+            <h1 style="border-bottom: 2px solid #cccccc; padding-bottom: 10px;">Invoice #${order.id.slice(-6)}</h1>
             <p><strong>Date:</strong> ${new Date(order.createdAt).toLocaleDateString()}</p>
             <p><strong>Customer:</strong> ${order.user?.name || 'Valued Customer'}</p>
             <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
                 <thead>
-                    <tr style="background: #f4f4f4;">
-                        <th style="text-align: left; padding: 10px; border: 1px solid #ccc;">Item</th>
-                        <th style="text-align: right; padding: 10px; border: 1px solid #ccc;">Price</th>
+                    <tr style="background: #eeeeee;">
+                        <th style="text-align: left; padding: 10px; border: 1px solid #cccccc;">Item</th>
+                        <th style="text-align: right; padding: 10px; border: 1px solid #cccccc;">Price</th>
                     </tr>
                 </thead>
                 <tbody>
                     ${order.orderItems.map(item => `
                         <tr>
-                            <td style="padding: 10px; border: 1px solid #ccc;">${item.product?.name || 'Product'}</td>
-                            <td style="text-align: right; padding: 10px; border: 1px solid #ccc;">₹${(item.price * item.quantity).toFixed(2)}</td>
+                            <td style="padding: 10px; border: 1px solid #cccccc;">${item.product?.name || 'Product'}</td>
+                            <td style="text-align: right; padding: 10px; border: 1px solid #cccccc;">₹${(item.price * item.quantity).toFixed(2)}</td>
                         </tr>
                     `).join('')}
                 </tbody>
@@ -353,10 +352,9 @@ export default function StoreOrders() {
         document.body.appendChild(invoiceDiv);
 
         try {
-            // 3. Capture with specific settings
             const canvas = await html2canvas(invoiceDiv, {
                 scale: 2,
-                useCORS: true, // Required for images
+                useCORS: true,
                 allowTaint: true
             });
 
@@ -372,7 +370,6 @@ export default function StoreOrders() {
             console.error("PDF generation error:", err);
             toast.error("Failed to generate invoice");
         } finally {
-            // 4. Always cleanup
             document.body.removeChild(invoiceDiv);
         }
     };
