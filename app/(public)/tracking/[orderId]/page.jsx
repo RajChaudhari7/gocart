@@ -78,54 +78,73 @@ export default function TrackingPage() {
 
     // Fetch Order Data
     useEffect(() => {
-        const fetchOrderDetails = async () => {
+
+        if (!orderId) return;
+
+        let interval;
+
+        const fetchOrderDetails = async (showLoader = false) => {
+
             try {
-                setLoading(true);
+
+                if (showLoader) {
+                    setLoading(true);
+                }
+
                 const token = await getToken();
 
-                const { data } = await axios.get(`/api/orders/${orderId}`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
+                const { data } = await axios.get(
+                    `/api/orders/${orderId}`,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                    }
+                );
 
                 setOrder(data.order || data);
+
             } catch (error) {
-                toast.error("Failed to load tracking data.");
-                console.error(error);
+
+                console.log(error);
+
             } finally {
-                setLoading(false);
+
+                if (showLoader) {
+                    setLoading(false);
+                }
+
             }
+
         };
 
-        if (orderId) {
-            fetchOrderDetails();
-        }
+        // Initial Load
+        fetchOrderDetails(true);
+
+        // Refresh every 5 seconds
+        interval = setInterval(() => {
+
+            fetchOrderDetails(false);
+
+        }, 5000);
+
+        return () => clearInterval(interval);
+
     }, [orderId, getToken]);
 
-    // Poll for Real-Time Driver Location
     useEffect(() => {
-        // Only poll if driver is assigned and order is active
+
         if (!order?.driver?.id) return;
 
-        const activeStatuses = ["DRIVER_ASSIGNED", "REACHED_SHOP", "PICKED_UP", "OUT_FOR_DELIVERY", "DELIVERY_INITIATED"];
-        if (!activeStatuses.includes(order.status)) return;
+        if (!order.driver.latitude) return;
 
-        const fetchDriverLocation = async () => {
-            try {
-                const { data } = await axios.get(`/api/driver/location?driverId=${order.driver.id}`);
-                if (data.latitude && data.longitude) {
-                    setDriverLocation({ lat: data.latitude, lng: data.longitude });
-                }
-            } catch (error) {
-                console.error("Failed to fetch live driver location", error);
-            }
-        };
+        setDriverLocation({
+            lat: order.driver.latitude,
+            lng: order.driver.longitude
+        });
 
-        fetchDriverLocation(); // Initial fetch
-
-        // Poll every 10 seconds
-        const locationInterval = setInterval(fetchDriverLocation, 10000);
-        return () => clearInterval(locationInterval);
     }, [order]);
+
 
     const currentStep = order ? (TRACK_INDEX[order.status] ?? 0) : 0;
     const statusHistory = order?.statusHistory || {};
