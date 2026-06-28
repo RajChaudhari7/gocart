@@ -14,7 +14,6 @@ export default function DeliveredOrders() {
     const [selectedOrder, setSelectedOrder] = useState(null)
     const [isModalOpen, setIsModalOpen] = useState(false)
 
-
     // Filters
     const currentDate = new Date()
     const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth())
@@ -32,8 +31,8 @@ export default function DeliveredOrders() {
             const { data } = await axios.get('/api/store/orders', {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            // Filter only DELIVERED
-            setOrders(data.orders.filter(o => o.status === "DELIVERED"));
+            // Fetch all, but we will filter by DELIVERED in the logic below
+            setOrders(data.orders);
         } catch (error) {
             console.error(error);
         } finally {
@@ -41,25 +40,20 @@ export default function DeliveredOrders() {
         }
     };
 
-    // Helper to calculate financials
     const getOrderFinances = (order) => {
-        // 1. Calculate actual product cost (ignores the delivery fee completely)
         const productTotal = order.orderItems.reduce(
             (sum, item) => sum + item.price * item.quantity,
             0
         );
-
-        // 2. Calculate platform commission (10%) and seller earnings (90%)
         const platformFee = productTotal * 0.10;
         const sellerEarnings = productTotal * 0.90;
-
-        // 3. Identify shipping fee (Customer Total - Product Total)
         const shippingFee = Math.max(0, order.total - productTotal);
-
         return { productTotal, platformFee, sellerEarnings, shippingFee };
     };
 
     const filteredOrders = orders.filter(order => {
+        if (order.status !== "DELIVERED") return false;
+
         const orderDate = new Date(order.createdAt)
         if (selectedDate) {
             const selected = new Date(selectedDate)
@@ -70,15 +64,11 @@ export default function DeliveredOrders() {
         return orderDate.getFullYear() === selectedYear && orderDate.getMonth() === selectedMonth
     })
 
-    const openModal = (order) => {
-        setSelectedOrder(order)
-        setIsModalOpen(true)
-    }
+    // Financial Calculation for Revenue
+    const totalRevenue = filteredOrders.reduce((acc, order) => acc + getOrderFinances(order).sellerEarnings, 0);
 
-    const closeModal = () => {
-        setSelectedOrder(null)
-        setIsModalOpen(false)
-    }
+    const openModal = (order) => { setSelectedOrder(order); setIsModalOpen(true); }
+    const closeModal = () => { setSelectedOrder(null); setIsModalOpen(false); }
 
     const HighlightOrderId = ({ id }) => {
         if (!id) return null;
@@ -95,46 +85,29 @@ export default function DeliveredOrders() {
     };
 
     const downloadInvoicePDF = async (order) => {
-        // Create a temporary hidden container for the invoice
         const invoiceDiv = document.createElement('div');
         invoiceDiv.style.width = '800px';
         invoiceDiv.style.padding = '40px';
         invoiceDiv.style.background = '#ffffff';
         invoiceDiv.innerHTML = `
-        <h1 style="color: #333;">Invoice #${order.id.slice(-6)}</h1>
-        <p>Date: ${new Date(order.createdAt).toLocaleDateString()}</p>
-        <hr/>
-        <h3>Customer: ${order.user?.name}</h3>
-        <table style="width: 100%; border-collapse: collapse;">
-            <thead>
-                <tr style="border-bottom: 2px solid #eee;">
-                    <th style="text-align: left; padding: 10px;">Item</th>
-                    <th style="text-align: right; padding: 10px;">Price</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${order.orderItems.map(item => `
-                    <tr>
-                        <td style="padding: 10px;">${item.product?.name} x ${item.quantity}</td>
-                        <td style="text-align: right; padding: 10px;">₹${(item.price * item.quantity).toFixed(2)}</td>
-                    </tr>
-                `).join('')}
-            </tbody>
-        </table>
-        <h3 style="text-align: right;">Total: ₹${order.total.toFixed(2)}</h3>
-    `;
-
+            <h1 style="color: #333;">Invoice #${order.id.slice(-6)}</h1>
+            <p>Date: ${new Date(order.createdAt).toLocaleDateString()}</p>
+            <hr/>
+            <h3>Customer: ${order.user?.name}</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead><tr style="border-bottom: 2px solid #eee;"><th style="text-align: left; padding: 10px;">Item</th><th style="text-align: right; padding: 10px;">Price</th></tr></thead>
+                <tbody>${order.orderItems.map(item => `<tr><td style="padding: 10px;">${item.product?.name} x ${item.quantity}</td><td style="text-align: right; padding: 10px;">₹${(item.price * item.quantity).toFixed(2)}</td></tr>`).join('')}</tbody>
+            </table>
+            <h3 style="text-align: right;">Total: ₹${order.total.toFixed(2)}</h3>
+        `;
         document.body.appendChild(invoiceDiv);
         const canvas = await html2canvas(invoiceDiv, { scale: 2 });
         const imgData = canvas.toDataURL('image/png');
-
         const pdf = new jsPDF('p', 'pt', 'a4');
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-
         pdf.addImage(imgData, 'PNG', 40, 40, pdfWidth - 80, pdfHeight);
         pdf.save(`Invoice_${order.id.slice(-6)}.pdf`);
-
         document.body.removeChild(invoiceDiv);
     };
 
@@ -153,40 +126,30 @@ export default function DeliveredOrders() {
                     {[2023, 2024, 2025, 2026].map(y => <option key={y} value={y}>{y}</option>)}
                 </select>
                 <input type="date" value={selectedDate || ""} onChange={(e) => setSelectedDate(e.target.value)} className="border rounded-lg px-3 py-2 text-sm" />
-                {selectedDate && <button onClick={() => setSelectedDate(null)} className="text-red-500 text-sm underline">Clear</button>}
+                {selectedDate && <button onClick={() => setSelectedDate(null)} className="text-red-500 text-sm underline ml-2">Clear Date</button>}
+            </div>
+
+            {/* Revenue Display */}
+            <div className="bg-emerald-50 p-6 rounded-xl border border-emerald-100 mb-6">
+                <p className="text-sm text-emerald-600 font-medium">Total Delivered Revenue (90%)</p>
+                <p className="text-3xl font-bold text-emerald-700">₹{totalRevenue.toFixed(2)}</p>
             </div>
 
             {filteredOrders.map((order) => {
                 const finances = getOrderFinances(order);
                 return (
-                    <div
-                        key={order.id}
-                        onClick={() => openModal(order)}
-                        className="bg-white rounded-xl shadow-sm border p-5 hover:shadow-md transition cursor-pointer border-l-4 border-indigo-500"
-                    >
+                    <div key={order.id} onClick={() => openModal(order)} className="bg-white rounded-xl shadow-sm border p-5 mb-4 hover:shadow-md transition cursor-pointer border-l-4 border-green-500">
                         <div className="flex justify-between items-start mb-2">
                             <h2 className="text-lg font-medium">{order.user?.name}</h2>
-                            <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-bold">
-                                {order.status}
-                            </span>
+                            <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-bold">{order.status}</span>
                         </div>
-
-                        {/* Use the new highlighted ID component */}
                         <HighlightOrderId id={order.id} />
-
                         <div className="grid grid-cols-2 gap-3 text-gray-600 text-sm mt-4">
                             <div><b className="text-gray-800">Earnings:</b> ₹{finances.sellerEarnings.toFixed(2)}</div>
                             <div><b className="text-gray-800">Total:</b> ₹{order.total}</div>
                         </div>
-
-                        {/* Action Buttons */}
-                        <div className="flex gap-2 mt-4 items-center" onClick={e => e.stopPropagation()}>
-                            <button
-                                onClick={() => downloadInvoicePDF(order)}
-                                className="px-3 py-1 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded text-sm font-medium"
-                            >
-                                Customer Invoice
-                            </button>
+                        <div className="flex gap-2 mt-4" onClick={e => e.stopPropagation()}>
+                            <button onClick={() => downloadInvoicePDF(order)} className="px-3 py-1 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded text-sm font-medium">Customer Invoice</button>
                         </div>
                     </div>
                 );
