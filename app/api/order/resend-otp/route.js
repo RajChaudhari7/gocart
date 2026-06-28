@@ -1,5 +1,5 @@
 import prisma from "@/lib/prisma"
-import { generateOtp, hashOtp } from "@/lib/otp"
+import { generateOtp } from "@/lib/otp"
 import { sendEmail } from "@/lib/sendEmail"
 import { NextResponse } from "next/server"
 
@@ -37,11 +37,12 @@ export async function POST(request) {
                 id: orderId
             },
             data: {
-                deliveryOtp: hashOtp(otp),
+                deliveryOtp: otp, // Store plain OTP
                 deliveryOtpExpiry: new Date(
                     Date.now() + 10 * 60 * 1000
                 ),
                 otpVerified: false,
+                otpVerifyAttempts: 0,
                 otpResendCount: {
                     increment: 1
                 }
