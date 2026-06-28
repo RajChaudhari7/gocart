@@ -26,12 +26,23 @@ export async function GET(request, { params }) {
             include: {
                 orderItems: {
                     include: {
-                        product: true
+                        product: true,
                     },
                 },
                 address: true,
-                driver: true,
-                store: true, // Helpful if you want to show store details later
+
+                driver: {
+                    select: {
+                        id: true,
+                        name: true,
+                        phone: true,
+                        latitude: true,
+                        longitude: true,
+                        isOnline: true,
+                    },
+                },
+
+                store: true,
             },
         });
 
