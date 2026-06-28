@@ -5,8 +5,6 @@ import Loading from "@/components/Loading"
 import { useAuth } from "@clerk/nextjs"
 import axios from "axios"
 import toast from "react-hot-toast"
-import jsPDF from "jspdf"
-import html2canvas from "html2canvas-pro";
 import { useOrderStore } from "@/hooks/use-order-store"
 
 const SELLER_STATUSES = [
@@ -16,19 +14,13 @@ const SELLER_STATUSES = [
     "ORDER_PACKED"
 ]
 
-// Helper to calculate financials
 const getOrderFinances = (order) => {
-    // 1. Calculate actual product cost (ignores the delivery fee completely)
     const productTotal = order.orderItems.reduce(
         (sum, item) => sum + item.price * item.quantity,
         0
     );
-
-    // 2. Calculate platform commission (10%) and seller earnings (90%)
     const platformFee = productTotal * 0.10;
     const sellerEarnings = productTotal * 0.90;
-
-    // 3. Identify shipping fee (Customer Total - Product Total)
     const shippingFee = Math.max(0, order.total - productTotal);
 
     return { productTotal, platformFee, sellerEarnings, shippingFee };
@@ -41,19 +33,7 @@ export default function StoreOrders() {
     const [loading, setLoading] = useState(true)
     const [selectedOrder, setSelectedOrder] = useState(null)
     const [isModalOpen, setIsModalOpen] = useState(false)
-
-    const currentDate = new Date()
-
-    const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth())
-    const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear())
-    const [selectedDate, setSelectedDate] = useState(null)
-    const [statusFilter, setStatusFilter] = useState("ALL")
     const audioRef = useRef(null);
-    const months = [
-        "January", "February", "March", "April",
-        "May", "June", "July", "August",
-        "September", "October", "November", "December"
-    ]
 
     useEffect(() => {
         fetchOrders()
@@ -71,72 +51,25 @@ export default function StoreOrders() {
                     headers: { Authorization: `Bearer ${token}` }
                 });
 
-                // Check if new orders arrived
                 if (data.orders.length > orders.length) {
-                    // Play sound if orders increased
                     audioRef.current.play().catch(e => console.log("Audio play blocked:", e));
                     toast.success("New order received!");
                 }
-
                 setOrders(data.orders);
                 setOrderCount(data.activeCount);
             } catch (error) {
                 console.error("Polling error:", error);
             }
-        }, 5000); // Poll every 5 seconds
+        }, 5000);
 
         return () => clearInterval(pollInterval);
     }, [orders.length]);
 
-    const filteredOrders = orders.filter(order => {
-        const isFinished = ["DELIVERED", "CANCELLED", "RETURNED"].includes(order.status);
-        if (isFinished) return false;
-        const orderDate = new Date(order.createdAt)
+    // Filter only active (non-finished) orders
+    const activeOrders = orders.filter(order =>
+        !["DELIVERED", "CANCELLED", "RETURNED"].includes(order.status)
+    );
 
-        if (selectedDate) {
-            const selected = new Date(selectedDate)
-            if (
-                orderDate.getDate() !== selected.getDate() ||
-                orderDate.getMonth() !== selected.getMonth() ||
-                orderDate.getFullYear() !== selected.getFullYear()
-            ) {
-                return false
-            }
-        } else {
-            if (
-                orderDate.getFullYear() !== selectedYear ||
-                orderDate.getMonth() !== selectedMonth
-            ) {
-                return false
-            }
-        }
-
-        if (statusFilter !== "ALL" && order.status !== statusFilter) {
-            return false
-        }
-
-        return true
-    })
-
-    /* ================= FINANCIAL CALCULATIONS ================= */
-
-    // 🟢 Revenue: 90% of product total (Exclude Cancelled + Returned)
-    const revenue = filteredOrders
-        .filter(order => !["CANCELLED", "RETURNED"].includes(order.status))
-        .reduce((total, order) => total + getOrderFinances(order).sellerEarnings, 0)
-
-    // 🔴 Cancelled Amount: 100% of product total (excluding delivery)
-    const cancelledAmount = filteredOrders
-        .filter(order => order.status === "CANCELLED")
-        .reduce((total, order) => total + getOrderFinances(order).sellerEarnings, 0)
-
-    // 🟠 Returned Amount: 100% of product total (excluding delivery)
-    const returnedAmount = filteredOrders
-        .filter(order => order.status === "RETURNED")
-        .reduce((total, order) => total + getOrderFinances(order).sellerEarnings, 0)
-
-
-    /* ================= FETCH & ACTIONS ================= */
     const fetchOrders = async () => {
         try {
             const token = await getToken();
@@ -472,106 +405,23 @@ export default function StoreOrders() {
                 </button>
             </div>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
-                <h1 className="text-3xl text-slate-700 font-semibold">Store Orders</h1>
-                <div className="flex gap-3">
-                    <button
-                        onClick={downloadReportPDF}
-                        className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow hover:bg-indigo-700"
-                    >
-                        Download Report
-                    </button>
-                    <select
-                        value={selectedMonth}
-                        onChange={(e) => { setSelectedMonth(Number(e.target.value)); setSelectedDate(null) }}
-                        className="border-gray-300 focus:ring-2 focus:ring-indigo-500 rounded-lg"
-                    >
-                        {months.map((month, index) => (
-                            <option key={index} value={index}>{month}</option>
-                        ))}
-                    </select>
-                    <select
-                        value={selectedYear}
-                        onChange={(e) => { setSelectedYear(Number(e.target.value)); setSelectedDate(null) }}
-                        className="border-gray-300 focus:ring-2 focus:ring-indigo-500 rounded-lg"
-                    >
-                        {[2023, 2024, 2025, 2026].map(year => (
-                            <option key={year} value={year}>{year}</option>
-                        ))}
-                    </select>
-                    <select
-                        value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value)}
-                        className="border-gray-300 focus:ring-2 focus:ring-indigo-500 rounded-lg"
-                    >
-                        <option value="ALL">All Orders</option>
-                        <option value="DELIVERED">Delivered</option>
-                        <option value="RETURNED">Returned</option>
-                        <option value="CANCELLED">Cancelled</option>
-                    </select>
-                </div>
+                <h1 className="text-3xl text-slate-700 font-semibold">Store New Orders</h1>
             </div>
 
-            <input
-                type="date"
-                value={selectedDate || ""}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="border rounded-lg px-3 py-2 text-sm mb-2"
-            />
 
-            {selectedDate && (
-                <button
-                    onClick={() => setSelectedDate(null)}
-                    className="text-sm text-red-500 underline ml-3"
-                >
-                    Clear
-                </button>
-            )}
 
-            <div className="bg-white shadow rounded-xl p-5 border mb-6">
-                <p className="text-sm text-gray-500 mb-4">
-                    {selectedDate
-                        ? `Earnings on ${new Date(selectedDate).toLocaleDateString()}`
-                        : `Earnings in ${months[selectedMonth]} ${selectedYear}`
-                    }
-                </p>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                    {/* 🟢 Earnings */}
-                    <div className="bg-emerald-50 p-4 rounded-lg border border-emerald-100">
-                        <p className="text-sm text-emerald-600 font-medium">Net Earnings</p>
-                        <p className="text-2xl font-bold text-emerald-700">₹{revenue.toFixed(2)}</p>
-                    </div>
-
-                    {/* 🔴 Cancelled Amount */}
-                    <div className="bg-red-50 p-4 rounded-lg border border-red-100">
-                        <p className="text-sm text-red-600 font-medium">Lost Value (Cancelled)</p>
-                        <p className="text-2xl font-bold text-red-700">₹{cancelledAmount.toFixed(2)}</p>
-                    </div>
-
-                    {/* 🟠 Returned Amount */}
-                    <div className="bg-orange-50 p-4 rounded-lg border border-orange-100">
-                        <p className="text-sm text-orange-600 font-medium">Lost Value (Returned)</p>
-                        <p className="text-2xl font-bold text-orange-700">₹{returnedAmount.toFixed(2)}</p>
-                    </div>
+            {activeOrders.length === 0 ? (
+                <div className="text-center py-20 bg-white rounded-xl border border-dashed border-gray-300">
+                    <p className="text-gray-500">No new active orders at the moment.</p>
                 </div>
-            </div>
-
-            {filteredOrders.length === 0 ? (
-                <p className="text-gray-500 text-center mt-10">
-                    {selectedDate
-                        ? `No orders on ${new Date(selectedDate).toLocaleDateString()}`
-                        : `No orders in ${months[selectedMonth]} ${selectedYear}`
-                    }
-                </p>
             ) : (
                 <div className="grid gap-5 max-w-5xl">
-                    {filteredOrders.map((order) => {
+                    {activeOrders.map((order) => {
                         const finances = getOrderFinances(order);
-
                         return (
                             <div
                                 key={order.id}
-                                onClick={() => openModal(order)}
+                                onClick={() => { setSelectedOrder(order); openModal(true); }}
                                 className="bg-white rounded-xl shadow-sm border p-5 hover:shadow-md transition cursor-pointer border-l-4 border-indigo-500"
                             >
                                 <div className="flex justify-between items-start mb-2">
