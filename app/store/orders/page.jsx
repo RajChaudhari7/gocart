@@ -104,6 +104,7 @@ export default function StoreOrders() {
             setOrders(data.orders);
             setOrderCount(data.activeCount);
             setCommission(data.settings?.commissionPercent || 10);
+            setSettings(data.settings);
 
         } catch (error) {
             toast.error(error?.response?.data?.error || error.message);
