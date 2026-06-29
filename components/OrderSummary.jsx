@@ -1,7 +1,7 @@
 'use client'
 
 import { PlusIcon, MapPinIcon, CheckCircle2Icon, TagIcon, XIcon, CreditCardIcon, BanknoteIcon } from 'lucide-react'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import AddressModal from './AddressModal'
 import { useDispatch, useSelector } from 'react-redux'
 import toast from 'react-hot-toast'
