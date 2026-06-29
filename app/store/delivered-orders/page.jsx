@@ -21,6 +21,14 @@ export default function DeliveredOrders() {
     const [selectedDate, setSelectedDate] = useState(null)
     const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
 
+
+    const [settings, setSettings] = useState({
+        commissionPercent: 10,
+        deliveryFee: 50,
+        driverFee: 30,
+    })
+
+
     useEffect(() => {
         fetchDeliveredOrders()
     }, [])
@@ -33,6 +41,9 @@ export default function DeliveredOrders() {
             });
             // Fetch all, but we will filter by DELIVERED in the logic below
             setOrders(data.orders);
+            setSettings(data.settings);
+
+
         } catch (error) {
             console.error(error);
         } finally {
@@ -41,15 +52,31 @@ export default function DeliveredOrders() {
     };
 
     const getOrderFinances = (order) => {
+
         const productTotal = order.orderItems.reduce(
             (sum, item) => sum + item.price * item.quantity,
             0
         );
-        const platformFee = productTotal * 0.10;
-        const sellerEarnings = productTotal * 0.90;
-        const shippingFee = Math.max(0, order.total - productTotal);
-        return { productTotal, platformFee, sellerEarnings, shippingFee };
-    };
+
+        const commission =
+            settings?.commissionPercent || 10;
+
+        const platformFee =
+            productTotal * commission / 100;
+
+        const sellerEarnings =
+            productTotal - platformFee;
+
+        const shippingFee =
+            Math.max(0, order.total - productTotal);
+
+        return {
+            productTotal,
+            platformFee,
+            sellerEarnings,
+            shippingFee,
+        };
+    }
 
     const filteredOrders = orders.filter(order => {
         if (order.status !== "DELIVERED") return false;
@@ -131,7 +158,7 @@ export default function DeliveredOrders() {
 
             {/* Revenue Display */}
             <div className="bg-emerald-50 p-6 rounded-xl border border-emerald-100 mb-6">
-                <p className="text-sm text-emerald-600 font-medium">Total Delivered Revenue (90%)</p>
+                <p className="text-sm text-emerald-600 font-medium">Total Delivered Revenue ({100 - settings.commissionPercent}%)</p>
                 <p className="text-3xl font-bold text-emerald-700">₹{totalRevenue.toFixed(2)}</p>
             </div>
 
@@ -177,7 +204,7 @@ export default function DeliveredOrders() {
                                             <span>₹{stats.productTotal.toFixed(2)}</span>
                                         </div>
                                         <div className="flex justify-between text-red-500">
-                                            <span>Platform Commission (10%)</span>
+                                            <span>Platform Commission ({settings.commissionPercent}%)</span>
                                             <span>- ₹{stats.platformFee.toFixed(2)}</span>
                                         </div>
                                         <div className="flex justify-between text-slate-400 border-b pb-3">

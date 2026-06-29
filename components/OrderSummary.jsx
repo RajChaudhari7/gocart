@@ -15,6 +15,10 @@ const OrderSummary = ({ totalPrice, items }) => {
   const { getToken } = useAuth()
   const router = useRouter()
   const dispatch = useDispatch()
+  const [settings, setSettings] = useState({
+    deliveryFee: 50,
+    freeDeliveryAbove: 999999
+  });
 
   const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '₹'
   const addressList = useSelector(state => state.address.list)
@@ -26,7 +30,8 @@ const OrderSummary = ({ totalPrice, items }) => {
   const [coupon, setCoupon] = useState(null)
   const [isProcessing, setIsProcessing] = useState(false)
 
-  const shippingCost = 50
+  const shippingCost =
+    totalPrice >= settings.freeDeliveryAbove ? 0 : settings.deliveryFee;
   const discount = coupon ? (coupon.discount / 100) * totalPrice : 0
   const finalTotal = totalPrice + shippingCost - discount
 
@@ -94,6 +99,19 @@ const OrderSummary = ({ totalPrice, items }) => {
     }
   }
 
+  useEffect(() => {
+    async function loadSettings() {
+      try {
+        const { data } = await axios.get("/api/platform/settings");
+        setSettings(data);
+      } catch {
+        console.log("Using default settings");
+      }
+    }
+
+    loadSettings();
+  }, []);
+
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-[2rem] p-6 shadow-xl text-slate-200">
 
@@ -109,8 +127,8 @@ const OrderSummary = ({ totalPrice, items }) => {
           <div
             onClick={() => setPaymentMethod('COD')}
             className={`cursor-pointer rounded-xl border p-3 flex flex-col items-center gap-2 transition-all ${paymentMethod === 'COD'
-                ? 'bg-indigo-500/10 border-indigo-500 text-indigo-400'
-                : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-600'
+              ? 'bg-indigo-500/10 border-indigo-500 text-indigo-400'
+              : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-600'
               }`}
           >
             <BanknoteIcon size={24} />
@@ -120,8 +138,8 @@ const OrderSummary = ({ totalPrice, items }) => {
           <div
             onClick={() => toast.error('Stripe service is currently unavailable')}
             className={`cursor-not-allowed opacity-50 rounded-xl border p-3 flex flex-col items-center gap-2 transition-all ${paymentMethod === 'STRIPE'
-                ? 'bg-indigo-500/10 border-indigo-500 text-indigo-400'
-                : 'bg-slate-950 border-slate-800 text-slate-500'
+              ? 'bg-indigo-500/10 border-indigo-500 text-indigo-400'
+              : 'bg-slate-950 border-slate-800 text-slate-500'
               }`}
           >
             <CreditCardIcon size={24} />

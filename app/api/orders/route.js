@@ -31,6 +31,14 @@ export async function POST(request) {
     let fullAmount = 0;
     let isShippingFeeAdded = false;
 
+    const settings =
+      await prisma.platformSettings.findFirst() || {
+        commissionPercent: 10,
+        deliveryFee: 50,
+        driverFee: 30,
+        freeDeliveryAbove: 999999,
+      };
+
     // 🔥 TRANSACTION START
     await prisma.$transaction(async (tx) => {
       const ordersByStore = new Map();
@@ -79,16 +87,27 @@ export async function POST(request) {
       // 📦 STEP 2: CREATE ORDERS
       // ===============================
       for (const [storeId, sellerItems] of ordersByStore.entries()) {
-        let total = sellerItems.reduce(
-          (acc, item) => acc + item.price * item.quantity,
+
+        // Product total
+        const productTotal = sellerItems.reduce(
+          (sum, item) => sum + item.price * item.quantity,
           0
         );
 
-        // 🚚 Shipping logic
-        if (!isPrimeMember && !isShippingFeeAdded) {
-          total += 50;
+        // Delivery charge
+        let deliveryCharge = 0;
+
+        if (
+          !isPrimeMember &&
+          productTotal < settings.freeDeliveryAbove &&
+          !isShippingFeeAdded
+        ) {
+          deliveryCharge = settings.deliveryFee;
           isShippingFeeAdded = true;
         }
+
+        // Final order total
+        const total = productTotal + deliveryCharge;
 
         fullAmount += total;
         const now = new Date();

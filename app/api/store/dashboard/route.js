@@ -98,6 +98,19 @@ export async function GET(request) {
       }
     });
 
+    const settings =
+      await prisma.platformSettings.findFirst() || {
+        commissionPercent: 10,
+        deliveryFee: 50,
+        driverFee: 30,
+        freeDeliveryAbove: 999999
+      };
+
+    const commissionRate = settings.commissionPercent / 100;
+
+    const sellerAmount =
+      productTotal * (1 - commissionRate);
+
     /* ---------- TOP PRODUCTS ---------- */
     const topProducts = products
       .map((p) => ({
@@ -136,7 +149,16 @@ export async function GET(request) {
         } else if (order.status === "RETURNED") {
           months[monthIndex].returned += 1;
         } else {
-          months[monthIndex].earnings += order.total;
+          const productTotal = order.orderItems.reduce(
+            (sum, item) => sum + item.price * item.quantity,
+            0
+          );
+
+          const sellerAmount =
+            productTotal -
+            (productTotal * commission) / 100;
+
+          months[monthIndex].earnings += sellerAmount;
           months[monthIndex].orders += 1;
         }
       }
@@ -157,10 +179,6 @@ export async function GET(request) {
       value: m.canceled
     }));
 
-    const returnedChart = months.map((m) => ({
-      name: m.name,
-      value: m.returned
-    }));
 
 
     /* ---------- KPI CALCULATIONS (FILTERED) ---------- */
@@ -183,14 +201,27 @@ export async function GET(request) {
       }
     });
 
-    /* ✅ FIXED EARNINGS */
+    // total earnings
     const totalEarnings = filteredOrders
       .filter(
-        (order) =>
+        order =>
           order.status !== "CANCELLED" &&
           order.status !== "RETURNED"
       )
-      .reduce((acc, order) => acc + order.total, 0);
+      .reduce((acc, order) => {
+
+        const productTotal = order.orderItems.reduce(
+          (sum, item) => sum + item.price * item.quantity,
+          0
+        );
+
+        const sellerAmount =
+          productTotal -
+          (productTotal * commission) / 100;
+
+        return acc + sellerAmount;
+
+      }, 0);
 
     /* ---------- MONTHLY REPORT ---------- */
 
@@ -236,27 +267,11 @@ export async function GET(request) {
       }
     });
 
-    /* ---------- RETURNED DETAILS ---------- */
-    const returnedOrdersDetails = [];
-
-    monthlyOrders.forEach((order) => {
-      if (order.status === "RETURNED") {
-        order.orderItems.forEach((item) => {
-          const product = products.find((p) => p.id === item.productId);
-
-          returnedOrdersDetails.push({
-            productName: product?.name || "Unknown",
-            quantity: item.quantity,
-            price: item.price
-          });
-        });
-      }
-    });
-
 
 
     /* ---------- RESPONSE ---------- */
     const dashboardData = {
+      settings,
       storeIsActive: store.isActive,
       storeName: store.name,
       storeLogo: store.logo,
@@ -269,10 +284,7 @@ export async function GET(request) {
       earningsChart,
       ordersChart,
       canceledChart,
-      returnedChart,
 
-      returnedProducts: filteredReturnedProducts,
-      returnedAmount: filteredReturnedAmount,
       cancelledAmount,
 
       orders: filteredOrders,
@@ -283,9 +295,7 @@ export async function GET(request) {
         deliveredOrders,
         cancelledOrders: cancelledOrdersDetails.length,
         cancelledAmount,
-        returnedAmount: filteredReturnedAmount, 
         cancelledDetails: cancelledOrdersDetails,
-        returnedDetails: returnedOrdersDetails
       }
     };
 

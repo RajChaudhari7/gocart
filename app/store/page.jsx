@@ -21,21 +21,11 @@ import { Sun, Moon } from "lucide-react"
 import jsPDF from "jspdf"
 import html2canvas from "html2canvas"
 
-// Helper to calculate financials
-const getOrderFinances = (orderItems) => {
-  const productTotal = orderItems?.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
-  ) || 0;
-
-  const sellerEarnings = productTotal * 0.90;
-  return { productTotal, sellerEarnings };
-};
-
 export default function Dashboard() {
   const { getToken } = useAuth()
   const router = useRouter()
   const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '₹'
+  const commission = dashboardData.settings?.commissionPercent || 10;
 
   const [loading, setLoading] = useState(true)
   const [dashboardData, setDashboardData] = useState({
@@ -55,6 +45,8 @@ export default function Dashboard() {
     storeLogo: "",
     monthlyReport: {}
   })
+
+
 
   /* ---------------- YEAR + MONTH FILTER ---------------- */
   const currentYear = new Date().getFullYear()
@@ -86,6 +78,8 @@ export default function Dashboard() {
       setLoading(false)
     }
   }
+
+
 
   useEffect(() => {
     navigator.geolocation.getCurrentPosition(
@@ -159,12 +153,30 @@ export default function Dashboard() {
   /* -------------------- FINANCIAL KPIs -------------------- */
   const filteredOrders = dashboardData.orders || []
 
-  // Net Earnings (90% of product total, ignoring delivery fees)
+  //  net earnings
   const netEarnings = useMemo(() => {
     return filteredOrders
-      .filter(o => o.status !== "CANCELLED" && o.status !== "RETURNED")
-      .reduce((sum, o) => sum + getOrderFinances(o.orderItems).sellerEarnings, 0)
-  }, [filteredOrders])
+      .filter(
+        o =>
+          o.status !== "CANCELLED" &&
+          o.status !== "RETURNED"
+      )
+      .reduce((sum, order) => {
+
+        const productTotal = order.orderItems.reduce(
+          (acc, item) => acc + item.price * item.quantity,
+          0
+        );
+
+        const sellerAmount =
+          productTotal -
+          (productTotal * commission) / 100;
+
+        return sum + sellerAmount;
+
+      }, 0);
+
+  }, [filteredOrders, commission]);
 
   // Lost Revenue from Cancelled Orders (Product total only)
   const cancelledRevenueLoss = useMemo(() => {
@@ -197,26 +209,25 @@ export default function Dashboard() {
   const stats = [
     { title: "Products", value: dashboardData.totalProducts, icon: ShoppingBasketIcon },
     {
-      title: "Net Earnings (90%)",
+      title: `Net Earnings (${100 - commission}%)`,
       value: currency + netEarnings.toFixed(2),
       icon: CircleDollarSignIcon
     },
     { title: "Orders", value: dashboardData.totalOrders + ` (${productsSoldPercent}%)`, icon: TagsIcon },
-    {
-      title: "Returns",
-      value: dashboardData.returnedProducts || 0,
-      icon: TrendingUpIcon
-    },
     { title: "Avg Rating", value: avgRating + " ⭐", icon: StarIcon },
     { title: "Canceled", value: totalCanceledOrders + ` (${canceledPercent}%)`, icon: XCircleIcon },
   ]
 
   /* -------------------- CHART DATA -------------------- */
-  // Scale charts down to 90% logic (optional, assuming chart data is raw totals)
+  
   const earningsData = useMemo(
-    () => dashboardData.earningsChart.map(i => ({ name: i.name, value: (i.value || 0) * 0.90 })),
+    () =>
+      dashboardData.earningsChart.map(i => ({
+        name: i.name,
+        value: i.value || 0
+      })),
     [dashboardData.earningsChart]
-  )
+  );
 
   const ordersData = useMemo(
     () => dashboardData.ordersChart.map(i => ({ name: i.name, value: i.value || 0 })),
@@ -226,11 +237,6 @@ export default function Dashboard() {
   const canceledOrdersData = useMemo(
     () => dashboardData.canceledChart.map(i => ({ name: i.name, value: i.value || 0 })),
     [dashboardData.canceledChart]
-  )
-
-  const returnedOrdersData = useMemo(
-    () => dashboardData.returnedChart.map(i => ({ name: i.name, value: i.value || 0 })),
-    [dashboardData.returnedChart]
   )
 
   if (loading) return <Loading />
@@ -342,7 +348,6 @@ export default function Dashboard() {
         earningsData={earningsData}
         ordersData={ordersData}
         canceledOrdersData={canceledOrdersData}
-        returnedOrdersData={returnedOrdersData}
         topProducts={dashboardData.topProducts}
       />
 
@@ -358,7 +363,7 @@ export default function Dashboard() {
           <h3 className="text-sm font-semibold">Insights</h3>
         </div>
         <ul className="text-sm text-slate-600 space-y-1">
-          <li>📈 Net Earnings for {filterYear}: {currency}{netEarnings.toFixed(2)}</li>
+          <li>📈 Seller Earnings ({100 - commission}%): {currency}{netEarnings.toFixed(2)}</li>
           <li>⭐ Average rating: {avgRating}</li>
           <li>❌ {totalCanceledOrders} total canceled orders</li>
         </ul>
@@ -538,7 +543,7 @@ export default function Dashboard() {
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "14px" }}>
               <tbody>
                 <tr style={{ borderBottom: "1px solid #f1f5f9" }}>
-                  <td style={{ padding: "10px 0", color: "#475569" }}>Net Earnings (90%)</td>
+                  <td style={{ padding: "10px 0", color: "#475569" }}>Net Earnings ({100 - commission}%)</td>
                   <td style={{ padding: "10px 0", textAlign: "right", fontWeight: "bold", color: "#0f172a" }}>
                     {currency}{netEarnings.toFixed(2)}
                   </td>

@@ -340,6 +340,14 @@ export async function GET(request) {
       return NextResponse.json({ error: "Not authorized" }, { status: 401 })
     }
 
+    const settings =
+      await prisma.platformSettings.findFirst() || {
+        commissionPercent: 10,
+        deliveryFee: 50,
+        driverFee: 30,
+        freeDeliveryAbove: 999999,
+      };
+
     const orders = await prisma.order.findMany({
       where: { storeId },
       include: {
@@ -373,7 +381,8 @@ export async function GET(request) {
 
     return NextResponse.json({
       orders,
-      activeCount: activeOrdersCount
+      activeCount: activeOrdersCount,
+      settings,
     })
 
   } catch (error) {
