@@ -105,10 +105,7 @@ export async function GET(request) {
         freeDeliveryAbove: 999999
       };
 
-    const commissionRate = settings.commissionPercent / 100;
-
-    const sellerAmount =
-      productTotal * (1 - commissionRate);
+    const commission = settings.commissionPercent;
 
     /* ---------- TOP PRODUCTS ---------- */
     const topProducts = products
@@ -152,8 +149,7 @@ export async function GET(request) {
           );
 
           const sellerAmount =
-            productTotal -
-            (productTotal * commission) / 100;
+            productTotal * ((100 - commission) / 100);
 
           months[monthIndex].earnings += sellerAmount;
           months[monthIndex].orders += 1;
@@ -204,8 +200,7 @@ export async function GET(request) {
         );
 
         const sellerAmount =
-          productTotal -
-          (productTotal * commission) / 100;
+          productTotal * ((100 - commission) / 100);
 
         return acc + sellerAmount;
 
