@@ -14,17 +14,7 @@ const SELLER_STATUSES = [
     "ORDER_PACKED"
 ]
 
-const getOrderFinances = (order) => {
-    const productTotal = order.orderItems.reduce(
-        (sum, item) => sum + item.price * item.quantity,
-        0
-    );
-    const platformFee = productTotal * 0.10;
-    const sellerEarnings = productTotal * 0.90;
-    const shippingFee = Math.max(0, order.total - productTotal);
 
-    return { productTotal, platformFee, sellerEarnings, shippingFee };
-};
 
 export default function StoreOrders() {
     const { getToken } = useAuth()
@@ -34,9 +24,31 @@ export default function StoreOrders() {
     const [selectedOrder, setSelectedOrder] = useState(null)
     const [isModalOpen, setIsModalOpen] = useState(false)
     const audioRef = useRef(null);
+    const [commission, setCommission] = useState(10);
+
+    const getOrderFinances = (order, commission = 10) => {
+        const productTotal = order.orderItems.reduce(
+            (sum, item) => sum + item.price * item.quantity,
+            0
+        );
+
+        const platformFee = (productTotal * commission) / 100;
+
+        const sellerEarnings = productTotal - platformFee;
+
+        const shippingFee = Math.max(0, order.total - productTotal);
+
+        return {
+            productTotal,
+            platformFee,
+            sellerEarnings,
+            shippingFee
+        };
+    };
 
     useEffect(() => {
         fetchOrders()
+        setCommission(data.settings.commissionPercent);
     }, [])
 
     useEffect(() => {
@@ -200,13 +212,13 @@ export default function StoreOrders() {
                         <th style="padding:10px;">Customer</th>
                         <th style="padding:10px;">Date</th>
                         <th style="padding:10px;">Status</th>
-                        <th style="padding:10px; text-align:right;">Platform Fee</th>
+                        <th style="padding:10px; text-align:right;">₹${finances.platformFee.toFixed(2)}</th>
                         <th style="padding:10px; text-align:right;">Your Earnings</th>
                     </tr>
                 </thead>
                 <tbody>
                     ${filteredOrders.map(order => {
-            const finances = getOrderFinances(order);
+            const finances = getOrderFinances(order, commission);
             let statusColor = "#eab308";
             let bgColor = "#fef9c3";
 
@@ -417,7 +429,7 @@ export default function StoreOrders() {
             ) : (
                 <div className="grid gap-5 max-w-5xl">
                     {activeOrders.map((order) => {
-                        const finances = getOrderFinances(order);
+                        const finances = getOrderFinances(order, commission);
                         return (
                             <div
                                 key={order.id}
@@ -513,7 +525,7 @@ export default function StoreOrders() {
                                             <span>₹{stats.productTotal.toFixed(2)}</span>
                                         </div>
                                         <div className="flex justify-between text-red-500">
-                                            <span>Platform Commission (10%)</span>
+                                            <span>Platform Commission ({commission}%)</span>
                                             <span>- ₹{stats.platformFee.toFixed(2)}</span>
                                         </div>
                                         <div className="flex justify-between text-slate-400 border-b pb-3">
