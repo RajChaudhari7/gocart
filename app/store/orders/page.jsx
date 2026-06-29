@@ -540,19 +540,19 @@ export default function StoreOrders() {
                                     <div className="space-y-3 text-sm">
                                         <div className="flex justify-between text-slate-600">
                                             <span>Product Total</span>
-                                            <span>₹{stats.productTotal.toFixed(2)}</span>
+                                            <span>₹{stats.productTotal?.toFixed(2)}</span>
                                         </div>
                                         <div className="flex justify-between text-red-500">
                                             <span>Platform Commission ({commission}%)</span>
-                                            <span>- ₹{stats.platformFee.toFixed(2)}</span>
+                                            <span>- ₹{stats.platformFee?.toFixed(2)}</span>
                                         </div>
                                         <div className="flex justify-between text-slate-400 border-b pb-3">
                                             <span>Delivery Fee (Paid by Customer)</span>
-                                            <span>₹{stats.shippingFee.toFixed(2)}</span>
+                                            <span>₹{stats.deliveryFee?.toFixed(2)}</span>
                                         </div>
                                         <div className="flex justify-between text-lg font-bold text-emerald-600 pt-1">
                                             <span>Your Net Earnings</span>
-                                            <span>₹{stats.sellerEarnings.toFixed(2)}</span>
+                                            <span>₹{stats.sellerEarnings?.toFixed(2)}</span>
                                         </div>
                                     </div>
                                 </div>
