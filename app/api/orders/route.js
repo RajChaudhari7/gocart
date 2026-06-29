@@ -65,7 +65,7 @@ export async function POST(request) {
           );
         }
 
-        // ✅ Group by store
+
         if (!ordersByStore.has(product.storeId)) {
           ordersByStore.set(product.storeId, []);
         }
@@ -121,11 +121,15 @@ export async function POST(request) {
             storeId,
             addressId,
             total,
+            commissionPercent: settings.commissionPercent,
+            deliveryFee: deliveryCharge,
+            driverFee: settings.driverFee,
             paymentMethod,
             status: "ORDER_PLACED",
             statusHistory: {
               ORDER_PLACED: now.toISOString(),
             },
+
             orderItems: {
               create: sellerItems.map((item) => ({
                 productId: item.id,

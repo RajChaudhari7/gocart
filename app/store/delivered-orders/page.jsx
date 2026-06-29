@@ -59,7 +59,7 @@ export default function DeliveredOrders() {
         );
 
         const commission =
-            settings?.commissionPercent || 10;
+            order.commissionPercent ?? settings.commissionPercent ?? 10;
 
         const platformFee =
             productTotal * commission / 100;
@@ -67,16 +67,18 @@ export default function DeliveredOrders() {
         const sellerEarnings =
             productTotal - platformFee;
 
-        const shippingFee =
-            Math.max(0, order.total - productTotal);
-
         return {
             productTotal,
             platformFee,
             sellerEarnings,
-            shippingFee,
+
+            deliveryFee:
+                order.deliveryFee ?? settings.deliveryFee ?? 0,
+
+            driverFee:
+                order.driverFee ?? settings.driverFee ?? 0,
         };
-    }
+    };
 
     const filteredOrders = orders.filter(order => {
         if (order.status !== "DELIVERED") return false;
@@ -207,9 +209,9 @@ export default function DeliveredOrders() {
                                             <span>Platform Commission ({settings.commissionPercent}%)</span>
                                             <span>- ₹{stats.platformFee.toFixed(2)}</span>
                                         </div>
-                                        <div className="flex justify-between text-slate-400 border-b pb-3">
+                                        <div className="flex justify-between text-slate-600">
                                             <span>Delivery Fee (Paid by Customer)</span>
-                                            <span>₹{stats.shippingFee.toFixed(2)}</span>
+                                            <span>₹{stats.deliveryFee.toFixed(2)}</span>
                                         </div>
                                         <div className="flex justify-between text-lg font-bold text-emerald-600 pt-1">
                                             <span>Your Net Earnings</span>

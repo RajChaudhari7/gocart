@@ -96,6 +96,10 @@ model Order {
   /// Tracking History
   statusHistory Json @default("{}")
 
+  commissionPercent Float?
+  deliveryFee       Float?
+  driverFee         Float?
+
   /// Delivery OTP
   deliveryOtp       String?
   deliveryOtpExpiry DateTime?
@@ -300,9 +304,9 @@ model Driver {
 
 model PlatformSettings {
   id String @id @default(cuid())
-  
+
   commissionPercent Float @default(10)
- 
+
   deliveryFee Float @default(50)
 
   driverFee Float @default(30)

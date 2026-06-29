@@ -49,7 +49,7 @@ export default function Dashboard() {
     }
   })
 
-  const commission = dashboardData.settings?.commissionPercent || 10;
+  const currentCommission = dashboardData.settings?.commissionPercent || 10;
 
 
 
@@ -173,15 +173,18 @@ export default function Dashboard() {
           0
         );
 
+        const orderCommission =
+          order.commissionPercent ?? currentCommission;
+
         const sellerAmount =
           productTotal -
-          (productTotal * commission) / 100;
+          (productTotal * orderCommission) / 100;
 
         return sum + sellerAmount;
 
       }, 0);
 
-  }, [filteredOrders, commission]);
+  }, [filteredOrders, currentCommission]);
 
   // Lost Revenue from Cancelled Orders (Product total only)
   const cancelledRevenueLoss = useMemo(() => {
@@ -214,7 +217,7 @@ export default function Dashboard() {
   const stats = [
     { title: "Products", value: dashboardData.totalProducts, icon: ShoppingBasketIcon },
     {
-      title: `Net Earnings (${100 - commission}%)`,
+      title: "Net Earnings",
       value: currency + netEarnings.toFixed(2),
       icon: CircleDollarSignIcon
     },
@@ -368,7 +371,7 @@ export default function Dashboard() {
           <h3 className="text-sm font-semibold">Insights</h3>
         </div>
         <ul className="text-sm text-slate-600 space-y-1">
-          <li>📈 Seller Earnings ({100 - commission}%): {currency}{netEarnings.toFixed(2)}</li>
+          <li>📈 Seller Earnings{currency}{netEarnings.toFixed(2)}</li>
           <li>⭐ Average rating: {avgRating}</li>
           <li>❌ {totalCanceledOrders} total canceled orders</li>
         </ul>
@@ -548,7 +551,7 @@ export default function Dashboard() {
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "14px" }}>
               <tbody>
                 <tr style={{ borderBottom: "1px solid #f1f5f9" }}>
-                  <td style={{ padding: "10px 0", color: "#475569" }}>Net Earnings ({100 - commission}%)</td>
+                  <td style={{ padding: "10px 0", color: "#475569" }}>Net Earnings</td>
                   <td style={{ padding: "10px 0", textAlign: "right", fontWeight: "bold", color: "#0f172a" }}>
                     {currency}{netEarnings.toFixed(2)}
                   </td>

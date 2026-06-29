@@ -382,7 +382,7 @@ export async function GET(request) {
     return NextResponse.json({
       orders,
       activeCount: activeOrdersCount,
-      settings,
+       settings,
     })
 
   } catch (error) {

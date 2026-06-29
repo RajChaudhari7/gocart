@@ -47,6 +47,9 @@ export async function GET(request) {
         total: true,
         createdAt: true,
         status: true,
+        commissionPercent: true,
+        deliveryFee: true,
+        driverFee: true,
         orderItems: {
           select: {
             productId: true,
@@ -104,8 +107,6 @@ export async function GET(request) {
         driverFee: 30,
         freeDeliveryAbove: 999999
       };
-
-    const commission = settings.commissionPercent;
 
     /* ---------- TOP PRODUCTS ---------- */
     const topProducts = products

@@ -32,17 +32,21 @@ export default function StoreOrders() {
             0
         );
 
+        const commission =
+        order.commissionPercent ?? settings.commissionPercent ?? 10;
+
         const platformFee = (productTotal * commission) / 100;
 
         const sellerEarnings = productTotal - platformFee;
 
-        const shippingFee = Math.max(0, order.total - productTotal);
+        const deliveryFee =
+            order.deliveryFee ?? settings.deliveryFee ?? 0;
 
         return {
             productTotal,
             platformFee,
             sellerEarnings,
-            shippingFee
+            deliveryFee
         };
     };
 
