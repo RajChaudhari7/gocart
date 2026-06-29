@@ -33,7 +33,7 @@ export default function StoreOrders() {
 
     const getOrderFinances = (order) => {
         const productTotal = (order.orderItems || []).reduce(
-            (sum, item) => sum + item.price * item.quantity,
+            (sum, item) => sum + Number(item.price) * Number(item.quantity),
             0
         );
 
@@ -78,6 +78,7 @@ export default function StoreOrders() {
                 setOrders(data.orders);
                 setOrderCount(data.activeCount);
                 setCommission(data.settings?.commissionPercent || 10);
+                setSettings(data.settings);
             } catch (error) {
                 console.error("Polling error:", error);
             }
@@ -399,10 +400,6 @@ export default function StoreOrders() {
         }
     };
 
-    const openModal = (order) => {
-        setSelectedOrder(order)
-        setIsModalOpen(true)
-    }
 
     const closeModal = () => {
         setSelectedOrder(null)
@@ -451,7 +448,10 @@ export default function StoreOrders() {
                         return (
                             <div
                                 key={order.id}
-                                onClick={() => { setSelectedOrder(order); openModal(true); }}
+                                onClick={() => {
+                                    setSelectedOrder(order);
+                                    setIsModalOpen(true);
+                                }}
                                 className="bg-white rounded-xl shadow-sm border p-5 hover:shadow-md transition cursor-pointer border-l-4 border-indigo-500"
                             >
                                 <div className="flex justify-between items-start mb-2">
@@ -522,9 +522,6 @@ export default function StoreOrders() {
                 </div>
             )}
 
-            console.log("Selected Order:", selectedOrder);
-            console.log("User:", selectedOrder.user);
-            console.log("Items:", selectedOrder.orderItems);
 
             {/* ================= MODAL ================= */}
             {isModalOpen && selectedOrder && (
