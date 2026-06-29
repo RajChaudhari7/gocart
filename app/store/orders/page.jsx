@@ -25,6 +25,11 @@ export default function StoreOrders() {
     const [isModalOpen, setIsModalOpen] = useState(false)
     const audioRef = useRef(null);
     const [commission, setCommission] = useState(10);
+    const [settings, setSettings] = useState({
+        commissionPercent: 10,
+        deliveryFee: 50,
+        driverFee: 30,
+    });
 
     const getOrderFinances = (order) => {
         const productTotal = order.orderItems.reduce(
@@ -33,7 +38,7 @@ export default function StoreOrders() {
         );
 
         const commission =
-        order.commissionPercent ?? settings.commissionPercent ?? 10;
+            order.commissionPercent ?? settings.commissionPercent ?? 10;
 
         const platformFee = (productTotal * commission) / 100;
 
