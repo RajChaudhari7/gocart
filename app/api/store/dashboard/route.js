@@ -150,7 +150,7 @@ export async function GET(request) {
           );
 
           const sellerAmount =
-            productTotal * ((100 - commission) / 100);
+            productTotal * ((100 - currentCommission) / 100);
 
           months[monthIndex].earnings += sellerAmount;
           months[monthIndex].orders += 1;
@@ -201,7 +201,7 @@ export async function GET(request) {
         );
 
         const sellerAmount =
-          productTotal * ((100 - commission) / 100);
+          productTotal * ((100 - currentCommission) / 100);
 
         return acc + sellerAmount;
 
