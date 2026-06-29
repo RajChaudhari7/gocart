@@ -578,7 +578,7 @@ export default function StoreOrders() {
                         {/* PRODUCTS */}
                         <div className="space-y-3 mb-6">
                             <h3 className="text-xs uppercase tracking-wider font-bold text-slate-500">Ordered Items</h3>
-                            {selectedOrder.orderItems.map((item, i) => (
+                            {selectedOrder?.orderItems?.map((item, i) => (
                                 <div key={i} className="flex gap-4 border p-3 rounded-xl bg-white">
                                     <img src={item.product?.images?.[0]?.src || item.product?.images?.[0]} className="w-16 h-16 object-cover rounded-lg border" />
                                     <div className="flex-1">
