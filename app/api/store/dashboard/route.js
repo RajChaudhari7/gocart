@@ -17,7 +17,6 @@ const getAll12Months = (year) => {
       earnings: 0,
       orders: 0,
       canceled: 0,
-      returned: 0
     });
   }
 
@@ -146,8 +145,6 @@ export async function GET(request) {
       if (monthIndex !== -1) {
         if (order.status === "CANCELLED") {
           months[monthIndex].canceled += 1;
-        } else if (order.status === "RETURNED") {
-          months[monthIndex].returned += 1;
         } else {
           const productTotal = order.orderItems.reduce(
             (sum, item) => sum + item.price * item.quantity,
@@ -182,19 +179,10 @@ export async function GET(request) {
 
 
     /* ---------- KPI CALCULATIONS (FILTERED) ---------- */
-    let filteredReturnedProducts = 0;
-    let filteredReturnedAmount = 0;
+
     let cancelledAmount = 0;
 
     filteredOrders.forEach((order) => {
-      if (order.status === "RETURNED") {
-        filteredReturnedProducts += order.orderItems.reduce(
-          (acc, item) => acc + item.quantity,
-          0
-        );
-
-        filteredReturnedAmount += order.total;
-      }
 
       if (order.status === "CANCELLED") {
         cancelledAmount += order.total;
@@ -205,8 +193,8 @@ export async function GET(request) {
     const totalEarnings = filteredOrders
       .filter(
         order =>
-          order.status !== "CANCELLED" &&
-          order.status !== "RETURNED"
+          order.status !== "CANCELLED"
+
       )
       .reduce((acc, order) => {
 

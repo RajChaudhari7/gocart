@@ -25,7 +25,7 @@ export default function Dashboard() {
   const { getToken } = useAuth()
   const router = useRouter()
   const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '₹'
-  const commission = dashboardData.settings?.commissionPercent || 10;
+
 
   const [loading, setLoading] = useState(true)
   const [dashboardData, setDashboardData] = useState({
@@ -43,8 +43,13 @@ export default function Dashboard() {
     topProducts: [],
     storeName: "",
     storeLogo: "",
-    monthlyReport: {}
+    monthlyReport: {},
+    settings: {
+      commissionPercent: 10
+    }
   })
+
+  const commission = dashboardData.settings?.commissionPercent || 10;
 
 
 
@@ -219,7 +224,7 @@ export default function Dashboard() {
   ]
 
   /* -------------------- CHART DATA -------------------- */
-  
+
   const earningsData = useMemo(
     () =>
       dashboardData.earningsChart.map(i => ({
