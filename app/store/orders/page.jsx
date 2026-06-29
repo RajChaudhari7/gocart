@@ -48,7 +48,6 @@ export default function StoreOrders() {
 
     useEffect(() => {
         fetchOrders()
-        setCommission(data.settings.commissionPercent);
     }, [])
 
     useEffect(() => {
@@ -69,6 +68,7 @@ export default function StoreOrders() {
                 }
                 setOrders(data.orders);
                 setOrderCount(data.activeCount);
+                setCommission(data.settings?.commissionPercent || 10);
             } catch (error) {
                 console.error("Polling error:", error);
             }
@@ -85,18 +85,23 @@ export default function StoreOrders() {
     const fetchOrders = async () => {
         try {
             const token = await getToken();
-            const { data } = await axios.get('/api/store/orders', {
-                headers: { Authorization: `Bearer ${token}` }
+
+            const { data } = await axios.get("/api/store/orders", {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
             });
+
             setOrders(data.orders);
             setOrderCount(data.activeCount);
+            setCommission(data.settings?.commissionPercent || 10);
+
         } catch (error) {
             toast.error(error?.response?.data?.error || error.message);
         } finally {
             setLoading(false);
         }
     };
-
     const updateOrderStatus = async (order, newStatus) => {
         const currentIndex = SELLER_STATUSES.indexOf(order.status)
         const newIndex = SELLER_STATUSES.indexOf(newStatus)
@@ -120,6 +125,8 @@ export default function StoreOrders() {
         }
     };
 
+
+
     const cancelOrder = async (order) => {
         if (order.status === "DELIVERED" || order.status === "CANCELLED") return
         if (!confirm("Are you sure you want to cancel this order?")) return
@@ -137,6 +144,7 @@ export default function StoreOrders() {
             toast.error(error?.response?.data?.error || error.message)
         }
     }
+
 
     /* ================= PDF EXPORTS ================= */
     const downloadReportPDF = async () => {
