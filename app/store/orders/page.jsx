@@ -26,7 +26,7 @@ export default function StoreOrders() {
     const audioRef = useRef(null);
     const [commission, setCommission] = useState(10);
 
-    const getOrderFinances = (order, commission = 10) => {
+    const getOrderFinances = (order) => {
         const productTotal = order.orderItems.reduce(
             (sum, item) => sum + item.price * item.quantity,
             0
