@@ -108,6 +108,8 @@ export async function GET(request) {
         freeDeliveryAbove: 999999
       };
 
+    const currentCommission = settings.commissionPercent;
+
     /* ---------- TOP PRODUCTS ---------- */
     const topProducts = products
       .map((p) => ({
