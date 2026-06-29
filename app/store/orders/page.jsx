@@ -32,7 +32,7 @@ export default function StoreOrders() {
     });
 
     const getOrderFinances = (order) => {
-        const productTotal = order.orderItems.reduce(
+        const productTotal = (order.orderItems || []).reduce(
             (sum, item) => sum + item.price * item.quantity,
             0
         );
