@@ -235,7 +235,7 @@ export async function POST(request) {
             </tr>
           `).join("")
 
-        const grandTotal = order.orderItems.reduce(
+        const productTotal = order.orderItems.reduce(
           (sum, item) => sum + item.price * item.quantity,
           0
         )
@@ -294,7 +294,7 @@ export async function POST(request) {
     </table>
 
     <p style="text-align:right;font-size:16px;font-weight:600;margin-top:16px;color:#111827;">
-      Grand Total: ₹${grandTotal}
+      Grand Total: ₹${productTotal}
     </p>
 
     <hr style="border:none;border-top:1px solid #e5e7eb;margin:20px 0;" />
