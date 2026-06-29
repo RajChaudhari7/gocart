@@ -522,6 +522,10 @@ export default function StoreOrders() {
                 </div>
             )}
 
+            console.log("Selected Order:", selectedOrder);
+            console.log("User:", selectedOrder.user);
+            console.log("Items:", selectedOrder.orderItems);
+
             {/* ================= MODAL ================= */}
             {isModalOpen && selectedOrder && (
                 <div onClick={closeModal} className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
