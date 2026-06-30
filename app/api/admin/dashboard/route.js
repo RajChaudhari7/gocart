@@ -34,15 +34,50 @@ export async function GET(request) {
             }
         }
 
-        // ✅ ONLY Delivered Orders Count (FILTERED)
-        const orders = await prisma.order.count({
+        const orders = await prisma.order.count({ where: { status: "DELIVERED", ...dateFilter } })
+        
+        const deliveredOrders = await prisma.order.findMany({
             where: {
                 status: "DELIVERED",
                 ...dateFilter
+            },
+            select: {
+                orderItems: {
+                    select: {
+                        price: true,
+                        quantity: true
+                    }
+                },
+                commissionPercent: true,
+                deliveryFee: true,
+                driverFee: true,
+                createdAt: true,
+                total: true
             }
         })
 
-        // ✅ ONLY Approved Stores (NO DATE FILTER)
+        let sellerRevenue = 0;
+        let adminRevenue = 0;
+
+        for (const order of deliveredOrders) {
+
+            const productTotal = order.orderItems.reduce(
+                (sum, item) => sum + item.price * item.quantity,
+                0
+            );
+
+            const commission =
+                (productTotal * (order.commissionPercent || 10)) / 100;
+
+            sellerRevenue +=
+                productTotal - commission;
+
+            adminRevenue +=
+                commission +
+                (order.deliveryFee || 0) -
+                (order.driverFee || 0);
+        }
+
         const stores = await prisma.store.count({
             where: {
                 status: "approved"
@@ -61,16 +96,7 @@ export async function GET(request) {
             }
         })
 
-        // ✅ FILTERED Revenue
-        const revenueData = await prisma.order.aggregate({
-            _sum: { total: true },
-            where: {
-                status: "DELIVERED",
-                ...dateFilter
-            }
-        })
 
-        const revenue = (revenueData._sum.total || 0).toFixed(2)
 
         // ✅ Products (no filter)
         const products = await prisma.product.count()
@@ -80,6 +106,8 @@ export async function GET(request) {
             stores,
             products,
             revenue,
+            sellerRevenue: sellerRevenue.toFixed(2),
+            adminRevenue: adminRevenue.toFixed(2),
             allOrders
         }
 

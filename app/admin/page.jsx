@@ -5,7 +5,7 @@ import OrdersAreaChart from "@/components/OrdersAreaChart"
 import { useAuth } from "@clerk/nextjs"
 import axios from "axios"
 import {
-    CircleDollarSignIcon,
+    IndianRupeeIcon,
     ShoppingBasketIcon,
     StoreIcon,
     TagsIcon,
@@ -35,7 +35,20 @@ export default function AdminDashboard() {
 
     const dashboardCardsData = [
         { title: 'Total Products', value: dashboardData.products, icon: ShoppingBasketIcon, color: 'bg-blue-100 text-blue-600' },
-        { title: 'Total Revenue', value: currency + dashboardData.revenue, icon: CircleDollarSignIcon, color: 'bg-green-100 text-green-600' },
+        {
+            title: "Seller Revenue",
+            value: currency + dashboardData.sellerRevenue,
+            icon: IndianRupeeIcon,
+            color: "bg-green-100 text-green-600"
+        },
+
+        {
+            title: "Admin Revenue",
+            value: currency + dashboardData.adminRevenue,
+            icon: IndianRupeeIcon,
+            color: "bg-purple-100 text-purple-700"
+        },
+
         { title: 'Total Orders', value: dashboardData.orders, icon: TagsIcon, color: 'bg-indigo-100 text-indigo-600' },
         { title: 'Total Stores', value: dashboardData.stores, icon: StoreIcon, color: 'bg-orange-100 text-orange-600' },
     ]
