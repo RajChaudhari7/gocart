@@ -26,7 +26,6 @@ export default function AdminDashboard() {
 
     const [dashboardData, setDashboardData] = useState({
         products: 0,
-        revenue: 0,
         orders: 0,
         stores: 0,
         canceledOrders: 0,
