@@ -82,7 +82,6 @@ const ProductDetails = ({ product }) => {
 
     if (!isSignedIn) {
       toast.error("Please login to add this product to your cart.")
-      router.push("/sign-in")
       return
     }
 
@@ -304,7 +303,6 @@ const ProductDetails = ({ product }) => {
                     onClick={() => {
                       if (!isSignedIn) {
                         toast.error("Please login to manage your cart.")
-                        router.push("/sign-in")
                         return
                       }
                       handleQuantityChange(quantity - 1)
@@ -319,7 +317,6 @@ const ProductDetails = ({ product }) => {
                     onClick={() => {
                       if (!isSignedIn) {
                         toast.error("Please login to manage your cart.")
-                        router.push("/sign-in")
                         return
                       }
                       handleQuantityChange(quantity + 1)
