@@ -88,6 +88,7 @@ export default function AdminDashboard() {
         const cardRef = useRef(null)
         const x = useMotionValue(0)
         const y = useMotionValue(0)
+
         const rotateX = useTransform(y, [-50, 50], [15, -15])
         const rotateY = useTransform(x, [-50, 50], [-15, 15])
 
@@ -95,6 +96,7 @@ export default function AdminDashboard() {
             const rect = cardRef.current.getBoundingClientRect()
             const px = e.clientX - rect.left - rect.width / 2
             const py = e.clientY - rect.top - rect.height / 2
+
             x.set(px / 2)
             y.set(py / 2)
         }
@@ -103,6 +105,7 @@ export default function AdminDashboard() {
             x.set(0)
             y.set(0)
         }
+
         const content = (
             <motion.div
                 ref={cardRef}
@@ -121,73 +124,73 @@ export default function AdminDashboard() {
 
                 <card.icon size={50} className="opacity-80" />
             </motion.div>
-        );
+        )
+
+        return card.link ? (
+            <Link href={card.link}>
+                {content}
+            </Link>
+        ) : (
+            <div className="text-slate-500 p-6">
+                <h1 className="text-3xl font-bold mb-6 text-slate-800">
+                    Admin <span className="text-indigo-600">Dashboard</span>
+                </h1>
+
+                <div className="flex gap-4 mb-6">
+
+                    {/* Month Filter */}
+                    <select
+                        value={month}
+                        onChange={(e) => setMonth(Number(e.target.value))}
+                        className="p-2 border rounded-lg"
+                    >
+                        {/* ✅ All Months Option */}
+                        <option value={0}>All Months</option>
+
+                        {[
+                            "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+                        ].map((m, i) => (
+                            <option key={i} value={i + 1}>
+                                {m}
+                            </option>
+                        ))}
+                    </select>
+
+                    {/* Year Filter */}
+                    <select
+                        value={year}
+                        onChange={(e) => setYear(Number(e.target.value))}
+                        className="p-2 border rounded-lg"
+                    >
+                        {[2023, 2024, 2025, 2026].map((y) => (
+                            <option key={y} value={y}>
+                                {y}
+                            </option>
+                        ))}
+                    </select>
+
+                </div>
+
+                {/* 3D Cards Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-6 mb-10">
+                    {dashboardCardsData.map((card, index) => (
+                        <TiltCard key={index} card={card} />
+                    ))}
+                </div>
+
+                {/* Orders Area Chart */}
+                <motion.div
+                    className="bg-white p-6 rounded-xl shadow-2xl"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5 }}
+                >
+                    <h2 className="text-xl font-semibold mb-4">Orders Overview</h2>
+                    <OrdersAreaChart allOrders={dashboardData.allOrders} />
+                </motion.div>
+
+            </div>
+        )
     }
-
-    return dashboardCardsData.link ? (
-        <Link href={dashboardCardsData.link}>
-            {content}
-        </Link>
-    ) : (
-        <div className="text-slate-500 p-6">
-            <h1 className="text-3xl font-bold mb-6 text-slate-800">
-                Admin <span className="text-indigo-600">Dashboard</span>
-            </h1>
-
-            <div className="flex gap-4 mb-6">
-
-                {/* Month Filter */}
-                <select
-                    value={month}
-                    onChange={(e) => setMonth(Number(e.target.value))}
-                    className="p-2 border rounded-lg"
-                >
-                    {/* ✅ All Months Option */}
-                    <option value={0}>All Months</option>
-
-                    {[
-                        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-                        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-                    ].map((m, i) => (
-                        <option key={i} value={i + 1}>
-                            {m}
-                        </option>
-                    ))}
-                </select>
-
-                {/* Year Filter */}
-                <select
-                    value={year}
-                    onChange={(e) => setYear(Number(e.target.value))}
-                    className="p-2 border rounded-lg"
-                >
-                    {[2023, 2024, 2025, 2026].map((y) => (
-                        <option key={y} value={y}>
-                            {y}
-                        </option>
-                    ))}
-                </select>
-
-            </div>
-
-            {/* 3D Cards Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-6 mb-10">
-                {dashboardCardsData.map((card, index) => (
-                    <TiltCard key={index} card={card} />
-                ))}
-            </div>
-
-            {/* Orders Area Chart */}
-            <motion.div
-                className="bg-white p-6 rounded-xl shadow-2xl"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-            >
-                <h2 className="text-xl font-semibold mb-4">Orders Overview</h2>
-                <OrdersAreaChart allOrders={dashboardData.allOrders} />
-            </motion.div>
-
-        </div>
-    )
 }
