@@ -53,21 +53,39 @@ export async function GET(request) {
             }
         })
 
-        let deliveredRevenue = 0
+        let sellerRevenue = 0
+        let adminRevenue = 0
+
         let cancelledAmount = 0
-        let returnedAmount = 0
 
         let deliveredCount = 0
         let cancelledCount = 0
-        let returnedCount = 0
 
         const productMap = {}
 
         orders.forEach(order => {
-
             if (order.status === "DELIVERED") {
-                deliveredRevenue += order.total
+
                 deliveredCount++
+
+                const productTotal = order.orderItems.reduce(
+                    (sum, item) => sum + item.price * item.quantity,
+                    0
+                )
+
+                const commissionPercent = order.commissionPercent || 10
+
+                const commission =
+                    (productTotal * commissionPercent) / 100
+
+                // Seller Earnings
+                sellerRevenue += productTotal - commission
+
+                // Admin Earnings
+                adminRevenue +=
+                    commission +
+                    (order.deliveryFee || 0) -
+                    (order.driverFee || 0)
 
                 order.orderItems.forEach(item => {
                     productMap[item.productId] =
@@ -78,11 +96,6 @@ export async function GET(request) {
             if (order.status === "CANCELLED") {
                 cancelledAmount += order.total
                 cancelledCount++
-            }
-
-            if (order.status === "RETURNED") {
-                returnedAmount += order.total
-                returnedCount++
             }
         })
 
@@ -108,12 +121,11 @@ export async function GET(request) {
 
         return NextResponse.json({
             data: {
-                deliveredRevenue,
-                cancelledAmount,
-                returnedAmount,
+                sellerRevenue: Number(sellerRevenue.toFixed(2)),
+                adminRevenue: Number(adminRevenue.toFixed(2)),
+                cancelledAmount: Number(cancelledAmount.toFixed(2)),
                 deliveredCount,
                 cancelledCount,
-                returnedCount,
                 topProduct
             }
         })

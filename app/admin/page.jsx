@@ -14,6 +14,7 @@ import {
 import { useEffect, useState, useRef } from "react"
 import toast from "react-hot-toast"
 import { motion, useMotionValue, useTransform } from "framer-motion"
+import Link from "next/link"
 
 export default function AdminDashboard() {
 
@@ -28,6 +29,8 @@ export default function AdminDashboard() {
         products: 0,
         orders: 0,
         stores: 0,
+        sellerRevenue: 0,
+        adminRevenue: 0,
         canceledOrders: 0,
         allOrders: [],
     })
@@ -38,6 +41,7 @@ export default function AdminDashboard() {
             title: "Seller Revenue",
             value: currency + dashboardData.sellerRevenue,
             icon: IndianRupeeIcon,
+            link: '/admin/sales',
             color: "bg-green-100 text-green-600"
         },
 
@@ -99,12 +103,10 @@ export default function AdminDashboard() {
             x.set(0)
             y.set(0)
         }
-
-        return (
-
+        const content = (
             <motion.div
                 ref={cardRef}
-                className={`flex items-center justify-between p-6 rounded-xl shadow-2xl ${card.color} cursor-pointer perspective`}
+                className={`flex items-center justify-between p-6 rounded-xl shadow-2xl ${card.color} cursor-pointer`}
                 style={{ rotateX, rotateY }}
                 onMouseMove={handleMouseMove}
                 onMouseLeave={handleMouseLeave}
@@ -112,14 +114,21 @@ export default function AdminDashboard() {
             >
                 <div className="flex flex-col">
                     <p className="text-sm font-medium">{card.title}</p>
-                    <b className="text-2xl md:text-3xl font-semibold">{card.value}</b>
+                    <b className="text-2xl md:text-3xl font-semibold">
+                        {card.value}
+                    </b>
                 </div>
+
                 <card.icon size={50} className="opacity-80" />
             </motion.div>
-        )
+        );
     }
 
-    return (
+    return card.link ? (
+        <Link href={card.link}>
+            {content}
+        </Link>
+    ) : (
         <div className="text-slate-500 p-6">
             <h1 className="text-3xl font-bold mb-6 text-slate-800">
                 Admin <span className="text-indigo-600">Dashboard</span>

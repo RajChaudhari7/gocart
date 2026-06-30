@@ -58,14 +58,14 @@ export default function SalesPage() {
             <div className="flex gap-3 mb-6">
                 <select value={month} onChange={(e) => setMonth(Number(e.target.value))}>
                     <option value={0}>All Months</option>
-                    {["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
+                    {["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
                         .map((m, i) => (
-                            <option key={i} value={i+1}>{m}</option>
+                            <option key={i} value={i + 1}>{m}</option>
                         ))}
                 </select>
 
                 <select value={year} onChange={(e) => setYear(Number(e.target.value))}>
-                    {[2023,2024,2025,2026].map(y => (
+                    {[2023, 2024, 2025, 2026].map(y => (
                         <option key={y}>{y}</option>
                     ))}
                 </select>
@@ -85,20 +85,65 @@ export default function SalesPage() {
             </div>
 
             {/* STORE DATA */}
+            {/* STORE DATA */}
             {data && (
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
 
-                    <div>💰 Revenue: ₹{data.deliveredRevenue}</div>
-                    <div>❌ Cancelled Amount: ₹{data.cancelledAmount}</div>
-                    <div>🔁 Returned Amount: ₹{data.returnedAmount}</div>
+                    <div className="bg-green-100 p-4 rounded-lg shadow">
+                        <p className="text-sm text-gray-600">Seller Revenue</p>
+                        <h2 className="text-2xl font-bold text-green-700">
+                            ₹{Number(data.sellerRevenue).toFixed(2)}
+                        </h2>
+                    </div>
 
-                    <div>📦 Delivered Orders: {data.deliveredCount}</div>
-                    <div>❌ Cancelled Orders: {data.cancelledCount}</div>
-                    <div>🔁 Returned Orders: {data.returnedCount}</div>
+                    <div className="bg-blue-100 p-4 rounded-lg shadow">
+                        <p className="text-sm text-gray-600">Admin Revenue</p>
+                        <h2 className="text-2xl font-bold text-blue-700">
+                            ₹{Number(data.adminRevenue).toFixed(2)}
+                        </h2>
+                    </div>
+
+                    <div className="bg-red-100 p-4 rounded-lg shadow">
+                        <p className="text-sm text-gray-600">Cancelled Amount</p>
+                        <h2 className="text-2xl font-bold text-red-700">
+                            ₹{Number(data.cancelledAmount).toFixed(2)}
+                        </h2>
+                    </div>
+
+                    <div className="bg-white p-4 rounded-lg shadow">
+                        <p className="text-sm text-gray-600">Delivered Orders</p>
+                        <h2 className="text-2xl font-bold">
+                            {data.deliveredCount}
+                        </h2>
+                    </div>
+
+                    <div className="bg-white p-4 rounded-lg shadow">
+                        <p className="text-sm text-gray-600">Cancelled Orders</p>
+                        <h2 className="text-2xl font-bold text-red-600">
+                            {data.cancelledCount}
+                        </h2>
+                    </div>
 
                     {data.topProduct && (
-                        <div className="col-span-2">
-                            🏆 Top Product: {data.topProduct.name}
+                        <div className="bg-indigo-50 p-4 rounded-lg shadow col-span-2 md:col-span-4 flex items-center gap-4">
+
+                            {data.topProduct.images?.length > 0 && (
+                                <img
+                                    src={data.topProduct.images[0]}
+                                    alt={data.topProduct.name}
+                                    className="w-16 h-16 rounded-lg object-cover border"
+                                />
+                            )}
+
+                            <div>
+                                <p className="text-sm text-gray-500">
+                                    Best Selling Product
+                                </p>
+                                <h2 className="text-xl font-bold">
+                                    🏆 {data.topProduct.name}
+                                </h2>
+                            </div>
+
                         </div>
                     )}
 
