@@ -35,7 +35,7 @@ export async function GET(request) {
         }
 
         const orders = await prisma.order.count({ where: { status: "DELIVERED", ...dateFilter } })
-        
+
         const deliveredOrders = await prisma.order.findMany({
             where: {
                 status: "DELIVERED",
@@ -105,7 +105,6 @@ export async function GET(request) {
             orders,
             stores,
             products,
-            revenue,
             sellerRevenue: sellerRevenue.toFixed(2),
             adminRevenue: adminRevenue.toFixed(2),
             allOrders
