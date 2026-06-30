@@ -124,8 +124,8 @@ export default function AdminDashboard() {
         );
     }
 
-    return card.link ? (
-        <Link href={card.link}>
+    return dashboardCardsData.link ? (
+        <Link href={dashboardCardsData.link}>
             {content}
         </Link>
     ) : (
