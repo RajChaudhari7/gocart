@@ -26,7 +26,7 @@ const LatestProducts = () => {
           theme="dark"
         />
 
-        <div className="mt-14 grid grid-cols-2 md:grid-cols-4 gap-8">
+        <div className="mt-10 grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
           {products
             .slice()
             .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
@@ -34,7 +34,7 @@ const LatestProducts = () => {
             .map((product, index) => (
               <div
                 key={index}
-                className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-4 hover:scale-[1.03] transition"
+                className="rounded-2xl overflow-hidden"
               >
                 <ProductCard
                   product={product}

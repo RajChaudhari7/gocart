@@ -14,6 +14,8 @@ import {
   AlertCircleIcon
 } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { useUser } from "@clerk/nextjs"
+import toast from "react-hot-toast"
 import { setCartItemQuantity } from "@/lib/features/cart/cartSlice"
 import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-motion"
 
@@ -42,6 +44,7 @@ const toBase64 = (str) =>
 const ProductDetails = ({ product }) => {
   const dispatch = useDispatch()
   const router = useRouter()
+  const { isSignedIn } = useUser()
   const cart = useSelector(state => state.cart.cartItems)
 
   const productId = product.id
@@ -76,13 +79,22 @@ const ProductDetails = ({ product }) => {
 
   /* ---------- HANDLERS ---------- */
   const handleAddToCart = () => {
+
+    if (!isSignedIn) {
+      toast.error("Please login to add this product to your cart.")
+      router.push("/sign-in")
+      return
+    }
+
     if (isOutOfStock) return
 
-    dispatch(setCartItemQuantity({
-      productId,
-      quantity: 1,
-      maxQuantity: maxQty
-    }))
+    dispatch(
+      setCartItemQuantity({
+        productId,
+        quantity: 1,
+        maxQuantity: maxQty,
+      })
+    )
 
     setInCart(true)
   }
@@ -289,7 +301,14 @@ const ProductDetails = ({ product }) => {
 
                 <div className="flex items-center justify-between bg-slate-900 border border-slate-700 rounded-full w-full sm:w-40 h-14 px-2">
                   <button
-                    onClick={() => handleQuantityChange(quantity - 1)}
+                    onClick={() => {
+                      if (!isSignedIn) {
+                        toast.error("Please login to manage your cart.")
+                        router.push("/sign-in")
+                        return
+                      }
+                      handleQuantityChange(quantity - 1)
+                    }}
                     className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-full transition-colors"
                   >
                     <MinusIcon size={20} />
@@ -297,7 +316,14 @@ const ProductDetails = ({ product }) => {
                   <span className="font-bold text-lg w-8 text-center">{quantity}</span>
                   <button
                     disabled={isAtMaxStock}
-                    onClick={() => handleQuantityChange(quantity + 1)}
+                    onClick={() => {
+                      if (!isSignedIn) {
+                        toast.error("Please login to manage your cart.")
+                        router.push("/sign-in")
+                        return
+                      }
+                      handleQuantityChange(quantity + 1)
+                    }}
                     className={`p-2 rounded-full transition-colors ${isAtMaxStock
                       ? "text-slate-700 cursor-not-allowed"
                       : "text-slate-400 hover:text-white hover:bg-slate-800"
