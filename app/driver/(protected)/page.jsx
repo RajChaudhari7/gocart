@@ -280,10 +280,10 @@ export default function DriverDashboard() {
 
                 <div className="max-w-7xl mx-auto p-8">
 
-                    <div className="flex justify-between items-center">
+                    <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-5">
 
                         <div>
-                            <h1 className="text-3xl font-bold">
+                            <h1 className="text-2xl md:text-3xl font-bold">
                                 {JSON.parse(localStorage.getItem("driver"))?.name
                                     ? `Welcome, ${JSON.parse(localStorage.getItem("driver")).name} 👋`
                                     : "Welcome Driver 👋"}
@@ -294,7 +294,7 @@ export default function DriverDashboard() {
                             </p>
                         </div>
 
-                        <div className="bg-green-500 px-5 py-2 rounded-full font-semibold flex items-center gap-2">
+                        <div className="self-start md:self-auto bg-green-500 px-5 py-2 rounded-full">
                             <span className="w-3 h-3 bg-white rounded-full animate-pulse"></span>
                             Online
                         </div>
@@ -305,13 +305,13 @@ export default function DriverDashboard() {
 
             </div>
 
-            <div className="max-w-7xl mx-auto p-6">
+            <div className="max-w-7xl mx-auto px-4 md:px-6 py-6">
 
                 {/* Stats */}
 
-                <div className="grid md:grid-cols-4 gap-6 -mt-12">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 -mt-8 md:-mt-12">
 
-                    <div className="bg-white rounded-2xl shadow-lg p-6">
+                    <div className="bg-white rounded-2xl shadow-lg p-4 md:p-6">
 
                         <h2 className="text-gray-500 text-sm">
                             Today's Earnings
@@ -323,7 +323,7 @@ export default function DriverDashboard() {
 
                     </div>
 
-                    <div className="bg-white rounded-2xl shadow-lg p-6">
+                    <div className="bg-white rounded-2xl shadow-lg p-4 md:p-6">
 
                         <h2 className="text-gray-500 text-sm">
                             Today's Deliveries
@@ -335,7 +335,7 @@ export default function DriverDashboard() {
 
                     </div>
 
-                    <div className="bg-white rounded-2xl shadow-lg p-6">
+                    <div className="bg-white rounded-2xl shadow-lg p-4 md:p-6">
 
                         <h2 className="text-gray-500 text-sm">
                             Yesterday Earnings
@@ -347,7 +347,7 @@ export default function DriverDashboard() {
 
                     </div>
 
-                    <div className="bg-white rounded-2xl shadow-lg p-6">
+                    <div className="bg-white rounded-2xl shadow-lg p-4 md:p-6">
 
                         <h2 className="text-gray-500 text-sm">
                             Monthly Earnings
@@ -363,12 +363,12 @@ export default function DriverDashboard() {
 
                 {/* Earnings Filter */}
 
-                <div className="bg-white rounded-2xl shadow-lg p-5 mt-8 flex flex-wrap gap-4">
+                <div className="bg-white rounded-2xl shadow-lg p-4 md:p-5 mt-8 flex flex-col sm:flex-row flex-wrap gap-4">
 
                     <select
                         value={month}
                         onChange={(e) => setMonth(Number(e.target.value))}
-                        className="border rounded-lg px-4 py-2"
+                        className="border rounded-lg px-4 py-2 w-full sm:w-auto"
                     >
 
                         {[
@@ -398,7 +398,7 @@ export default function DriverDashboard() {
                     <select
                         value={year}
                         onChange={(e) => setYear(Number(e.target.value))}
-                        className="border rounded-lg px-4 py-2"
+                        className="border rounded-lg px-4 py-2 w-full sm:w-auto"
                     >
 
                         {[2024, 2025, 2026].map((y) => (
@@ -413,14 +413,14 @@ export default function DriverDashboard() {
                         type="date"
                         value={selectedDate}
                         onChange={(e) => setSelectedDate(e.target.value)}
-                        className="border rounded-lg px-4 py-2"
+                        className="border rounded-lg px-4 py-2 w-full sm:w-auto"
                     />
 
                 </div>
 
                 {/* Quick Stats */}
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-8">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mt-8">
 
                     <Link
                         href="/driver/orders"
@@ -437,7 +437,7 @@ export default function DriverDashboard() {
                         </p>
                     </Link>
 
-                    <div className="bg-white rounded-2xl shadow-lg p-6">
+                    <div className="bg-white rounded-2xl shadow-lg p-4 md:p-6">
 
                         <Truck className="text-orange-500 w-10 h-10" />
 
@@ -451,7 +451,7 @@ export default function DriverDashboard() {
 
                     </div>
 
-                    <div className="bg-white rounded-2xl shadow-lg p-6">
+                    <div className="bg-white rounded-2xl shadow-lg p-4 md:p-6">
 
                         <Bike className="text-green-600 w-10 h-10" />
 
