@@ -273,104 +273,47 @@ export default function DriverDashboard() {
 
 
     return (
-        <div className="min-h-screen bg-slate-100">
+        <div className="min-h-screen bg-slate-100 pb-20"> {/* Added pb-20 to prevent overlap */}
 
             {/* Header */}
             <div className="bg-gradient-to-r from-indigo-700 via-blue-700 to-cyan-600 text-white rounded-b-3xl shadow-lg">
-
-                <div className="max-w-7xl mx-auto p-8">
-
-                    <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-5">
-
+                <div className="max-w-7xl mx-auto px-4 py-8">
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                         <div>
-                            <h1 className="text-2xl md:text-3xl font-bold">
+                            <h1 className="text-xl md:text-3xl font-bold truncate">
                                 {JSON.parse(localStorage.getItem("driver"))?.name
                                     ? `Welcome, ${JSON.parse(localStorage.getItem("driver")).name} 👋`
                                     : "Welcome Driver 👋"}
                             </h1>
-
-                            <p className="text-blue-100 mt-2">
-                                Ready for today's deliveries?
-                            </p>
+                            <p className="text-blue-100 mt-1">Ready for today's deliveries?</p>
                         </div>
-
-                        <div className="self-start md:self-auto bg-green-500 px-5 py-2 rounded-full">
-                            <span className="w-3 h-3 bg-white rounded-full animate-pulse"></span>
-                            Online
+                        <div className="flex items-center gap-2 bg-green-500/20 border border-green-400 px-4 py-2 rounded-full self-start sm:self-auto">
+                            <span className="w-2.5 h-2.5 bg-green-400 rounded-full animate-pulse"></span>
+                            <span className="text-sm font-medium">Online</span>
                         </div>
-
                     </div>
-
                 </div>
-
             </div>
 
-            <div className="max-w-7xl mx-auto px-4 md:px-6 py-6">
-
-                {/* Stats */}
-
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 -mt-8 md:-mt-12">
-
-                    <div className="bg-white rounded-2xl shadow-lg p-4 md:p-6">
-
-                        <h2 className="text-gray-500 text-sm">
-                            Today's Earnings
-                        </h2>
-
-                        <p className="text-3xl font-bold mt-3 text-green-600">
-                            ₹{dashboard?.todayRevenue || 0}
-                        </p>
-
-                    </div>
-
-                    <div className="bg-white rounded-2xl shadow-lg p-4 md:p-6">
-
-                        <h2 className="text-gray-500 text-sm">
-                            Today's Deliveries
-                        </h2>
-
-                        <p className="text-3xl font-bold mt-3 text-blue-600">
-                            {dashboard?.todayDeliveries || 0}
-                        </p>
-
-                    </div>
-
-                    <div className="bg-white rounded-2xl shadow-lg p-4 md:p-6">
-
-                        <h2 className="text-gray-500 text-sm">
-                            Yesterday Earnings
-                        </h2>
-
-                        <p className="text-3xl font-bold mt-3 text-orange-600">
-                            ₹{dashboard?.yesterdayRevenue || 0}
-                        </p>
-
-                    </div>
-
-                    <div className="bg-white rounded-2xl shadow-lg p-4 md:p-6">
-
-                        <h2 className="text-gray-500 text-sm">
-                            Monthly Earnings
-                        </h2>
-
-                        <p className="text-3xl font-bold mt-3 text-purple-600">
-                            ₹{dashboard?.selectedRevenue || 0}
-                        </p>
-
-                    </div>
-
+            <div className="max-w-7xl mx-auto px-4 py-6">
+                {/* Stats Grid - Responsive columns */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6 -mt-12">
+                    {[
+                        { title: "Today's Earnings", val: `₹${dashboard?.todayRevenue || 0}`, color: "text-green-600" },
+                        { title: "Today's Deliveries", val: dashboard?.todayDeliveries || 0, color: "text-blue-600" },
+                        { title: "Yesterday", val: `₹${dashboard?.yesterdayRevenue || 0}`, color: "text-orange-600" },
+                        { title: "Monthly", val: `₹${dashboard?.selectedRevenue || 0}`, color: "text-purple-600" },
+                    ].map((stat, i) => (
+                        <div key={i} className="bg-white rounded-2xl shadow-md p-4">
+                            <h2 className="text-gray-500 text-[10px] md:text-sm uppercase font-semibold">{stat.title}</h2>
+                            <p className={`text-lg md:text-3xl font-bold mt-1 ${stat.color}`}>{stat.val}</p>
+                        </div>
+                    ))}
                 </div>
 
-                {/* Earnings Filter */}
-
-                <div className="bg-white rounded-2xl shadow-lg p-4 md:p-5 mt-8 flex flex-col sm:flex-row flex-wrap gap-4">
-
-                    <select
-                        value={month}
-                        onChange={(e) => setMonth(Number(e.target.value))}
-                        className="border rounded-lg px-4 py-2 w-full sm:w-auto"
-                    >
-
+                {/* Filters */}
+                <div className="bg-white rounded-2xl shadow-md p-4 mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <select value={month} onChange={(e) => setMonth(Number(e.target.value))} className="border rounded-lg px-3 py-2 text-sm">
                         {[
                             "January",
                             "February",
@@ -395,11 +338,7 @@ export default function DriverDashboard() {
 
                     </select>
 
-                    <select
-                        value={year}
-                        onChange={(e) => setYear(Number(e.target.value))}
-                        className="border rounded-lg px-4 py-2 w-full sm:w-auto"
-                    >
+                    <select value={year} onChange={(e) => setYear(Number(e.target.value))} className="border rounded-lg px-3 py-2 text-sm">
 
                         {[2024, 2025, 2026].map((y) => (
                             <option key={y}>
@@ -409,109 +348,37 @@ export default function DriverDashboard() {
 
                     </select>
 
-                    <input
-                        type="date"
-                        value={selectedDate}
-                        onChange={(e) => setSelectedDate(e.target.value)}
-                        className="border rounded-lg px-4 py-2 w-full sm:w-auto"
-                    />
+                    <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="border rounded-lg px-3 py-2 text-sm" />
 
                 </div>
 
                 {/* Quick Stats */}
 
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mt-8">
-
-                    <Link
-                        href="/driver/orders"
-                        className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition"
-                    >
-                        <Package className="text-blue-600 w-10 h-10" />
-
-                        <h2 className="font-semibold text-lg mt-4">
-                            Assigned Orders
-                        </h2>
-
-                        <p className="text-gray-500 text-sm mt-2">
-                            View Active Orders
-                        </p>
+                {/* Quick Stats Links */}
+                <div className="grid grid-cols-2 gap-4 mt-6">
+                    <Link href="/driver/orders" className="bg-white p-4 rounded-2xl shadow-md hover:shadow-lg transition">
+                        <Package className="text-blue-600 w-8 h-8" />
+                        <h2 className="font-bold mt-2">Active Orders</h2>
                     </Link>
-
-                    <div className="bg-white rounded-2xl shadow-lg p-4 md:p-6">
-
-                        <Truck className="text-orange-500 w-10 h-10" />
-
-                        <h2 className="font-semibold text-lg mt-4">
-                            Active Orders
-                        </h2>
-
-                        <p className="text-3xl font-bold text-orange-600 mt-2">
-                            {dashboard?.activeOrders || 0}
-                        </p>
-
-                    </div>
-
-                    <div className="bg-white rounded-2xl shadow-lg p-4 md:p-6">
-
-                        <Bike className="text-green-600 w-10 h-10" />
-
-                        <h2 className="font-semibold text-lg mt-4">
-                            Total Delivered
-                        </h2>
-
-                        <p className="text-3xl font-bold text-green-600 mt-2">
-                            {dashboard?.totalDelivered || 0}
-                        </p>
-
-                    </div>
-
-                    <Link
-                        href="/driver/profile"
-                        className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition"
-                    >
-                        <User className="text-purple-600 w-10 h-10" />
-
-                        <h2 className="font-semibold text-lg mt-4">
-                            Profile
-                        </h2>
-
-                        <p className="text-gray-500 text-sm mt-2">
-                            Manage Account
-                        </p>
-
+                    <Link href="/driver/profile" className="bg-white p-4 rounded-2xl shadow-md hover:shadow-lg transition">
+                        <User className="text-purple-600 w-8 h-8" />
+                        <h2 className="font-bold mt-2">Profile</h2>
                     </Link>
-
                 </div>
 
                 {/* Recent Deliveries */}
 
-                <div className="bg-white mt-8 rounded-2xl shadow-lg">
-
-                    <div className="p-5 border-b">
-
-                        <h2 className="text-xl font-bold">
-                            Recent Deliveries
-                        </h2>
-
-                    </div>
-
+                <div className="bg-white mt-6 rounded-2xl shadow-md overflow-hidden">
+                    <div className="p-4 border-b font-bold">Recent Deliveries</div>
                     <div className="overflow-x-auto">
-
-                        <table className="w-full">
-
-                            <thead className="bg-gray-50">
-
+                        <table className="w-full text-sm">
+                            <thead className="bg-gray-50 text-gray-600">
                                 <tr>
-
-                                    <th className="text-left p-4">Order</th>
-                                    <th className="text-left p-4">Customer</th>
-                                    <th className="text-left p-4">Status</th>
-                                    <th className="text-left p-4">Earning</th>
-
+                                    <th className="p-3 text-left">Order</th>
+                                    <th className="p-3 text-left">Customer</th>
+                                    <th className="p-3 text-right">Earning</th>
                                 </tr>
-
                             </thead>
-
                             <tbody>
 
                                 <tr>
@@ -539,54 +406,19 @@ export default function DriverDashboard() {
             {/* Existing Incoming Order Popup */}
 
             {incomingOrder && (
-
-                <div className="fixed bottom-6 right-6 w-96 bg-white rounded-2xl shadow-2xl border overflow-hidden z-50">
-
-                    <div className="bg-gradient-to-r from-indigo-600 to-cyan-600 text-white p-5">
-
-                        <h2 className="font-bold text-lg">
-                            🚚 New Delivery Request
-                        </h2>
-
+                <div className="fixed bottom-4 inset-x-4 md:inset-x-auto md:right-6 md:w-96 bg-white rounded-2xl shadow-2xl border z-50 animate-in slide-in-from-bottom-10">
+                    <div className="bg-gradient-to-r from-indigo-600 to-cyan-600 text-white p-4 rounded-t-2xl font-bold">
+                        🚚 New Delivery Request
                     </div>
-
-                    <div className="p-5">
-
-                        <p>
-                            <strong>Store:</strong>{" "}
-                            {incomingOrder.store.name}
-                        </p>
-
-                        <p className="mt-2">
-                            Time Remaining :
-                            <span className="font-bold text-red-500">
-                                {" "}
-                                {countdown}s
-                            </span>
-                        </p>
-
-                        <div className="flex gap-3 mt-5">
-
-                            <button
-                                onClick={handleAccept}
-                                className="flex-1 bg-green-600 hover:bg-green-700 transition rounded-lg py-3 text-white font-semibold"
-                            >
-                                Accept
-                            </button>
-
-                            <button
-                                onClick={handleDecline}
-                                className="flex-1 bg-red-600 hover:bg-red-700 transition rounded-lg py-3 text-white font-semibold"
-                            >
-                                Decline
-                            </button>
-
+                    <div className="p-4">
+                        <p className="text-sm"><strong>Store:</strong> {incomingOrder.store.name}</p>
+                        <p className="text-sm mt-1">Time Remaining: <span className="font-bold text-red-500">{countdown}s</span></p>
+                        <div className="flex gap-3 mt-4">
+                            <button onClick={handleAccept} className="flex-1 bg-green-600 text-white py-2.5 rounded-lg font-bold">Accept</button>
+                            <button onClick={handleDecline} className="flex-1 bg-red-600 text-white py-2.5 rounded-lg font-bold">Decline</button>
                         </div>
-
                     </div>
-
                 </div>
-
             )}
 
         </div>
