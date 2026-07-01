@@ -275,6 +275,24 @@ export default function DriverDashboard() {
     return (
         <div className="min-h-screen bg-slate-100 pb-20"> {/* Added pb-20 to prevent overlap */}
 
+            {/* Existing Incoming Order Popup */}
+
+            {incomingOrder && (
+                <div className="fixed bottom-4 inset-x-4 md:inset-x-auto md:right-6 md:w-96 bg-white rounded-2xl shadow-2xl border z-50 animate-in slide-in-from-bottom-10">
+                    <div className="bg-gradient-to-r from-indigo-600 to-cyan-600 text-white p-4 rounded-t-2xl font-bold">
+                        🚚 New Delivery Request
+                    </div>
+                    <div className="p-4">
+                        <p className="text-sm"><strong>Store:</strong> {incomingOrder.store.name}</p>
+                        <p className="text-sm mt-1">Time Remaining: <span className="font-bold text-red-500">{countdown}s</span></p>
+                        <div className="flex gap-3 mt-4">
+                            <button onClick={handleAccept} className="flex-1 bg-green-600 text-white py-2.5 rounded-lg font-bold">Accept</button>
+                            <button onClick={handleDecline} className="flex-1 bg-red-600 text-white py-2.5 rounded-lg font-bold">Decline</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Header */}
             <div className="bg-gradient-to-r from-indigo-700 via-blue-700 to-cyan-600 text-white rounded-b-3xl shadow-lg">
                 <div className="max-w-7xl mx-auto px-4 py-8">
@@ -366,60 +384,9 @@ export default function DriverDashboard() {
                     </Link>
                 </div>
 
-                {/* Recent Deliveries */}
-
-                <div className="bg-white mt-6 rounded-2xl shadow-md overflow-hidden">
-                    <div className="p-4 border-b font-bold">Recent Deliveries</div>
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
-                            <thead className="bg-gray-50 text-gray-600">
-                                <tr>
-                                    <th className="p-3 text-left">Order</th>
-                                    <th className="p-3 text-left">Customer</th>
-                                    <th className="p-3 text-right">Earning</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-
-                                <tr>
-
-                                    <td className="p-4">No deliveries yet</td>
-
-                                    <td>-</td>
-
-                                    <td>-</td>
-
-                                    <td>₹0</td>
-
-                                </tr>
-
-                            </tbody>
-
-                        </table>
-
-                    </div>
-
-                </div>
-
             </div>
 
-            {/* Existing Incoming Order Popup */}
 
-            {incomingOrder && (
-                <div className="fixed bottom-4 inset-x-4 md:inset-x-auto md:right-6 md:w-96 bg-white rounded-2xl shadow-2xl border z-50 animate-in slide-in-from-bottom-10">
-                    <div className="bg-gradient-to-r from-indigo-600 to-cyan-600 text-white p-4 rounded-t-2xl font-bold">
-                        🚚 New Delivery Request
-                    </div>
-                    <div className="p-4">
-                        <p className="text-sm"><strong>Store:</strong> {incomingOrder.store.name}</p>
-                        <p className="text-sm mt-1">Time Remaining: <span className="font-bold text-red-500">{countdown}s</span></p>
-                        <div className="flex gap-3 mt-4">
-                            <button onClick={handleAccept} className="flex-1 bg-green-600 text-white py-2.5 rounded-lg font-bold">Accept</button>
-                            <button onClick={handleDecline} className="flex-1 bg-red-600 text-white py-2.5 rounded-lg font-bold">Decline</button>
-                        </div>
-                    </div>
-                </div>
-            )}
 
         </div>
     )
