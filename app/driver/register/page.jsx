@@ -2,6 +2,7 @@
 
 import ProgressBar from "@/components/driver/ProgressBar"
 import StepFour from "@/components/driver/StepFour"
+import StepOne from "@/components/driver/StepOne"
 import StepThree from "@/components/driver/StepThree"
 import StepTwo from "@/components/driver/StepTwo"
 import Success from "@/components/driver/Success"
