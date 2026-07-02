@@ -316,3 +316,69 @@ model PlatformSettings {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+enum DriverStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model DriverApplication {
+  id String @id @default(cuid())
+
+  // Personal
+
+  name String
+
+  phone String @unique
+
+  email String?
+
+  password String
+
+  profilePhoto String
+
+  // Vehicle
+
+  vehicleType String
+
+  vehicleName String?
+
+  vehicleNumber String
+
+  // Documents
+
+  driverLicense String
+
+  aadharFront String
+
+  aadharBack String
+
+  rcBook String
+
+  // Bank
+
+  bankName String
+
+  accountHolder String
+
+  accountNumber String
+
+  ifsc String
+
+  upiId String?
+
+  // Admin
+
+  status DriverStatus @default(PENDING)
+
+  adminRemark String?
+
+  approvedAt DateTime?
+
+  rejectedAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+}

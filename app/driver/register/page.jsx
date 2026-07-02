@@ -1,0 +1,100 @@
+'use client'
+
+import ProgressBar from "@/components/driver/ProgressBar"
+import StepFour from "@/components/driver/StepFour"
+import StepThree from "@/components/driver/StepThree"
+import StepTwo from "@/components/driver/StepTwo"
+import Success from "@/components/driver/Success"
+import { useState } from "react"
+
+
+export default function DriverRegister() {
+
+    const [step, setStep] = useState(1)
+
+    const [form, setForm] = useState({
+
+        // Personal
+        name: "",
+        phone: "",
+        email: "",
+        password: "",
+        confirmPassword: "",
+
+        // Vehicle
+        vehicleType: "",
+        vehicleNumber: "",
+
+        // Documents
+        profilePhoto: null,
+        driverLicense: null,
+        aadharFront: null,
+        aadharBack: null,
+        rcBook: null,
+
+        // Bank
+        bankName: "",
+        accountHolder: "",
+        accountNumber: "",
+        ifsc: "",
+        upiId: ""
+    })
+
+    const next = () => setStep(step + 1)
+
+    const back = () => setStep(step - 1)
+
+    return (
+
+        <div className="min-h-screen bg-[#050914] py-10 px-4">
+
+            <div className="max-w-6xl mx-auto">
+
+                <ProgressBar step={step} />
+
+                {step === 1 &&
+                    <StepOne
+                        form={form}
+                        setForm={setForm}
+                        next={next}
+                    />
+                }
+
+                {step === 2 &&
+                    <StepTwo
+                        form={form}
+                        setForm={setForm}
+                        next={next}
+                        back={back}
+                    />
+                }
+
+                {step === 3 &&
+                    <StepThree
+                        form={form}
+                        setForm={setForm}
+                        next={next}
+                        back={back}
+                    />
+                }
+
+                {step === 4 &&
+                    <StepFour
+                        form={form}
+                        setForm={setForm}
+                        back={back}
+                        setStep={setStep}
+                    />
+                }
+
+                {step === 5 &&
+                    <Success />
+                }
+
+            </div>
+
+        </div>
+
+    )
+
+}
