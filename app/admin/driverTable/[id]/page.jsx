@@ -184,22 +184,6 @@ export default function DriverDetailsPage({ params }) {
 
                             <p className="text-gray-500">
 
-                                Vehicle Name
-
-                            </p>
-
-                            <h3 className="font-semibold mt-1">
-
-                                {driver.vehicleName}
-
-                            </h3>
-
-                        </div>
-
-                        <div>
-
-                            <p className="text-gray-500">
-
                                 Number Plate
 
                             </p>
