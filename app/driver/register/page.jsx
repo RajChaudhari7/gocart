@@ -7,6 +7,7 @@ import StepThree from "@/components/driver/StepThree"
 import StepTwo from "@/components/driver/StepTwo"
 import Success from "@/components/driver/Success"
 import { useState } from "react"
+import Link from "next/link";
 
 
 export default function DriverRegister() {
@@ -52,6 +53,15 @@ export default function DriverRegister() {
             <div className="max-w-6xl mx-auto">
 
                 <ProgressBar step={step} />
+
+                <div className="flex justify-end mt-4 mb-6">
+                    <Link
+                        href="/driver/login"
+                        className="text-cyan-400 hover:text-cyan-300 font-semibold transition"
+                    >
+                        Already have an account? Login →
+                    </Link>
+                </div>
 
                 {step === 1 &&
                     <StepOne

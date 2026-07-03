@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { Lock, Phone, ArrowRight } from "lucide-react"
 import Image from "next/image"
+import Link from "next/link";
 
 export default function DriverLogin() {
     const router = useRouter()
@@ -168,6 +169,19 @@ export default function DriverLogin() {
                             {loading ? "Logging in..." : "Login to Start Earning"}
                             {!loading && <ArrowRight size={18} />}
                         </button>
+
+                        <div className="pt-4 text-center">
+                            <p className="text-white/60">
+                                New Driver?{" "}
+                                <Link
+                                    href="/driver/register"
+                                    className="text-cyan-400 font-semibold hover:text-cyan-300 transition"
+                                >
+                                    Register Here
+                                </Link>
+                            </p>
+                        </div>
+
                     </form>
                 </div>
             </div>
