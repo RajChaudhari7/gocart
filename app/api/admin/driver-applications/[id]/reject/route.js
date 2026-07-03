@@ -25,6 +25,17 @@ export async function PATCH(req, { params }) {
             );
         }
 
+        if (application.status === "APPROVED") {
+            return NextResponse.json(
+                {
+                    error: "Approved application cannot be rejected",
+                },
+                {
+                    status: 400,
+                }
+            );
+        }
+
         await prisma.driverApplication.update({
 
             where: {

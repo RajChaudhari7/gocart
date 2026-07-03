@@ -22,10 +22,11 @@ export async function PATCH(req, { params }) {
             );
         }
 
-        if (application.status !== "PENDING") {
+        // Already approved
+        if (application.status === "APPROVED") {
             return NextResponse.json(
                 {
-                    error: "Application already processed",
+                    error: "Application already approved",
                 },
                 {
                     status: 400,
@@ -33,46 +34,66 @@ export async function PATCH(req, { params }) {
             );
         }
 
+        // Check if driver already exists
+        const existingDriver = await prisma.driver.findUnique({
+            where: {
+                phone: application.phone,
+            },
+        });
+
         const hashedPassword = await bcrypt.hash(
             application.password,
             10
         );
 
-        await prisma.$transaction([
+        await prisma.$transaction(async (tx) => {
 
-            prisma.driverApplication.update({
+            await tx.driverApplication.update({
                 where: {
                     id: application.id,
                 },
                 data: {
                     status: "APPROVED",
                     approvedAt: new Date(),
+                    rejectedAt: null,
+                    adminRemark: null,
                 },
-            }),
+            });
 
-            prisma.driver.create({
-                data: {
+            if (!existingDriver) {
 
-                    name: application.name,
+                await tx.driver.create({
+                    data: {
+                        name: application.name,
+                        phone: application.phone,
+                        password: hashedPassword,
 
-                    phone: application.phone,
+                        vehicle: application.vehicleType,
+                        vehicleNo: application.vehicleNumber,
 
-                    password: hashedPassword,
+                        isOnline: false,
+                        isAvailable: true,
+                        isActive: true,
+                    },
+                });
 
-                    vehicle: application.vehicleType,
+            } else {
 
-                    vehicleNo: application.vehicleNumber,
+                await tx.driver.update({
+                    where: {
+                        id: existingDriver.id,
+                    },
+                    data: {
+                        name: application.name,
+                        vehicle: application.vehicleType,
+                        vehicleNo: application.vehicleNumber,
+                        isActive: true,
+                    },
+                });
 
-                    isOnline: false,
+            }
 
-                    isAvailable: true,
-
-                    isActive: true,
-
-                },
-            }),
-
-        ]);
+        });
 
         return NextResponse.json({
             success: true,
@@ -85,7 +106,7 @@ export async function PATCH(req, { params }) {
 
         return NextResponse.json(
             {
-                error: "Something went wrong",
+                error: error.message,
             },
             {
                 status: 500,

@@ -138,10 +138,16 @@ export default function DriverDetailsPage({ params }) {
 
                     </div>
 
-                    <span className="bg-yellow-100 text-yellow-700 px-5 py-2 rounded-full font-semibold">
-
-                        Pending Review
-
+                    <span
+                        className={`px-5 py-2 rounded-full font-semibold
+                                ${driver.status === "PENDING"
+                                ? "bg-yellow-100 text-yellow-700"
+                                : driver.status === "APPROVED"
+                                    ? "bg-green-100 text-green-700"
+                                    : "bg-red-100 text-red-700"
+                            }`}
+                    >
+                        {driver.status}
                     </span>
 
                 </div>
@@ -202,7 +208,7 @@ export default function DriverDetailsPage({ params }) {
 
                                 <Calendar className="text-cyan-600" />
 
-                                {driver.createdAt}
+                                {new Date(driver.createdAt).toLocaleString()}
 
                             </div>
 
@@ -295,9 +301,12 @@ export default function DriverDetailsPage({ params }) {
                                 className="border rounded-2xl overflow-hidden"
                             >
 
-                                <img
+                                <Image
                                     src={doc.img}
+                                    width={600}
+                                    height={400}
                                     className="w-full h-64 object-cover"
+                                    alt={doc.title}
                                 />
 
                                 <div className="flex items-center justify-between p-4">
@@ -449,33 +458,50 @@ export default function DriverDetailsPage({ params }) {
 
                     </h2>
 
-                    <textarea
-                        rows={4}
-                        value={remark}
-                        onChange={(e) => setRemark(e.target.value)}
-                        placeholder="Reason if rejecting..."
-                        className="w-full border rounded-2xl p-4 resize-none outline-none focus:ring-2 focus:ring-cyan-500"
-                    />
+                    {driver.status !== "APPROVED" && (
+                        <textarea
+                            rows={4}
+                            value={remark}
+                            onChange={(e) => setRemark(e.target.value)}
+                            placeholder="Reason if rejecting..."
+                            className="w-full border rounded-2xl p-4 resize-none outline-none focus:ring-2 focus:ring-cyan-500"
+                        />
+                    )}
+
+                    {driver.status === "REJECTED" && driver.adminRemark && (
+                        <div className="mt-5 rounded-xl bg-red-50 border border-red-200 p-4">
+                            <h3 className="font-semibold text-red-600">
+                                Previous Rejection Reason
+                            </h3>
+
+                            <p className="text-gray-700 mt-2">
+                                {driver.adminRemark}
+                            </p>
+                        </div>
+                    )}
 
                     <div className="flex justify-end gap-4 mt-6">
 
-                        <button
-                            onClick={rejectDriver}
-                            className="bg-red-500 hover:bg-red-600 text-white px-8 py-3 rounded-2xl flex items-center gap-2"
-                        >
-                            <CircleX size={18} />
-                            Reject
-                        </button>
+                        {driver.status !== "APPROVED" && (
+                            <button
+                                onClick={approveDriver}
+                                disabled={loading}
+                                className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-8 py-3 rounded-2xl flex items-center gap-2"
+                            >
+                                <BadgeCheck size={18} />
+                                {loading ? "Approving..." : "Approve"}
+                            </button>
+                        )}
 
-                        <button
-                            type="button"
-                            disabled={loading}
-                            onClick={approveDriver}
-                            className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-8 py-3 rounded-2xl flex items-center gap-2"
-                        >
-                            <BadgeCheck size={18} />
-                            {loading ? "Approving..." : "Approve"}
-                        </button>
+                        {driver.status !== "APPROVED" && (
+                            <button
+                                onClick={rejectDriver}
+                                className="bg-red-500 hover:bg-red-600 text-white px-8 py-3 rounded-2xl flex items-center gap-2"
+                            >
+                                <CircleX size={18} />
+                                Reject
+                            </button>
+                        )}
 
                     </div>
 
