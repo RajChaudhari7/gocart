@@ -1,5 +1,4 @@
 import prisma from "@/lib/prisma";
-import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
 
 export async function PATCH(req, { params }) {
@@ -41,11 +40,6 @@ export async function PATCH(req, { params }) {
             },
         });
 
-        const hashedPassword = await bcrypt.hash(
-            application.password,
-            10
-        );
-
         await prisma.$transaction(async (tx) => {
 
             await tx.driverApplication.update({
@@ -66,7 +60,7 @@ export async function PATCH(req, { params }) {
                     data: {
                         name: application.name,
                         phone: application.phone,
-                        password: hashedPassword,
+                        password: application.password,
 
                         vehicle: application.vehicleType,
                         vehicleNo: application.vehicleNumber,
