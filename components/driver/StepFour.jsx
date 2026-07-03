@@ -77,38 +77,58 @@ export default function StepFour({
                 id: "upload"
             })
 
-            const profilePhoto =
-                await uploadFile(form.profilePhoto)
-
-            const driverLicense =
-                await uploadFile(form.driverLicense)
-
-            const aadharFront =
-                await uploadFile(form.aadharFront)
-
-            const aadharBack =
-                await uploadFile(form.aadharBack)
-
-            const rcBook =
-                await uploadFile(form.rcBook)
+            const [
+                profilePhoto,
+                driverLicense,
+                aadharFront,
+                aadharBack,
+                rcBook
+            ] = await Promise.all([
+                uploadFile(form.profilePhoto),
+                uploadFile(form.driverLicense),
+                uploadFile(form.aadharFront),
+                uploadFile(form.aadharBack),
+                uploadFile(form.rcBook)
+            ])
 
             toast.loading("Submitting application...", {
                 id: "upload"
             })
 
+            const payload = {
+
+                name: form.name,
+                phone: form.phone,
+                email: form.email,
+                password: form.password,
+
+                vehicleType: form.vehicleType,
+                vehicleName: form.vehicleName,
+                vehicleNumber: form.vehicleNumber,
+
+                profilePhoto,
+                driverLicense,
+                aadharFront,
+                aadharBack,
+                rcBook,
+
+                bankName: form.bankName,
+                accountHolder: form.accountHolder,
+                accountNumber: form.accountNumber,
+                ifsc: form.ifsc,
+                upiId: form.upiId
+
+            }
+
             await axios.post(
                 "/api/driver/register",
-                {
+                payload
+            )
 
-                    ...form,
-
-                    profilePhoto,
-                    driverLicense,
-                    aadharFront,
-                    aadharBack,
-                    rcBook
-
-                }
+            // Save phone number for approval status checking
+            localStorage.setItem(
+                "driverApplicationPhone",
+                form.phone
             )
 
             toast.success(
@@ -267,6 +287,8 @@ export default function StepFour({
             <div className="flex justify-between mt-12">
 
                 <button
+
+                    disabled={loading}
 
                     onClick={back}
 
