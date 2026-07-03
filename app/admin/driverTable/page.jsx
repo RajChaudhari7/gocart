@@ -39,52 +39,68 @@ export default function DriversPage() {
                 Drivers
             </h1>
 
-            <div className="bg-white rounded-xl shadow overflow-hidden">
+            <div className="flex gap-3 mb-6">
 
-                <div className="flex gap-3 mb-6">
+                <button
+                    onClick={() => setStatus("PENDING")}
+                    className={`px-5 py-2 rounded-xl ${status === "PENDING"
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-200"
+                        }`}
+                >
+                    Pending
+                </button>
 
-                    <button
-                        onClick={() => setStatus("PENDING")}
-                        className={`px-5 py-2 rounded-xl ${status === "PENDING"
-                            ? "bg-blue-600 text-white"
-                            : "bg-gray-200"
-                            }`}
-                    >
-                        Pending
-                    </button>
+                <button
+                    onClick={() => setStatus("APPROVED")}
+                    className={`px-5 py-2 rounded-xl ${status === "APPROVED"
+                        ? "bg-green-600 text-white"
+                        : "bg-gray-200"
+                        }`}
+                >
+                    Approved
+                </button>
 
-                    <button
-                        onClick={() => setStatus("APPROVED")}
-                        className={`px-5 py-2 rounded-xl ${status === "APPROVED"
-                            ? "bg-green-600 text-white"
-                            : "bg-gray-200"
-                            }`}
-                    >
-                        Approved
-                    </button>
+                <button
+                    onClick={() => setStatus("REJECTED")}
+                    className={`px-5 py-2 rounded-xl ${status === "REJECTED"
+                        ? "bg-red-600 text-white"
+                        : "bg-gray-200"
+                        }`}
+                >
+                    Rejected
+                </button>
 
-                    <button
-                        onClick={() => setStatus("REJECTED")}
-                        className={`px-5 py-2 rounded-xl ${status === "REJECTED"
-                            ? "bg-red-600 text-white"
-                            : "bg-gray-200"
-                            }`}
-                    >
-                        Rejected
-                    </button>
+            </div>
 
-                </div>
+            <div className="bg-white rounded-2xl shadow-md overflow-hidden border border-gray-200">
 
-                <table className="w-full">
+                <table className="w-full table-fixed">
 
                     <thead className="bg-gray-100">
 
                         <tr>
-                            <th>Name</th>
-                            <th>Phone</th>
-                            <th>Vehicle</th>
-                            <th>Applied On</th>
-                            <th>Action</th>
+
+                            <th className="w-[25%] px-6 py-4 text-left text-sm font-semibold text-gray-700">
+                                Name
+                            </th>
+
+                            <th className="w-[20%] px-6 py-4 text-center text-sm font-semibold text-gray-700">
+                                Phone
+                            </th>
+
+                            <th className="w-[15%] px-6 py-4 text-center text-sm font-semibold text-gray-700">
+                                Vehicle
+                            </th>
+
+                            <th className="w-[20%] px-6 py-4 text-center text-sm font-semibold text-gray-700">
+                                Applied On
+                            </th>
+
+                            <th className="w-[20%] px-6 py-4 text-center text-sm font-semibold text-gray-700">
+                                Action
+                            </th>
+
                         </tr>
 
                     </thead>
@@ -97,7 +113,7 @@ export default function DriversPage() {
 
                                 <td
                                     colSpan={5}
-                                    className="text-center py-10 text-gray-500"
+                                    className="py-12 text-center text-gray-500"
                                 >
                                     No Applications Found
                                 </td>
@@ -110,30 +126,32 @@ export default function DriversPage() {
 
                                 <tr
                                     key={driver.id}
-                                    className="border-t"
+                                    className="border-t hover:bg-gray-50 transition"
                                 >
 
-                                    <td className="p-4">
+                                    <td className="px-6 py-5 font-medium text-gray-800">
                                         {driver.name}
                                     </td>
 
-                                    <td className="p-4">
+                                    <td className="px-6 py-5 text-center text-gray-700">
                                         {driver.phone}
                                     </td>
 
-                                    <td className="p-4">
-                                        {driver.vehicleType}
+                                    <td className="px-6 py-5 text-center">
+
+                                        <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-sm font-medium">
+                                            {driver.vehicleType}
+                                        </span>
+
                                     </td>
 
-                                    <td className="p-4">
+                                    <td className="px-6 py-5 text-center text-gray-600">
                                         {new Date(driver.createdAt).toLocaleDateString()}
                                     </td>
 
-                                    <td className="p-4">
+                                    <td className="px-6 py-5 text-center">
 
-                                        <button
-                                            className="bg-cyan-600 hover:bg-cyan-700 text-white px-5 py-2 rounded-lg"
-                                        >
+                                        <button className="px-5 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white font-medium transition">
                                             View
                                         </button>
 
