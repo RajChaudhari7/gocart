@@ -24,6 +24,7 @@ import { useRouter } from "next/navigation";
 export default function DriverDetailsPage({ params }) {
 
     const [driver, setDriver] = useState(null);
+    const [loading, setLoading] = useState(false);
 
     const [remark, setRemark] = useState("");
 
@@ -42,8 +43,10 @@ export default function DriverDetailsPage({ params }) {
     };
 
     const approveDriver = async () => {
+        if (loading) return;
 
         try {
+            setLoading(true);
 
             await axios.patch(
                 `/api/admin/driver-applications/${params.id}/approve`
@@ -51,7 +54,7 @@ export default function DriverDetailsPage({ params }) {
 
             toast.success("Driver Approved");
 
-            router.push("/admin/driverTable");
+            router.replace("/admin/driverTable");
 
         } catch (error) {
 
@@ -60,8 +63,9 @@ export default function DriverDetailsPage({ params }) {
                 "Approval failed"
             );
 
+        } finally {
+            setLoading(false);
         }
-
     };
 
     const rejectDriver = async () => {
@@ -464,11 +468,13 @@ export default function DriverDetailsPage({ params }) {
                         </button>
 
                         <button
+                            type="button"
+                            disabled={loading}
                             onClick={approveDriver}
-                            className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-2xl flex items-center gap-2"
+                            className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-8 py-3 rounded-2xl flex items-center gap-2"
                         >
                             <BadgeCheck size={18} />
-                            Approve
+                            {loading ? "Approving..." : "Approve"}
                         </button>
 
                     </div>
