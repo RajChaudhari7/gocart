@@ -18,12 +18,16 @@ import {
     FileText
 } from "lucide-react"
 import Loading from "@/components/Loading";
+import toast from "react-hot-toast";
+import { useRouter } from "next/navigation";
 
 export default function DriverDetailsPage({ params }) {
 
     const [driver, setDriver] = useState(null);
 
     const [remark, setRemark] = useState("");
+
+    const router = useRouter();
 
     const fetchDriver = async () => {
         try {
