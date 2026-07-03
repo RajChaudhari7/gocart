@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { useRouter } from "next/navigation";
 
 export default function DriversPage() {
 
     const [drivers, setDrivers] = useState([]);
     const [status, setStatus] = useState("PENDING");
+    const router = useRouter();
 
     const fetchDrivers = async () => {
 
@@ -151,7 +153,10 @@ export default function DriversPage() {
 
                                     <td className="px-6 py-5 text-center">
 
-                                        <button className="px-5 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white font-medium transition">
+                                        <button
+                                            onClick={() => router.push(`/admin/driverTable/${driver.id}`)}
+                                            className="px-5 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white font-medium transition"
+                                        >
                                             View
                                         </button>
 
