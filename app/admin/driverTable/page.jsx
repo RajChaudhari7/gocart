@@ -6,10 +6,16 @@ import axios from "axios";
 export default function DriversPage() {
 
     const [drivers, setDrivers] = useState([]);
+    const [status, setStatus] = useState("PENDING");
 
     const fetchDrivers = async () => {
-        const { data } = await axios.get("/api/admin/drivers");
+
+        const { data } = await axios.get(
+            `/api/admin/driver-applications?status=${status}`
+        );
+
         setDrivers(data);
+
     };
 
     const toggleStatus = async (id) => {
@@ -21,8 +27,10 @@ export default function DriversPage() {
     };
 
     useEffect(() => {
+
         fetchDrivers();
-    }, []);
+
+    }, [status]);
 
     return (
         <div className="p-6">
@@ -33,93 +41,75 @@ export default function DriversPage() {
 
             <div className="bg-white rounded-xl shadow overflow-hidden">
 
+                <div className="flex gap-3 mb-6">
+
+                    <button
+                        onClick={() => setStatus("PENDING")}
+                        className={`px-5 py-2 rounded-xl ${status === "PENDING"
+                            ? "bg-blue-600 text-white"
+                            : "bg-gray-200"
+                            }`}
+                    >
+                        Pending
+                    </button>
+
+                    <button
+                        onClick={() => setStatus("APPROVED")}
+                        className={`px-5 py-2 rounded-xl ${status === "APPROVED"
+                            ? "bg-green-600 text-white"
+                            : "bg-gray-200"
+                            }`}
+                    >
+                        Approved
+                    </button>
+
+                    <button
+                        onClick={() => setStatus("REJECTED")}
+                        className={`px-5 py-2 rounded-xl ${status === "REJECTED"
+                            ? "bg-red-600 text-white"
+                            : "bg-gray-200"
+                            }`}
+                    >
+                        Rejected
+                    </button>
+
+                </div>
+
                 <table className="w-full">
 
                     <thead className="bg-gray-100">
 
                         <tr>
-                            <th className="p-4 text-left">
-                                Name
-                            </th>
-
-                            <th className="p-4 text-left">
-                                Phone
-                            </th>
-
-                            <th className="p-4 text-left">
-                                Vehicle
-                            </th>
-
-                            <th className="p-4 text-left">
-                                Status
-                            </th>
-
-                            <th className="p-4 text-left">
-                                Action
-                            </th>
+                            <th>Name</th>
+                            <th>Phone</th>
+                            <th>Vehicle</th>
+                            <th>Applied On</th>
+                            <th>Action</th>
                         </tr>
 
                     </thead>
 
                     <tbody>
 
-                        {drivers.map((driver) => (
+                        <td>{driver.name}</td>
 
-                            <tr
-                                key={driver.id}
-                                className="border-t"
+                        <td>{driver.phone}</td>
+
+                        <td>{driver.vehicleType}</td>
+
+                        <td>
+                            {new Date(driver.createdAt).toLocaleDateString()}
+                        </td>
+
+                        <td>
+
+                            <button
+                                className="bg-cyan-600 text-white px-4 py-2 rounded-lg"
                             >
-                                <td className="p-4">
-                                    {driver.name}
-                                </td>
+                                View
+                            </button>
 
-                                <td className="p-4">
-                                    {driver.phone}
-                                </td>
-
-                                <td className="p-4">
-                                    {driver.vehicle}
-                                </td>
-
-                                <td className="p-4">
-
-                                    <span
-                                        className={`px-3 py-1 rounded-full text-sm ${
-                                            driver.isActive
-                                                ? "bg-green-100 text-green-700"
-                                                : "bg-red-100 text-red-700"
-                                        }`}
-                                    >
-                                        {driver.isActive
-                                            ? "Active"
-                                            : "Inactive"}
-                                    </span>
-
-                                </td>
-
-                                <td className="p-4">
-
-                                    <button
-                                        onClick={() =>
-                                            toggleStatus(driver.id)
-                                        }
-                                        className={`px-4 py-2 rounded-lg text-white ${
-                                            driver.isActive
-                                                ? "bg-red-500"
-                                                : "bg-green-500"
-                                        }`}
-                                    >
-                                        {driver.isActive
-                                            ? "Deactivate"
-                                            : "Activate"}
-                                    </button>
-
-                                </td>
-
-                            </tr>
-
-                        ))}
-
+                        </td>
                     </tbody>
 
                 </table>
