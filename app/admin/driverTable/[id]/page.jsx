@@ -37,6 +37,58 @@ export default function DriverDetailsPage({ params }) {
         }
     };
 
+    const approveDriver = async () => {
+
+        try {
+
+            await axios.patch(
+                `/api/admin/driver-applications/${params.id}/approve`
+            );
+
+            toast.success("Driver Approved");
+
+            router.push("/admin/driverTable");
+
+        } catch (error) {
+
+            toast.error(
+                error.response?.data?.error ||
+                "Approval failed"
+            );
+
+        }
+
+    };
+
+    const rejectDriver = async () => {
+
+        if (!remark)
+            return toast.error("Please enter rejection reason");
+
+        try {
+
+            await axios.patch(
+                `/api/admin/driver-applications/${params.id}/reject`,
+                {
+                    remark,
+                }
+            );
+
+            toast.success("Driver Rejected");
+
+            router.push("/admin/driverTable");
+
+        } catch (error) {
+
+            toast.error(
+                error.response?.data?.error ||
+                "Rejection failed"
+            );
+
+        }
+
+    };
+
     useEffect(() => {
         fetchDriver();
     }, []);
@@ -399,20 +451,20 @@ export default function DriverDetailsPage({ params }) {
 
                     <div className="flex justify-end gap-4 mt-6">
 
-                        <button className="bg-red-500 hover:bg-red-600 text-white px-8 py-3 rounded-2xl flex items-center gap-2">
-
+                        <button
+                            onClick={rejectDriver}
+                            className="bg-red-500 hover:bg-red-600 text-white px-8 py-3 rounded-2xl flex items-center gap-2"
+                        >
                             <CircleX size={18} />
-
                             Reject
-
                         </button>
 
-                        <button className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-2xl flex items-center gap-2">
-
+                        <button
+                            onClick={approveDriver}
+                            className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-2xl flex items-center gap-2"
+                        >
                             <BadgeCheck size={18} />
-
                             Approve
-
                         </button>
 
                     </div>
