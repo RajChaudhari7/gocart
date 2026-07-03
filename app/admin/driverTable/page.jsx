@@ -91,14 +91,14 @@ export default function DriversPage() {
 
                     <tbody>
 
-                        <td>{driver.name}</td>
+                        <td>{drivers.name}</td>
 
-                        <td>{driver.phone}</td>
+                        <td>{drivers.phone}</td>
 
-                        <td>{driver.vehicleType}</td>
+                        <td>{drivers.vehicleType}</td>
 
                         <td>
-                            {new Date(driver.createdAt).toLocaleDateString()}
+                            {new Date(drivers.createdAt).toLocaleDateString()}
                         </td>
 
                         <td>
