@@ -6,7 +6,7 @@ import StepOne from "@/components/driver/StepOne"
 import StepThree from "@/components/driver/StepThree"
 import StepTwo from "@/components/driver/StepTwo"
 import Success from "@/components/driver/Success"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link";
 
 
@@ -14,7 +14,7 @@ export default function DriverRegister() {
 
     const [step, setStep] = useState(1)
 
-    const [form, setForm] = useState({
+    const defaultForm = {
 
         // Personal
         name: "",
@@ -25,6 +25,7 @@ export default function DriverRegister() {
 
         // Vehicle
         vehicleType: "",
+        vehicleName: "",
         vehicleNumber: "",
 
         // Documents
@@ -40,11 +41,66 @@ export default function DriverRegister() {
         accountNumber: "",
         ifsc: "",
         upiId: ""
-    })
+
+    };
+
+    const [form, setForm] = useState(defaultForm);
 
     const next = () => setStep(step + 1)
 
     const back = () => setStep(step - 1)
+
+    useEffect(() => {
+
+        const savedApplication =
+            localStorage.getItem("driverApplication");
+
+        if (!savedApplication) return;
+
+        const application =
+            JSON.parse(savedApplication);
+
+        // Pending Application
+        if (application.status === "PENDING") {
+
+            setStep(5);
+
+            return;
+
+        }
+
+        // Rejected Application
+        if (application.status === "REJECTED") {
+
+            setForm({
+
+                name: application.name || "",
+                phone: application.phone || "",
+                email: application.email || "",
+                password: "",
+                confirmPassword: "",
+
+                vehicleType: application.vehicleType || "",
+                vehicleName: application.vehicleName || "",
+                vehicleNumber: application.vehicleNumber || "",
+
+                profilePhoto: application.profilePhoto,
+                driverLicense: application.driverLicense,
+                aadharFront: application.aadharFront,
+                aadharBack: application.aadharBack,
+                rcBook: application.rcBook,
+
+                bankName: application.bankName || "",
+                accountHolder: application.accountHolder || "",
+                accountNumber: application.accountNumber || "",
+                ifsc: application.ifsc || "",
+                upiId: application.upiId || ""
+
+            });
+
+        }
+
+    }, []);
 
     return (
 

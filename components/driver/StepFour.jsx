@@ -37,9 +37,14 @@ export default function StepFour({
 
     const uploadFile = async (file) => {
 
-        const formData = new FormData()
+        // Already uploaded
+        if (typeof file === "string") {
+            return file;
+        }
 
-        formData.append("file", file)
+        const formData = new FormData();
+
+        formData.append("file", file);
 
         const { data } = await axios.post(
             "/api/upload",
@@ -49,9 +54,9 @@ export default function StepFour({
                     "Content-Type": "multipart/form-data"
                 }
             }
-        )
+        );
 
-        return data.url
+        return data.url;
 
     }
 
@@ -120,15 +125,33 @@ export default function StepFour({
 
             }
 
-            await axios.post(
-                "/api/driver/register",
-                payload
-            )
+            const savedApplication =
+                JSON.parse(localStorage.getItem("driverApplication"));
+
+            if (savedApplication?.status === "REJECTED") {
+
+                await axios.patch(
+                    `/api/driver/application/${savedApplication.id}`,
+                    payload
+                );
+
+            } else {
+
+                await axios.post(
+                    "/api/driver/register",
+                    payload
+                );
+
+            }
 
             // Save phone number for approval status checking
             localStorage.setItem(
-                "driverApplicationPhone",
-                form.phone
+                "driverApplication",
+                JSON.stringify({
+                    ...payload,
+                    phone: form.phone,
+                    status: "PENDING",
+                })
             )
 
             toast.success(
@@ -138,7 +161,17 @@ export default function StepFour({
                 }
             )
 
-            setStep(5)
+            localStorage.setItem(
+                "driverApplication",
+                JSON.stringify({
+                    ...payload,
+                    id: savedApplication?.id,
+                    phone: form.phone,
+                    status: "PENDING"
+                })
+            );
+
+            setStep(5);
 
         }
 
