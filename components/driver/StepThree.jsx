@@ -64,6 +64,18 @@ export default function StepThree({
 
     }
 
+    const getPreview = (file) => {
+
+        if (!file) return "";
+
+        if (typeof file === "string") {
+            return file;
+        }
+
+        return URL.createObjectURL(file);
+
+    };
+
     return (
 
         <motion.div
@@ -112,7 +124,7 @@ export default function StepThree({
                                     <>
 
                                         <Image
-                                            src={URL.createObjectURL(form[doc.key])}
+                                            src={getPreview(form[doc.key])}
                                             alt={doc.title}
                                             width={150}
                                             height={150}
