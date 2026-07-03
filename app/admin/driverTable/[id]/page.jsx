@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from "react"
+import { useState, useEffect } from "react";
+import axios from "axios";
 import Link from "next/link"
 import Image from "next/image"
 import {
@@ -16,53 +17,37 @@ import {
     CircleX,
     FileText
 } from "lucide-react"
+import Loading from "@/components/Loading";
 
-export default function DriverDetailsPage() {
+export default function DriverDetailsPage({ params }) {
 
-    // Temporary Dummy Data
-    const driver = {
+    const [driver, setDriver] = useState(null);
 
-        profilePhoto: "/driver.png",
+    const [remark, setRemark] = useState("");
 
-        name: "Raj Chaudhari",
+    const fetchDriver = async () => {
+        try {
+            const { data } = await axios.get(
+                `/api/admin/driver-applications/${params.id}`
+            );
 
-        phone: "8484877857",
+            setDriver(data);
+        } catch (error) {
+            console.log(error);
+        }
+    };
 
-        email: "raj@gmail.com",
+    useEffect(() => {
+        fetchDriver();
+    }, []);
 
-        vehicleType: "Bike",
-
-        vehicleName: "Hero Splendor",
-
-        vehicleNumber: "MH39AB1234",
-
-        createdAt: "03 July 2026",
-
-        driverLicense:
-            "https://placehold.co/600x400",
-
-        aadharFront:
-            "https://placehold.co/600x400",
-
-        aadharBack:
-            "https://placehold.co/600x400",
-
-        rcBook:
-            "https://placehold.co/600x400",
-
-        bankName: "State Bank of India",
-
-        accountHolder: "Raj Chaudhari",
-
-        accountNumber: "XXXXXXXX1234",
-
-        ifsc: "SBIN000123",
-
-        upiId: "raj@upi"
-
+    if (!driver) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <Loading />
+            </div>
+        );
     }
-
-    const [remark, setRemark] = useState("")
 
     return (
 
