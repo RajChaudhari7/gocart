@@ -91,25 +91,60 @@ export default function DriversPage() {
 
                     <tbody>
 
-                        <td>{drivers.name}</td>
+                        {drivers.length === 0 ? (
 
-                        <td>{drivers.phone}</td>
+                            <tr>
 
-                        <td>{drivers.vehicleType}</td>
+                                <td
+                                    colSpan={5}
+                                    className="text-center py-10 text-gray-500"
+                                >
+                                    No Applications Found
+                                </td>
 
-                        <td>
-                            {new Date(drivers.createdAt).toLocaleDateString()}
-                        </td>
+                            </tr>
 
-                        <td>
+                        ) : (
 
-                            <button
-                                className="bg-cyan-600 text-white px-4 py-2 rounded-lg"
-                            >
-                                View
-                            </button>
+                            drivers.map((driver) => (
 
-                        </td>
+                                <tr
+                                    key={driver.id}
+                                    className="border-t"
+                                >
+
+                                    <td className="p-4">
+                                        {driver.name}
+                                    </td>
+
+                                    <td className="p-4">
+                                        {driver.phone}
+                                    </td>
+
+                                    <td className="p-4">
+                                        {driver.vehicleType}
+                                    </td>
+
+                                    <td className="p-4">
+                                        {new Date(driver.createdAt).toLocaleDateString()}
+                                    </td>
+
+                                    <td className="p-4">
+
+                                        <button
+                                            className="bg-cyan-600 hover:bg-cyan-700 text-white px-5 py-2 rounded-lg"
+                                        >
+                                            View
+                                        </button>
+
+                                    </td>
+
+                                </tr>
+
+                            ))
+
+                        )}
+
                     </tbody>
 
                 </table>
