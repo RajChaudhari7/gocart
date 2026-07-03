@@ -99,16 +99,27 @@ export default function DriverNavbar() {
                     {
                         driverId: driver.id
                     }
-                )
+                );
+
             }
 
-        } catch (error) { }
+            localStorage.removeItem("driver");
+            localStorage.removeItem("driverId");
+            localStorage.removeItem("driverSession");
 
-        localStorage.removeItem("driver")
+            toast.success("Logged out successfully");
 
-        toast.success("Logged out successfully")
+            router.replace("/driver/login");
 
-        router.replace("/driver/login")
+        } catch (error) {
+
+            toast.error(
+                error.response?.data?.error ||
+                "Unable to logout"
+            );
+
+        }
+
     }
 
     useEffect(() => {
