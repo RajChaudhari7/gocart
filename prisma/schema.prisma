@@ -295,6 +295,8 @@ model Driver {
   isActive Boolean @default(true)
 
   isAvailable Boolean @default(true)
+  isLoggedIn  Boolean @default(false)
+  sessionId   String?
 
   orders Order[]
 

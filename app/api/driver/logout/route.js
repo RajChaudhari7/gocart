@@ -1,31 +1,37 @@
-import prisma from "@/lib/prisma"
-import { NextResponse } from "next/server"
+import prisma from "@/lib/prisma";
+import { NextResponse } from "next/server";
 
 export async function POST(request) {
 
     try {
 
-        const { driverId } = await request.json()
+        const { driverId } = await request.json();
 
         await prisma.driver.update({
             where: {
-                id: driverId
+                id: driverId,
             },
             data: {
-                isOnline: false
-            }
-        })
+                isOnline: false,
+                isAvailable: true,
+                sessionId: null,
+            },
+        });
 
         return NextResponse.json({
-            success: true
-        })
+            success: true,
+        });
 
     } catch (error) {
 
         return NextResponse.json(
-            { error: error.message },
-            { status: 500 }
-        )
+            {
+                error: error.message,
+            },
+            {
+                status: 500,
+            }
+        );
 
     }
 

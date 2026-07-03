@@ -29,11 +29,17 @@ export default function DriverLogin() {
             localStorage.setItem(
                 "driver",
                 JSON.stringify(data.driver)
-            )
+            );
+
             localStorage.setItem(
                 "driverId",
                 data.driver.id
-            )
+            );
+
+            localStorage.setItem(
+                "driverSession",
+                data.sessionId
+            );
             try {
                 await requestLocation(data.driver);
             } catch (err) {

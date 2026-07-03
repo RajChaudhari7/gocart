@@ -1,117 +1,117 @@
-import prisma from "@/lib/prisma"
-import bcrypt from "bcryptjs"
-import { NextResponse } from "next/server"
+import prisma from "@/lib/prisma";
+import bcrypt from "bcryptjs";
+import { randomUUID } from "crypto";
+import { NextResponse } from "next/server";
 
 export async function POST(request) {
-
     try {
 
-        const {
-            phone,
-            password
-        } = await request.json()
+        const { phone, password } = await request.json();
 
-        const driver = await prisma.driver.findFirst({
+        const driver = await prisma.driver.findUnique({
             where: {
-                phone
-            }
-        })
+                phone,
+            },
+        });
 
         if (!driver) {
             return NextResponse.json(
                 {
-                    error: "Driver not found"
+                    error: "Driver not found",
                 },
                 {
-                    status: 404
+                    status: 404,
                 }
-            )
+            );
         }
 
         const match = await bcrypt.compare(
             password,
             driver.password
-        )
+        );
 
         if (!match) {
             return NextResponse.json(
                 {
-                    error: "Invalid credentials"
+                    error: "Invalid credentials",
                 },
                 {
-                    status: 400
+                    status: 400,
                 }
-            )
+            );
         }
 
-        const updatedDriver =
-            await prisma.driver.update({
-                where: {
-                    id: driver.id
+        if (driver.sessionId) {
+            return NextResponse.json(
+                {
+                    error:
+                        "This account is already logged in on another device. Please logout first.",
                 },
-                data: {
-                    isOnline: true,
-                    isAvailable: true
+                {
+                    status: 400,
                 }
-            })
+            );
+        }
 
-        // Find active order
-        const activeOrder =
-            await prisma.order.findFirst({
-                where: {
-                    driverId: driver.id,
-                    status: {
-                        in: [
-                            "DRIVER_ASSIGNED",
-                            "REACHED_SHOP",
-                            "PICKED_UP",
-                            "OUT_FOR_DELIVERY",
-                            "DELIVERY_INITIATED"
-                        ]
-                    }
-                }
-            })
+        // Create new session
+        const sessionId = randomUUID();
 
-        // Driver already has an order
+        const updatedDriver = await prisma.driver.update({
+            where: {
+                id: driver.id,
+            },
+            data: {
+                isOnline: true,
+                isAvailable: true,
+                sessionId,
+            },
+        });
+
+        // Check if driver already has an active order
+        const activeOrder = await prisma.order.findFirst({
+            where: {
+                driverId: driver.id,
+                status: {
+                    in: [
+                        "DRIVER_ASSIGNED",
+                        "REACHED_SHOP",
+                        "PICKED_UP",
+                        "OUT_FOR_DELIVERY",
+                        "DELIVERY_INITIATED",
+                    ],
+                },
+            },
+        });
+
         if (activeOrder) {
-
             await prisma.driver.update({
                 where: {
-                    id: driver.id
+                    id: driver.id,
                 },
                 data: {
-                    isAvailable: false
-                }
-            })
-
-        } else {
-
-            await prisma.driver.update({
-                where: {
-                    id: driver.id
+                    isAvailable: false,
                 },
-                data: {
-                    isAvailable: true
-                }
-            })
+            });
 
+            updatedDriver.isAvailable = false;
         }
 
         return NextResponse.json({
             success: true,
-            driver: updatedDriver
-        })
+            driver: updatedDriver,
+            sessionId,
+        });
 
     } catch (error) {
 
         return NextResponse.json(
             {
-                error: error.message
+                error: error.message,
             },
             {
-                status: 500
+                status: 500,
             }
-        )
+        );
 
     }
 }
