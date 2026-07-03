@@ -280,7 +280,7 @@ model Driver {
   id String @id @default(cuid())
 
   name     String
-  phone    String
+  phone    String @unique
   password String
 
   vehicle   String?
