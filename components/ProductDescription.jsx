@@ -52,29 +52,28 @@ const ProductDescription = ({ product }) => {
             <button
               key={tab}
               onClick={() => setSelectedTab(tab)}
-              className={`pb-4 text-lg font-bold transition-all ${selectedTab === tab ? 'text-purple-600' : 'text-gray-400'}`}
+              className={`pb-4 text-lg font-bold transition-all ${selectedTab === tab ? 'text-purple-600 border-b-2 border-purple-600' : 'text-gray-400'
+                }`}
             >
               {tab}
             </button>
           ))}
         </div>
 
+        {/* IMPROVED SHARE BUTTON VISIBILITY */}
         <button
           onClick={handleShare}
-          className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-full text-sm font-medium transition"
+          className="flex items-center gap-2 bg-white border-2 border-purple-100 hover:border-purple-300 hover:bg-purple-50 text-purple-700 px-5 py-2.5 rounded-full text-sm font-bold transition shadow-sm"
         >
-          <Share2 size={16} /> Share
+          <Share2 size={18} />
+          <span className="hidden sm:inline">Share Product</span>
         </button>
       </div>
 
       <AnimatePresence mode="wait">
-        {selectedTab === "Description" ? (
-          <motion.div key="desc" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="prose prose-slate max-w-none bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
-            <p className="text-gray-600 leading-relaxed">{product.description}</p>
-          </motion.div>
-        ) : (
+        {selectedTab === "Reviews" && (
           <motion.div key="reviews" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
-            {/* Summary Card */}
+            {/* Summary Card with Visible Numbers & Animated Bars */}
             <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 grid md:grid-cols-3 gap-8">
               <div className="text-center md:text-left flex flex-col justify-center">
                 <div className="text-6xl font-black text-gray-900">{ratingSummary.avg}</div>
@@ -83,16 +82,29 @@ const ProductDescription = ({ product }) => {
                     <StarIcon key={i} size={20} className={i <= Math.round(ratingSummary.avg) ? "fill-yellow-400 text-yellow-400" : "text-gray-200"} />
                   ))}
                 </div>
-                <p className="text-sm text-gray-500 font-medium">{ratingSummary.total} Total Reviews</p>
+                <p className="text-sm text-gray-500 font-bold">{ratingSummary.total} Total Ratings</p>
               </div>
 
-              <div className="md:col-span-2 space-y-3">
+              <div className="md:col-span-2 space-y-4">
                 {[5, 4, 3, 2, 1].map(star => (
                   <div key={star} className="flex items-center gap-3">
-                    <span className="text-xs font-bold w-3">{star}</span>
-                    <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-yellow-400" style={{ width: `${(ratingSummary.counts[star] / (ratingSummary.total || 1)) * 100}%` }} />
+                    {/* VISIBLE STAR NUMBER */}
+                    <span className="text-sm font-bold text-gray-700 w-4">{star}</span>
+
+                    {/* ANIMATED BAR */}
+                    <div className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${(ratingSummary.counts[star] / (ratingSummary.total || 1)) * 100}%` }}
+                        transition={{ duration: 1, ease: "easeOut" }}
+                        className="h-full bg-yellow-400 rounded-full"
+                      />
                     </div>
+
+                    {/* VISIBLE COUNT */}
+                    <span className="text-sm font-semibold text-gray-900 w-12 text-right">
+                      {ratingSummary.counts[star]}
+                    </span>
                   </div>
                 ))}
               </div>
