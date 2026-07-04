@@ -52,7 +52,9 @@ const ProductDescription = ({ product }) => {
             <button
               key={tab}
               onClick={() => setSelectedTab(tab)}
-              className={`pb-4 text-lg font-bold transition-all ${selectedTab === tab ? 'text-purple-600 border-b-2 border-purple-600' : 'text-gray-400'
+              className={`pb-4 text-lg font-bold transition-all ${selectedTab === tab
+                ? 'text-purple-600 border-b-2 border-purple-600'
+                : 'text-gray-400 hover:text-gray-600'
                 }`}
             >
               {tab}
@@ -60,7 +62,6 @@ const ProductDescription = ({ product }) => {
           ))}
         </div>
 
-        {/* IMPROVED SHARE BUTTON VISIBILITY */}
         <button
           onClick={handleShare}
           className="flex items-center gap-2 bg-white border-2 border-purple-100 hover:border-purple-300 hover:bg-purple-50 text-purple-700 px-5 py-2.5 rounded-full text-sm font-bold transition shadow-sm"
@@ -70,10 +71,27 @@ const ProductDescription = ({ product }) => {
         </button>
       </div>
 
+      {/* CONTENT AREA */}
       <AnimatePresence mode="wait">
-        {selectedTab === "Reviews" && (
-          <motion.div key="reviews" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
-            {/* Summary Card with Visible Numbers & Animated Bars */}
+        {selectedTab === "Description" ? (
+          <motion.div
+            key="desc"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100"
+          >
+            <p className="text-gray-600 leading-relaxed text-lg">{product.description}</p>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="reviews"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            className="space-y-8"
+          >
+            {/* Summary Card */}
             <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 grid md:grid-cols-3 gap-8">
               <div className="text-center md:text-left flex flex-col justify-center">
                 <div className="text-6xl font-black text-gray-900">{ratingSummary.avg}</div>
@@ -130,7 +148,7 @@ const ProductDescription = ({ product }) => {
       </AnimatePresence>
 
       {/* STORE CARD (UNCHANGED) */}
-      <div className="mt-14 flex items-center gap-4 rounded-3xl bg-gradient-to-r from-purple-600 to-pink-500 p-6 text-white">
+      <div className="mt-14 flex items-center gap-4 rounded-3xl bg-gradient-to-r from-purple-600 to-pink-500 p-6 text-white shadow-lg">
         <Image
           src={product.store.logo}
           alt={product.store.name}
