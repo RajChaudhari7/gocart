@@ -27,7 +27,7 @@ export async function POST(request) {
 
 
 
-    if (!address) throw new Error("Address not found");
+
 
     const isPrimeMember = has({ plan: "prime" });
 
@@ -121,6 +121,8 @@ export async function POST(request) {
         const address = await tx.address.findUnique({
           where: { id: addressId }
         });
+
+        if (!address) throw new Error("Address not found");
 
         const order = await tx.order.create({
           data: {
