@@ -54,7 +54,7 @@
     "react-leaflet": "^5.0.0",
     "react-parallax-tilt": "^1.7.318",
     "react-redux": "^9.2.0",
-    "recharts": "^3.7.0",
+    "recharts": "^3.9.1",
     "resend": "^6.7.0",
     "stripe": "^18.5.0",
     "tailwind-merge": "^3.4.0",

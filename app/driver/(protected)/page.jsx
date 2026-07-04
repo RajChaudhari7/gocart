@@ -16,6 +16,7 @@ import axios from "axios"
 import toast from "react-hot-toast"
 import { useRouter } from "next/navigation"
 import Loading from "@/components/Loading"
+import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 export default function DriverDashboard() {
 
@@ -273,7 +274,7 @@ export default function DriverDashboard() {
 
 
     return (
-        <div className="min-h-screen bg-slate-100 pb-20"> {/* Added pb-20 to prevent overlap */}
+        <div className="min-h-screen bg-slate-100 pb-20">
 
             {/* Existing Incoming Order Popup */}
 
@@ -293,40 +294,60 @@ export default function DriverDashboard() {
                 </div>
             )}
 
-            {/* Header */}
-            <div className="bg-gradient-to-r from-indigo-700 via-blue-700 to-cyan-600 text-white rounded-b-3xl shadow-lg">
-                <div className="max-w-7xl mx-auto px-4 py-8">
-                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+            {/* Header - Sleek Dark Gradient */}
+            <header className="bg-slate-900 text-white rounded-b-[2rem] shadow-xl">
+                <div className="max-w-7xl mx-auto px-6 py-10">
+                    <div className="flex justify-between items-center">
                         <div>
-                            <h1 className="text-xl md:text-3xl font-bold truncate">
-                                {JSON.parse(localStorage.getItem("driver"))?.name
-                                    ? `Welcome, ${JSON.parse(localStorage.getItem("driver")).name} 👋`
-                                    : "Welcome Driver 👋"}
+                            <h1 className="text-2xl font-bold tracking-tight">
+                                {JSON.parse(localStorage.getItem("driver"))?.name || "Driver"} 👋
                             </h1>
-                            <p className="text-blue-100 mt-1">Ready for today's deliveries?</p>
+                            <p className="text-slate-400 text-sm mt-1">Dashboard Overview</p>
                         </div>
-                        <div className="flex items-center gap-2 bg-green-500/20 border border-green-400 px-4 py-2 rounded-full self-start sm:self-auto">
-                            <span className="w-2.5 h-2.5 bg-green-400 rounded-full animate-pulse"></span>
-                            <span className="text-sm font-medium">Online</span>
+                        <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-full">
+                            <span className="relative flex h-2 w-2">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                            </span>
+                            <span className="text-emerald-400 text-xs font-semibold uppercase tracking-wider">Online</span>
                         </div>
                     </div>
                 </div>
-            </div>
+            </header>
 
-            <div className="max-w-7xl mx-auto px-4 py-6">
+            <main className="max-w-7xl mx-auto px-4 -mt-8 space-y-6">
                 {/* Stats Grid - Responsive columns */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6 -mt-12">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                     {[
-                        { title: "Today's Earnings", val: `₹${dashboard?.todayRevenue || 0}`, color: "text-green-600" },
-                        { title: "Today's Deliveries", val: dashboard?.todayDeliveries || 0, color: "text-blue-600" },
-                        { title: "Yesterday", val: `₹${dashboard?.yesterdayRevenue || 0}`, color: "text-orange-600" },
-                        { title: "Monthly", val: `₹${dashboard?.selectedRevenue || 0}`, color: "text-purple-600" },
+                        { title: "Today Earnings", val: `₹${dashboard?.todayRevenue || 0}`, color: "text-emerald-600" },
+                        { title: "Deliveries", val: dashboard?.todayDeliveries || 0, color: "text-blue-600" },
+                        { title: "Yesterday", val: `₹${dashboard?.yesterdayRevenue || 0}`, color: "text-orange-500" },
+                        { title: "Month Total", val: `₹${dashboard?.selectedRevenue || 0}`, color: "text-indigo-600" },
                     ].map((stat, i) => (
-                        <div key={i} className="bg-white rounded-2xl shadow-md p-4">
-                            <h2 className="text-gray-500 text-[10px] md:text-sm uppercase font-semibold">{stat.title}</h2>
-                            <p className={`text-lg md:text-3xl font-bold mt-1 ${stat.color}`}>{stat.val}</p>
+                        <div key={i} className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100">
+                            <p className="text-[10px] uppercase tracking-wider font-bold text-slate-400">{stat.title}</p>
+                            <p className={`text-xl font-extrabold mt-1 ${stat.color}`}>{stat.val}</p>
                         </div>
                     ))}
+                </div>
+
+                {/* Weekly Earnings Chart Placeholder */}
+                <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                    <h3 className="font-bold text-slate-800 mb-6">Weekly Earnings</h3>
+                    <div className="h-48 w-full">
+                        {/* Responsive container for chart */}
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={dashboard?.weeklyData || []}>
+                                <XAxis dataKey="day" axisLine={false} tickLine={false} fontSize={12} />
+                                <Tooltip cursor={{ fill: '#f1f5f9' }} />
+                                <Bar dataKey="revenue" radius={[6, 6, 0, 0]}>
+                                    {dashboard?.weeklyData?.map((entry, index) => (
+                                        <Cell key={index} fill={entry.revenue > 0 ? '#4f46e5' : '#e2e8f0'} />
+                                    ))}
+                                </Bar>
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
                 </div>
 
                 {/* Filters */}
@@ -370,8 +391,6 @@ export default function DriverDashboard() {
 
                 </div>
 
-                {/* Quick Stats */}
-
                 {/* Quick Stats Links */}
                 <div className="grid grid-cols-2 gap-4 mt-6">
                     <Link href="/driver/orders" className="bg-white p-4 rounded-2xl shadow-md hover:shadow-lg transition">
@@ -384,10 +403,7 @@ export default function DriverDashboard() {
                     </Link>
                 </div>
 
-            </div>
-
-
-
+            </main>
         </div>
     )
 }
