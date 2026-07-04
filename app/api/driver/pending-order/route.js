@@ -52,8 +52,8 @@ export async function GET(request) {
 
     if (order && order.store) {
         // Force parse coordinates from the database
-        const storeLat = parseFloat(order.store.lat);
-        const storeLng = parseFloat(order.store.lng);
+        const storeLat = parseFloat(order.store.latitude);
+        const storeLng = parseFloat(order.store.longitude);
 
         // Only calculate if all 4 values are valid numbers
         if (!isNaN(storeLat) && !isNaN(storeLng) && !isNaN(driverLat) && !isNaN(driverLng)) {
