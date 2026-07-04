@@ -25,9 +25,7 @@ export async function POST(request) {
       );
     }
 
-    const address = await tx.address.findUnique({
-      where: { id: addressId }
-    });
+
 
     if (!address) throw new Error("Address not found");
 
@@ -119,6 +117,10 @@ export async function POST(request) {
         const now = new Date();
 
         const numericOrderId = generateNumericOrderId();
+
+        const address = await tx.address.findUnique({
+          where: { id: addressId }
+        });
 
         const order = await tx.order.create({
           data: {
