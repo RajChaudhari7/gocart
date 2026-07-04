@@ -370,6 +370,8 @@ export default function DriverOrders() {
                                                 ? [order.store?.latitude, order.store?.longitude]
                                                 : [order.address?.latitude, order.address?.longitude]
                                         }
+                                        // Logic to switch icon color
+                                        isGoingToShop={["DRIVER_ASSIGNED", "REACHED_SHOP"].includes(order.status)}
                                     />
                                 )}
 

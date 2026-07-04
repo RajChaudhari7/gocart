@@ -1,52 +1,51 @@
 'use client'
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap, Polyline } from 'react-leaflet';
 import L from 'leaflet';
 import { useEffect } from 'react';
 
-// Import Leaflet styles
 import "leaflet/dist/leaflet.css";
-import "leaflet/dist/images/marker-shadow.png";
-import icon from "leaflet/dist/images/marker-icon.png";
-import iconRetina from "leaflet/dist/images/marker-icon-2x.png";
 
-// Fix for default Leaflet marker icons in React
-const DefaultIcon = L.icon({
-    iconUrl: icon.src,
-    iconRetinaUrl: iconRetina.src,
-    shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
+// Define custom icons
+const createIcon = (color) => new L.Icon({
+    iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${color}.png`,
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+    iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
 });
-L.Marker.prototype.options.icon = DefaultIcon;
 
-// Helper to keep the map centered on the driver
-function MapUpdater({ center }) {
+const icons = {
+    driver: createIcon('blue'),
+    shop: createIcon('red'),
+    customer: createIcon('green')
+};
+
+function MapUpdater({ driverPos, destinationPos }) {
     const map = useMap();
     useEffect(() => {
-        if (center) map.setView(center, 15);
-    }, [center, map]);
+        if (driverPos && destinationPos) {
+            const bounds = L.latLngBounds([driverPos, destinationPos]);
+            map.fitBounds(bounds, { padding: [50, 50] });
+        }
+    }, [driverPos, destinationPos, map]);
     return null;
 }
 
-export default function DeliveryMap({ driverPos, destinationPos }) {
+export default function DeliveryMap({ driverPos, destinationPos, isGoingToShop }) {
     if (!driverPos || !destinationPos) return null;
 
     return (
-        <div className="h-48 w-full rounded-xl overflow-hidden mb-4 border border-gray-200">
+        <div className="h-64 w-full rounded-xl overflow-hidden mb-4 border-2 border-indigo-100 shadow-inner">
             <MapContainer center={driverPos} zoom={15} className="h-full w-full">
                 <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
 
-                {/* Driver Marker */}
-                <Marker position={driverPos}>
-                    <Popup>You are here</Popup>
+                {/* Route Path (The highlighted road) */}
+                <Polyline positions={[driverPos, destinationPos]} color="indigo" weight={5} dashArray="10, 10" />
+
+                <Marker position={driverPos} icon={icons.driver}><Popup>You</Popup></Marker>
+                <Marker position={destinationPos} icon={isGoingToShop ? icons.shop : icons.customer}>
+                    <Popup>{isGoingToShop ? "Store" : "Customer"}</Popup>
                 </Marker>
 
-                {/* Destination Marker */}
-                <Marker position={destinationPos}>
-                    <Popup>Destination</Popup>
-                </Marker>
-
-                <MapUpdater center={driverPos} />
+                <MapUpdater driverPos={driverPos} destinationPos={destinationPos} />
             </MapContainer>
         </div>
     );
