@@ -20,29 +20,25 @@ export async function GET(req) {
         }
 
         const getWeeklyData = async () => {
-            const weekly = [];
+            const data = [];
             for (let i = 6; i >= 0; i--) {
-                const d = new Date();
-                d.setDate(d.getDate() - i);
-                d.setHours(0, 0, 0, 0);
+                const start = new Date();
+                start.setDate(start.getDate() - i);
+                start.setHours(0, 0, 0, 0);
 
-                const nextDay = new Date(d);
-                nextDay.setDate(d.getDate() + 1);
+                const end = new Date(start);
+                end.setDate(start.getDate() + 1);
 
-                const dayOrders = await prisma.order.findMany({
-                    where: {
-                        driverId,
-                        status: "DELIVERED",
-                        createdAt: { gte: d, lt: nextDay }
-                    }
+                const orders = await prisma.order.findMany({
+                    where: { driverId, status: "DELIVERED", createdAt: { gte: start, lt: end } }
                 });
 
-                weekly.push({
-                    day: d.toLocaleDateString('en-US', { weekday: 'short' }),
-                    revenue: dayOrders.reduce((acc, o) => acc + (o.driverFee || 0), 0)
+                data.push({
+                    day: start.toLocaleDateString('en-US', { weekday: 'short' }),
+                    revenue: orders.reduce((acc, o) => acc + (o.driverFee || 0), 0)
                 });
             }
-            return weekly;
+            return data;
         };
 
         const weeklyData = await getWeeklyData();
@@ -191,7 +187,7 @@ export async function GET(req) {
                 totalDelivered,
 
                 weeklyData,
-                
+
                 recentOrders
 
             }

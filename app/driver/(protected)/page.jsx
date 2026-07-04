@@ -330,79 +330,98 @@ export default function DriverDashboard() {
                         </div>
                     ))}
                 </div>
-
-                {/* Weekly Earnings Chart Placeholder */}
+                {/* Weekly Earnings Chart */}
                 <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-                    <h3 className="font-bold text-slate-800 mb-6">Weekly Earnings</h3>
+                    <div className="flex justify-between items-center mb-6">
+                        <h3 className="font-bold text-slate-800">Weekly Earnings</h3>
+                        <span className="text-[10px] text-slate-400 uppercase font-bold">Last 7 Days</span>
+                    </div>
+
                     <div className="h-48 w-full">
-                        {/* Responsive container for chart */}
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={dashboard?.weeklyData || []}>
-                                <XAxis dataKey="day" axisLine={false} tickLine={false} fontSize={12} />
-                                <Tooltip cursor={{ fill: '#f1f5f9' }} />
-                                <Bar dataKey="revenue" radius={[6, 6, 0, 0]}>
-                                    {dashboard?.weeklyData?.map((entry, index) => (
-                                        <Cell key={index} fill={entry.revenue > 0 ? '#4f46e5' : '#e2e8f0'} />
-                                    ))}
-                                </Bar>
-                            </BarChart>
-                        </ResponsiveContainer>
+                        {dashboard?.weeklyData ? (
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={dashboard.weeklyData}>
+                                    <XAxis
+                                        dataKey="day"
+                                        axisLine={false}
+                                        tickLine={false}
+                                        fontSize={12}
+                                        tick={{ fill: '#94a3b8' }}
+                                    />
+                                    <Tooltip
+                                        cursor={{ fill: '#f8fafc' }}
+                                        contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                    />
+                                    <Bar dataKey="revenue" radius={[6, 6, 0, 0]}>
+                                        {dashboard.weeklyData.map((entry, index) => (
+                                            <Cell
+                                                key={index}
+                                                fill={entry.revenue > 0 ? '#4f46e5' : '#e2e8f0'}
+                                            />
+                                        ))}
+                                    </Bar>
+                                </BarChart>
+                            </ResponsiveContainer>
+                        ) : (
+                            <div className="h-full flex items-center justify-center text-slate-400 text-sm">
+                                No data available
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Filters */}
+                    <div className="bg-white rounded-2xl shadow-md p-4 mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <select value={month} onChange={(e) => setMonth(Number(e.target.value))} className="border rounded-lg px-3 py-2 text-sm">
+                            {[
+                                "January",
+                                "February",
+                                "March",
+                                "April",
+                                "May",
+                                "June",
+                                "July",
+                                "August",
+                                "September",
+                                "October",
+                                "November",
+                                "December"
+                            ].map((m, index) => (
+                                <option
+                                    key={index}
+                                    value={index + 1}
+                                >
+                                    {m}
+                                </option>
+                            ))}
+
+                        </select>
+
+                        <select value={year} onChange={(e) => setYear(Number(e.target.value))} className="border rounded-lg px-3 py-2 text-sm">
+
+                            {[2024, 2025, 2026].map((y) => (
+                                <option key={y}>
+                                    {y}
+                                </option>
+                            ))}
+
+                        </select>
+
+                        <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="border rounded-lg px-3 py-2 text-sm" />
+
+                    </div>
+
+                    {/* Quick Stats Links */}
+                    <div className="grid grid-cols-2 gap-4 mt-6">
+                        <Link href="/driver/orders" className="bg-white p-4 rounded-2xl shadow-md hover:shadow-lg transition">
+                            <Package className="text-blue-600 w-8 h-8" />
+                            <h2 className="font-bold mt-2">Active Orders</h2>
+                        </Link>
+                        <Link href="/driver/profile" className="bg-white p-4 rounded-2xl shadow-md hover:shadow-lg transition">
+                            <User className="text-purple-600 w-8 h-8" />
+                            <h2 className="font-bold mt-2">Profile</h2>
+                        </Link>
                     </div>
                 </div>
-
-                {/* Filters */}
-                <div className="bg-white rounded-2xl shadow-md p-4 mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <select value={month} onChange={(e) => setMonth(Number(e.target.value))} className="border rounded-lg px-3 py-2 text-sm">
-                        {[
-                            "January",
-                            "February",
-                            "March",
-                            "April",
-                            "May",
-                            "June",
-                            "July",
-                            "August",
-                            "September",
-                            "October",
-                            "November",
-                            "December"
-                        ].map((m, index) => (
-                            <option
-                                key={index}
-                                value={index + 1}
-                            >
-                                {m}
-                            </option>
-                        ))}
-
-                    </select>
-
-                    <select value={year} onChange={(e) => setYear(Number(e.target.value))} className="border rounded-lg px-3 py-2 text-sm">
-
-                        {[2024, 2025, 2026].map((y) => (
-                            <option key={y}>
-                                {y}
-                            </option>
-                        ))}
-
-                    </select>
-
-                    <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="border rounded-lg px-3 py-2 text-sm" />
-
-                </div>
-
-                {/* Quick Stats Links */}
-                <div className="grid grid-cols-2 gap-4 mt-6">
-                    <Link href="/driver/orders" className="bg-white p-4 rounded-2xl shadow-md hover:shadow-lg transition">
-                        <Package className="text-blue-600 w-8 h-8" />
-                        <h2 className="font-bold mt-2">Active Orders</h2>
-                    </Link>
-                    <Link href="/driver/profile" className="bg-white p-4 rounded-2xl shadow-md hover:shadow-lg transition">
-                        <User className="text-purple-600 w-8 h-8" />
-                        <h2 className="font-bold mt-2">Profile</h2>
-                    </Link>
-                </div>
-
             </main>
         </div>
     )
