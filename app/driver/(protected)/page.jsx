@@ -45,6 +45,7 @@ export default function DriverDashboard() {
         }
     }, [])
 
+
     useEffect(() => {
         const storedDriver = localStorage.getItem("driver")
 
@@ -56,6 +57,21 @@ export default function DriverDashboard() {
             setIsLoading(false)
         }
     }, [router])
+
+    useEffect(() => {
+        const assignOrder = async () => {
+            try {
+                await axios.post("/api/driver/assign-pending-orders");
+            } catch (err) {
+                console.log(err);
+            }
+        };
+
+        if (!isLoading) {
+            assignOrder();
+            fetchDashboard();
+        }
+    }, [isLoading]);
 
     useEffect(() => {
         const audio = audioRef.current
