@@ -15,8 +15,8 @@ export default function PrivacyPolicyPage() {
 
         {/* Introduction */}
         <p className="text-white/70 leading-relaxed">
-          At <strong>SheKart</strong>, we are committed to protecting your privacy.
-          SheKart is a women-led platform built to empower women entrepreneurs and
+          At <strong>Nandurbar Bazar</strong>, we are committed to protecting your privacy.
+          Nandurbar Bazar is a women-led platform built to empower women entrepreneurs and
           shoppers. This Privacy Policy explains how we collect, use, and safeguard
           your personal information when you use our website and services.
         </p>
@@ -40,7 +40,7 @@ export default function PrivacyPolicyPage() {
             How We Use Your Information
           </h2>
           <ul className="list-disc list-inside text-white/70 space-y-2">
-            <li>To operate and improve the SheKart platform</li>
+            <li>To operate and improve the Nandurbar Bazar platform</li>
             <li>To process orders and payments securely</li>
             <li>To communicate important updates and offers</li>
             <li>To support women-led businesses</li>
@@ -65,7 +65,7 @@ export default function PrivacyPolicyPage() {
             Sharing of Information
           </h2>
           <p className="text-white/70 leading-relaxed">
-            SheKart does not sell your personal data. Information may be shared with
+            Nandurbar Bazar does not sell your personal data. Information may be shared with
             trusted service providers only to deliver our services or meet legal
             requirements.
           </p>
@@ -77,7 +77,7 @@ export default function PrivacyPolicyPage() {
             Cookies
           </h2>
           <p className="text-white/70 leading-relaxed">
-            Cookies help us improve your experience on SheKart. You can disable
+            Cookies help us improve your experience on Nandurbar Bazar. You can disable
             cookies through your browser settings at any time.
           </p>
         </div>
@@ -103,7 +103,7 @@ export default function PrivacyPolicyPage() {
             If you have any questions regarding this Privacy Policy, contact us at:
           </p>
           <p className="text-white font-medium">
-            📧 hello@shekart.com
+            📧 hello@nandurbarbazar.com
           </p>
         </div>
 

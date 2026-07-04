@@ -14,7 +14,7 @@ export async function POST(req) {
         });
 
         await transporter.sendMail({
-            from: `"SheKart Contact" <${process.env.EMAIL_USER}>`,
+            from: `"Nandurbar Bazar Contact" <${process.env.EMAIL_USER}>`,
             to: process.env.EMAIL_USER,
             subject: "New Contact Message",
             html: `
@@ -26,7 +26,7 @@ export async function POST(req) {
       <div style="padding:24px 32px; background:linear-gradient(135deg,#06b6d4,#3b82f6); color:white;">
         <h2 style="margin:0; font-size:22px;">📩 New Contact Message</h2>
         <p style="margin:6px 0 0; font-size:13px; opacity:0.9;">
-          SheKart Contact Form Submission
+          Nanurbar Bazar Contact Form Submission
         </p>
       </div>
 
@@ -64,7 +64,7 @@ export async function POST(req) {
 
       <!-- Footer -->
       <div style="padding:18px 32px; font-size:12px; color:#9ca3af; text-align:center; border-top:1px solid rgba(255,255,255,0.08);">
-        © ${new Date().getFullYear()} SheKart — Premium Support System
+        © ${new Date().getFullYear()} Nandurbar Bazar — Premium Support System
       </div>
 
     </div>

@@ -31,7 +31,7 @@ export default function CookieSettingsPage() {
             Cookie <span className="text-cyan-400">Settings</span>
           </h1>
           <p className="text-white/60 text-sm">
-            Manage how SheKart uses cookies to improve your experience.
+            Manage how Nandurbar Bazar uses cookies to improve your experience.
           </p>
         </header>
 
@@ -56,7 +56,7 @@ export default function CookieSettingsPage() {
           <div>
             <h3 className="font-semibold">Analytics Cookies</h3>
             <p className="text-sm text-white/50 mt-1">
-              Help us understand how users interact with SheKart.
+              Help us understand how users interact with Nandurbar Bazar.
             </p>
           </div>
           <input
