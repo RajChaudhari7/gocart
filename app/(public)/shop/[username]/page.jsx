@@ -14,6 +14,7 @@ export default function StoreShop() {
   const { username } = useParams()
   const [products, setProducts] = useState([])
   const [storeInfo, setStoreInfo] = useState(null)
+  const [selectedSubCategory, setSelectedSubCategory] = useState("All");
   const [loading, setLoading] = useState(true)
 
   const fetchStoreData = async () => {
@@ -30,6 +31,22 @@ export default function StoreShop() {
   const storeIsActive = useSelector(
     state => state.store?.current?.isActive
   )
+
+  const subCategories = [
+    "All",
+    ...new Set(
+      products
+        .map(product => product.subCategory)
+        .filter(Boolean)
+    )
+  ];
+
+  const filteredProducts =
+    selectedSubCategory === "All"
+      ? products
+      : products.filter(
+        product => product.subCategory === selectedSubCategory
+      );
 
   useEffect(() => {
     fetchStoreData()
@@ -92,13 +109,31 @@ export default function StoreShop() {
           Shop Products
         </h2>
 
-        {products.length === 0 ? (
+        {subCategories.length > 1 && (
+          <div className="flex flex-wrap gap-3 mb-8">
+            {subCategories.map((sub) => (
+              <button
+                key={sub}
+                onClick={() => setSelectedSubCategory(sub)}
+                className={`px-5 py-2 rounded-full transition
+          ${selectedSubCategory === sub
+                    ? "bg-cyan-500 text-white"
+                    : "bg-white/10 text-slate-300 hover:bg-white/20"
+                  }`}
+              >
+                {sub}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {filteredProducts.length === 0 ? (
           <p className="text-slate-400 text-center py-20">
             No products available
           </p>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6 sm:gap-8">
-            {products.map(product => (
+            {filteredProducts.map(product => (
               <ProductCard
                 key={product.id}
                 product={product}
