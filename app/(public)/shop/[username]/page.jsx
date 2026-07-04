@@ -55,8 +55,7 @@ export default function StoreShop() {
   if (loading) return <Loading />
 
   return (
-    <section className="min-h-[70vh] px-4 sm:px-6 py-12 bg-gradient-to-br from-[#020617] via-[#020617] to-black text-white animate-fade-in">
-
+    <section className="min-h-[70vh] pt-28 pb-12 px-4 sm:px-6 bg-gradient-to-br from-[#020617] via-[#020617] to-black text-white animate-fade-in">
       {/* STORE HEADER */}
       {storeInfo && (
         <div className="max-w-7xl mx-auto bg-gradient-to-br from-white/10 to-white/5 
