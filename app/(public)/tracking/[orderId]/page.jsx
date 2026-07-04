@@ -226,6 +226,35 @@ export default function TrackingPage() {
                                         </p>
                                     </div>
                                 ))}
+
+                                {/* Order Summary */}
+                                <div className="mt-6 border-t border-white/10 pt-4 space-y-3">
+
+                                    <div className="flex justify-between text-white/60">
+                                        <span>Subtotal</span>
+                                        <span>
+                                            {currency}
+                                            {order.totalAmount - order.deliveryFee}
+                                        </span>
+                                    </div>
+
+                                    <div className="flex justify-between text-white/60">
+                                        <span>Delivery Fee</span>
+                                        <span>
+                                            {currency}
+                                            {order.deliveryFee}
+                                        </span>
+                                    </div>
+
+                                    <div className="flex justify-between text-lg font-bold text-emerald-400 border-t border-white/10 pt-3">
+                                        <span>Total Paid</span>
+                                        <span>
+                                            {currency}
+                                            {order.totalAmount}
+                                        </span>
+                                    </div>
+
+                                </div>
                             </div>
 
                             {/* Payment Summary */}
@@ -265,7 +294,7 @@ export default function TrackingPage() {
                     <div className="lg:col-span-2 space-y-6">
 
                         {/* LIVE MAP WIDGET */}
-                        {driverLocation && (
+                        {driverLocation && order.status !== "DELIVERED" && (
                             <div className="bg-white/5 border border-white/10 rounded-2xl p-1 overflow-hidden backdrop-blur-xl shadow-2xl h-[350px] relative z-0">
 
                                 <LiveMap
