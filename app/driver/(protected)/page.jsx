@@ -185,55 +185,43 @@ export default function DriverDashboard() {
     }, [month, year, selectedDate])
 
     useEffect(() => {
+        const interval = setInterval(async () => {
+            const driver = JSON.parse(localStorage.getItem("driver"));
+            if (!driver?.id) return;
 
-        const interval = setInterval(
-            async () => {
+            // Get driver's location
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    async (position) => {
+                        const { latitude, longitude } = position.coords;
 
-                const driver =
-                    JSON.parse(
-                        localStorage.getItem("driver")
-                    )
+                        try {
+                            const { data } = await axios.get(
+                                `/api/driver/pending-order?driverId=${driver.id}&lat=${latitude}&lng=${longitude}`
+                            );
 
-                if (!driver?.id) return
+                            if (
+                                data.order &&
+                                !incomingOrder &&
+                                !ignoredOrders.includes(data.order.id)
+                            ) {
+                                setIncomingOrder(data.order);
+                                setIgnoredOrders(prev => [...prev, data.order.id]);
+                                setCountdown(60);
+                                toast.success("New Delivery Request Nearby");
+                            }
+                        } catch (error) {
+                            console.error("Error fetching order:", error);
+                        }
+                    },
+                    (err) => console.error("Location access denied", err),
+                    { enableHighAccuracy: true }
+                );
+            }
+        }, 5000); // Increased interval to 5s to avoid excessive location pings
 
-                ignoredOrdersRef.current = ignoredOrders
-
-                try {
-
-                    const { data } =
-                        await axios.get(
-                            `/api/driver/pending-order?driverId=${driver.id}`
-                        )
-
-                    if (
-                        data.order &&
-                        !incomingOrder &&
-                        !ignoredOrders.includes(data.order.id)
-                    ) {
-                        setIncomingOrder(data.order)
-                        setIgnoredOrders(prev => [
-                            ...prev,
-                            data.order.id
-                        ])
-                        setCountdown(60)
-
-                        toast.success(
-                            "New Delivery Request"
-                        )
-                    }
-
-                } catch (error) {
-                    console.error(error)
-                }
-
-            },
-            2000
-        )
-
-        return () =>
-            clearInterval(interval)
-
-    }, [ignoredOrders])
+        return () => clearInterval(interval);
+    }, [ignoredOrders, incomingOrder]);
 
 
 
@@ -275,20 +263,31 @@ export default function DriverDashboard() {
 
     return (
         <div className="min-h-screen bg-slate-100 pb-20">
-
-            {/* Existing Incoming Order Popup */}
-
             {incomingOrder && (
-                <div className="fixed bottom-4 inset-x-4 md:inset-x-auto md:right-6 md:w-96 bg-white rounded-2xl shadow-2xl border z-50 animate-in slide-in-from-bottom-10">
-                    <div className="bg-gradient-to-r from-indigo-600 to-cyan-600 text-white p-4 rounded-t-2xl font-bold">
-                        🚚 New Delivery Request
+                <div className="fixed top-4 inset-x-4 md:left-auto md:right-6 md:w-96 bg-white rounded-2xl shadow-2xl border border-indigo-100 z-[100] animate-in slide-in-from-top-10">
+                    <div className="bg-gradient-to-r from-indigo-600 to-cyan-600 text-white p-4 rounded-t-2xl flex justify-between items-center">
+                        <span className="font-bold">🚚 New Delivery</span>
+                        <span className="bg-white/20 px-2 py-0.5 rounded-md text-xs font-mono">{countdown}s</span>
                     </div>
-                    <div className="p-4">
-                        <p className="text-sm"><strong>Store:</strong> {incomingOrder.store.name}</p>
-                        <p className="text-sm mt-1">Time Remaining: <span className="font-bold text-red-500">{countdown}s</span></p>
-                        <div className="flex gap-3 mt-4">
-                            <button onClick={handleAccept} className="flex-1 bg-green-600 text-white py-2.5 rounded-lg font-bold">Accept</button>
-                            <button onClick={handleDecline} className="flex-1 bg-red-600 text-white py-2.5 rounded-lg font-bold">Decline</button>
+                    <div className="p-4 space-y-3">
+                        <div className="flex justify-between items-center">
+                            <p className="text-sm font-semibold text-slate-800">{incomingOrder.store.name}</p>
+                            <span className="text-xs text-indigo-600 font-bold bg-indigo-50 px-2 py-1 rounded-full">
+                                {incomingOrder.distanceToStore || "Calculating..."} km away
+                            </span>
+                        </div>
+
+                        <div className="border-t pt-2 mt-2">
+                            <p className="text-xs text-slate-500">Delivery to:</p>
+                            <p className="text-sm font-medium">{incomingOrder.address?.name || "Customer Location"}</p>
+                            <p className="text-xs text-indigo-500 font-bold mt-1">
+                                {incomingOrder.distanceToCustomer || "..."} km from store
+                            </p>
+                        </div>
+
+                        <div className="flex gap-3 pt-2">
+                            <button onClick={handleAccept} className="flex-1 bg-emerald-600 text-white py-3 rounded-xl font-bold hover:bg-emerald-700 transition">Accept</button>
+                            <button onClick={handleDecline} className="flex-1 bg-slate-100 text-slate-600 py-3 rounded-xl font-bold hover:bg-slate-200 transition">Decline</button>
                         </div>
                     </div>
                 </div>
