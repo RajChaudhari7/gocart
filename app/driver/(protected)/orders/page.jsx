@@ -144,36 +144,28 @@ export default function DriverOrders() {
     }, [])
 
     useEffect(() => {
-        const driver = JSON.parse(localStorage.getItem("driver"));
-        if (!driver?.id) return;
-
         const interval = setInterval(async () => {
-            // Only fetch if we aren't currently showing an order
-            if (incomingOrder) return;
+            const driver = JSON.parse(localStorage.getItem("driver"))
+            if (!driver?.id) return
 
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(async (position) => {
-                    const { latitude, longitude } = position.coords;
-                    try {
-                        const { data } = await axios.get(
-                            `/api/driver/pending-order?driverId=${driver.id}&lat=${latitude}&lng=${longitude}`
-                        );
+            ignoredOrdersRef.current = ignoredOrders
 
-                        if (data.order && !ignoredOrders.includes(data.order.id)) {
-                            setIncomingOrder(data.order);
-                            setIgnoredOrders(prev => [...prev, data.order.id]);
-                            setCountdown(60);
-                            toast.success("New Delivery Request!");
-                        }
-                    } catch (error) {
-                        console.error("Polling error:", error);
-                    }
-                });
+            try {
+                const { data } = await axios.get(`/api/driver/pending-order?driverId=${driver.id}`)
+
+                if (data.order && !incomingOrder && !ignoredOrders.includes(data.order.id)) {
+                    setIncomingOrder(data.order)
+                    setIgnoredOrders(prev => [...prev, data.order.id])
+                    setCountdown(60)
+                    toast.success("New Delivery Request")
+                }
+            } catch (error) {
+                console.error(error)
             }
-        }, 5000); 
+        }, 2000)
 
-        return () => clearInterval(interval);
-    }, [ignoredOrders, incomingOrder]);
+        return () => clearInterval(interval)
+    }, [ignoredOrders, incomingOrder])
 
     useEffect(() => {
         if (!incomingOrder) return
@@ -320,46 +312,64 @@ export default function DriverOrders() {
                     </header>
 
                     {incomingOrder && (
-                        <div className="fixed top-6 left-4 right-4 md:left-auto md:right-6 md:w-96 z-50 bg-white/95 backdrop-blur-md shadow-2xl border border-indigo-100 rounded-3xl p-5 animate-in slide-in-from-top-10">
-                            <div className="flex justify-between items-center mb-4">
-                                <h2 className="font-extrabold text-gray-900 flex items-center gap-2">
-                                    <span className="relative flex h-3 w-3">
-                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-                                        <span className="relative inline-flex rounded-full h-3 w-3 bg-indigo-500"></span>
-                                    </span>
-                                    New Delivery
+                        <div className="fixed top-6 right-6 z-50 bg-white shadow-2xl border border-gray-100 rounded-2xl p-5 w-80 animate-in slide-in-from-top-4 duration-300">
+                            <div className="flex items-center gap-3 mb-2">
+                                <div className="bg-blue-100 p-2 rounded-full">
+                                    <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                                </div>
+                                <h2 className="font-bold text-lg text-gray-900">
+                                    New Delivery Request
                                 </h2>
-                                <span className="bg-indigo-50 text-indigo-700 px-3 py-1 rounded-full text-xs font-bold font-mono">
-                                    {countdown}s left
-                                </span>
                             </div>
 
+                            {/* Inserted Highlighted Order ID here */}
                             <HighlightOrderId id={incomingOrder.id} />
 
-                            <div className="space-y-4 bg-gray-50 p-4 rounded-2xl mb-5">
-                                <div className="flex justify-between items-center">
-                                    <span className="text-sm text-gray-500">Store</span>
-                                    <span className="font-semibold text-gray-900">{incomingOrder.store?.name}</span>
-                                </div>
-                                <div className="flex justify-between items-center border-t border-gray-200 pt-3">
-                                    <span className="text-sm text-gray-500">Distance to Store</span>
-                                    <span className="text-indigo-600 font-bold">
-                                        {incomingOrder.distanceToStore ? `${parseFloat(incomingOrder.distanceToStore).toFixed(2)} km` : "..."}
+                            <div className="space-y-3 mb-5">
+                                <div className="flex justify-between items-center text-sm">
+                                    <span className="text-gray-500">Store</span>
+                                    <span className="font-medium text-gray-900 text-right truncate max-w-[150px]" title={incomingOrder.store?.name}>
+                                        {incomingOrder.store?.name}
                                     </span>
                                 </div>
-                                <div className="flex justify-between items-center border-t border-gray-200 pt-3">
-                                    <span className="text-sm text-gray-500">To Customer</span>
-                                    <span className="text-indigo-600 font-bold">
-                                        {incomingOrder.distanceToCustomer ? `${parseFloat(incomingOrder.distanceToCustomer).toFixed(2)} km` : "..."}
+
+                                <div className="flex justify-between items-center text-sm">
+                                    <span className="text-gray-500">Distance to Store</span>
+                                    <span className="font-semibold text-blue-600">
+                                        {incomingOrder.distanceToStore
+                                            ? `${incomingOrder.distanceToStore.toFixed(1)} km`
+                                            : "Calculating..."}
+                                    </span>
+                                </div>
+
+                                <div className="flex justify-between items-center text-sm">
+                                    <span className="text-gray-500">Store to Customer</span>
+                                    <span className="font-semibold text-blue-600">
+                                        {incomingOrder.distanceToCustomer
+                                            ? `${incomingOrder.distanceToCustomer.toFixed(1)} km`
+                                            : "Calculating..."}
+                                    </span>
+                                </div>
+
+                                <div className="pt-3 border-t border-gray-100 flex justify-between items-center">
+                                    <span className="text-sm font-medium text-gray-500">Time to Accept</span>
+                                    <span className={`font-bold ${countdown <= 10 ? 'text-red-600 animate-pulse' : 'text-gray-900'}`}>
+                                        {countdown}s
                                     </span>
                                 </div>
                             </div>
 
-                            <div className="flex gap-3">
-                                <button onClick={handleAccept} className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-2xl transition">
+                            <div className="flex gap-3 mt-4">
+                                <button
+                                    onClick={handleAccept}
+                                    className="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium py-2.5 rounded-xl transition shadow-sm shadow-green-200"
+                                >
                                     Accept
                                 </button>
-                                <button onClick={handleDecline} className="flex-1 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 font-bold py-3 rounded-2xl transition">
+                                <button
+                                    onClick={handleDecline}
+                                    className="flex-1 bg-red-50 hover:bg-red-100 text-red-600 font-medium py-2.5 rounded-xl transition"
+                                >
                                     Decline
                                 </button>
                             </div>
