@@ -3,6 +3,7 @@ import { useEffect, useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 import axios from "axios"
 import toast from "react-hot-toast"
+import DeliveryMap from "@/components/DeliveryMap"
 
 export default function DriverOrders() {
     const [orders, setOrders] = useState([])
@@ -14,6 +15,7 @@ export default function DriverOrders() {
     const [incomingOrder, setIncomingOrder] = useState(null)
     const [ignoredOrders, setIgnoredOrders] = useState([])
     const [countdown, setCountdown] = useState(60)
+    const [driverLocation, setDriverLocation] = useState(null);
 
     const ignoredOrdersRef = useRef([])
     const audioRef = useRef(null);
@@ -92,28 +94,19 @@ export default function DriverOrders() {
 
         const watchId = navigator.geolocation.watchPosition(
             async (position) => {
+                const { latitude, longitude } = position.coords;
+                setDriverLocation([latitude, longitude]); // IMPORTANT: Update state here
                 try {
-                    await axios.post(
-                        "/api/driver/update-location",
-                        {
-                            driverId,
-                            latitude: position.coords.latitude,
-                            longitude: position.coords.longitude
-                        }
-                    )
-                } catch (error) {
-                    console.error(error)
-                }
+                    await axios.post("/api/driver/update-location", {
+                        driverId: getDriverId(),
+                        latitude,
+                        longitude
+                    });
+                } catch (error) { console.error(error); }
             },
-            (error) => {
-                console.error(error)
-            },
-            {
-                enableHighAccuracy: true,
-                maximumAge: 5000,
-                timeout: 10000
-            }
-        )
+            (error) => console.error(error),
+            { enableHighAccuracy: true }
+        );
 
         return () => navigator.geolocation.clearWatch(watchId)
     }, [])
@@ -230,36 +223,6 @@ export default function DriverOrders() {
             toast.error(error?.response?.data?.error || "Failed to update status")
         }
     }
-
-    const canReachShop = async (order) => {
-        return new Promise((resolve) => {
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    const lat1 = position.coords.latitude
-                    const lon1 = position.coords.longitude
-                    const lat2 = order.store.latitude
-                    const lon2 = order.store.longitude
-                    const R = 6371e3
-                    const φ1 = lat1 * Math.PI / 180
-                    const φ2 = lat2 * Math.PI / 180
-                    const Δφ = (lat2 - lat1) * Math.PI / 180
-                    const Δλ = (lon2 - lon1) * Math.PI / 180
-
-                    const a =
-                        Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-                        Math.cos(φ1) * Math.cos(φ2) *
-                        Math.sin(Δλ / 2) * Math.sin(Δλ / 2)
-
-                    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-                    const distance = R * c
-
-                    resolve(distance <= 100)
-                },
-                () => resolve(false)
-            )
-        })
-    }
-
     const StatusBadge = ({ status }) => {
         const styles = {
             DRIVER_ASSIGNED: "bg-blue-100 text-blue-700 border-blue-200",
@@ -396,9 +359,20 @@ export default function DriverOrders() {
                                 <p className="text-gray-500 max-w-sm">Stay on this screen. New delivery assignments will appear here automatically once you are matched.</p>
                             </div>
                         )}
-
                         {!isLoading && orders.map(order => (
                             <div key={order.id} className="bg-white border border-gray-100 shadow-sm hover:shadow-md transition-shadow rounded-2xl p-5 md:p-6">
+
+                                {driverLocation && (
+                                    <DeliveryMap
+                                        driverPos={driverLocation}
+                                        destinationPos={
+                                            ["DRIVER_ASSIGNED", "REACHED_SHOP"].includes(order.status)
+                                                ? [order.store?.latitude, order.store?.longitude]
+                                                : [order.address?.latitude, order.address?.longitude]
+                                        }
+                                    />
+                                )}
+
                                 <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-6">
                                     <div>
                                         <div className="flex items-center gap-3 mb-3">
