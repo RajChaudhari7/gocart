@@ -337,7 +337,7 @@ export default function DriverOrders() {
                                     <span className="text-gray-500">Distance to Store</span>
                                     <span className="font-semibold text-blue-600">
                                         {incomingOrder.distanceToStore && !isNaN(parseFloat(incomingOrder.distanceToStore))
-                                            ? `${parseFloat(incomingOrder.distanceToStore).toFixed(1)} km`
+                                            ? `${parseFloat(incomingOrder.distanceToStore).toFixed(2)} km`
                                             : "Calculating..."}
                                     </span>
                                 </div>
@@ -346,7 +346,7 @@ export default function DriverOrders() {
                                     <span className="text-gray-500">Store to Customer</span>
                                     <span className="font-semibold text-blue-600">
                                         {incomingOrder.distanceToCustomer && !isNaN(parseFloat(incomingOrder.distanceToCustomer))
-                                            ? `${parseFloat(incomingOrder.distanceToCustomer).toFixed(1)} km`
+                                            ? `${parseFloat(incomingOrder.distanceToCustomer).toFixed(2)} km`
                                             : "Calculating..."}
                                     </span>
                                 </div>
