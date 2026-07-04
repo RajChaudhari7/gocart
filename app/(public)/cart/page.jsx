@@ -67,7 +67,7 @@ export default function Cart() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 py-12 px-4 sm:px-6 lg:px-8 text-slate-200">
+    <div className="min-h-screen bg-slate-950 pt-28 pb-12 px-4 sm:px-6 lg:px-8 text-slate-200">
       <div className="max-w-7xl mx-auto">
 
         {/* Page Title */}
