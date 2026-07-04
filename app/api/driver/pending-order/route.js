@@ -50,10 +50,20 @@ export async function GET(request) {
         include: { store: true }
     });
 
-    if (order && driverLat && driverLng) {
-        const distanceToStore = getDistance(driverLat, driverLng, order.store.lat, order.store.lng);
-        return NextResponse.json({ order: { ...order, distanceToStore } });
-    }
+    if (order && order.store) {
+        // Force parse coordinates from the database
+        const storeLat = parseFloat(order.store.lat);
+        const storeLng = parseFloat(order.store.lng);
 
+        // Only calculate if all 4 values are valid numbers
+        if (!isNaN(storeLat) && !isNaN(storeLng) && !isNaN(driverLat) && !isNaN(driverLng)) {
+            const distanceToStore = getDistance(driverLat, driverLng, storeLat, storeLng);
+            return NextResponse.json({ order: { ...order, distanceToStore } });
+        } else {
+            // Log to see which coordinate is missing
+            console.log("Missing coords:", { driverLat, driverLng, storeLat, storeLng });
+            return NextResponse.json({ order: { ...order, distanceToStore: "N/A" } });
+        }
+    }
     return NextResponse.json({ order });
 }
