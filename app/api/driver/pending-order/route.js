@@ -51,19 +51,27 @@ export async function GET(request) {
     });
 
     if (order && order.store) {
-        // Force parse coordinates from the database
-        const storeLat = parseFloat(order.store.latitude);
-        const storeLng = parseFloat(order.store.longitude);
+        // Correct Field Names from your schema
+        const sLat = parseFloat(order.store.latitude);
+        const sLng = parseFloat(order.store.longitude);
 
-        // Only calculate if all 4 values are valid numbers
-        if (!isNaN(storeLat) && !isNaN(storeLng) && !isNaN(driverLat) && !isNaN(driverLng)) {
-            const distanceToStore = getDistance(driverLat, driverLng, storeLat, storeLng);
-            return NextResponse.json({ order: { ...order, distanceToStore } });
-        } else {
-            // Log to see which coordinate is missing
-            console.log("Missing coords:", { driverLat, driverLng, storeLat, storeLng });
-            return NextResponse.json({ order: { ...order, distanceToStore: "N/A" } });
-        }
+        // Driver to Store
+        const distanceToStore = (driverLat && driverLng && !isNaN(sLat) && !isNaN(sLng))
+            ? getDistance(driverLat, driverLng, sLat, sLng)
+            : "0.0";
+
+        // Store to Customer (using deliveryLatitude/Longitude from Order model)
+        const cLat = parseFloat(order.deliveryLatitude);
+        const cLng = parseFloat(order.deliveryLongitude);
+
+        const distanceToCustomer = (!isNaN(cLat) && !isNaN(cLng) && !isNaN(sLat) && !isNaN(sLng))
+            ? getDistance(sLat, sLng, cLat, cLng)
+            : "0.0";
+
+        return NextResponse.json({
+            order: { ...order, distanceToStore, distanceToCustomer }
+        });
     }
-    return NextResponse.json({ order });
+
+    return NextResponse.json({ order: null });
 }

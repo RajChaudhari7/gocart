@@ -277,11 +277,12 @@ export default function DriverDashboard() {
                             </span>
                         </div>
 
+                        {/* ... inside your incomingOrder component ... */}
                         <div className="border-t pt-2 mt-2">
                             <p className="text-xs text-slate-500">Delivery to:</p>
                             <p className="text-sm font-medium">{incomingOrder.address?.name || "Customer Location"}</p>
                             <p className="text-xs text-indigo-500 font-bold mt-1">
-                                {incomingOrder.distanceToCustomer || "..."} km from store
+                                {incomingOrder.distanceToCustomer || "0.0"} km from store
                             </p>
                         </div>
 
