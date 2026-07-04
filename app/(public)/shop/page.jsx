@@ -16,6 +16,7 @@ function ShopContent() {
 
   const router = useRouter()
   const [searchInput, setSearchInput] = useState(search || '')
+  const [selectedCategory, setSelectedCategory] = useState("All")
 
   useEffect(() => {
     const delay = setTimeout(() => {
@@ -40,14 +41,40 @@ function ShopContent() {
     fetchStores()
   }, [])
 
+  const categories = useMemo(() => {
+
+    const uniqueCategories = [
+      ...new Set(
+        stores
+          .map(store => store.category)
+          .filter(Boolean)
+      )
+    ]
+
+    return ["All", ...uniqueCategories]
+
+  }, [stores])
+
   /* FILTER STORES */
   const filteredStores = useMemo(() => {
-    return stores.filter((store) =>
-      search
-        ? store.name?.toLowerCase().includes(search.toLowerCase())
-        : true
-    )
-  }, [stores, search])
+
+    return stores.filter((store) => {
+
+      const matchesSearch =
+        search
+          ? store.name?.toLowerCase().includes(search.toLowerCase())
+          : true
+
+      const matchesCategory =
+        selectedCategory === "All"
+          ? true
+          : store.category === selectedCategory
+
+      return matchesSearch && matchesCategory
+
+    })
+
+  }, [stores, search, selectedCategory])
 
   return (
     <section className="min-h-screen bg-[#020617] text-white">
@@ -91,6 +118,28 @@ function ShopContent() {
       text-sm sm:text-base"
           />
         </div>
+      </div>
+
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 mt-8 flex flex-wrap gap-3">
+
+        {categories.map((category) => (
+
+          <button
+            key={category}
+            onClick={() => setSelectedCategory(category)}
+            className={`
+        px-5 py-2 rounded-full text-sm transition-all
+        ${selectedCategory === category
+                ? "bg-emerald-500 text-white"
+                : "bg-white/5 border border-white/10 text-white/70 hover:bg-white/10"
+              }
+      `}
+          >
+            {category}
+          </button>
+
+        ))}
+
       </div>
 
       {/* SHOP GRID */}
