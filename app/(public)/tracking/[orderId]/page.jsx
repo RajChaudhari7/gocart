@@ -231,10 +231,10 @@ export default function TrackingPage() {
                                 <div className="mt-6 border-t border-white/10 pt-4 space-y-3">
 
                                     <div className="flex justify-between text-white/60">
-                                        <span>Subtotal</span>
+                                        <span>Products Total</span>
                                         <span>
                                             {currency}
-                                            {order.totalAmount - order.deliveryFee}
+                                            {(order.total - (order.deliveryFee || 0)).toFixed(2)}
                                         </span>
                                     </div>
 
@@ -242,7 +242,7 @@ export default function TrackingPage() {
                                         <span>Delivery Fee</span>
                                         <span>
                                             {currency}
-                                            {order.deliveryFee}
+                                            {(order.deliveryFee || 0).toFixed(2)}
                                         </span>
                                     </div>
 
@@ -250,7 +250,7 @@ export default function TrackingPage() {
                                         <span>Total Paid</span>
                                         <span>
                                             {currency}
-                                            {order.totalAmount}
+                                            {order.total.toFixed(2)}
                                         </span>
                                     </div>
 
