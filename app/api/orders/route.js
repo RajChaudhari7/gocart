@@ -25,6 +25,12 @@ export async function POST(request) {
       );
     }
 
+    const address = await tx.address.findUnique({
+      where: { id: addressId }
+    });
+
+    if (!address) throw new Error("Address not found");
+
     const isPrimeMember = has({ plan: "prime" });
 
     let orderIds = [];
@@ -120,6 +126,8 @@ export async function POST(request) {
             userId,
             storeId,
             addressId,
+            deliveryLatitude: address.latitude,
+            deliveryLongitude: address.longitude,
             total,
             commissionPercent: settings.commissionPercent,
             deliveryFee: deliveryCharge,
