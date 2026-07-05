@@ -33,7 +33,6 @@ export async function POST(request) {
 
     let orderIds = [];
     let fullAmount = 0;
-    let isShippingFeeAdded = false;
 
     const settings =
       await prisma.platformSettings.findFirst() || {
@@ -103,11 +102,9 @@ export async function POST(request) {
 
         if (
           !isPrimeMember &&
-          productTotal < settings.freeDeliveryAbove &&
-          !isShippingFeeAdded
+          productTotal < settings.freeDeliveryAbove
         ) {
           deliveryCharge = settings.deliveryFee;
-          isShippingFeeAdded = true;
         }
 
         // Final order total
