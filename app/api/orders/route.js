@@ -79,8 +79,6 @@ export async function POST(request) {
           price: product.price,
         });
 
-
-
         // 🔥 SAFE DECREMENT (inside lock)
         await tx.$executeRaw`
           UPDATE "Product"
@@ -89,8 +87,9 @@ export async function POST(request) {
         `;
       }
 
-      const totalStores = ordersByStore.size;
-
+      // ===============================
+      // 📦 STEP 2: CREATE ORDERS
+      // ===============================
       for (const [storeId, sellerItems] of ordersByStore.entries()) {
 
         // Product total
@@ -101,21 +100,14 @@ export async function POST(request) {
 
         // Delivery charge
         let deliveryCharge = 0;
-        let driverFee = 0;
 
-        if (!isPrimeMember) {
-
-          const eligibleForDelivery =
-            productTotal < settings.freeDeliveryAbove;
-
-          if (eligibleForDelivery) {
-
-            deliveryCharge =
-              settings.deliveryFee / totalStores;
-
-            driverFee =
-              settings.driverFee / totalStores;
-          }
+        if (
+          !isPrimeMember &&
+          productTotal < settings.freeDeliveryAbove &&
+          !isShippingFeeAdded
+        ) {
+          deliveryCharge = settings.deliveryFee;
+          isShippingFeeAdded = true;
         }
 
         // Final order total
@@ -143,7 +135,7 @@ export async function POST(request) {
             total,
             commissionPercent: settings.commissionPercent,
             deliveryFee: deliveryCharge,
-            driverFee,
+            driverFee: settings.driverFee,
             paymentMethod,
             status: "ORDER_PLACED",
             statusHistory: {
