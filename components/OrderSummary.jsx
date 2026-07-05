@@ -30,8 +30,32 @@ const OrderSummary = ({ totalPrice, items }) => {
   const [coupon, setCoupon] = useState(null)
   const [isProcessing, setIsProcessing] = useState(false)
 
-  const shippingCost =
-    totalPrice >= settings.freeDeliveryAbove ? 0 : settings.deliveryFee;
+  const stores = items.reduce((acc, item) => {
+    const storeId = item.storeId;
+    const storeName = item.store?.name || item.storeName || "Store";
+
+    if (!acc[storeId]) {
+      acc[storeId] = {
+        name: storeName,
+        subtotal: 0,
+      };
+    }
+
+    acc[storeId].subtotal += item.price * item.quantity;
+
+    return acc;
+  }, {});
+
+  const shippingCost = Object.values(stores).reduce((sum, store) => {
+    if (
+      totalPrice >= settings.freeDeliveryAbove
+    ) {
+      return sum;
+    }
+
+    return sum + settings.deliveryFee;
+  }, 0);
+
   const discount = coupon ? (coupon.discount / 100) * totalPrice : 0
   const finalTotal = totalPrice + shippingCost - discount
 
@@ -242,27 +266,81 @@ const OrderSummary = ({ totalPrice, items }) => {
       </div>
 
       {/* PRICE BREAKDOWN */}
-      <div className="pt-6 border-t border-slate-800/80 space-y-3">
+      <div className="pt-6 border-t border-slate-800/80 space-y-4">
+
+        {Object.values(stores).map((store, index) => (
+          <div
+            key={index}
+            className="rounded-xl bg-slate-950 border border-slate-800 p-3"
+          >
+
+            <p className="text-sm font-bold text-white mb-2">
+              {store.name}
+            </p>
+
+            <div className="flex justify-between text-sm text-slate-400">
+              <span>Products</span>
+              <span>
+                {currency}
+                {store.subtotal}
+              </span>
+            </div>
+
+            <div className="flex justify-between text-sm text-slate-400 mt-1">
+              <span>Delivery</span>
+
+              <Protect
+                plan="prime"
+                fallback={
+                  <span>{currency}{settings.deliveryFee}</span>
+                }
+              >
+                <span className="text-emerald-400 font-bold">
+                  Free
+                </span>
+              </Protect>
+
+            </div>
+
+          </div>
+        ))}
+
         <div className="flex justify-between text-sm text-slate-400">
           <span>Subtotal</span>
-          <span className="font-medium text-white">{currency}{totalPrice.toLocaleString()}</span>
+          <span className="text-white">
+            {currency}{totalPrice}
+          </span>
         </div>
 
         <div className="flex justify-between text-sm text-slate-400">
-          <span>Shipping</span>
-          <Protect plan="prime" fallback={
-            <span className="font-medium text-white">{currency}{shippingCost}</span>
-          }>
-            <span className="font-bold text-emerald-400">Free</span>
+          <span>Total Delivery</span>
+
+          <Protect
+            plan="prime"
+            fallback={
+              <span className="text-white">
+                {currency}{shippingCost}
+              </span>
+            }
+          >
+            <span className="font-bold text-emerald-400">
+              Free
+            </span>
           </Protect>
+
         </div>
 
         {coupon && (
-          <div className="flex justify-between text-sm text-emerald-400 font-medium">
-            <span>Discount ({coupon.discount}%)</span>
-            <span>-{currency}{discount.toFixed(2)}</span>
+          <div className="flex justify-between text-sm text-emerald-400">
+            <span>
+              Discount ({coupon.discount}%)
+            </span>
+            <span>
+              -{currency}{discount.toFixed(2)}
+            </span>
           </div>
         )}
+
       </div>
 
       {/* TOTAL */}
