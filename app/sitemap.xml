@@ -1,28 +1,42 @@
 export default async function sitemap() {
+  const baseUrl = "https://gocart-delta.vercel.app";
 
   return [
-
     {
-      url: "https://gocart-delta.vercel.app",
-      priority: 1,
+      url: `${baseUrl}/`,
+      lastModified: new Date(),
       changeFrequency: "daily",
+      priority: 1.0,
     },
-
     {
-      url: "https://gocart-delta.vercel.app/shop",
+      url: `${baseUrl}/shop`,
+      lastModified: new Date(),
+      changeFrequency: "daily",
       priority: 0.9,
     },
-
     {
-      url: "https://gocart-delta.vercel.app/product",
+      url: `${baseUrl}/product`,
+      lastModified: new Date(),
+      changeFrequency: "daily",
       priority: 0.9,
     },
-
     {
-      url: "https://gocart-delta.vercel.app/cart",
+      url: `${baseUrl}/cart`,
+      lastModified: new Date(),
+      changeFrequency: "weekly",
       priority: 0.6,
     },
-
+    {
+      url: `${baseUrl}/contact`,
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.7,
+    },
+    {
+      url: `${baseUrl}/orders`,
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 0.5,
+    },
   ];
-
 }
