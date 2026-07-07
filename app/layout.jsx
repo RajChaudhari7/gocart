@@ -14,6 +14,10 @@ const outfit = Outfit({
 export const metadata = {
   metadataBase: new URL("https://gocart-delta.vercel.app"), 
 
+  verification: {
+    google: "google970ad242fb17dc77.html",
+  },
+
   title: {
     default: "Nandurbar Bazar | Online Grocery & Local Shopping",
     template: "%s | Nandurbar Bazar",
