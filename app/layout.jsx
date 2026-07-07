@@ -12,23 +12,105 @@ const outfit = Outfit({
 })
 
 export const metadata = {
-  title: "Nandurbar Bazar - Shop smarter",
-  description: "Nandurbar Bazar - Shop smarter",
-  manifest: "/manifest.json",
+  metadataBase: new URL("https://gocart-delta.vercel.app"), 
 
-  themeColor: "#06b6d4",
+  title: {
+    default: "Nandurbar Bazar | Online Grocery & Local Shopping",
+    template: "%s | Nandurbar Bazar",
+  },
+
+  description:
+    "Order groceries, fruits, vegetables, dairy products and daily essentials from trusted local shops in Nandurbar. Fast delivery with Cash on Delivery available.",
+
+  keywords: [
+    "Nandurbar Bazar",
+    "Nandurbar Grocery",
+    "Online Grocery",
+    "Local Shops",
+    "Nandurbar Online Shopping",
+    "Vegetables",
+    "Fruits",
+    "Milk",
+    "Daily Essentials",
+    "COD Grocery",
+    "Hyperlocal Delivery",
+    "Local Market",
+    "Nandurbar",
+  ],
+
+  authors: [
+    {
+      name: "Raj Chaudhari",
+    },
+  ],
+
+  creator: "Raj Chaudhari",
+
+  publisher: "Nandurbar Bazar",
+
+  applicationName: "Nandurbar Bazar",
+
+  robots: {
+    index: true,
+    follow: true,
+    nocache: false,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+
+  openGraph: {
+    title: "Nandurbar Bazar",
+    description:
+      "Buy groceries and daily essentials from trusted local shops in Nandurbar with quick delivery.",
+
+    url: "https://gocart-delta.vercel.app",
+
+    siteName: "Nandurbar Bazar",
+
+    locale: "en_IN",
+
+    type: "website",
+
+    images: [
+      {
+        url: "/seo-banner.png",
+        width: 1200,
+        height: 630,
+        alt: "Nandurbar Bazar",
+      },
+    ],
+  },
+
+  twitter: {
+    card: "summary_large_image",
+    title: "Nandurbar Bazar",
+    description:
+      "Order groceries online from local stores in Nandurbar.",
+
+    images: ["/seo-banner.png"],
+  },
 
   icons: {
     icon: "/icon-192.png",
+    shortcut: "/icon-192.png",
     apple: "/icon-192.png",
   },
+
+  manifest: "/manifest.json",
+
+  themeColor: "#06b6d4",
 
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
     title: "Nandurbar Bazar",
   },
-}
+};
 
 export default function RootLayout({ children }) {
   return (

@@ -1,0 +1,28 @@
+export default async function sitemap() {
+
+  return [
+
+    {
+      url: "https://gocart-delta.vercel.app",
+      priority: 1,
+      changeFrequency: "daily",
+    },
+
+    {
+      url: "https://gocart-delta.vercel.app/shop",
+      priority: 0.9,
+    },
+
+    {
+      url: "https://gocart-delta.vercel.app/product",
+      priority: 0.9,
+    },
+
+    {
+      url: "https://gocart-delta.vercel.app/cart",
+      priority: 0.6,
+    },
+
+  ];
+
+}
