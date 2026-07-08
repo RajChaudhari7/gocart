@@ -288,6 +288,7 @@ model Driver {
 
   latitude  Float?
   longitude Float?
+  profilePhoto String?
 
   reassignCount Int @default(0)
 

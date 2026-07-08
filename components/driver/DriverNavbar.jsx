@@ -285,19 +285,16 @@ export default function DriverNavbar() {
                             </div>
 
                             <div className="hidden sm:block">
-
                                 <p className="text-xs text-slate-300">
                                     Welcome
                                 </p>
 
-                                <p className="font-semibold text-white text-base">
+                                <p className="font-semibold text-white">
                                     {firstName}
                                 </p>
-
                             </div>
 
                         </div>
-
                         {/* Logout */}
                         <button
                             onClick={logout}
