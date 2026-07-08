@@ -82,7 +82,6 @@ export async function PATCH(req, { params }) {
                     },
                     data: {
                         name: application.name,
-                        email: application.email,
 
                         profilePhoto: application.profilePhoto,
 
