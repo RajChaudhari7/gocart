@@ -159,17 +159,16 @@ export async function POST(request) {
 
     }
     catch (error) {
-
-        console.log(error);
+        console.error("REGISTER ERROR:");
+        console.error(error);
 
         return NextResponse.json(
             {
-                error: "Something went wrong."
+                error: error.message
             },
             {
                 status: 500
             }
         );
-
     }
 }
