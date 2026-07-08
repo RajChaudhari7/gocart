@@ -276,7 +276,7 @@ export default function DriverNavbar() {
                             <div className="relative w-11 h-11 rounded-full overflow-hidden border-2 border-white shadow-md">
 
                                 <Image
-                                    src={driver?.image || "/default-avatar.png"}
+                                    src={driver?.profilePhoto || "/default-avatar.png"}
                                     alt={firstName}
                                     fill
                                     className="object-cover"
