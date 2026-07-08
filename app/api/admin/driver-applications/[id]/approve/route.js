@@ -60,7 +60,11 @@ export async function PATCH(req, { params }) {
                     data: {
                         name: application.name,
                         phone: application.phone,
+                        email: application.email,
+
                         password: application.password,
+
+                        profilePhoto: application.profilePhoto,
 
                         vehicle: application.vehicleType,
                         vehicleNo: application.vehicleNumber,
@@ -79,8 +83,13 @@ export async function PATCH(req, { params }) {
                     },
                     data: {
                         name: application.name,
+                        email: application.email,
+
+                        profilePhoto: application.profilePhoto,
+
                         vehicle: application.vehicleType,
                         vehicleNo: application.vehicleNumber,
+
                         isActive: true,
                     },
                 });
