@@ -60,7 +60,6 @@ export async function PATCH(req, { params }) {
                     data: {
                         name: application.name,
                         phone: application.phone,
-                        email: application.email,
 
                         password: application.password,
 
