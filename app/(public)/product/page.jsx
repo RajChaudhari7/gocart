@@ -41,16 +41,44 @@ function ShopContent() {
 
   // Debounced Search
   useEffect(() => {
-    const delay = setTimeout(() => {
-      if (searchInput.trim() === '') {
-        router.push('/product')
-      } else {
-        router.push(`/product?search=${encodeURIComponent(searchInput)}`)
-      }
-    }, 400)
 
-    return () => clearTimeout(delay)
-  }, [searchInput, router])
+    const delay = setTimeout(async () => {
+
+      if (!searchInput.trim()) {
+
+        router.push("/product");
+        return;
+
+      }
+
+      try {
+
+        const { data } = await axios.post(
+          "/api/search/smart",
+          {
+            query: searchInput
+          }
+        );
+
+        if (data.search) {
+
+          router.push(
+            `/product?search=${encodeURIComponent(data.search)}`
+          );
+
+        }
+
+      } catch (err) {
+
+        console.log(err);
+
+      }
+
+    }, 400);
+
+    return () => clearTimeout(delay);
+
+  }, [searchInput]);
 
   /* ✅ DYNAMIC CATEGORIES */
   const allCategories = useMemo(() => {
