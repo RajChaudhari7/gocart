@@ -1,8 +1,8 @@
 'use client'
 
-import CustomersAlsoBought from "@/components/CustomersAlsoBought";
 import ProductDescription from "@/components/ProductDescription";
 import ProductDetails from "@/components/ProductDetails";
+import SimilarProducts from "@/components/SimilarProducts";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
@@ -39,7 +39,7 @@ export default function Product() {
         <ProductDescription product={product} />
 
         {/* CUSTOMERS ALSO BOUGHT */}
-        <CustomersAlsoBought productId={product.id} />
+        <SimilarProducts productId={product.id} />
       </div>
     </div>
   );
