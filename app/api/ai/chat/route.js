@@ -1,11 +1,13 @@
 import prisma from "@/lib/prisma";
 import { openai } from "@/configs/openai";
 import { NextResponse } from "next/server";
+import { getAuth } from "@clerk/nextjs/server";
 
 export async function POST(request) {
     try {
 
         const { message } = await request.json();
+        const { userId } = getAuth(request);
 
         if (!message) {
             return NextResponse.json(
@@ -38,6 +40,91 @@ export async function POST(request) {
 
         });
 
+        let orderContext = "User is not logged in.";
+
+        if (userId) {
+
+            const orders = await prisma.order.findMany({
+
+                where: {
+                    userId
+                },
+
+                include: {
+
+                    store: {
+                        select: {
+                            name: true
+                        }
+                    },
+
+                    driver: {
+                        select: {
+                            name: true,
+                            vehicle: true,
+                            vehicleNo: true
+                        }
+                    },
+
+                    orderItems: {
+
+                        include: {
+
+                            product: {
+
+                                select: {
+
+                                    id: true,
+                                    name: true,
+                                    category: true,
+                                    price: true
+
+                                }
+
+                            }
+
+                        }
+
+                    }
+
+                },
+
+                orderBy: {
+                    createdAt: "desc"
+                },
+
+                take: 20
+
+            });
+
+            orderContext = orders.map(order => {
+
+                return `
+
+Order ID: ${order.id}
+
+Status: ${order.status}
+
+Total: ₹${order.total}
+
+Payment: ${order.paymentMethod}
+
+Store: ${order.store?.name || "Unknown"}
+
+Driver: ${order.driver?.name || "Not Assigned"}
+
+Products:
+
+${order.orderItems.map(item =>
+                    `- ${item.product.name} x${item.quantity}`
+                ).join("\n")}
+
+`;
+
+            }).join("\n====================\n");
+
+        }
+
         // Convert products into AI context
         const productContext = products
             .map((p) => {
@@ -64,25 +151,40 @@ Description: ${p.description}
                 role: "system",
 
                 content: `
+
 You are Nandurbar Bazar AI.
 
-You are an intelligent shopping assistant.
+You help users with:
 
-Your job is ONLY to recommend products from the provided catalog.
+• Finding products
+• Comparing products
+• Recommending products
+• Checking order status
+• Delivery information
+• Previous purchases
+• Store information
+• Driver information
 
 Rules:
 
 1. NEVER invent products.
 
-2. NEVER recommend products not present in catalog.
+2. NEVER invent orders.
 
-3. If user asks for unavailable products, politely say unavailable.
+3. Use ONLY the provided catalog and order history.
 
-4. Recommend maximum 5 products.
+4. If user asks about products,
+search Product Catalog.
 
-5. Explain naturally.
+5. If user asks about orders,
+search Order History.
 
-6. Return ONLY valid JSON.
+6. Recommend maximum 5 products.
+
+7. If information is unavailable,
+politely say so.
+
+Return ONLY JSON.
 
 Format:
 
@@ -91,9 +193,17 @@ Format:
     "productIds":["id1","id2"]
 }
 
-Here is the product catalog:
+========================
+PRODUCT CATALOG
+========================
 
 ${productContext}
+
+========================
+ORDER HISTORY
+========================
+
+${orderContext}
 
 `
             },
@@ -141,22 +251,27 @@ ${productContext}
 
         }
 
-        const recommendedProducts =
-            await prisma.product.findMany({
+        let recommendedProducts = [];
 
-                where: {
-                    id: {
-                        in: ai.productIds || []
+        if (ai.productIds?.length) {
+
+            recommendedProducts =
+                await prisma.product.findMany({
+
+                    where: {
+                        id: {
+                            in: ai.productIds
+                        }
+                    },
+
+                    include: {
+                        store: true,
+                        rating: true
                     }
-                },
 
-                include: {
-                    store: true,
-                    rating: true
-                }
+                });
 
-            });
-
+        }
         return NextResponse.json({
 
             reply: ai.reply,
