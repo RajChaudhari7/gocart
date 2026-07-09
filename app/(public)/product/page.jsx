@@ -121,11 +121,29 @@ function ShopContent() {
   /* 🔥 FILTER + SORT */
   const filteredProducts = useMemo(() => {
     return products
-      .filter((p) =>
-        search
-          ? p.name?.toLowerCase().includes(search.toLowerCase())
-          : true
-      )
+      .filter((p) => {
+
+        if (!search) return true;
+
+        const q = search.toLowerCase();
+
+        return (
+
+          p.name?.toLowerCase().includes(q) ||
+
+          p.description?.toLowerCase().includes(q) ||
+
+          p.category?.toLowerCase().includes(q) ||
+
+          p.subCategory?.toLowerCase().includes(q) ||
+
+          p.keywords?.some(k =>
+            k.toLowerCase().includes(q)
+          )
+
+        );
+
+      })
       .filter((p) =>
         category === 'all'
           ? true
