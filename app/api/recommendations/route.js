@@ -7,17 +7,55 @@ export async function GET(req) {
 
         const { userId } = getAuth(req);
 
+        // Guest user
         if (!userId) {
-            return NextResponse.json([]);
+
+            const guestProducts = await prisma.product.findMany({
+
+                where: {
+                    isArchived: false,
+                    quantity: {
+                        gt: 0
+                    }
+                },
+
+                include: {
+                    store: true
+                }
+
+            });
+
+            guestProducts.sort((a, b) => {
+
+                const scoreA =
+                    (a.featured ? 1000 : 0) +
+                    a.totalSales * 5 +
+                    a.averageRating * 40 +
+                    a.totalViews;
+
+                const scoreB =
+                    (b.featured ? 1000 : 0) +
+                    b.totalSales * 5 +
+                    b.averageRating * 40 +
+                    b.totalViews;
+
+                return scoreB - scoreA;
+
+            });
+
+            return NextResponse.json(guestProducts.slice(0, 20));
+
         }
 
-        // Purchase history
         const preferences = await prisma.userPreference.findMany({
+
             where: {
                 userId
             }
+
         });
 
+        // No purchase history
         if (preferences.length === 0) {
 
             const products = await prisma.product.findMany({
@@ -31,54 +69,51 @@ export async function GET(req) {
 
                 include: {
                     store: true
-                },
-
-                orderBy: [
-                    {
-                        featured: "desc"
-                    },
-                    {
-                        totalSales: "desc"
-                    },
-                    {
-                        averageRating: "desc"
-                    }
-                ],
-
-                take: 20
+                }
 
             });
 
-            return NextResponse.json(products);
+            products.sort((a, b) => {
+
+                const scoreA =
+                    (a.featured ? 1000 : 0) +
+                    a.totalSales * 5 +
+                    a.averageRating * 40 +
+                    a.totalViews;
+
+                const scoreB =
+                    (b.featured ? 1000 : 0) +
+                    b.totalSales * 5 +
+                    b.averageRating * 40 +
+                    b.totalViews;
+
+                return scoreB - scoreA;
+
+            });
+
+            return NextResponse.json(products.slice(0, 20));
 
         }
 
-        // Purchased products
         const purchasedIds = preferences.map(p => p.productId);
 
-        // Favorite categories
-        const categoryScore = {};
+        const favouriteCategories = [
+            ...new Set(
+                preferences.map(p => p.category)
+            )
+        ];
 
-        for (const item of preferences) {
+        const favouriteSubCategories = [
+            ...new Set(
+                preferences
+                    .map(p => p.subCategory)
+                    .filter(Boolean)
+            )
+        ];
 
-            categoryScore[item.category] =
-                (categoryScore[item.category] || 0) + 1;
-
-        }
-
-        const favouriteCategories = Object.keys(categoryScore);
-
-        const recommendations = await prisma.product.findMany({
+        const products = await prisma.product.findMany({
 
             where: {
-
-                category: {
-                    in: favouriteCategories
-                },
-
-                id: {
-                    notIn: purchasedIds
-                },
 
                 quantity: {
                     gt: 0
@@ -94,24 +129,55 @@ export async function GET(req) {
 
         });
 
-        recommendations.sort((a, b) => {
+        const scoredProducts = products.map(product => {
 
-            const scoreA =
-                (a.featured ? 100 : 0) +
-                a.totalSales * 2 +
-                a.averageRating * 15;
+            let score = 0;
 
-            const scoreB =
-                (b.featured ? 100 : 0) +
-                b.totalSales * 2 +
-                b.averageRating * 15;
+            // Featured
+            if (product.featured)
+                score += 120;
 
-            return scoreB - scoreA;
+            // Same subcategory
+            if (
+                product.subCategory &&
+                favouriteSubCategories.includes(product.subCategory)
+            )
+                score += 100;
+
+            // Same category
+            if (
+                favouriteCategories.includes(product.category)
+            )
+                score += 60;
+
+            // Popularity
+            score += product.totalSales * 3;
+
+            // Rating
+            score += product.averageRating * 15;
+
+            // Views
+            score += product.totalViews * 0.05;
+
+            // Penalize already purchased
+            if (purchasedIds.includes(product.id))
+                score -= 500;
+
+            return {
+                ...product,
+                recommendationScore: score
+            };
 
         });
 
+        scoredProducts.sort(
+            (a, b) =>
+                b.recommendationScore -
+                a.recommendationScore
+        );
+
         return NextResponse.json(
-            recommendations.slice(0, 20)
+            scoredProducts.slice(0, 20)
         );
 
     } catch (error) {
