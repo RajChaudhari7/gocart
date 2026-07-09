@@ -5,6 +5,7 @@ import BestSelling from "@/components/BestSelling";
 import Hero from "@/components/Hero";
 import LatestProducts from "@/components/LatestProducts";
 import Categories from "@/components/Categories";
+import RecommendedProducts from "@/components/RecommendedProducts";
 
 export default function Home() {
     return (
@@ -27,6 +28,7 @@ export default function Home() {
 
             <Hero />
             <BestSelling />
+            <RecommendedProducts />
             <Categories />
             <LatestProducts />
         </>
