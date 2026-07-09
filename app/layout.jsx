@@ -5,6 +5,7 @@ import StoreProvider from "@/app/StoreProvider"
 import SplashWrapper from "@/components/SplashWrapper"
 import { GoogleAnalytics } from "@next/third-parties/google"
 import "./globals.css"
+import AIChatButton from "@/components/AIChat/AIChatButton"
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -126,6 +127,7 @@ export default function RootLayout({ children }) {
               {children}
             </SplashWrapper>
             <Toaster />
+            <AIChatButton />
           </StoreProvider>
           <GoogleAnalytics
             gaId={process.env.NEXT_PUBLIC_GA_ID}
