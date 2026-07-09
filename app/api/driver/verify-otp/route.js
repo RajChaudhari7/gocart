@@ -8,6 +8,19 @@ export async function POST(request) {
         const order = await prisma.order.findUnique({
             where: {
                 id: orderId
+            },
+            include: {
+                orderItems: {
+                    include: {
+                        product: {
+                            select: {
+                                id: true,
+                                category: true,
+                                subCategory: true
+                            }
+                        }
+                    }
+                }
             }
         })
 
@@ -62,6 +75,39 @@ export async function POST(request) {
                 }
             }
         })
+
+        // Save user preferences for AI recommendations
+
+        for (const item of order.orderItems) {
+
+            await prisma.userPreference.upsert({
+
+                where: {
+                    userId_productId: {
+                        userId: order.userId,
+                        productId: item.product.id
+                    }
+                },
+
+                update: {
+                    purchasedAt: new Date()
+                },
+
+                create: {
+
+                    userId: order.userId,
+
+                    productId: item.product.id,
+
+                    category: item.product.category,
+
+                    subCategory: item.product.subCategory
+
+                }
+
+            })
+
+        }
 
         // 4. Driver becomes available again
         if (order.driverId) {

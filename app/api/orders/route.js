@@ -86,9 +86,7 @@ export async function POST(request) {
         `;
       }
 
-      // ===============================
-      // 📦 STEP 2: CREATE ORDERS
-      // ===============================
+      
       for (const [storeId, sellerItems] of ordersByStore.entries()) {
 
         // Product total

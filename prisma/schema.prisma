@@ -19,7 +19,8 @@ model User {
   store       Store?
   buyerOrders Order[]   @relation("BuyerRelation")
 
-  returnRequests ReturnRequest[]
+  returnRequests  ReturnRequest[]
+  userPreferences UserPreference[]
 }
 
 model Product {
@@ -43,11 +44,18 @@ model Product {
   subCategory String?
   isArchived  Boolean  @default(false)
 
+  totalSales    Int   @default(0)
+  totalViews    Int   @default(0)
+  averageRating Float @default(0)
+
+  featured Boolean @default(false)
+
   store      Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
   orderItems OrderItem[]
   rating     Rating[]
 
-  returnItems ReturnItem[]
+  returnItems     ReturnItem[]
+  userPreferences UserPreference[]
 
   @@index([barcode, storeId])
 }
@@ -286,8 +294,8 @@ model Driver {
   vehicle   String?
   vehicleNo String?
 
-  latitude  Float?
-  longitude Float?
+  latitude     Float?
+  longitude    Float?
   profilePhoto String?
 
   reassignCount Int @default(0)
@@ -384,4 +392,24 @@ model DriverApplication {
   createdAt DateTime @default(now())
 
   updatedAt DateTime @updatedAt
+}
+
+model UserPreference {
+  id String @id @default(cuid())
+
+  userId    String
+  productId String
+
+  category    String
+  subCategory String?
+
+  purchasedAt DateTime @default(now())
+  rating      Int?
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@index([userId])
+  @@index([category])
 }

@@ -76,6 +76,20 @@ function ShopContent() {
     return uniqueSubCats.length > 0 ? ['all', ...uniqueSubCats] : []
   }, [products, category])
 
+  const getAIScore = (product) => {
+
+    return (
+
+      product.totalSales * 5 +
+
+      product.averageRating * 25 +
+
+      product.totalViews * 0.2
+
+    )
+
+  }
+
   /* 🔥 FILTER + SORT */
   const filteredProducts = useMemo(() => {
     return products
@@ -105,9 +119,21 @@ function ShopContent() {
         }
       })
       .sort((a, b) => {
-        if (sort === 'low-high') return Number(a.price) - Number(b.price)
-        if (sort === 'high-low') return Number(b.price) - Number(a.price)
-        return 0
+
+        // Featured products first
+        if (a.featured && !b.featured) return -1
+        if (!a.featured && b.featured) return 1
+
+        // Price sorting still works if selected
+        if (sort === "low-high")
+          return a.price - b.price
+
+        if (sort === "high-low")
+          return b.price - a.price
+
+        // Default AI Ranking
+        return getAIScore(b) - getAIScore(a)
+
       })
   }, [products, search, category, subCategory, priceRange, sort])
 
