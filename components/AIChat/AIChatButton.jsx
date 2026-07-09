@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Bot, X } from "lucide-react";
 import AIChatWindow from "./AIChatWindow";
@@ -8,6 +8,15 @@ import AIChatWindow from "./AIChatWindow";
 export default function AIChatButton() {
 
     const [open, setOpen] = useState(false);
+    const [position, setPosition] = useState({ x: 0, y: 0 });
+
+    useEffect(() => {
+        const saved = localStorage.getItem("ai-position");
+
+        if (saved) {
+            setPosition(JSON.parse(saved));
+        }
+    }, []);
 
     return (
         <>
@@ -24,6 +33,33 @@ export default function AIChatButton() {
                 {!open && (
 
                     <motion.button
+
+                        drag
+                        dragMomentum={false}
+                        dragElastic={0.15}
+
+                        style={{
+                            x: position.x,
+                            y: position.y,
+                        }}
+
+                        onDragEnd={(e, info) => {
+
+                            const newPosition = {
+
+                                x: position.x + info.offset.x,
+                                y: position.y + info.offset.y,
+
+                            };
+
+                            setPosition(newPosition);
+
+                            localStorage.setItem(
+                                "ai-position",
+                                JSON.stringify(newPosition)
+                            );
+
+                        }}
 
                         initial={{
                             opacity: 0,
@@ -55,37 +91,36 @@ export default function AIChatButton() {
                         onClick={() => setOpen(true)}
 
                         className="
-                        fixed
-                        bottom-5
-                        right-5
-                        md:right-6
-                        md:bottom-6
+                            fixed
+                            bottom-24
+                            right-5
+                            md:right-6
 
-                        z-[9998]
+                            z-[9998]
 
-                        group
+                            group
 
-                        flex
-                        items-center
-                        gap-3
+                            flex
+                            items-center
+                            gap-3
 
-                        rounded-full
+                            rounded-full
 
-                        bg-gradient-to-r
-                        from-cyan-500
-                        to-indigo-600
+                            bg-gradient-to-r
+                            from-cyan-500
+                            to-indigo-600
 
-                        text-white
+                            text-white
 
-                        px-5
-                        py-3
+                            px-5
+                            py-3
 
-                        shadow-2xl
+                            shadow-2xl
 
-                        hover:shadow-cyan-500/30
+                            hover:shadow-cyan-500/30
 
-                        transition-all
-                        duration-300
+                            cursor-grab
+                            active:cursor-grabbing
                         "
 
                     >
