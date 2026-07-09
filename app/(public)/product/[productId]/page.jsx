@@ -1,5 +1,6 @@
 'use client'
 
+import CustomersAlsoBought from "@/components/CustomersAlsoBought";
 import ProductDescription from "@/components/ProductDescription";
 import ProductDetails from "@/components/ProductDetails";
 import { useParams, useRouter } from "next/navigation";
@@ -36,6 +37,9 @@ export default function Product() {
 
         {/* DESCRIPTION */}
         <ProductDescription product={product} />
+
+        {/* CUSTOMERS ALSO BOUGHT */}
+        <CustomersAlsoBought productId={product.id} />
       </div>
     </div>
   );
