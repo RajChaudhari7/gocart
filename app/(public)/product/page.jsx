@@ -6,6 +6,7 @@ import { SlidersHorizontal, X, Search, ChevronRight } from 'lucide-react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useSelector } from 'react-redux'
 import { motion, AnimatePresence } from 'framer-motion'
+import axios from 'axios'
 
 /* ✅ PRICE RANGES */
 const PRICE_RANGES = [
