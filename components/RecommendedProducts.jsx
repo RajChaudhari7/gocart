@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { Sparkles } from "lucide-react";
-import ProductCard from "@/components/ProductCard";
+import ProductCard from "./ProductCard";
 
 export default function RecommendedProducts() {
 
