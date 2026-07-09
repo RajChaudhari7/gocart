@@ -109,6 +109,24 @@ export async function POST(request) {
 
         }
 
+        for (const item of order.orderItems) {
+
+            await prisma.product.update({
+
+                where: {
+                    id: item.productId
+                },
+
+                data: {
+                    totalSales: {
+                        increment: item.quantity
+                    }
+                }
+
+            })
+
+        }
+
         // 4. Driver becomes available again
         if (order.driverId) {
             await prisma.driver.update({

@@ -80,6 +80,32 @@ export async function POST(request) {
       },
     })
 
+    // Recalculate average rating
+
+    const stats = await prisma.rating.aggregate({
+
+      where: {
+        productId
+      },
+
+      _avg: {
+        rating: true
+      }
+
+    })
+
+    await prisma.product.update({
+
+      where: {
+        id: productId
+      },
+
+      data: {
+        averageRating: stats._avg.rating || 0
+      }
+
+    })
+
     return NextResponse.json({
       message: 'Rating added successfully',
       rating: ratingResponse,
