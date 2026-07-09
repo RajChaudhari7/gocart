@@ -35,29 +35,48 @@ export default function RecommendedProducts() {
     };
 
     if (loading) {
+
         return (
-            <section className="mt-16">
 
-                <div className="rounded-3xl border border-slate-800 bg-slate-900/40 backdrop-blur-xl p-6 md:p-8">
+            <section className="mt-10 md:mt-16">
 
-                    <div className="flex items-center gap-3 mb-8">
+                <div className="rounded-2xl md:rounded-3xl border border-slate-800 bg-slate-900/60 backdrop-blur-xl p-4 md:p-8">
 
-                        <Sparkles
-                            className="text-cyan-400"
-                            size={26}
-                        />
+                    {/* Heading */}
+
+                    <div className="flex items-center gap-3 mb-6">
+
+                        <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-cyan-500/10 flex items-center justify-center">
+
+                            <Sparkles
+                                className="text-cyan-400"
+                                size={20}
+                            />
+
+                        </div>
 
                         <div>
 
-                            <h2 className="text-2xl md:text-3xl font-black text-white">
-
+                            <h2
+                                className="
+                                text-lg
+                                sm:text-xl
+                                md:text-3xl
+                                font-black
+                                bg-gradient-to-r
+                                from-cyan-300
+                                via-white
+                                to-indigo-300
+                                bg-clip-text
+                                text-transparent
+                            "
+                            >
                                 Recommended For You
-
                             </h2>
 
-                            <p className="text-slate-400 text-sm">
+                            <p className="text-xs md:text-sm text-slate-400">
 
-                                Based on your shopping history
+                                Personalized just for you
 
                             </p>
 
@@ -65,14 +84,26 @@ export default function RecommendedProducts() {
 
                     </div>
 
-                    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4 md:gap-6">
+                    {/* Skeleton */}
 
-                        {products.map(product => (
+                    <div
+                        className="
+                        grid
+                        grid-cols-2
+                        sm:grid-cols-2
+                        md:grid-cols-3
+                        lg:grid-cols-4
+                        xl:grid-cols-5
+                        gap-3
+                        md:gap-6
+                    "
+                    >
 
-                            <ProductCard
-                                key={product.id}
-                                product={product}
-                                storeIsActive={product.store?.isActive}
+                        {Array.from({ length: 5 }).map((_, index) => (
+
+                            <div
+                                key={index}
+                                className="h-64 md:h-80 rounded-2xl bg-slate-800 animate-pulse"
                             />
 
                         ))}
@@ -82,55 +113,87 @@ export default function RecommendedProducts() {
                 </div>
 
             </section>
+
         );
+
     }
 
     if (products.length === 0) return null;
 
     return (
 
-        <section className="py-14">
+        <section className="mt-10 md:mt-16">
 
-            <div className="flex items-center justify-between mb-8">
+            <div className="rounded-2xl md:rounded-3xl border border-slate-800 bg-slate-900/60 backdrop-blur-xl p-4 md:p-8">
 
-                <div>
+                {/* Heading */}
 
-                    <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 mb-6">
+
+                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-cyan-500/10 flex items-center justify-center">
 
                         <Sparkles
                             className="text-cyan-400"
-                            size={26}
+                            size={20}
                         />
-
-                        <h2 className="text-3xl font-black text-white">
-
-                            Recommended For You
-
-                        </h2>
 
                     </div>
 
-                    <p className="text-slate-400 mt-2">
+                    <div>
 
-                        Based on your shopping history
+                        <h2
+                            className="
+                            text-lg
+                            sm:text-xl
+                            md:text-3xl
+                            font-black
+                            bg-gradient-to-r
+                            from-cyan-300
+                            via-white
+                            to-indigo-300
+                            bg-clip-text
+                            text-transparent
+                        "
+                        >
+                            Recommended For You
+                        </h2>
 
-                    </p>
+                        <p className="text-xs md:text-sm text-slate-400">
+
+                            Personalized picks based on your shopping history
+
+                        </p>
+
+                    </div>
 
                 </div>
 
-            </div>
+                {/* Products */}
 
-            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-6">
+                <div
+                    className="
+                    grid
+                    grid-cols-2
+                    sm:grid-cols-2
+                    md:grid-cols-3
+                    lg:grid-cols-4
+                    xl:grid-cols-5
+                    gap-3
+                    md:gap-6
+                "
+                >
 
-                {products.map((product) => (
+                    {products.map((product) => (
 
-                    <ProductCard
-                        key={product.id}
-                        product={product}
-                        storeIsActive={product.store?.isActive === true}
-                    />
+                        <ProductCard
+                            key={product.id}
+                            product={product}
+                            storeIsActive={product.store?.isActive === true}
+                        />
 
-                ))}
+                    ))}
+
+                </div>
 
             </div>
 

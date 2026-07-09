@@ -129,52 +129,75 @@ export async function GET(req) {
 
         });
 
-        const scoredProducts = products.map(product => {
+        const scoredProducts = products
+            .filter(product => !purchasedIds.includes(product.id))
+            .map(product => {
 
-            let score = 0;
+                let score = 0;
 
-            // Featured
-            if (product.featured)
-                score += 120;
+                // Featured
+                if (product.featured)
+                    score += 120;
 
-            // Same subcategory
-            if (
-                product.subCategory &&
-                favouriteSubCategories.includes(product.subCategory)
-            )
-                score += 100;
+                // Same subcategory
+                if (
+                    product.subCategory &&
+                    favouriteSubCategories.includes(product.subCategory)
+                )
+                    score += 100;
 
-            // Same category
-            if (
-                favouriteCategories.includes(product.category)
-            )
-                score += 60;
+                // Same category
+                if (
+                    favouriteCategories.includes(product.category)
+                )
+                    score += 60;
 
-            // Popularity
-            score += product.totalSales * 3;
+                // Popularity
+                score += product.totalSales * 3;
 
-            // Rating
-            score += product.averageRating * 15;
+                // Rating
+                score += product.averageRating * 15;
 
-            // Views
-            score += product.totalViews * 0.05;
+                // Views
+                score += product.totalViews * 0.05;
 
-            // Penalize already purchased
-            if (purchasedIds.includes(product.id))
-                score -= 500;
+                // Penalize already purchased
+                if (purchasedIds.includes(product.id))
+                    score -= 500;
 
-            return {
-                ...product,
-                recommendationScore: score
-            };
+                return {
+                    ...product,
+                    recommendationScore: score
+                };
 
-        });
+            });
 
         scoredProducts.sort(
             (a, b) =>
                 b.recommendationScore -
                 a.recommendationScore
         );
+
+        if (scoredProducts.length === 0) {
+
+            const fallback = await prisma.product.findMany({
+
+                where: {
+                    quantity: {
+                        gt: 0
+                    },
+                    isArchived: false
+                },
+
+                include: {
+                    store: true
+                }
+
+            });
+
+            return NextResponse.json(fallback.slice(0, 20));
+
+        }
 
         return NextResponse.json(
             scoredProducts.slice(0, 20)
