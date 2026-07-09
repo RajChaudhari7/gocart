@@ -151,7 +151,6 @@ Description: ${p.description}
                 role: "system",
 
                 content: `
-
 You are Nandurbar Bazar AI.
 
 You help users with:
