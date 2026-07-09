@@ -36,28 +36,48 @@ export default function RecommendedProducts() {
 
     if (loading) {
         return (
-            <section className="py-14">
+            <section className="mt-16">
 
-                <div className="flex items-center gap-3 mb-8">
+                <div className="rounded-3xl border border-slate-800 bg-slate-900/40 backdrop-blur-xl p-6 md:p-8">
 
-                    <Sparkles className="text-cyan-400" />
+                    <div className="flex items-center gap-3 mb-8">
 
-                    <h2 className="text-3xl font-black text-white">
-                        Recommended For You
-                    </h2>
-
-                </div>
-
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
-
-                    {Array.from({ length: 5 }).map((_, index) => (
-
-                        <div
-                            key={index}
-                            className="h-72 rounded-3xl bg-white/5 animate-pulse"
+                        <Sparkles
+                            className="text-cyan-400"
+                            size={26}
                         />
 
-                    ))}
+                        <div>
+
+                            <h2 className="text-2xl md:text-3xl font-black text-white">
+
+                                Recommended For You
+
+                            </h2>
+
+                            <p className="text-slate-400 text-sm">
+
+                                Based on your shopping history
+
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4 md:gap-6">
+
+                        {products.map(product => (
+
+                            <ProductCard
+                                key={product.id}
+                                product={product}
+                                storeIsActive={product.store?.isActive}
+                            />
+
+                        ))}
+
+                    </div>
 
                 </div>
 
