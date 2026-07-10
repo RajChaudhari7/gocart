@@ -30,7 +30,7 @@ function ShopContent() {
   const [sort, setSort] = useState('')
   const [priceRange, setPriceRange] = useState('ALL')
   const [showMobileFilter, setShowMobileFilter] = useState(false)
-  const [searchInput, setSearchInput] = useState(search || '')
+  const [searchInput, setSearchInput] = useState("")
 
   // Sync category from URL
   useEffect(() => {
