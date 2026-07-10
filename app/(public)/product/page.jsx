@@ -41,6 +41,7 @@ function ShopContent() {
   const [priceRange, setPriceRange] = useState('ALL')
   const [showMobileFilter, setShowMobileFilter] = useState(false)
   const [searchInput, setSearchInput] = useState("")
+  const [smartProducts, setSmartProducts] = useState([]);
 
   // Sync category from URL
   useEffect(() => {
@@ -74,7 +75,7 @@ function ShopContent() {
         setLoadingSearch(true);
 
         const { data } = await axios.post(
-          "/api/search/smart",
+          "/api/search/suggestions",
           {
             query: searchInput,
           }
@@ -140,7 +141,10 @@ function ShopContent() {
 
   /* 🔥 FILTER + SORT */
 
-  const sourceProducts = products;
+  const sourceProducts =
+    smartProducts.length > 0
+      ? smartProducts
+      : products;
 
 
   const filteredProducts = useMemo(() => {
@@ -225,44 +229,57 @@ function ShopContent() {
 
             <input
               type="text"
-              placeholder="Search products..."
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               onFocus={() => {
-
                 if (dropdownData.products.length)
                   setShowDropdown(true);
+              }}
+              onKeyDown={async (e) => {
+                if (e.key !== "Enter") return;
 
+                setShowDropdown(false);
+
+                try {
+
+                  const { data } = await axios.post(
+                    "/api/search/smart",
+                    {
+                      query: searchInput,
+                    }
+                  );
+
+                  // Replace the product grid
+                  setSmartProducts(data.products);
+
+                } catch (err) {
+                  console.log(err);
+                }
               }}
               className="
-        w-full
-        pl-11
-        pr-5
-        py-3.5
-        rounded-full
-        bg-slate-900
-        border
-        border-slate-800
-        text-white
-        placeholder:text-slate-500
-        outline-none
-        focus:border-indigo-500
-        transition
-        "
+            w-full
+            pl-11
+            pr-5
+            py-3.5
+            rounded-full
+            bg-slate-900
+            border
+            border-slate-800
+            text-white
+            placeholder:text-slate-500
+            outline-none
+            focus:border-indigo-500
+            transition
+            "
             />
 
             {showDropdown && (
 
               <SearchDropdown
-
                 loading={loadingSearch}
-
-                data={dropdownData}
-
-                closeDropdown={() => setShowDropdown(false)}
-
+                results={dropdownData}
+                onClose={() => setShowDropdown(false)}
               />
-
             )}
 
           </div>
@@ -408,7 +425,17 @@ function ShopContent() {
                 <h3 className="text-xl font-bold text-white mb-2">No products found</h3>
                 <p className="text-slate-400">Try adjusting your filters or search query.</p>
                 <button
-                  onClick={() => { handleCategoryChange('all'); setPriceRange('ALL'); setSearchInput(''); }}
+                  onClick={() => {
+
+                    handleCategoryChange("all");
+
+                    setPriceRange("ALL");
+
+                    setSearchInput("");
+
+                    setSmartProducts([]);
+
+                  }}
                   className="mt-6 text-indigo-400 font-semibold hover:text-indigo-300 transition-colors"
                 >
                   Clear all filters
