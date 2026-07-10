@@ -74,7 +74,7 @@ function ShopContent() {
 
         setLoadingSearch(true);
 
-        const { data } = await axios.post(
+        const { data } = await axios.get(
           "/api/search/suggestions",
           {
             query: searchInput,
