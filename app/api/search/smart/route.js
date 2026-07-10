@@ -1,5 +1,5 @@
+import { searchAI } from "@/configs/searchAI";
 import prisma from "@/lib/prisma";
-import { openai } from "@/configs/openai";
 import { NextResponse } from "next/server";
 
 export async function POST(request) {
@@ -24,8 +24,8 @@ export async function POST(request) {
 
         // ---------- AI SEARCH ----------
         try {
-            const completion = await openai.chat.completions.create({
-                model: process.env.OPENAI_MODEL || "gemini-3-flash-preview",
+            const completion = await searchAI.chat.completions.create({
+                model: process.env.SEARCH_AI_MODEL || "gemini-3-flash-preview",
 
                 messages: [
                     {
