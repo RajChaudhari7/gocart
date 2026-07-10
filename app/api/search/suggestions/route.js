@@ -20,6 +20,11 @@ export async function GET(request) {
         // Products
         //------------------------------------
 
+        const words = query
+            .toLowerCase()
+            .split(" ")
+            .filter(Boolean);
+
         const products = await prisma.product.findMany({
             where: {
                 quantity: {
@@ -32,28 +37,41 @@ export async function GET(request) {
                     isActive: true,
                 },
 
-                OR: [
+                OR: words.flatMap((word) => [
                     {
                         name: {
-                            contains: query,
+                            contains: word,
+                            mode: "insensitive",
+                        },
+                    },
+
+                    {
+                        description: {
+                            contains: word,
                             mode: "insensitive",
                         },
                     },
 
                     {
                         category: {
-                            contains: query,
+                            contains: word,
                             mode: "insensitive",
                         },
                     },
 
                     {
                         subCategory: {
-                            contains: query,
+                            contains: word,
                             mode: "insensitive",
                         },
                     },
-                ],
+
+                    {
+                        keywords: {
+                            has: word,
+                        },
+                    },
+                ]),
             },
 
             include: {
@@ -101,6 +119,10 @@ export async function GET(request) {
             ...new Set([
                 query,
                 ...products.map((p) => p.name),
+                ...products.map((p) => p.category),
+                ...products
+                    .map((p) => p.subCategory)
+                    .filter(Boolean),
             ]),
         ].slice(0, 8);
 
