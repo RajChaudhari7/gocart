@@ -162,7 +162,7 @@ function ShopContent() {
         return getAIScore(b) - getAIScore(a)
 
       })
-  }, [sourceProducts, search, category, subCategory, priceRange, sort])
+  }, [sourceProducts, category, subCategory, priceRange, sort])
 
   // Custom handler for Category selection
   const handleCategoryChange = (newCat) => {
