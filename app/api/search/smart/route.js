@@ -102,9 +102,7 @@ Return ONLY JSON.
             },
         });
 
-        const keywords = (aiSearch.keywords || []).map((k) =>
-            k.toLowerCase()
-        );
+
 
         //-----------------------------------
         // Score Products
@@ -121,6 +119,10 @@ Return ONLY JSON.
 
             const subCategory = (product.subCategory || "").toLowerCase();
 
+            const keywords = (aiSearch.keywords || []).map((k) =>
+                k.toLowerCase()
+            );
+
             keywords.forEach((keyword) => {
                 if (name.includes(keyword)) score += 120;
 
@@ -129,6 +131,13 @@ Return ONLY JSON.
                 if (category.includes(keyword)) score += 80;
 
                 if (subCategory.includes(keyword)) score += 90;
+                if (
+                    keywordsArray.some(k =>
+                        k.includes(keyword)
+                    )
+                ) {
+                    score += 100;
+                }
             });
 
             if (

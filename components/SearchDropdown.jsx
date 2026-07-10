@@ -100,7 +100,7 @@ export default function SearchDropdown({
 
                                 <Link
                                     key={product.id}
-                                    href={`/product/${product.id}`}
+                                    href={`/product?search=${encodeURIComponent(product.name)}`}
                                     onClick={onClose}
                                     className="
                   flex

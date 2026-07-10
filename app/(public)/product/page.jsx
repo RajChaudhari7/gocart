@@ -21,6 +21,7 @@ const PRICE_RANGES = [
 function ShopContent() {
   const searchParams = useSearchParams()
   const categoryFromURL = searchParams.get('category')
+  const searchFromURL = searchParams.get("search");
   const router = useRouter()
   const [dropdownData, setDropdownData] = useState({
     products: [],
@@ -42,6 +43,10 @@ function ShopContent() {
   const [showMobileFilter, setShowMobileFilter] = useState(false)
   const [searchInput, setSearchInput] = useState("")
   const [smartProducts, setSmartProducts] = useState([]);
+
+
+
+
 
   // Sync category from URL
   useEffect(() => {
@@ -101,6 +106,38 @@ function ShopContent() {
 
   }, [searchInput]);
 
+  useEffect(() => {
+
+    if (!searchFromURL) {
+      setSmartProducts([]);
+      return;
+    }
+
+    setSearchInput(searchFromURL);
+
+    const loadProducts = async () => {
+
+      try {
+
+        const { data } = await axios.post(
+          "/api/search/smart",
+          {
+            query: searchFromURL,
+          }
+        );
+
+        setSmartProducts(data.products);
+
+      } catch (err) {
+        console.log(err);
+      }
+
+    };
+
+    loadProducts();
+
+  }, [searchFromURL]);
+
   /* ✅ DYNAMIC CATEGORIES */
   const allCategories = useMemo(() => {
     const productCategories = products
@@ -142,7 +179,7 @@ function ShopContent() {
   /* 🔥 FILTER + SORT */
 
   const sourceProducts =
-    smartProducts.length > 0
+    searchInput.trim()
       ? smartProducts
       : products;
 
@@ -242,10 +279,12 @@ function ShopContent() {
 
                 try {
 
-                  const { data } = await axios.post(
-                    "/api/search/smart",
+                  const { data } = await axios.get(
+                    "/api/search/suggestions",
                     {
-                      query: searchInput,
+                      params: {
+                        q: searchInput,
+                      },
                     }
                   );
 
