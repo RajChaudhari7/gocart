@@ -1,7 +1,7 @@
 import prisma from "@/lib/prisma";
-import { openai } from "@/configs/openai";
 import { NextResponse } from "next/server";
 import { getAuth } from "@clerk/nextjs/server";
+import { chatAI } from "@/configs/chatAI";
 
 export async function POST(request) {
     try {
@@ -214,10 +214,10 @@ ${orderContext}
 
         ];
 
-        const response = await openai.chat.completions.create({
+        const response = await chatAI.chat.completions.create({
 
             model:
-                process.env.OPENAI_MODEL ||
+                process.env.CHAT_AI_MODEL ||
                 "gemini-3-flash-preview",
 
             messages,
