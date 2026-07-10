@@ -72,6 +72,7 @@ function ShopContent() {
           suggestions: [],
         });
 
+
         return;
       }
 
@@ -87,6 +88,8 @@ function ShopContent() {
         );
 
         setDropdownData(data);
+        console.log("Dropdown Data:", data);
+
 
         setShowDropdown(true);
 
