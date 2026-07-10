@@ -19,9 +19,9 @@ const PRICE_RANGES = [
 
 function ShopContent() {
   const searchParams = useSearchParams()
-  const search = searchParams.get('search')
   const categoryFromURL = searchParams.get('category')
   const router = useRouter()
+  const [searchResults, setSearchResults] = useState([]);
 
   const products = useSelector((state) => state.product.list || [])
 
@@ -47,26 +47,23 @@ function ShopContent() {
 
       if (!searchInput.trim()) {
 
-        router.push("/product");
+        setSearchResults([]);
         return;
 
       }
 
       try {
 
-        const { data } = await axios.post("/api/search/smart", {
-          query: searchInput,
-        });
+        const { data } = await axios.post(
+          "/api/search/smart",
+          {
+            query: searchInput,
+          }
+        );
 
-        console.log("AI Search Response:", data);
+        console.log(data);
 
-        if (data.search) {
-
-          router.push(
-            `/product?search=${encodeURIComponent(data.search)}`
-          );
-
-        }
+        setSearchResults(data.products || []);
 
       } catch (err) {
 
@@ -74,7 +71,7 @@ function ShopContent() {
 
       }
 
-    }, 400);
+    }, 300);
 
     return () => clearTimeout(delay);
 
@@ -119,31 +116,15 @@ function ShopContent() {
   }
 
   /* 🔥 FILTER + SORT */
+
+  const sourceProducts =
+    searchInput.trim().length > 0
+      ? searchResults
+      : products;
+
+
   const filteredProducts = useMemo(() => {
-    return products
-      .filter((p) => {
-
-        if (!search) return true;
-
-        const q = search.toLowerCase();
-
-        return (
-
-          p.name?.toLowerCase().includes(q) ||
-
-          p.description?.toLowerCase().includes(q) ||
-
-          p.category?.toLowerCase().includes(q) ||
-
-          p.subCategory?.toLowerCase().includes(q) ||
-
-          p.keywords?.some(k =>
-            k.toLowerCase().includes(q)
-          )
-
-        );
-
-      })
+    return sourceProducts
       .filter((p) =>
         category === 'all'
           ? true
@@ -181,7 +162,7 @@ function ShopContent() {
         return getAIScore(b) - getAIScore(a)
 
       })
-  }, [products, search, category, subCategory, priceRange, sort])
+  }, [sourceProducts, search, category, subCategory, priceRange, sort])
 
   // Custom handler for Category selection
   const handleCategoryChange = (newCat) => {
