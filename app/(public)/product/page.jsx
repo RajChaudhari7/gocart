@@ -54,12 +54,11 @@ function ShopContent() {
 
       try {
 
-        const { data } = await axios.post(
-          "/api/search/smart",
-          {
-            query: searchInput
-          }
-        );
+        const { data } = await axios.post("/api/search/smart", {
+          query: searchInput,
+        });
+
+        console.log("AI Search Response:", data);
 
         if (data.search) {
 
