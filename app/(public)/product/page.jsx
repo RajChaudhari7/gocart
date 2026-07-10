@@ -7,6 +7,7 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { useSelector } from 'react-redux'
 import { motion, AnimatePresence } from 'framer-motion'
 import axios from 'axios'
+import SearchDropdown from '@/components/SearchDropdown'
 
 /* ✅ PRICE RANGES */
 const PRICE_RANGES = [
@@ -21,7 +22,16 @@ function ShopContent() {
   const searchParams = useSearchParams()
   const categoryFromURL = searchParams.get('category')
   const router = useRouter()
-  const [searchResults, setSearchResults] = useState([]);
+  const [dropdownData, setDropdownData] = useState({
+    products: [],
+    categories: [],
+    stores: [],
+    suggestions: [],
+  });
+
+  const [showDropdown, setShowDropdown] = useState(false);
+
+  const [loadingSearch, setLoadingSearch] = useState(false);
 
   const products = useSelector((state) => state.product.list || [])
 
@@ -47,12 +57,21 @@ function ShopContent() {
 
       if (!searchInput.trim()) {
 
-        setSearchResults([]);
-        return;
+        setShowDropdown(false);
 
+        setDropdownData({
+          products: [],
+          stores: [],
+          categories: [],
+          suggestions: [],
+        });
+
+        return;
       }
 
       try {
+
+        setLoadingSearch(true);
 
         const { data } = await axios.post(
           "/api/search/smart",
@@ -61,13 +80,17 @@ function ShopContent() {
           }
         );
 
-        console.log(data);
+        setDropdownData(data);
 
-        setSearchResults(data.products || []);
+        setShowDropdown(true);
 
       } catch (err) {
 
         console.log(err);
+
+      } finally {
+
+        setLoadingSearch(false);
 
       }
 
@@ -117,10 +140,7 @@ function ShopContent() {
 
   /* 🔥 FILTER + SORT */
 
-  const sourceProducts =
-    searchInput.trim().length > 0
-      ? searchResults
-      : products;
+  const sourceProducts = products;
 
 
   const filteredProducts = useMemo(() => {
@@ -197,18 +217,54 @@ function ShopContent() {
       <div className="sticky top-[70px] md:top-[80px] z-40 bg-slate-950/80 backdrop-blur-xl border-b border-slate-800/80">
         <div className="max-w-4xl mx-auto px-4 py-4">
           <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+
+            <Search
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"
+              size={18}
+            />
+
             <input
               type="text"
               placeholder="Search products..."
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              className="w-full pl-11 pr-5 py-3.5 rounded-full 
-              bg-slate-900 border border-slate-800 
-              text-white placeholder-slate-500 
-              outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 
-              transition-all duration-300 text-sm sm:text-base shadow-sm"
+              onFocus={() => {
+
+                if (dropdownData.products.length)
+                  setShowDropdown(true);
+
+              }}
+              className="
+        w-full
+        pl-11
+        pr-5
+        py-3.5
+        rounded-full
+        bg-slate-900
+        border
+        border-slate-800
+        text-white
+        placeholder:text-slate-500
+        outline-none
+        focus:border-indigo-500
+        transition
+        "
             />
+
+            {showDropdown && (
+
+              <SearchDropdown
+
+                loading={loadingSearch}
+
+                data={dropdownData}
+
+                closeDropdown={() => setShowDropdown(false)}
+
+              />
+
+            )}
+
           </div>
         </div>
       </div>
