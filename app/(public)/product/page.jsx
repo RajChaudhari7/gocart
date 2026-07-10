@@ -83,7 +83,9 @@ function ShopContent() {
         const { data } = await axios.get(
           "/api/search/suggestions",
           {
-            query: searchInput,
+            params: {
+              q: searchInput,
+            },
           }
         );
 
