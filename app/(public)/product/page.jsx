@@ -45,6 +45,40 @@ function ShopContent() {
   const [smartProducts, setSmartProducts] = useState([]);
 
 
+  const searchProducts = async (text) => {
+    try {
+      setSearchInput(text);
+      setShowDropdown(false);
+
+      const { data } = await axios.post("/api/search/smart", {
+        query: text,
+      });
+
+      setSmartProducts(data.products);
+
+      router.replace(`/product?search=${encodeURIComponent(text)}`);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  const filterCategory = (cat) => {
+    setShowDropdown(false);
+
+    setSearchInput("");
+
+    setSmartProducts([]);
+
+    handleCategoryChange(cat);
+
+    router.replace(`/product?category=${encodeURIComponent(cat)}`);
+  };
+
+  const openStore = (username) => {
+    setShowDropdown(false);
+
+    router.push(`/shop/${username}`);
+  };
 
 
 
