@@ -50,11 +50,24 @@ function ShopContent() {
 
   // Sync category from URL
   useEffect(() => {
+
     if (categoryFromURL) {
-      setCategory(categoryFromURL)
-      setSubCategory('all') // Reset subcategory when URL category changes
+
+      setCategory(categoryFromURL);
+
+      setSubCategory("all");
+
+      setSearchInput("");
+
+      setSmartProducts([]);
+
+    } else {
+
+      setCategory("all");
+
     }
-  }, [categoryFromURL])
+
+  }, [categoryFromURL]);
 
   // Debounced Search
   useEffect(() => {
@@ -114,32 +127,29 @@ function ShopContent() {
   useEffect(() => {
 
     if (!searchFromURL) {
+
       setSmartProducts([]);
+
       return;
+
     }
 
     setSearchInput(searchFromURL);
 
-    const loadProducts = async () => {
+    const fetchProducts = async () => {
 
-      try {
+      const { data } = await axios.post(
+        "/api/search/smart",
+        {
+          query: searchFromURL,
+        }
+      );
 
-        const { data } = await axios.post(
-          "/api/search/smart",
-          {
-            query: searchFromURL,
-          }
-        );
-
-        setSmartProducts(data.products);
-
-      } catch (err) {
-        console.log(err);
-      }
+      setSmartProducts(data.products);
 
     };
 
-    loadProducts();
+    fetchProducts();
 
   }, [searchFromURL]);
 
@@ -184,7 +194,7 @@ function ShopContent() {
   /* 🔥 FILTER + SORT */
 
   const sourceProducts =
-    searchInput.trim()
+    searchFromURL
       ? smartProducts
       : products;
 
@@ -232,10 +242,16 @@ function ShopContent() {
 
   // Custom handler for Category selection
   const handleCategoryChange = (newCat) => {
-    setCategory(newCat)
-    setSubCategory('all') // Reset subcategory when changing main category
-  }
 
+    setCategory(newCat);
+
+    setSubCategory("all");
+
+    setSearchInput("");
+
+    setSmartProducts([]);
+
+  };
   return (
     <section className="min-h-screen bg-slate-950 text-slate-200">
 
@@ -277,28 +293,14 @@ function ShopContent() {
                 if (dropdownData.products.length)
                   setShowDropdown(true);
               }}
-              onKeyDown={async (e) => {
+              onKeyDown={(e) => {
                 if (e.key !== "Enter") return;
 
                 setShowDropdown(false);
 
-                try {
-
-                  const { data } = await axios.get(
-                    "/api/search/suggestions",
-                    {
-                      params: {
-                        q: searchInput,
-                      },
-                    }
-                  );
-
-                  // Replace the product grid
-                  setSmartProducts(data.products);
-
-                } catch (err) {
-                  console.log(err);
-                }
+                router.push(
+                  `/product?search=${encodeURIComponent(searchInput)}`
+                );
               }}
               className="
             w-full
@@ -323,6 +325,9 @@ function ShopContent() {
                 loading={loadingSearch}
                 results={dropdownData}
                 onClose={() => setShowDropdown(false)}
+                onProductClick={searchProducts}
+                onCategoryClick={filterCategory}
+                onStoreClick={openStore}
               />
             )}
 
@@ -470,6 +475,8 @@ function ShopContent() {
                 <p className="text-slate-400">Try adjusting your filters or search query.</p>
                 <button
                   onClick={() => {
+
+                    router.push("/product");
 
                     handleCategoryChange("all");
 

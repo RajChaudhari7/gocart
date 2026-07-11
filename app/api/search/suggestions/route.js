@@ -78,9 +78,10 @@ export async function GET(request) {
                 store: {
                     select: {
                         id: true,
+                        username: true,
                         name: true,
-                        isActive:true
-                    },
+                        isActive: true,
+                },
                 },
             },
 
@@ -103,15 +104,15 @@ export async function GET(request) {
         // Stores
         //------------------------------------
 
+
         const stores = [
             ...new Map(
                 products.map((p) => [
-                    p.store.id,
+                    p.store.username,
                     p.store,
                 ])
             ).values(),
         ];
-
         //------------------------------------
         // Suggestions
         //------------------------------------

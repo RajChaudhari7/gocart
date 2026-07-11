@@ -13,6 +13,9 @@ export default function SearchDropdown({
     loading,
     results,
     onClose,
+    onProductClick,
+    onCategoryClick,
+    onStoreClick,
 }) {
     if (!loading && !results) return null;
 
@@ -98,10 +101,10 @@ export default function SearchDropdown({
 
                             {results.products.map((product) => (
 
-                                <Link
+                                <button
                                     key={product.id}
-                                    href={`/product?search=${encodeURIComponent(product.name)}`}
-                                    onClick={onClose}
+                                    type="button"
+                                    onClick={() => onProductClick(product.name)}
                                     className="
                   flex
                   items-center
@@ -138,7 +141,7 @@ export default function SearchDropdown({
                                         ₹{product.price}
                                     </div>
 
-                                </Link>
+                                </button>
 
                             ))}
 
@@ -158,10 +161,10 @@ export default function SearchDropdown({
 
                             {results.categories.map((cat) => (
 
-                                <Link
+                                <button
                                     key={cat}
-                                    href={`/product?category=${encodeURIComponent(cat)}`}
-                                    onClick={onClose}
+                                    type="button"
+                                    onClick={() => onCategoryClick(cat)}
                                     className="
                   flex
                   items-center
@@ -183,7 +186,7 @@ export default function SearchDropdown({
                                         {cat}
                                     </span>
 
-                                </Link>
+                                </button>
 
                             ))}
 
@@ -203,10 +206,10 @@ export default function SearchDropdown({
 
                             {results.stores.map((store) => (
 
-                                <Link
+                                <button
                                     key={store.id}
-                                    href={`/stores/${store.id}`}
-                                    onClick={onClose}
+                                    type="button"
+                                    onClick={() => onStoreClick(store.username)}
                                     className="
                   flex
                   items-center
@@ -238,7 +241,7 @@ export default function SearchDropdown({
                                         className="text-slate-500"
                                     />
 
-                                </Link>
+                                </button>
 
                             ))}
 
