@@ -21,6 +21,8 @@ model User {
 
   returnRequests  ReturnRequest[]
   userPreferences UserPreference[]
+  activities      ProductView[]
+  userActivity    UserActivity[]
 }
 
 model Product {
@@ -56,6 +58,8 @@ model Product {
 
   returnItems     ReturnItem[]
   userPreferences UserPreference[]
+  views           ProductView[]
+  userActivities  UserActivity[]
 
   @@index([barcode, storeId])
 }
@@ -412,4 +416,49 @@ model UserPreference {
   @@unique([userId, productId])
   @@index([userId])
   @@index([category])
+}
+
+model UserActivity {
+  id String @id @default(cuid())
+
+  userId String
+
+  productId String?
+
+  category String?
+
+  action ActivityType
+
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  product Product? @relation(fields: [productId], references: [id])
+}
+
+enum ActivityType {
+  SEARCH
+  VIEW
+  CART
+  WISHLIST
+  PURCHASE
+}
+
+model ProductView {
+  id String @id @default(cuid())
+
+  userId    String
+  productId String
+
+  category    String?
+  subCategory String?
+
+  viewedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([productId])
 }

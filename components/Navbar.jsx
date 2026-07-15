@@ -51,6 +51,8 @@ const Navbar = () => {
   const [deferredPrompt, setDeferredPrompt] = useState(null)
   const [isInstalled, setIsInstalled] = useState(false)
   const [isTWA, setIsTWA] = useState(false)
+  const [isAndroid, setIsAndroid] = useState(false)
+  const [isIOS, setIsIOS] = useState(false)
 
   /* ================= PWA ================= */
   useEffect(() => {
@@ -61,6 +63,16 @@ const Navbar = () => {
 
       const twa =
         document.referrer.includes('android-app://')
+
+      const ua = navigator.userAgent.toLowerCase()
+
+      setIsAndroid(/android/.test(ua))
+
+      setIsIOS(
+        /iphone|ipad|ipod/.test(ua) ||
+        (navigator.platform === "MacIntel" &&
+          navigator.maxTouchPoints > 1)
+      )
 
       setIsInstalled(standalone)
       setIsTWA(twa || standalone)
@@ -97,20 +109,49 @@ const Navbar = () => {
   }, [])
 
   const installApp = async () => {
-    if (!deferredPrompt) {
-      alert('Use browser menu ⋮ and tap Install App')
+
+    // Android
+    if (isAndroid) {
+      window.location.href = "/apk/nandurbar-bazar.apk"
       return
     }
 
-    deferredPrompt.prompt()
+    // iPhone / iPad
+    if (isIOS) {
 
-    const result = await deferredPrompt.userChoice
+      alert(
+        `Install Nandurbar Bazar
 
-    if (result.outcome === 'accepted') {
-      setIsInstalled(true)
+1. Tap Share (⬆️)
+
+2. Tap "Add to Home Screen"
+
+3. Tap Add`
+      )
+
+      return
     }
 
-    setDeferredPrompt(null)
+    // Windows / macOS
+
+    if (deferredPrompt) {
+
+      deferredPrompt.prompt()
+
+      const result = await deferredPrompt.userChoice
+
+      if (result.outcome === "accepted") {
+        setIsInstalled(true)
+      }
+
+      setDeferredPrompt(null)
+
+      return
+    }
+
+    alert(
+      "Open this website in Google Chrome or Microsoft Edge to install the desktop app."
+    )
   }
 
   const isActive = (href) => pathname === href
@@ -125,6 +166,17 @@ const Navbar = () => {
       return () => clearTimeout(timer)
     }
   }, [cartCount])
+
+  const getButtonText = () => {
+
+    if (isAndroid)
+      return "Download Android App"
+
+    if (isIOS)
+      return "Install on iPhone"
+
+    return "Install Desktop App"
+  }
 
   const desktopLinks = [
     { name: 'Home', href: '/' },
@@ -166,13 +218,11 @@ const Navbar = () => {
           </Link>
 
           {!isTWA && (
-            <a
-              href="/apk/nandurbar-bazar.apk"
-              download
-              className="text-xs px-3 py-1 rounded-full bg-cyan-400 text-black font-medium"
+            <button
+              onClick={installApp}
             >
-              Download App
-            </a>
+              {getButtonText()}
+            </button>
           )}
 
           {!user ? (
@@ -249,15 +299,13 @@ const Navbar = () => {
                 </span>
               )}
             </Link>
-
+            
             {!isTWA && (
-              <a
-                href="/apk/nandurbar-bazar.apk"
-                download
-                className="px-4 py-2 rounded-full bg-gradient-to-r from-cyan-400 to-emerald-400 text-black font-medium"
+              <button
+                onClick={installApp}
               >
-                Download App
-              </a>
+                {getButtonText()}
+              </button>
             )}
 
             {!user ? (
