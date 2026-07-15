@@ -33,7 +33,19 @@ export async function GET(req, { params }) {
                     gt: 0
                 },
 
-                isArchived: false
+                isArchived: false,
+
+                OR: [
+
+                    {
+                        subCategory: currentProduct.subCategory
+                    },
+
+                    {
+                        category: currentProduct.category
+                    }
+
+                ]
 
             },
 
@@ -52,14 +64,14 @@ export async function GET(req, { params }) {
                 product.subCategory &&
                 product.subCategory === currentProduct.subCategory
             ) {
-                score += 100;
+                score += 300;
             }
 
             // Same Category
             if (
                 product.category === currentProduct.category
             ) {
-                score += 60;
+                score += 120;
             }
 
             // Featured
@@ -68,7 +80,7 @@ export async function GET(req, { params }) {
 
             // Same Store
             if (product.storeId === currentProduct.storeId)
-                score += 30;
+                score += 100;
 
             // Rating
             score += product.averageRating * 12;
@@ -80,8 +92,11 @@ export async function GET(req, { params }) {
             const difference =
                 Math.abs(product.price - currentProduct.price);
 
-            if (difference <= currentProduct.price * 0.20)
-                score += 15;
+            if (difference <= currentProduct.price * 0.10)
+                score += 40;
+
+            else if (difference <= currentProduct.price * 0.20)
+                score += 20;
 
             return {
 
