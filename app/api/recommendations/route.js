@@ -111,6 +111,38 @@ export async function GET(req) {
             )
         ];
 
+        const activities = await prisma.userActivity.findMany({
+            where: {
+                userId,
+            },
+            orderBy: {
+                createdAt: "desc",
+            },
+            take: 150,
+        });
+
+        const viewedProducts = activities
+            .filter(a => a.action === "VIEW")
+            .map(a => a.productId);
+
+        const searchedCategories = activities
+            .filter(a => a.action === "SEARCH")
+            .map(a => a.category)
+            .filter(Boolean);
+
+        const viewedCategories = activities
+            .filter(a => a.action === "VIEW")
+            .map(a => a.category)
+            .filter(Boolean);
+
+        const interestedCategories = [
+            ...new Set([
+                ...searchedCategories,
+                ...viewedCategories,
+                ...favouriteCategories,
+            ]),
+        ];
+
         const products = await prisma.product.findMany({
 
             where: {
@@ -135,31 +167,40 @@ export async function GET(req) {
 
                 let score = 0;
 
-                // Featured
+                /* Featured */
                 if (product.featured)
+                    score += 100;
+
+                /* Purchased Category */
+                if (favouriteCategories.includes(product.category))
+                    score += 150;
+
+                /* Viewed / Search Category */
+                if (interestedCategories.includes(product.category))
                     score += 120;
 
-                // Same subcategory
+                /* Purchased SubCategory */
                 if (
                     product.subCategory &&
                     favouriteSubCategories.includes(product.subCategory)
                 )
-                    score += 100;
+                    score += 180;
 
-                // Same category
-                if (
-                    favouriteCategories.includes(product.category)
-                )
-                    score += 60;
+                /* User viewed this product before */
+                if (viewedProducts.includes(product.id))
+                    score += 70;
 
-                // Popularity
-                score += product.totalSales * 3;
+                /* Popular Products */
+                score += product.totalSales * 4;
 
-                // Rating
-                score += product.averageRating * 15;
+                /* Highly Rated */
+                score += product.averageRating * 25;
 
-                // Views
-                score += product.totalViews * 0.05;
+                /* Trending */
+                score += product.totalViews * 0.15;
+
+                /* Slight randomness */
+                score += Math.random() * 40;
 
                 // Penalize already purchased
                 if (purchasedIds.includes(product.id))
