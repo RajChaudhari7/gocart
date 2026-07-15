@@ -69,45 +69,45 @@ export async function GET(req) {
 
         });
 
-        // No purchase history
-        if (preferences.length === 0) {
+        // // No purchase history
+        // if (preferences.length === 0) {
 
-            const products = await prisma.product.findMany({
+        //     const products = await prisma.product.findMany({
 
-                where: {
-                    isArchived: false,
-                    quantity: {
-                        gt: 0
-                    }
-                },
+        //         where: {
+        //             isArchived: false,
+        //             quantity: {
+        //                 gt: 0
+        //             }
+        //         },
 
-                include: {
-                    store: true
-                }
+        //         include: {
+        //             store: true
+        //         }
 
-            });
+        //     });
 
-            products.sort((a, b) => {
+        //     products.sort((a, b) => {
 
-                const scoreA =
-                    (a.featured ? 1000 : 0) +
-                    a.totalSales * 5 +
-                    a.averageRating * 40 +
-                    a.totalViews;
+        //         const scoreA =
+        //             (a.featured ? 1000 : 0) +
+        //             a.totalSales * 5 +
+        //             a.averageRating * 40 +
+        //             a.totalViews;
 
-                const scoreB =
-                    (b.featured ? 1000 : 0) +
-                    b.totalSales * 5 +
-                    b.averageRating * 40 +
-                    b.totalViews;
+        //         const scoreB =
+        //             (b.featured ? 1000 : 0) +
+        //             b.totalSales * 5 +
+        //             b.averageRating * 40 +
+        //             b.totalViews;
 
-                return scoreB - scoreA;
+        //         return scoreB - scoreA;
 
-            });
+        //     });
 
-            return NextResponse.json(products.slice(0, 20));
+        //     return NextResponse.json(products.slice(0, 20));
 
-        }
+        // }
 
         const purchasedIds = preferences.map(p => p.productId);
 
@@ -188,6 +188,17 @@ export async function GET(req) {
 
         });
 
+        const categoryScore = {};
+
+        views.forEach(view => {
+
+            if (!view.category) return;
+
+            categoryScore[view.category] =
+                (categoryScore[view.category] || 0) + 1;
+
+        });
+
         const scoredProducts = products
             .filter(product => !purchasedIds.includes(product.id))
             .map(product => {
@@ -199,20 +210,32 @@ export async function GET(req) {
                     score += 100;
 
                 /* Purchased Category */
-                if (favouriteCategories.includes(product.category))
-                    score += 150;
+
+
+                score += (categoryScore[product.category] || 0) * 20;
 
                 const recentlyViewed = views.find(
-                    v => v.productId === product.id
+                    (v) => v.productId === product.id
                 );
 
                 if (recentlyViewed) {
-                    score += 40;
+
+                    const daysAgo =
+                        (Date.now() - new Date(recentlyViewed.viewedAt).getTime()) / 86400000;
+
+                    if (daysAgo < 3)
+                        score += 80;
+
+                    else if (daysAgo < 7)
+                        score += 40;
+
+                    else
+                        score += 10;
                 }
 
+
                 /* Viewed / Search Category */
-                if (interestedCategories.includes(product.category))
-                    score += 120;
+                score += (categoryScore[product.category] || 0) * 35;
 
                 /* Purchased SubCategory */
                 if (
@@ -235,11 +258,7 @@ export async function GET(req) {
                 score += product.totalViews * 0.15;
 
                 /* Slight randomness */
-                score += Math.random() * 40;
-
-                // Penalize already purchased
-                if (purchasedIds.includes(product.id))
-                    score -= 500;
+                score += Math.random() * 5;
 
                 return {
                     ...product,
