@@ -55,6 +55,20 @@ export async function GET(req) {
 
         });
 
+        const views = await prisma.productView.findMany({
+
+            where: {
+                userId
+            },
+
+            orderBy: {
+                viewedAt: "desc"
+            },
+
+            take: 100
+
+        });
+
         // No purchase history
         if (preferences.length === 0) {
 
@@ -98,19 +112,32 @@ export async function GET(req) {
         const purchasedIds = preferences.map(p => p.productId);
 
         const favouriteCategories = [
-            ...new Set(
-                preferences.map(p => p.category)
-            )
+
+            ...new Set([
+
+                ...preferences.map(p => p.category),
+
+                ...views.map(v => v.category)
+
+            ])
+
         ];
 
         const favouriteSubCategories = [
-            ...new Set(
-                preferences
-                    .map(p => p.subCategory)
-                    .filter(Boolean)
-            )
-        ];
 
+            ...new Set([
+
+                ...preferences
+                    .map(p => p.subCategory)
+                    .filter(Boolean),
+
+                ...views
+                    .map(v => v.subCategory)
+                    .filter(Boolean)
+
+            ])
+
+        ];
         const activities = await prisma.userActivity.findMany({
             where: {
                 userId,
@@ -174,6 +201,14 @@ export async function GET(req) {
                 /* Purchased Category */
                 if (favouriteCategories.includes(product.category))
                     score += 150;
+
+                const recentlyViewed = views.find(
+                    v => v.productId === product.id
+                );
+
+                if (recentlyViewed) {
+                    score += 40;
+                }
 
                 /* Viewed / Search Category */
                 if (interestedCategories.includes(product.category))

@@ -15,6 +15,7 @@ import {
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useUser } from "@clerk/nextjs"
+import axios from "axios";
 import toast from "react-hot-toast"
 import { setCartItemQuantity } from "@/lib/features/cart/cartSlice"
 import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-motion"
@@ -44,7 +45,7 @@ const toBase64 = (str) =>
 const ProductDetails = ({ product }) => {
   const dispatch = useDispatch()
   const router = useRouter()
-  const { isSignedIn } = useUser()
+  const { isSignedIn, user } = useUser()
   const cart = useSelector(state => state.cart.cartItems)
 
   const productId = product.id
@@ -76,6 +77,34 @@ const ProductDetails = ({ product }) => {
       setQuantity(1)
     }
   }, [cart, productId, maxQty])
+
+  /* ---------------- PRODUCT VIEW TRACKING ---------------- */
+
+  useEffect(() => {
+
+    if (!isSignedIn || !user || !product?.id) return;
+
+    const timer = setTimeout(async () => {
+
+      try {
+
+        await axios.post("/api/activity/view", {
+
+          productId: product.id,
+
+        });
+
+      } catch (error) {
+
+        console.log(error);
+
+      }
+
+    }, 3000); // User stayed on page for 3 seconds
+
+    return () => clearTimeout(timer);
+
+  }, [product?.id, isSignedIn, user]);
 
   /* ---------- HANDLERS ---------- */
   const handleAddToCart = () => {
