@@ -42,9 +42,7 @@ export default function ContinueBrowsing() {
 
             <section className="mt-10 md:mt-16">
 
-                <div className="rounded-3xl border border-slate-800 bg-slate-900/60 backdrop-blur-xl p-4 md:p-8">
-
-                    <div className="flex items-center gap-3 mb-6">
+<div className="rounded-3xl border border-slate-800 bg-gradient-to-br from-slate-950 via-slate-950 to-black backdrop-blur-xl p-4 md:p-8 shadow-2xl shadow-black/40">                    <div className="flex items-center gap-3 mb-6">
 
                         <div className="w-12 h-12 rounded-full bg-indigo-500/10 flex items-center justify-center">
 
