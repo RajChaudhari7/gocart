@@ -30,6 +30,7 @@ export async function GET() {
 
         });
 
+
         const data = stores.map((store) => ({
 
             id: store.id,
@@ -48,15 +49,13 @@ export async function GET() {
 
             ownerEmail: store.user?.email,
 
-            totalProducts: store.Product.length,
-
-            featuredProducts: store.Product.filter(
-                (product) => product.featured
-            ).length,
+            totalProducts: store._count.Product,
 
         }));
 
+
         return NextResponse.json(data);
+
 
     } catch (error) {
 
@@ -64,10 +63,10 @@ export async function GET() {
 
         return NextResponse.json(
             {
-                error: error.message,
+                error: error?.message || "Something went wrong"
             },
             {
-                status: 500,
+                status: 500
             }
         );
 
