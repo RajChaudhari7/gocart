@@ -49,7 +49,9 @@ export async function GET() {
 
             ownerEmail: store.user?.email,
 
-            totalProducts: store._count.Product,
+            _count: {
+                Product: store._count.Product
+            }
 
         }));
 
