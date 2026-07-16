@@ -6,6 +6,7 @@ import SplashWrapper from "@/components/SplashWrapper"
 import { GoogleAnalytics } from "@next/third-parties/google"
 import "./globals.css"
 import AIChatButton from "@/components/AIChat/AIChatButton"
+import CompareBar from "@/components/CompareBar"
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -128,6 +129,7 @@ export default function RootLayout({ children }) {
             </SplashWrapper>
             <Toaster />
             <AIChatButton />
+            <CompareBar />
           </StoreProvider>
           <GoogleAnalytics
             gaId={process.env.NEXT_PUBLIC_GA_ID}
