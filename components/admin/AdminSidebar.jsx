@@ -9,7 +9,8 @@ import {
   TicketPercentIcon,
   TrendingUpIcon,
   TruckIcon,
-  Settings2Icon
+  Settings2Icon,
+  SparklesIcon
 } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
@@ -27,6 +28,7 @@ const AdminSidebar = () => {
     { name: 'Sales', href: '/admin/sales', icon: TrendingUpIcon },
     { name: 'DriversList', href: '/admin/driverTable', icon: PersonStandingIcon },
     { name: 'Platform', href: '/admin/platform-settings', icon: Settings2Icon },
+    { name: 'Features', href: '/admin/featured', icon: SparklesIcon },
   ]
 
   if (!user) return null

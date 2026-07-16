@@ -187,6 +187,13 @@ const ProductCard = ({ product, storeIsActive }) => {
             </div>
           )}
 
+          {product.featured && (
+            <div className="absolute top-3 left-3 z-30">
+              <span className="px-3 py-1 rounded-full bg-yellow-500 text-black text-[10px] font-bold uppercase tracking-wider shadow-lg">
+                ⭐ Featured
+              </span>
+            </div>
+          )}
           {/* IMAGE CONTAINER */}
           <div className="relative w-full aspect-square sm:h-[260px] bg-gradient-to-br from-slate-800/40 to-slate-900/40 p-4 md:p-6 overflow-hidden flex items-center justify-center">
 

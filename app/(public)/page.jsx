@@ -7,6 +7,7 @@ import LatestProducts from "@/components/LatestProducts";
 import Categories from "@/components/Categories";
 import RecommendedProducts from "@/components/RecommendedProducts";
 import ContinueBrowsing from "@/components/ContinueBrowsing";
+import FeaturedCollection from "@/components/FeaturedCollection";
 
 export default function Home() {
     return (
@@ -28,10 +29,11 @@ export default function Home() {
             />
 
             <Hero />
+            <Categories />
             <BestSelling />
+            <FeaturedCollection />
             <ContinueBrowsing />
             <RecommendedProducts />
-            <Categories />
             <LatestProducts />
         </>
     );

@@ -50,7 +50,8 @@ model Product {
   totalViews    Int   @default(0)
   averageRating Float @default(0)
 
-  featured Boolean @default(false)
+  featured         Boolean @default(false)
+  featuredPriority Int     @default(0)
 
   store      Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
   orderItems OrderItem[]
