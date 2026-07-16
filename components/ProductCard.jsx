@@ -12,6 +12,12 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useState, useRef } from 'react'
+import { Scale } from "lucide-react";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  addCompareProduct,
+  removeCompareProduct,
+} from "@/lib/features/compare/compareSlice";
 
 const LOW_STOCK_LIMIT = 10
 
@@ -48,6 +54,15 @@ const ProductCard = ({ product, storeIsActive }) => {
   // Track page and direction for sliding animations
   const [[page, direction], setPage] = useState([0, 0])
   const cardRef = useRef(null)
+  const dispatch = useDispatch();
+
+  const compareItems = useSelector(
+    (state) => state.compare.items
+  );
+
+  const isCompared = compareItems.some(
+    (item) => item.id === product.id
+  );
 
   const imageIndex = Math.abs(page % images.length)
   const currentImage = images[imageIndex] || '/placeholder.png'
@@ -82,6 +97,23 @@ const ProductCard = ({ product, storeIsActive }) => {
     }
   }
 
+  const toggleCompare = (e) => {
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (isCompared) {
+
+      dispatch(removeCompareProduct(product.id));
+
+    } else {
+
+      dispatch(addCompareProduct(product));
+
+    }
+
+  };
+
   // ================= 3D TILT (Desktop Only) =================
   const handleMouseMove = (e) => {
     if (!cardRef.current || isOutOfStock || isShopClosed || window.innerWidth < 768) return
@@ -91,7 +123,7 @@ const ProductCard = ({ product, storeIsActive }) => {
     const y = e.clientY - rect.top
 
     // Very subtle tilt for a premium feel
-    const rotateY = ((x / rect.width) - 0.5) * 6 
+    const rotateY = ((x / rect.width) - 0.5) * 6
     const rotateX = -((y / rect.height) - 0.5) * 6
 
     cardRef.current.style.transform = `
@@ -157,6 +189,19 @@ const ProductCard = ({ product, storeIsActive }) => {
 
           {/* IMAGE CONTAINER */}
           <div className="relative w-full aspect-square sm:h-[260px] bg-gradient-to-br from-slate-800/40 to-slate-900/40 p-4 md:p-6 overflow-hidden flex items-center justify-center">
+
+            <button
+              onClick={toggleCompare}
+              className={`absolute top-3 right-3 z-30 w-10 h-10 rounded-full backdrop-blur-md border flex items-center justify-center transition-all
+                  ${isCompared
+                  ? "bg-cyan-500 text-white border-cyan-400"
+                  : "bg-slate-900/70 text-slate-300 border-slate-700 hover:bg-slate-800"
+                }
+                `}
+            >
+              <Scale size={18} />
+            </button>
+
             <AnimatePresence initial={false} custom={direction}>
               <motion.div
                 key={page}
@@ -174,6 +219,8 @@ const ProductCard = ({ product, storeIsActive }) => {
                 onPointerDownCapture={(e) => e.stopPropagation()}
                 className="absolute inset-0 flex items-center justify-center p-6 cursor-grab active:cursor-grabbing"
               >
+
+
                 <Image
                   src={currentImage}
                   alt={product.name || 'Product image'}
@@ -264,7 +311,7 @@ const ProductCard = ({ product, storeIsActive }) => {
               )}
             </div>
           </div>
-          
+
         </div>
       </Link>
     </motion.div>
