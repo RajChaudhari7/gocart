@@ -10,28 +10,23 @@ export async function GET() {
             include: {
 
                 user: {
-
                     select: {
                         name: true,
-                        email: true,
-                    },
-
+                        email: true
+                    }
                 },
 
-                Product: {
-
+                _count: {
                     select: {
-                        id: true,
-                        featured: true,
-                    },
-
-                },
+                        Product: true
+                    }
+                }
 
             },
 
             orderBy: {
-                createdAt: "desc",
-            },
+                createdAt: "desc"
+            }
 
         });
 
