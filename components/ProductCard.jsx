@@ -15,8 +15,8 @@ import { useState, useRef } from 'react'
 import { Scale } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  addCompareProduct,
-  removeCompareProduct,
+  addToCompare,
+  removeFromCompare,
 } from "@/lib/features/compare/compareSlice";
 
 const LOW_STOCK_LIMIT = 10
@@ -57,7 +57,7 @@ const ProductCard = ({ product, storeIsActive }) => {
   const dispatch = useDispatch();
 
   const compareItems = useSelector(
-    (state) => state.compare.items
+    (state) => state.compare.products || []
   );
 
   const isCompared = compareItems.some(
@@ -104,11 +104,11 @@ const ProductCard = ({ product, storeIsActive }) => {
 
     if (isCompared) {
 
-      dispatch(removeCompareProduct(product.id));
+      dispatch(removeFromCompare(product.id));
 
     } else {
 
-      dispatch(addCompareProduct(product));
+      dispatch(addToCompare(product));
 
     }
 
