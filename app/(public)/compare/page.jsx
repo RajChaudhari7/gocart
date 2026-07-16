@@ -26,272 +26,191 @@ export default function ComparePage() {
         return null;
 
     return (
+        <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white">
 
-        <div className="min-h-screen bg-slate-950 text-white p-8">
+            {/* Header */}
+            <div className="border-b border-slate-800 bg-slate-900/70 backdrop-blur-xl sticky top-0 z-20">
 
-            <h1 className="text-4xl font-black mb-10">
+                <div className="max-w-7xl mx-auto px-4 md:px-8 py-6">
 
-                AI Product Comparison
+                    <h1 className="text-3xl md:text-5xl font-black">
+                        AI Product Comparison
+                    </h1>
 
-            </h1>
+                    <p className="text-slate-400 mt-2">
+                        Compare products side-by-side and find the best one.
+                    </p>
 
-            <div className="overflow-auto rounded-3xl border border-slate-800">
+                </div>
 
-                <table className="min-w-full">
+            </div>
 
-                    <thead>
+            <div className="max-w-7xl mx-auto p-4 md:p-8">
 
-                        <tr>
+                {/* Mobile View */}
 
-                            <th className="p-6 bg-slate-900 text-left">
+                <div className="lg:hidden space-y-6">
 
-                                Feature
+                    {products.map((product) => (
 
-                            </th>
+                        <div
+                            key={product.id}
+                            className="rounded-3xl bg-slate-900 border border-slate-800 p-5 shadow-xl"
+                        >
 
-                            {products.map(product => (
+                            <img
+                                src={product.images?.[0]}
+                                className="w-36 h-36 object-contain mx-auto"
+                            />
 
-                                <th
-                                    key={product.id}
-                                    className="p-6 bg-slate-900 text-center"
-                                >
+                            <h2 className="text-xl font-bold text-center mt-4">
+                                {product.name}
+                            </h2>
 
-                                    <img
-                                        src={product.images?.[0]}
-                                        className="w-40 h-40 object-contain mx-auto"
-                                    />
+                            <div className="mt-6 space-y-3">
 
-                                    <h2 className="mt-4 font-bold">
+                                <InfoRow title="Price" value={`₹${product.price}`} />
 
-                                        {product.name}
+                                <InfoRow title="MRP" value={`₹${product.mrp}`} />
 
-                                    </h2>
+                                <InfoRow title="Brand" value={product.brand || "-"} />
+
+                                <InfoRow title="Category" value={product.category} />
+
+                                <InfoRow title="Sub Category" value={product.subCategory} />
+
+                                <InfoRow title="Stock" value={product.quantity} />
+
+                                <InfoRow
+                                    title="Rating"
+                                    value={`⭐ ${product.averageRating.toFixed(1)}`}
+                                />
+
+                                <InfoRow
+                                    title="Sales"
+                                    value={product.totalSales}
+                                />
+
+                                <InfoRow
+                                    title="Featured"
+                                    value={product.featured ? "✅ Yes" : "❌ No"}
+                                />
+
+                            </div>
+
+                        </div>
+
+                    ))}
+
+                </div>
+
+                {/* Desktop View */}
+
+                <div className="hidden lg:block overflow-x-auto rounded-3xl border border-slate-800">
+
+                    <table className="min-w-full border-collapse">
+
+                        <thead>
+
+                            <tr>
+
+                                <th className="sticky left-0 bg-slate-900 z-10 p-6 text-left text-lg font-bold border-r border-slate-800">
+
+                                    Feature
 
                                 </th>
 
-                            ))}
+                                {products.map((product) => (
 
-                        </tr>
+                                    <th
+                                        key={product.id}
+                                        className="bg-slate-900 p-6 min-w-[260px]"
+                                    >
 
-                    </thead>
+                                        <div className="flex flex-col items-center">
 
-                    <tbody>
+                                            <img
+                                                src={product.images?.[0]}
+                                                className="w-40 h-40 object-contain"
+                                            />
 
-                        <tr>
+                                            <h2 className="mt-4 font-bold text-lg">
+                                                {product.name}
+                                            </h2>
 
-                            <td className="p-5 font-bold">
+                                        </div>
 
-                                Price
+                                    </th>
 
-                            </td>
+                                ))}
 
-                            {products.map(product => (
+                            </tr>
 
-                                <td
-                                    key={product.id}
-                                    className="text-center"
+                        </thead>
+
+                        <tbody>
+
+                            {[
+                                ["Price", (p) => `₹${p.price}`],
+                                ["MRP", (p) => `₹${p.mrp}`],
+                                ["Brand", (p) => p.brand || "-"],
+                                ["Category", (p) => p.category],
+                                ["Sub Category", (p) => p.subCategory],
+                                ["Stock", (p) => p.quantity],
+                                ["Rating", (p) => `⭐ ${p.averageRating.toFixed(1)}`],
+                                ["Total Sales", (p) => p.totalSales],
+                                ["Featured", (p) => (p.featured ? "✅" : "❌")],
+                            ].map(([label, getter]) => (
+
+                                <tr
+                                    key={label}
+                                    className="border-t border-slate-800 hover:bg-slate-900/40 transition"
                                 >
 
-                                    ₹{product.price}
+                                    <td className="sticky left-0 bg-slate-950 font-bold p-5 border-r border-slate-800">
 
-                                </td>
+                                        {label}
 
-                            ))}
+                                    </td>
 
-                        </tr>
+                                    {products.map((product) => (
 
-                        <tr>
+                                        <td
+                                            key={product.id}
+                                            className="text-center p-5"
+                                        >
 
-                            <td className="p-5 font-bold">
+                                            {getter(product)}
 
-                                MRP
+                                        </td>
 
-                            </td>
+                                    ))}
 
-                            {products.map(product => (
-
-                                <td
-                                    key={product.id}
-                                    className="text-center"
-                                >
-
-                                    ₹{product.mrp}
-
-                                </td>
+                                </tr>
 
                             ))}
 
-                        </tr>
+                        </tbody>
 
-                        <tr>
+                    </table>
 
-                            <td className="p-5 font-bold">
-
-                                Brand
-
-                            </td>
-
-                            {products.map(product => (
-
-                                <td
-                                    key={product.id}
-                                    className="text-center"
-                                >
-
-                                    {product.brand || "-"}
-
-                                </td>
-
-                            ))}
-
-                        </tr>
-
-                        <tr>
-
-                            <td className="p-5 font-bold">
-
-                                Category
-
-                            </td>
-
-                            {products.map(product => (
-
-                                <td
-                                    key={product.id}
-                                    className="text-center"
-                                >
-
-                                    {product.category}
-
-                                </td>
-
-                            ))}
-
-                        </tr>
-
-                        <tr>
-
-                            <td className="p-5 font-bold">
-
-                                Sub Category
-
-                            </td>
-
-                            {products.map(product => (
-
-                                <td
-                                    key={product.id}
-                                    className="text-center"
-                                >
-
-                                    {product.subCategory}
-
-                                </td>
-
-                            ))}
-
-                        </tr>
-
-                        <tr>
-
-                            <td className="p-5 font-bold">
-
-                                Stock
-
-                            </td>
-
-                            {products.map(product => (
-
-                                <td
-                                    key={product.id}
-                                    className="text-center"
-                                >
-
-                                    {product.quantity}
-
-                                </td>
-
-                            ))}
-
-                        </tr>
-
-                        <tr>
-
-                            <td className="p-5 font-bold">
-
-                                Rating
-
-                            </td>
-
-                            {products.map(product => (
-
-                                <td
-                                    key={product.id}
-                                    className="text-center"
-                                >
-
-                                    ⭐ {product.averageRating.toFixed(1)}
-
-                                </td>
-
-                            ))}
-
-                        </tr>
-
-                        <tr>
-
-                            <td className="p-5 font-bold">
-
-                                Total Sales
-
-                            </td>
-
-                            {products.map(product => (
-
-                                <td
-                                    key={product.id}
-                                    className="text-center"
-                                >
-
-                                    {product.totalSales}
-
-                                </td>
-
-                            ))}
-
-                        </tr>
-
-                        <tr>
-
-                            <td className="p-5 font-bold">
-
-                                Featured
-
-                            </td>
-
-                            {products.map(product => (
-
-                                <td
-                                    key={product.id}
-                                    className="text-center"
-                                >
-
-                                    {product.featured ? "✅" : "❌"}
-
-                                </td>
-
-                            ))}
-
-                        </tr>
-
-                    </tbody>
-
-                </table>
+                </div>
 
             </div>
 
         </div>
-
     );
+
+    function InfoRow({ title, value }) {
+        return (
+            <div className="flex justify-between items-center border-b border-slate-800 pb-2">
+                <span className="text-slate-400">{title}</span>
+
+                <span className="font-semibold text-white">
+                    {value}
+                </span>
+            </div>
+        );
+    }
 
 }
