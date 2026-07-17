@@ -6,7 +6,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Ban,
-  AlertCircle
+  AlertCircle,
+  Heart
 } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -18,6 +19,7 @@ import {
   addToCompare,
   removeFromCompare,
 } from "@/lib/features/compare/compareSlice";
+import { addToWishlist, removeFromWishlist } from '@/lib/features/wishlist/wishlistSlice'
 
 const LOW_STOCK_LIMIT = 10
 
@@ -56,6 +58,7 @@ const ProductCard = ({ product, storeIsActive }) => {
   const cardRef = useRef(null)
   const dispatch = useDispatch();
 
+  // compare items redux 
   const compareItems = useSelector(
     (state) => state.compare.products || []
   );
@@ -63,6 +66,16 @@ const ProductCard = ({ product, storeIsActive }) => {
   const isCompared = compareItems.some(
     (item) => item.id === product.id
   );
+
+  // wishlist compare
+  const wishlistItems = useSelector(
+    state => state.wishlist.products || []
+  );
+
+  const isWishlisted = wishlistItems.some(
+    item => item.id === product.id
+  );
+
 
   const imageIndex = Math.abs(page % images.length)
   const currentImage = images[imageIndex] || '/placeholder.png'
@@ -97,6 +110,7 @@ const ProductCard = ({ product, storeIsActive }) => {
     }
   }
 
+  // toggle Compare the products
   const toggleCompare = (e) => {
 
     e.preventDefault();
@@ -109,6 +123,24 @@ const ProductCard = ({ product, storeIsActive }) => {
     } else {
 
       dispatch(addToCompare(product));
+
+    }
+
+  };
+
+  // toggle the wishlist 
+  const toggleWishlist = (e) => {
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (isWishlisted) {
+
+      dispatch(removeFromWishlist(product.id));
+
+    } else {
+
+      dispatch(addToWishlist(product));
 
     }
 
@@ -206,6 +238,29 @@ const ProductCard = ({ product, storeIsActive }) => {
                 }
                 `}
             >
+
+              <motion.button
+                whileTap={{ scale: 0.75 }}
+                whileHover={{ scale: 1.08 }}
+                animate={
+                  isWishlisted
+                    ? {
+                      scale: [1, 1.35, 1],
+                      rotate: [0, -12, 12, -6, 6, 0]
+                    }
+                    : {}
+                }
+
+                transition={{ duration: 0.45 }}
+                onClick={toggleWishlist}
+
+                className={`absolute top-16 right-3 z-30 w-10 h-10 rounded-full backdrop:blur-md border flex items-center justify-center transition-all shadow
+                  ${isWishlisted ? "bg-red-500 border-red-400 text-white" : "bg-slate-900/70 border-slate-700 text-slate-300 hover:bg-slate-800"}`}
+              >
+
+                <Heart size={18} className={isWishlisted ? "fill white" : ""} />
+
+              </motion.button>
               <Scale size={18} />
             </button>
 

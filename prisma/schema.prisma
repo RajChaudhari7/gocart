@@ -17,7 +17,8 @@ model User {
   ratings     Rating[]
   Address     Address[]
   store       Store?
-  buyerOrders Order[]   @relation("BuyerRelation")
+  buyerOrders Order[]    @relation("BuyerRelation")
+  wishlist    Wishlist[]
 
   returnRequests  ReturnRequest[]
   userPreferences UserPreference[]
@@ -56,6 +57,7 @@ model Product {
   store      Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
   orderItems OrderItem[]
   rating     Rating[]
+  wishlist   Wishlist[]
 
   returnItems     ReturnItem[]
   userPreferences UserPreference[]
@@ -462,4 +464,18 @@ model ProductView {
 
   @@index([userId])
   @@index([productId])
+}
+
+model Wishlist {
+  id String @id @default(cuid())
+
+  userId    String
+  productId String
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, productId])
 }
