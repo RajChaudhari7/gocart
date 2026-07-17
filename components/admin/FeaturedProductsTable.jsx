@@ -117,27 +117,47 @@ export default function FeaturedProductsTable({ storeId }) {
 
         <div>
 
-            <div className="mb-6 flex items-center gap-4">
+            <div className="mb-8 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
 
-                <div className="relative w-80">
+                <div>
+
+                    <h2 className="text-2xl font-bold text-slate-800">
+                        Featured Products
+                    </h2>
+
+                    <p className="text-sm text-slate-500 mt-1">
+                        Manage products that appear in the Featured Collection on the homepage.
+                    </p>
+
+                </div>
+
+                <div className="relative w-full lg:w-96">
 
                     <Search
                         size={18}
-                        className="absolute left-3 top-3 text-slate-400"
+                        className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
                     />
 
                     <input
-
                         value={search}
-
-                        onChange={(e) =>
-                            setSearch(e.target.value)
-                        }
-
-                        placeholder="Search product..."
-
-                        className="pl-10 pr-4 py-3 rounded-xl border w-full"
-
+                        onChange={(e) => setSearch(e.target.value)}
+                        placeholder="Search products..."
+                        className="
+                w-full
+                rounded-2xl
+                border
+                border-slate-300
+                bg-white
+                pl-11
+                pr-4
+                py-3
+                text-sm
+                outline-none
+                transition
+                focus:border-emerald-500
+                focus:ring-4
+                focus:ring-emerald-100
+            "
                     />
 
                 </div>
