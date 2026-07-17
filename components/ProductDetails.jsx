@@ -16,7 +16,7 @@ import {
 import { useRouter } from "next/navigation"
 import { useUser } from "@clerk/nextjs"
 import axios from "axios";
-import toast from "react-hot-toast"
+import { toast } from "sonner";
 import { setCartItemQuantity } from "@/lib/features/cart/cartSlice"
 import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-motion"
 

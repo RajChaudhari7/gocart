@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import axios from "axios"
 import { useParams, useRouter } from "next/navigation"
 import { useAuth } from "@clerk/nextjs"
-import toast from "react-hot-toast"
+import { toast } from "sonner";
 import Image from "next/image"
 import { X } from "lucide-react"
 

@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 
 import axios from "axios";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 import { useAuth } from "@clerk/nextjs";
 
 const currency =

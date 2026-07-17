@@ -2,7 +2,7 @@
 import { useEffect, useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 import axios from "axios"
-import toast from "react-hot-toast"
+import { toast } from "sonner";
 import DeliveryMap from "@/components/DeliveryMap"
 
 export default function DriverOrders() {

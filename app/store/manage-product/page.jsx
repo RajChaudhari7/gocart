@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from "react"
-import { toast } from "react-hot-toast"
+import { toast } from "sonner";
 import Image from "next/image"
 import Loading from "@/components/Loading"
 import { useAuth, useUser } from "@clerk/nextjs"

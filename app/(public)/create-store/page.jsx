@@ -2,12 +2,13 @@
 import { assets } from "@/assets/assets"
 import { useEffect, useState } from "react"
 import Image from "next/image"
-import toast from "react-hot-toast"
+
 import Loading from "@/components/Loading"
 import { useAuth, useUser } from "@clerk/nextjs"
 import { useRouter } from "next/navigation"
 import axios from "axios"
 import { CheckCircle2, XCircle, Clock, ShieldCheck, ImagePlus } from "lucide-react"
+import { toast } from "sonner"
 
 export default function CreateStore() {
     const { user } = useUser()

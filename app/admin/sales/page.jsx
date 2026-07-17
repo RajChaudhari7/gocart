@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import axios from "axios"
 import { useAuth } from "@clerk/nextjs"
-import toast from "react-hot-toast"
+import { toast } from "sonner";
 
 export default function SalesPage() {
 

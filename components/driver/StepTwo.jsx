@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion"
 import { ArrowLeft, ArrowRight } from "lucide-react"
-import toast from "react-hot-toast"
+import { toast } from "sonner";
 import Image from "next/image"
 
 const vehicles = [

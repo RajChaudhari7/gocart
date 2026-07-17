@@ -15,7 +15,7 @@ import {
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { useEffect, useState, useMemo } from "react"
-import toast from "react-hot-toast"
+import { toast } from "sonner";
 import { motion } from "framer-motion"
 import { Sun, Moon } from "lucide-react"
 import jsPDF from "jspdf"

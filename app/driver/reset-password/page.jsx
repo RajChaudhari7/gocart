@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import axios from "axios"
-import toast from "react-hot-toast"
+import { toast } from "sonner";
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { Lock, Phone, ArrowLeft, RefreshCw } from "lucide-react"

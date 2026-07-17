@@ -4,7 +4,7 @@ import { PlusIcon, MapPinIcon, CheckCircle2Icon, TagIcon, XIcon, CreditCardIcon,
 import React, { useEffect, useState } from 'react'
 import AddressModal from './AddressModal'
 import { useDispatch, useSelector } from 'react-redux'
-import toast from 'react-hot-toast'
+import { toast } from "sonner";
 import { useRouter } from 'next/navigation'
 import { Protect, useAuth, useUser } from '@clerk/nextjs'
 import axios from 'axios'

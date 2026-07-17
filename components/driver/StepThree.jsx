@@ -3,7 +3,7 @@
 import Image from "next/image"
 import { motion } from "framer-motion"
 import { Upload, CheckCircle2, ArrowLeft, ArrowRight } from "lucide-react"
-import toast from "react-hot-toast"
+import { toast } from "sonner";
 
 const docs = [
     {

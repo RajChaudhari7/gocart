@@ -18,7 +18,7 @@ import {
     FileText
 } from "lucide-react"
 import Loading from "@/components/Loading";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
 export default function DriverDetailsPage({ params }) {

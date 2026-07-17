@@ -5,7 +5,7 @@ import { useAuth } from '@clerk/nextjs'
 import axios from 'axios'
 import { XIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { toast } from 'react-hot-toast'
+import { toast } from "sonner";
 import { useDispatch } from 'react-redux'
 import { indianStates } from '@/assets/indianStates'
 

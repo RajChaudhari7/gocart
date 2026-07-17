@@ -2,7 +2,7 @@
 
 import { Star, X } from 'lucide-react'
 import { useState, useEffect, useMemo } from 'react'
-import toast from 'react-hot-toast'
+import { toast } from "sonner";
 import { useAuth } from '@clerk/nextjs'
 import { useDispatch } from 'react-redux'
 import axios from 'axios'

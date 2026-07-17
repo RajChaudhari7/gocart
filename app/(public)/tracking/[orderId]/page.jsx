@@ -7,7 +7,7 @@ import Image from "next/image";
 import dynamic from "next/dynamic";
 import axios from "axios";
 import { useAuth } from "@clerk/nextjs";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 import {
     Package,
     Archive,

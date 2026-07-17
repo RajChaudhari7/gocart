@@ -7,7 +7,8 @@ import { useAuth } from "@clerk/nextjs"
 import axios from "axios"
 import { useDispatch } from "react-redux"
 import { clearCart } from "@/lib/features/cart/cartSlice"
-import toast from "react-hot-toast"
+import { toast } from "sonner"
+
 
 export default function LoadingPage() {
   const router = useRouter()

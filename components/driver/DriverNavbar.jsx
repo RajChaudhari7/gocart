@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { LogOut, Truck, Download } from "lucide-react"
-import toast from "react-hot-toast"
+import { toast } from "sonner";
 import { useRouter } from "next/navigation"
 import axios from "axios"
 import Image from "next/image"

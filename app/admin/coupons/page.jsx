@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from "react"
 import { format } from "date-fns"
-import toast from "react-hot-toast"
+import { toast } from "sonner";
 import { Trash2 } from "lucide-react"
 import { useAuth } from "@clerk/nextjs"
 import axios from "axios"

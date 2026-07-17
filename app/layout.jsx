@@ -1,5 +1,5 @@
 import { Outfit } from "next/font/google"
-import { Toaster } from "react-hot-toast"
+// import { Toaster } from "react-hot-toast"
 import { Toaster } from "sonner"
 import { ClerkProvider } from "@clerk/nextjs"
 import StoreProvider from "@/app/StoreProvider"
@@ -15,7 +15,7 @@ const outfit = Outfit({
 })
 
 export const metadata = {
-  metadataBase: new URL("https://gocart-delta.vercel.app"), 
+  metadataBase: new URL("https://gocart-delta.vercel.app"),
 
   verification: {
     google: "google970ad242fb17dc77.html",
@@ -128,7 +128,11 @@ export default function RootLayout({ children }) {
             <SplashWrapper>
               {children}
             </SplashWrapper>
-            <Toaster />
+            <Toaster
+              richColors
+              position="top-right"
+              expand
+            />
             <AIChatButton />
             <CompareBar />
           </StoreProvider>

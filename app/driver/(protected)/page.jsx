@@ -13,7 +13,7 @@ import {
 } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 import axios from "axios"
-import toast from "react-hot-toast"
+import { toast } from "sonner";
 import { useRouter } from "next/navigation"
 import Loading from "@/components/Loading"
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useAuth, useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import axios from "axios";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 import RatingModal from "@/components/RatingModal";
 import OrderCard from "@/components/OrderCard";
 import EmptyOrders from "@/components/orders/EmptyOrders";

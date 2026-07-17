@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 
 const ProductDescription = ({ product }) => {
   const [selectedTab, setSelectedTab] = useState('Description');

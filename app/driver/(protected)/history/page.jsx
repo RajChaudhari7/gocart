@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import axios from "axios"
-import toast from "react-hot-toast"
+import { toast } from "sonner";
 import { CheckCircle2, MapPin, CalendarClock, Receipt } from "lucide-react"
 
 export default function DriverHistory() {

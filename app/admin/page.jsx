@@ -12,7 +12,7 @@ import {
     XCircleIcon
 } from "lucide-react"
 import { useEffect, useState, useRef } from "react"
-import toast from "react-hot-toast"
+import { toast } from "sonner";
 import { motion, useMotionValue, useTransform } from "framer-motion"
 import Link from "next/link"
 

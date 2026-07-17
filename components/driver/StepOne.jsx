@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion"
 import { User, Phone, Mail, Lock, ArrowRight } from "lucide-react"
-import toast from "react-hot-toast"
+import { toast } from "sonner";
 
 export default function StepOne({
     form,

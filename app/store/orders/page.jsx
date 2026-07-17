@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import Loading from "@/components/Loading"
 import { useAuth } from "@clerk/nextjs"
 import axios from "axios"
-import toast from "react-hot-toast"
+import { toast } from "sonner";
 import { useOrderStore } from "@/hooks/use-order-store"
 
 const SELLER_STATUSES = [
