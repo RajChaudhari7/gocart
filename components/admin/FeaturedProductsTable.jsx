@@ -170,35 +170,35 @@ export default function FeaturedProductsTable({ storeId }) {
 
                 <table className="w-full">
 
-                    <thead>
+                    <thead className="bg-slate-50 sticky top-0 z-10">
 
-                        <tr className="bg-slate-50">
+                        <tr className="border-b border-slate-200">
 
-                            <th className="p-5 text-left">
+                            <th className="w-[45%] px-8 py-5 text-left text-sm font-bold text-slate-700">
                                 Product
                             </th>
 
-                            <th>
+                            <th className="text-center text-sm font-bold text-slate-700">
                                 Price
                             </th>
 
-                            <th>
+                            <th className="text-center text-sm font-bold text-slate-700">
                                 Stock
                             </th>
 
-                            <th>
+                            <th className="text-center text-sm font-bold text-slate-700">
                                 Rating
                             </th>
 
-                            <th>
+                            <th className="text-center text-sm font-bold text-slate-700">
                                 Sales
                             </th>
 
-                            <th>
+                            <th className="text-center text-sm font-bold text-slate-700">
                                 Views
                             </th>
 
-                            <th>
+                            <th className="text-center text-sm font-bold text-slate-700">
                                 Featured
                             </th>
 
@@ -212,39 +212,29 @@ export default function FeaturedProductsTable({ storeId }) {
 
                             <tr
                                 key={product.id}
-                                className="border-t hover:bg-slate-50"
+                                className="border-b border-slate-100 hover:bg-emerald-50/40 transition-all duration-300"
                             >
 
-                                <td className="p-5">
+                                <td className="px-8 py-5">
 
-                                    <div className="flex gap-4 items-center">
+                                    <div className="flex items-center gap-5">
 
                                         <Image
-
                                             src={product.images?.[0]}
-
-                                            alt=""
-
-                                            width={60}
-
-                                            height={60}
-
-                                            className="rounded-xl"
-
+                                            alt={product.name}
+                                            width={72}
+                                            height={72}
+                                            className="rounded-2xl object-cover border border-slate-200"
                                         />
 
                                         <div>
 
-                                            <h2 className="font-semibold">
-
+                                            <h2 className="font-semibold text-slate-800 leading-6">
                                                 {product.name}
-
                                             </h2>
 
-                                            <p className="text-sm text-slate-500">
-
+                                            <p className="text-sm text-slate-500 mt-1">
                                                 {product.category}
-
                                             </p>
 
                                         </div>
@@ -252,24 +242,21 @@ export default function FeaturedProductsTable({ storeId }) {
                                     </div>
 
                                 </td>
-
-                                <td>
-
+                                <td className="text-center font-semibold text-slate-700">
                                     ₹{product.price}
-
                                 </td>
 
-                                <td>
+                                <td className="text-center">
 
-                                    <span className={`px-3 py-1 rounded-full text-xs
+                                    <span
+                                        className={`inline-flex items-center justify-center px-4 py-1.5 rounded-full text-xs font-bold
 
-                                    ${product.quantity > 10
+                                                ${product.quantity > 10
+                                                ? "bg-green-100 text-green-700"
+                                                : "bg-orange-100 text-orange-700"
+                                            }`}
 
-                                            ? "bg-green-100 text-green-700"
-
-                                            : "bg-orange-100 text-orange-700"
-
-                                        }`}>
+                                    >
 
                                         {product.quantity}
 
@@ -277,66 +264,85 @@ export default function FeaturedProductsTable({ storeId }) {
 
                                 </td>
 
-                                <td>
+                                <td className="text-center">
 
-                                    ⭐ {product.averageRating.toFixed(1)}
+                                    <div className="flex justify-center items-center gap-1 font-semibold">
+
+                                        ⭐
+
+                                        <span>
+
+                                            {product.averageRating.toFixed(1)}
+
+                                        </span>
+
+                                    </div>
 
                                 </td>
 
-                                <td>
-
+                                <td className="text-center font-semibold text-slate-700">
                                     {product.totalSales}
-
                                 </td>
 
-                                <td>
-
+                                <td className="text-center font-semibold text-slate-700">
                                     {product.totalViews}
-
                                 </td>
 
-                                <td>
+                                <td className="text-center">
 
-                                    <button
-                                        onClick={() => toggleFeatured(product)}
-                                        className={`
-        relative
-        w-14
-        h-8
-        rounded-full
-        transition-all
-        duration-300
-        shadow-inner
-        ${product.featured
-                                                ? "bg-emerald-500"
-                                                : "bg-slate-300"
-                                            }
-    `}
-                                    >
+                                    <div className="flex justify-center">
 
-                                        <span
+                                        <button
+                                            onClick={() => toggleFeatured(product)}
                                             className={`
-            absolute
-            top-1
-            left-1
-            w-6
-            h-6
-            rounded-full
-            bg-white
-            shadow-lg
-            transition-all
-            duration-300
-            ${product.featured
-                                                    ? "translate-x-6"
-                                                    : ""
-                                                }
-        `}
-                                        />
 
-                                    </button>
+                                                relative
+                                                w-[58px]
+                                                h-[32px]
+                                                rounded-full
+                                                transition-all
+                                                duration-300
+
+                                                ${product.featured
+                                                    ? "bg-emerald-500"
+                                                    : "bg-slate-300"
+                                                }
+
+                                                `}
+
+                                        >
+
+                                            <div
+                                                className={`
+
+                                                absolute
+                                                top-[3px]
+                                                left-[3px]
+
+                                                w-[26px]
+                                                h-[26px]
+
+                                                rounded-full
+                                                bg-white
+
+                                                shadow-lg
+
+                                                transition-all
+                                                duration-300
+
+                                                ${product.featured
+                                                        ? "translate-x-[26px]"
+                                                        : ""
+                                                    }
+
+                                                `}
+                                            />
+
+                                        </button>
+
+                                    </div>
 
                                 </td>
-
                             </tr>
 
                         ))}
