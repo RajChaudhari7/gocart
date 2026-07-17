@@ -1,5 +1,6 @@
 import { Outfit } from "next/font/google"
 import { Toaster } from "react-hot-toast"
+import { Toaster } from "sonner"
 import { ClerkProvider } from "@clerk/nextjs"
 import StoreProvider from "@/app/StoreProvider"
 import SplashWrapper from "@/components/SplashWrapper"
