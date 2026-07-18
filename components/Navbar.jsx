@@ -7,6 +7,7 @@ import {
   X,
   HomeIcon,
   Search,
+  Heart,
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -42,6 +43,10 @@ const Navbar = () => {
   const cartCount = useSelector(
     (state) => state.cart?.total || state.cart?.items?.length || 0
   )
+
+  const wishlistCount = useSelector(
+    (state) => state.wishlist?.products?.length || 0
+  );
 
   const prevCartCount = useRef(cartCount)
 
@@ -192,7 +197,8 @@ const Navbar = () => {
     { id: 'product', href: '/product', icon: <Search size={18} />, label: 'Product' },
     { id: 'shop', href: '/shop', icon: <Search size={18} />, label: 'Shop' },
     { id: 'orders', href: '/orders', icon: <PackageIcon size={18} />, label: 'Orders' },
-    { id: 'cart', href: '/cart', icon: <ShoppingCart size={18} />, label: 'Cart' },
+    { id: 'cart', href: '/cart', icon: <ShoppingCart size={18} />, label: 'Cart', count: cartCount },
+    { id: 'wishlist', href: '/wishlist', icon: <Heart size={18} />, label: 'Wishlist', count: wishlistCount },
   ]
 
   return (
@@ -283,6 +289,39 @@ const Navbar = () => {
               </Link>
             ))}
 
+            {/* Wishlist */}
+
+            <Link href="/wishlist" className="relative">
+
+              <motion.div
+                whileHover={{ scale: 1.08 }}
+                className="flex items-center gap-1"
+              >
+
+                <Heart
+                  size={18}
+                  className="text-pink-400"
+                  fill={wishlistCount > 0 ? "currentColor" : "none"}
+                />
+
+                Wishlist
+
+              </motion.div>
+
+              {wishlistCount > 0 && (
+
+                <span className="absolute -top-3 -right-4 text-xs px-2 py-0.5 rounded-full bg-pink-500 text-white font-bold">
+
+                  {wishlistCount}
+
+                </span>
+
+              )}
+
+            </Link>
+
+            {/* Cart */}
+
             <Link href="/cart" className="relative">
               <motion.div
                 variants={cartPulse}
@@ -299,7 +338,7 @@ const Navbar = () => {
                 </span>
               )}
             </Link>
-            
+
             {!isTWA && (
               <button
                 onClick={installApp}
@@ -340,7 +379,21 @@ const Navbar = () => {
               className={`flex flex-col items-center gap-1 ${isActive(link.href) ? 'text-cyan-400' : 'text-white/70'
                 }`}
             >
-              {link.icon}
+              <div className="relative">
+
+                {link.icon}
+
+                {link.count > 0 && (
+
+                  <span className="absolute -top-2 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-pink-500 text-white text-[10px] flex items-center justify-center">
+
+                    {link.count}
+
+                  </span>
+
+                )}
+
+              </div>
               {link.label}
             </Link>
           ))}
@@ -391,6 +444,13 @@ const Navbar = () => {
                     {link.name}
                   </Link>
                 ))}
+
+                <Link
+                  href="/wishlist"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  Wishlist ({wishlistCount})
+                </Link>
 
                 <Link href="/cart" onClick={() => setMenuOpen(false)}>
                   Cart ({cartCount})
