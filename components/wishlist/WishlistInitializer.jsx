@@ -18,11 +18,7 @@ export default function WishlistInitializer() {
             try {
                 const { data } = await axios.get("/api/wishlist");
 
-                dispatch(
-                    setWishlist(
-                        data.map((item) => item.product)
-                    )
-                );
+                dispatch(setWishlist(data));
             } catch (err) {
                 console.log(err);
             }
