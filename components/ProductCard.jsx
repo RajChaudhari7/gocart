@@ -20,6 +20,7 @@ import {
   removeFromCompare,
 } from "@/lib/features/compare/compareSlice";
 import { addToWishlist, removeFromWishlist } from '@/lib/features/wishlist/wishlistSlice'
+import axios from 'axios'
 
 const LOW_STOCK_LIMIT = 10
 
