@@ -129,21 +129,25 @@ const ProductCard = ({ product, storeIsActive }) => {
   };
 
   // toggle the wishlist 
-  const toggleWishlist = (e) => {
-
+  const toggleWishlist = async (e) => {
     e.preventDefault();
     e.stopPropagation();
 
-    if (isWishlisted) {
+    try {
+      if (isWishlisted) {
+        await axios.delete(`/api/wishlist/${product.id}`);
 
-      dispatch(removeFromWishlist(product.id));
+        dispatch(removeFromWishlist(product.id));
+      } else {
+        await axios.post("/api/wishlist", {
+          productId: product.id,
+        });
 
-    } else {
-
-      dispatch(addToWishlist(product));
-
+        dispatch(addToWishlist(product));
+      }
+    } catch (err) {
+      console.log(err);
     }
-
   };
 
   // ================= 3D TILT (Desktop Only) =================
@@ -229,40 +233,43 @@ const ProductCard = ({ product, storeIsActive }) => {
           {/* IMAGE CONTAINER */}
           <div className="relative w-full aspect-square sm:h-[260px] bg-gradient-to-br from-slate-800/40 to-slate-900/40 p-4 md:p-6 overflow-hidden flex items-center justify-center">
 
+            {/* Compare Button */}
             <button
               onClick={toggleCompare}
               className={`absolute top-3 right-3 z-30 w-10 h-10 rounded-full backdrop-blur-md border flex items-center justify-center transition-all
-                  ${isCompared
+  ${isCompared
                   ? "bg-cyan-500 text-white border-cyan-400"
                   : "bg-slate-900/70 text-slate-300 border-slate-700 hover:bg-slate-800"
-                }
-                `}
+                }`}
             >
-
-              <motion.button
-                whileTap={{ scale: 0.75 }}
-                whileHover={{ scale: 1.08 }}
-                animate={
-                  isWishlisted
-                    ? {
-                      scale: [1, 1.35, 1],
-                      rotate: [0, -12, 12, -6, 6, 0]
-                    }
-                    : {}
-                }
-
-                transition={{ duration: 0.45 }}
-                onClick={toggleWishlist}
-
-                className={`absolute top-16 right-3 z-30 w-10 h-10 rounded-full backdrop:blur-md border flex items-center justify-center transition-all shadow
-                  ${isWishlisted ? "bg-red-500 border-red-400 text-white" : "bg-slate-900/70 border-slate-700 text-slate-300 hover:bg-slate-800"}`}
-              >
-
-                <Heart size={18} className={isWishlisted ? "fill white" : ""} />
-
-              </motion.button>
               <Scale size={18} />
             </button>
+
+            {/* Wishlist Button */}
+            <motion.button
+              whileTap={{ scale: 0.8 }}
+              whileHover={{ scale: 1.08 }}
+              animate={
+                isWishlisted
+                  ? {
+                    scale: [1, 1.25, 1],
+                    rotate: [0, -10, 10, -6, 6, 0],
+                  }
+                  : {}
+              }
+              transition={{ duration: 0.45 }}
+              onClick={toggleWishlist}
+              className={`absolute top-16 right-3 z-30 w-10 h-10 rounded-full backdrop-blur-md border flex items-center justify-center shadow transition-all
+              ${isWishlisted
+                  ? "bg-red-500 border-red-400 text-white"
+                  : "bg-slate-900/70 border-slate-700 text-slate-300 hover:bg-slate-800"
+                }`}
+            >
+              <Heart
+                size={18}
+                className={isWishlisted ? "fill-white text-white" : ""}
+              />
+            </motion.button>
 
             <AnimatePresence initial={false} custom={direction}>
               <motion.div

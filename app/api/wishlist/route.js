@@ -36,7 +36,9 @@ export async function GET() {
 
         });
 
-        return NextResponse.json(wishlist);
+        return NextResponse.json(
+            wishlist.map(item => item.product)
+        );
 
     } catch (error) {
 

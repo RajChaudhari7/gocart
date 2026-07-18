@@ -8,6 +8,8 @@ import { GoogleAnalytics } from "@next/third-parties/google"
 import "./globals.css"
 import AIChatButton from "@/components/AIChat/AIChatButton"
 import CompareBar from "@/components/CompareBar"
+import WishlistLoader from "@/components/WishlistLoader"
+import WishlistInitializer from "@/components/wishlist/WishlistInitializer"
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -125,6 +127,8 @@ export default function RootLayout({ children }) {
       <html lang="en">
         <body className={`${outfit.className} antialiased bg-slate-50 text-slate-900`}>
           <StoreProvider>
+            <WishlistLoader />
+            <WishlistInitializer />
             <SplashWrapper>
               {children}
             </SplashWrapper>
