@@ -9,6 +9,7 @@ import Image from "next/image"
 import axios from "axios"
 import { toast } from "sonner";
 import { useSelector } from "react-redux"
+import FollowStoreButton from "@/components/store/FollowStoreButton"
 
 export default function StoreShop() {
   const { username } = useParams()
@@ -75,15 +76,50 @@ export default function StoreShop() {
 
           {/* INFO */}
           <div className="flex-1 text-center md:text-left">
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold">
-              {storeInfo.name}
-            </h1>
+
+            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-5">
+
+              <div>
+                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold">
+                  {storeInfo.name}
+                </h1>
+
+                <div className="mt-3 flex items-center justify-center md:justify-start gap-2">
+                  <span
+                    className={`w-2.5 h-2.5 rounded-full ${storeInfo.isActive
+                        ? "bg-emerald-500"
+                        : "bg-red-500"
+                      }`}
+                  />
+
+                  <span
+                    className={`text-xs font-medium ${storeInfo.isActive
+                        ? "text-emerald-400"
+                        : "text-red-400"
+                      }`}
+                  >
+                    {storeInfo.isActive
+                      ? "Store is open"
+                      : "Store is closed"}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex justify-center md:justify-end">
+                <FollowStoreButton
+                  store={storeInfo}
+                  variant="profile"
+                />
+              </div>
+
+            </div>
 
             <p className="text-slate-300 mt-4 max-w-xl mx-auto md:mx-0">
               {storeInfo.description}
             </p>
 
             <div className="mt-6 flex flex-col gap-3 text-slate-400 text-sm">
+
               {storeInfo.address && (
                 <div className="flex items-center justify-center md:justify-start gap-2">
                   <MapPinIcon size={16} />
@@ -97,7 +133,9 @@ export default function StoreShop() {
                   <span>{storeInfo.email}</span>
                 </div>
               )}
+
             </div>
+
           </div>
         </div>
       )}

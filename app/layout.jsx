@@ -10,6 +10,7 @@ import AIChatButton from "@/components/AIChat/AIChatButton"
 import CompareBar from "@/components/CompareBar"
 import WishlistLoader from "@/components/WishlistLoader"
 import WishlistInitializer from "@/components/wishlist/WishlistInitializer"
+import FollowStoreInitializer from "@/lib/features/followStore/FollowStoreInitializer"
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -129,6 +130,7 @@ export default function RootLayout({ children }) {
           <StoreProvider>
             <WishlistLoader />
             <WishlistInitializer />
+            <FollowStoreInitializer />
             <SplashWrapper>
               {children}
             </SplashWrapper>

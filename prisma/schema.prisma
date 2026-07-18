@@ -14,11 +14,12 @@ model User {
   image String
   cart  Json   @default("{}")
 
-  ratings     Rating[]
-  Address     Address[]
-  store       Store?
-  buyerOrders Order[]    @relation("BuyerRelation")
-  wishlist    Wishlist[]
+  ratings         Rating[]
+  Address         Address[]
+  store           Store?
+  buyerOrders     Order[]         @relation("BuyerRelation")
+  wishlist        Wishlist[]
+  followingStores StoreFollower[]
 
   returnRequests  ReturnRequest[]
   userPreferences UserPreference[]
@@ -286,9 +287,10 @@ model Store {
   category       String?
   customCategory String?
 
-  Product Product[]
-  Order   Order[]
-  user    User      @relation(fields: [userId], references: [id])
+  Product        Product[]
+  Order          Order[]
+  user           User            @relation(fields: [userId], references: [id])
+ followers StoreFollower[]
 }
 
 model Driver {
@@ -478,4 +480,20 @@ model Wishlist {
   createdAt DateTime @default(now())
 
   @@unique([userId, productId])
+}
+
+model StoreFollower {
+  id String @id @default(cuid())
+
+  userId  String
+  storeId String
+
+  createdAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, storeId])
+  @@index([userId])
+  @@index([storeId])
 }

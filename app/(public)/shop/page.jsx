@@ -6,6 +6,7 @@ import { Suspense, useMemo, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import Link from "next/link"
+import FollowStoreButton from '@/components/store/FollowStoreButton'
 
 function ShopContent() {
 
@@ -154,31 +155,88 @@ function ShopContent() {
           className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6"
         >
           {filteredStores.map((store) => (
-            <Link key={store.id} href={`/shop/${store.username}`}>
-
-              <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 hover:scale-[1.04] transition cursor-pointer">
-
+            <motion.div
+              layout
+              key={store.id}
+              className="
+        group
+        relative
+        bg-white/5
+        backdrop-blur-xl
+        border
+        border-white/10
+        rounded-2xl
+        p-5
+        hover:border-emerald-400/30
+        hover:bg-white/[0.07]
+        hover:-translate-y-1
+        transition-all
+        duration-300
+      "
+            >
+              <Link
+                href={`/shop/${store.username}`}
+                className="block"
+              >
                 <div className="flex flex-col items-center text-center">
 
-                  <img
-                    src={store.logo || '/store.png'}
-                    alt={store.name}
-                    className="w-16 h-16 object-cover rounded-full mb-4"
-                  />
+                  <div className="relative mb-4">
 
-                  <h2 className="text-lg font-semibold text-white">
+                    <img
+                      src={store.logo || "/store.png"}
+                      alt={store.name}
+                      className="
+                w-16
+                h-16
+                object-cover
+                rounded-full
+                border
+                border-white/10
+                group-hover:border-emerald-400/40
+                transition
+              "
+                    />
+
+                    {store.isActive && (
+                      <span
+                        className="
+                  absolute
+                  bottom-0
+                  right-0
+                  w-4
+                  h-4
+                  rounded-full
+                  bg-emerald-500
+                  border-2
+                  border-[#020617]
+                "
+                      />
+                    )}
+
+                  </div>
+
+                  <h2 className="text-lg font-semibold text-white line-clamp-1">
                     {store.name}
                   </h2>
 
                   <p className="text-xs text-white/40 mt-1">
-                    {store.category || 'Local Store'}
+                    {store.category || "Local Store"}
+                  </p>
+
+                  <p className="mt-3 text-[11px] text-white/30">
+                    {store.isActive ? "Open now" : "Currently closed"}
                   </p>
 
                 </div>
+              </Link>
 
+              <div className="mt-5">
+                <FollowStoreButton
+                  store={store}
+                  variant="card"
+                />
               </div>
-
-            </Link>
+            </motion.div>
           ))}
         </motion.div>
 
