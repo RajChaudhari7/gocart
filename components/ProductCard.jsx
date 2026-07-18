@@ -46,7 +46,7 @@ const sliderVariants = {
   })
 }
 
-const ProductCard = ({ product, storeIsActive }) => {
+const ProductCard = ({ product, storeIsActive, trending = false, trendingRank = null, }) => {
   const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '₹'
   const isShopClosed = storeIsActive === false
 
@@ -199,9 +199,17 @@ const ProductCard = ({ product, storeIsActive }) => {
           onMouseMove={handleMouseMove}
           onMouseLeave={resetTilt}
           className={`relative flex flex-col h-full rounded-3xl overflow-hidden transition-all duration-300 ease-out will-change-transform
-          bg-slate-900 border border-slate-800 shadow-xl shadow-black/20
-          ${!isOutOfStock && !isShopClosed ? 'hover:shadow-indigo-500/10 hover:border-indigo-500/50 hover:bg-slate-800/80' : ''}
-          ${isOutOfStock ? 'opacity-70 grayscale-[0.5]' : ''}`}
+            bg-slate-900 shadow-xl shadow-black/20
+              ${trending
+              ? "border border-orange-500/25 hover:border-orange-400/60 hover:shadow-orange-500/10"
+              : "border border-slate-800"
+            }
+            ${!isOutOfStock && !isShopClosed
+              ? "hover:bg-slate-800/80"
+              : ""
+            }
+            ${isOutOfStock ? "opacity-70 grayscale-[0.5]" : ""}
+          `}
         >
 
           {/* SHOP CLOSED OVERLAY */}
@@ -224,13 +232,67 @@ const ProductCard = ({ product, storeIsActive }) => {
             </div>
           )}
 
-          {product.featured && (
-            <div className="absolute top-3 left-3 z-30">
-              <span className="px-3 py-1 rounded-full bg-yellow-500 text-black text-[10px] font-bold uppercase tracking-wider shadow-lg">
+          <div className="absolute top-3 left-3 z-30 flex flex-col items-start gap-2">
+
+            {trending && (
+              <motion.span
+                initial={{ opacity: 0, scale: 0.8, y: -5 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                transition={{ type: "spring", stiffness: 260, damping: 18 }}
+                className="
+        inline-flex
+        items-center
+        gap-1
+        rounded-full
+        border
+        border-orange-300/30
+        bg-gradient-to-r
+        from-orange-500
+        to-red-500
+        px-2.5
+        py-1
+        text-[9px]
+        font-black
+        uppercase
+        tracking-wider
+        text-white
+        shadow-lg
+        shadow-orange-500/20
+      "
+              >
+                🔥 Trending
+
+                {trendingRank && trendingRank <= 3 && (
+                  <span className="rounded-full bg-black/20 px-1.5 py-0.5">
+                    #{trendingRank}
+                  </span>
+                )}
+              </motion.span>
+            )}
+
+            {product.featured && (
+              <span
+                className="
+        inline-flex
+        items-center
+        rounded-full
+        bg-yellow-500
+        px-2.5
+        py-1
+        text-[9px]
+        font-black
+        uppercase
+        tracking-wider
+        text-black
+        shadow-lg
+      "
+              >
                 ⭐ Featured
               </span>
-            </div>
-          )}
+            )}
+
+          </div>
+
           {/* IMAGE CONTAINER */}
           <div className="relative w-full aspect-square sm:h-[260px] bg-gradient-to-br from-slate-800/40 to-slate-900/40 p-4 md:p-6 overflow-hidden flex items-center justify-center">
 
@@ -351,6 +413,52 @@ const ProductCard = ({ product, storeIsActive }) => {
             <h3 className="text-sm md:text-base font-semibold text-slate-200 group-hover:text-indigo-400 transition-colors line-clamp-2 leading-snug mb-4">
               {product.name}
             </h3>
+
+            {trending && (
+              <div className="mb-4 grid grid-cols-2 gap-2">
+
+                <div
+                  className="
+        rounded-xl
+        border
+        border-orange-500/10
+        bg-orange-500/5
+        px-2
+        py-1.5
+        text-center
+      "
+                >
+                  <p className="text-[9px] uppercase tracking-wider text-slate-500">
+                    Views
+                  </p>
+
+                  <p className="mt-0.5 text-xs font-bold text-orange-300">
+                    {Number(product.totalViews || 0).toLocaleString()}
+                  </p>
+                </div>
+
+                <div
+                  className="
+        rounded-xl
+        border
+        border-emerald-500/10
+        bg-emerald-500/5
+        px-2
+        py-1.5
+        text-center
+      "
+                >
+                  <p className="text-[9px] uppercase tracking-wider text-slate-500">
+                    Sold
+                  </p>
+
+                  <p className="mt-0.5 text-xs font-bold text-emerald-300">
+                    {Number(product.totalSales || 0).toLocaleString()}
+                  </p>
+                </div>
+
+              </div>
+            )}
 
             <div className="mt-auto flex items-end justify-between">
               <div className="flex flex-col">

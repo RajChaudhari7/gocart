@@ -8,6 +8,7 @@ import Categories from "@/components/Categories";
 import RecommendedProducts from "@/components/RecommendedProducts";
 import ContinueBrowsing from "@/components/ContinueBrowsing";
 import FeaturedCollection from "@/components/FeaturedCollection";
+import TrendingProducts from "@/components/TrendingProducts";
 
 export default function Home() {
     return (
@@ -32,6 +33,7 @@ export default function Home() {
             <Categories />
             <BestSelling />
             <FeaturedCollection />
+            <TrendingProducts />
             <ContinueBrowsing />
             <RecommendedProducts />
             <LatestProducts />
