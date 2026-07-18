@@ -13,10 +13,10 @@ import {
 
 import { useDispatch } from "react-redux";
 import { removeFromWishlist } from "@/lib/features/wishlist/wishlistSlice";
-import { addToCart } from "@/lib/features/cart/cartSlice";
 
 import axios from "axios";
 import { toast } from "sonner";
+import { setCartItemQuantity } from "@/lib/features/cart/cartSlice";
 
 const LOW_STOCK_LIMIT = 10;
 
@@ -72,7 +72,13 @@ export default function WishlistCard({ product }) {
     };
 
     const cartHandler = () => {
-        dispatch(addToCart(product));
+        dispatch(
+            setCartItemQuantity({
+                productId: product.id,
+                quantity: 1,
+                maxQuantity: product.quantity,
+            })
+        );
 
         toast.success("Added to cart 🛒");
     };
