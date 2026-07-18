@@ -30,21 +30,39 @@ export async function POST(req) {
             );
         }
 
-        await prisma.productView.create({
+        await prisma.$transaction([
 
-            data: {
+            prisma.productView.create({
 
-                userId,
+                data: {
 
-                productId,
+                    userId,
 
-                category: product.category,
+                    productId,
 
-                subCategory: product.subCategory
+                    category: product.category,
 
-            }
+                    subCategory: product.subCategory,
 
-        });
+                },
+
+            }),
+
+            prisma.product.update({
+
+                where: {
+                    id: productId,
+                },
+
+                data: {
+                    totalViews: {
+                        increment: 1,
+                    },
+                },
+
+            }),
+
+        ]);
 
         return NextResponse.json({
             success: true

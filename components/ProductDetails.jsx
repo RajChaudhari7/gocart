@@ -78,6 +78,37 @@ const ProductDetails = ({ product }) => {
     }
   }, [cart, productId, maxQty])
 
+  // View count
+  useEffect(() => {
+
+    if (!product?.id) return;
+
+    const viewedKey = `viewed-${product.id}`;
+
+    if (sessionStorage.getItem(viewedKey)) return;
+
+    const recordView = async () => {
+
+      try {
+
+        await axios.post(
+          `/api/products/${product.id}/view`
+        );
+
+        sessionStorage.setItem(viewedKey, "true");
+
+      } catch (error) {
+
+        console.log(error);
+
+      }
+
+    };
+
+    recordView();
+
+  }, [product?.id]);
+
   /* ---------------- PRODUCT VIEW TRACKING ---------------- */
 
   useEffect(() => {
