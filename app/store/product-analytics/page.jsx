@@ -496,13 +496,7 @@ function ViewsVsSalesTooltip({
         return null;
     }
 
-    const averageSales =
-        data.length > 0
-            ? data.reduce(
-                (sum, item) => sum + item.sales,
-                0
-            ) / data.length
-            : 0;
+
 
     return (
 
@@ -566,6 +560,14 @@ function ViewsVsSalesTooltip({
 
 }
 
+const averageSales =
+    data.length > 0
+        ? data.reduce(
+            (sum, item) => sum + item.sales,
+            0
+        ) / data.length
+        : 0;
+
 function ViewsVsSalesChart({
 
     data = [],
@@ -573,6 +575,8 @@ function ViewsVsSalesChart({
 }) {
 
     if (!data.length) {
+
+
 
         return (
 
