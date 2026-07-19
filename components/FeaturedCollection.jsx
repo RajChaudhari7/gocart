@@ -18,13 +18,9 @@ export default function FeaturedCollection() {
   async function loadProducts() {
     try {
       const { data } = await axios.get("/api/featured-products");
-
       setProducts(data);
     } catch (error) {
-      console.error(
-        "Failed to load featured products:",
-        error
-      );
+      console.error("Failed to load featured products:", error);
     } finally {
       setLoading(false);
     }
@@ -41,48 +37,19 @@ export default function FeaturedCollection() {
             border
             border-yellow-500/20
             bg-gradient-to-br
-            from-yellow-500/10
-            via-orange-500/5
-            to-transparent
+            from-[#0f172a]
+            via-[#111827]
+            to-[#020617]
             p-4
-            backdrop-blur-xl
+            shadow-2xl
+            shadow-yellow-950/20
             md:p-8
           "
         >
-          {/* Decorative Glow */}
-
-          <div
-            className="
-              pointer-events-none
-              absolute
-              -right-24
-              -top-24
-              h-72
-              w-72
-              rounded-full
-              bg-yellow-500/10
-              blur-3xl
-            "
-          />
-
-          <div
-            className="
-              pointer-events-none
-              absolute
-              -bottom-32
-              left-1/3
-              h-64
-              w-64
-              rounded-full
-              bg-orange-500/10
-              blur-3xl
-            "
-          />
-
-          {/* Loading Header */}
+          <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-yellow-500/10 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-32 left-1/3 h-72 w-72 rounded-full bg-orange-500/10 blur-3xl" />
 
           <div className="relative mb-8 flex items-center gap-4">
-
             <div
               className="
                 flex
@@ -98,70 +65,19 @@ export default function FeaturedCollection() {
                 bg-yellow-500/10
               "
             >
-              <Sparkles
-                className="text-yellow-400"
-                size={24}
-              />
+              <Sparkles className="text-yellow-400" size={24} />
             </div>
 
             <div className="flex-1">
-
-              <div
-                className="
-                  h-8
-                  w-64
-                  max-w-full
-                  animate-pulse
-                  rounded-lg
-                  bg-white/10
-                "
-              />
-
-              <div
-                className="
-                  mt-3
-                  h-4
-                  w-96
-                  max-w-full
-                  animate-pulse
-                  rounded-lg
-                  bg-white/5
-                "
-              />
-
+              <div className="h-8 w-64 max-w-full animate-pulse rounded-lg bg-white/10" />
+              <div className="mt-3 h-4 w-96 max-w-full animate-pulse rounded-lg bg-white/5" />
             </div>
-
           </div>
-
-          {/* Loading Product Count */}
 
           <div className="relative mb-6 flex items-center justify-between">
-
-            <div
-              className="
-                h-4
-                w-32
-                animate-pulse
-                rounded
-                bg-white/5
-              "
-            />
-
-            <div
-              className="
-                hidden
-                h-4
-                w-48
-                animate-pulse
-                rounded
-                bg-white/5
-                lg:block
-              "
-            />
-
+            <div className="h-4 w-32 animate-pulse rounded bg-white/5" />
+            <div className="hidden h-4 w-48 animate-pulse rounded bg-white/5 lg:block" />
           </div>
-
-          {/* Skeleton Grid */}
 
           <div
             className="
@@ -190,7 +106,6 @@ export default function FeaturedCollection() {
               />
             ))}
           </div>
-
         </div>
       </section>
     );
@@ -202,22 +117,10 @@ export default function FeaturedCollection() {
 
   return (
     <motion.section
-      initial={{
-        opacity: 0,
-        y: 25,
-      }}
-      whileInView={{
-        opacity: 1,
-        y: 0,
-      }}
-      viewport={{
-        once: true,
-        amount: 0.15,
-      }}
-      transition={{
-        duration: 0.5,
-        ease: "easeOut",
-      }}
+      initial={{ opacity: 0, y: 25 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.15 }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
       className="mt-10 md:mt-16"
     >
       <div
@@ -228,47 +131,17 @@ export default function FeaturedCollection() {
           border
           border-yellow-500/20
           bg-gradient-to-br
-          from-yellow-500/10
-          via-orange-500/5
-          to-transparent
+          from-[#0f172a]
+          via-[#111827]
+          to-[#020617]
           p-4
           shadow-2xl
-          shadow-yellow-950/10
-          backdrop-blur-xl
+          shadow-yellow-950/20
           md:p-8
         "
       >
-        {/* Decorative Background Glow */}
-
-        <div
-          className="
-            pointer-events-none
-            absolute
-            -right-24
-            -top-24
-            h-72
-            w-72
-            rounded-full
-            bg-yellow-500/10
-            blur-3xl
-          "
-        />
-
-        <div
-          className="
-            pointer-events-none
-            absolute
-            -bottom-36
-            left-1/3
-            h-72
-            w-72
-            rounded-full
-            bg-orange-500/10
-            blur-3xl
-          "
-        />
-
-        {/* Header */}
+        <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-yellow-500/10 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-36 left-1/3 h-72 w-72 rounded-full bg-orange-500/10 blur-3xl" />
 
         <div
           className="
@@ -283,12 +156,8 @@ export default function FeaturedCollection() {
           "
         >
           <div className="flex items-start gap-4">
-
             <motion.div
-              whileHover={{
-                rotate: 8,
-                scale: 1.05,
-              }}
+              whileHover={{ rotate: 8, scale: 1.05 }}
               transition={{
                 type: "spring",
                 stiffness: 260,
@@ -309,25 +178,12 @@ export default function FeaturedCollection() {
                 shadow-yellow-500/20
               "
             >
-              <Sparkles
-                size={25}
-                className="text-black"
-              />
+              <Sparkles size={25} className="text-black" />
             </motion.div>
 
             <div>
-
               <div className="flex flex-wrap items-center gap-3">
-
-                <h2
-                  className="
-                    text-2xl
-                    font-black
-                    tracking-tight
-                    text-white
-                    md:text-3xl
-                  "
-                >
+                <h2 className="text-2xl font-black tracking-tight text-white md:text-3xl">
                   Featured Collection
                 </h2>
 
@@ -348,36 +204,19 @@ export default function FeaturedCollection() {
                     sm:flex
                   "
                 >
-                  <Star
-                    size={13}
-                    className="fill-yellow-300"
-                  />
-
+                  <Star size={13} className="fill-yellow-300" />
                   Premium Picks
                 </span>
-
               </div>
 
-              <p
-                className="
-                  mt-2
-                  max-w-2xl
-                  text-sm
-                  leading-6
-                  text-slate-400
-                  md:text-base
-                "
-              >
-                Handpicked premium products from the best local
-                stores across{" "}
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300 md:text-base">
+                Handpicked premium products from the best local stores across{" "}
                 <span className="font-semibold text-yellow-300">
                   Nandurbar Bazar
                 </span>
                 .
               </p>
-
             </div>
-
           </div>
 
           <Link
@@ -405,57 +244,21 @@ export default function FeaturedCollection() {
             "
           >
             View All
-
             <ArrowRight size={18} />
           </Link>
-
         </div>
 
-        {/* Product Information */}
-
-        <div
-          className="
-            relative
-            mb-6
-            flex
-            flex-wrap
-            items-center
-            justify-between
-            gap-3
-          "
-        >
-          <p className="text-sm text-slate-400">
-            <span className="font-semibold text-white">
-              {products.length}
-            </span>{" "}
-            featured{" "}
-            {products.length === 1
-              ? "product"
-              : "products"}
+        <div className="relative mb-6 flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-slate-300">
+            <span className="font-semibold text-white">{products.length}</span>{" "}
+            featured {products.length === 1 ? "product" : "products"}
           </p>
 
-          <div
-            className="
-              hidden
-              items-center
-              gap-2
-              text-sm
-              font-medium
-              text-yellow-300
-              lg:flex
-            "
-          >
-            <Star
-              size={15}
-              className="fill-yellow-300"
-            />
-
+          <div className="hidden items-center gap-2 text-sm font-medium text-yellow-300 lg:flex">
+            <Star size={15} className="fill-yellow-300" />
             Curated by Nandurbar Bazar
           </div>
-
         </div>
-
-        {/* Desktop and Tablet Grid */}
 
         <div
           className="
@@ -472,17 +275,9 @@ export default function FeaturedCollection() {
           {products.map((product, index) => (
             <motion.div
               key={product.id}
-              initial={{
-                opacity: 0,
-                y: 20,
-              }}
-              whileInView={{
-                opacity: 1,
-                y: 0,
-              }}
-              viewport={{
-                once: true,
-              }}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
               transition={{
                 duration: 0.35,
                 delay: Math.min(index * 0.06, 0.3),
@@ -490,18 +285,13 @@ export default function FeaturedCollection() {
             >
               <ProductCard
                 product={product}
-                storeIsActive={
-                  product.store?.isActive === true
-                }
+                storeIsActive={product.store?.isActive === true}
               />
             </motion.div>
           ))}
         </div>
 
-        {/* Mobile Horizontal Slider */}
-
         <div className="relative md:hidden">
-
           <div
             className="
               flex
@@ -516,17 +306,9 @@ export default function FeaturedCollection() {
             {products.map((product, index) => (
               <motion.div
                 key={product.id}
-                initial={{
-                  opacity: 0,
-                  x: 20,
-                }}
-                whileInView={{
-                  opacity: 1,
-                  x: 0,
-                }}
-                viewport={{
-                  once: true,
-                }}
+                initial={{ opacity: 0, x: 20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
                 transition={{
                   duration: 0.35,
                   delay: Math.min(index * 0.05, 0.25),
@@ -540,16 +322,13 @@ export default function FeaturedCollection() {
               >
                 <ProductCard
                   product={product}
-                  storeIsActive={
-                    product.store?.isActive === true
-                  }
+                  storeIsActive={product.store?.isActive === true}
                 />
               </motion.div>
             ))}
           </div>
 
           <div className="mt-5 flex justify-center">
-
             <Link
               href="/featured"
               className="
@@ -570,14 +349,10 @@ export default function FeaturedCollection() {
               "
             >
               View All
-
               <ArrowRight size={16} />
             </Link>
-
           </div>
-
         </div>
-
       </div>
     </motion.section>
   );
