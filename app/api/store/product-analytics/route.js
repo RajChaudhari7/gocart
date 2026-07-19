@@ -100,19 +100,43 @@ export async function GET() {
                     ).toFixed(1)
                 );
 
-        const topProducts = products.slice(0, 10).map((product) => ({
-            id: product.id,
-            name: product.name,
-            image: product.images?.[0] || null,
-            category: product.category,
-            views: product.totalViews,
-            sales: product.totalSales,
-            stock: product.quantity,
-            rating: Number(product.averageRating.toFixed(1)),
-            price: product.price,
-            mrp: product.mrp,
-            featured: product.featured,
-        }));
+        const topProducts = products
+            .slice(0, 10)
+            .map((product, index) => ({
+
+                rank: index + 1,
+
+                id: product.id,
+
+                name: product.name,
+
+                image: product.images?.[0] || null,
+
+                category: product.category,
+
+                sold: product.totalSales,
+
+                views: product.totalViews,
+
+                stock: product.quantity,
+
+                rating: Number(product.averageRating.toFixed(1)),
+
+                price: product.price,
+
+                mrp: product.mrp,
+
+                featured: product.featured,
+
+                revenue:
+                    Number(
+                        (
+                            product.totalSales *
+                            product.price
+                        ).toFixed(2)
+                    ),
+
+            }));
 
         const lowStockProducts = products
             .filter(
@@ -184,7 +208,15 @@ export async function GET() {
                     id: products[0].id,
                     name: products[0].name,
                     image: products[0].images?.[0] || null,
-                    sales: products[0].totalSales,
+                    sold: products[0].totalSales,
+
+                    revenue:
+                        Number(
+                            (
+                                products[0].totalSales *
+                                products[0].price
+                            ).toFixed(2)
+                        ),
                     views: products[0].totalViews,
                     rating: Number(
                         products[0].averageRating.toFixed(1)
@@ -203,7 +235,15 @@ export async function GET() {
                         id: product.id,
                         name: product.name,
                         image: product.images?.[0] || null,
-                        sales: product.totalSales,
+                        sold: product.totalSales,
+
+                        revenue:
+                            Number(
+                                (
+                                    product.totalSales *
+                                    product.price
+                                ).toFixed(2)
+                            ),
                         views: product.totalViews,
                         rating: Number(
                             product.averageRating.toFixed(1)

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Image from "next/image";
 import axios from "axios";
 import { motion } from "framer-motion";
 import {
@@ -9,9 +10,12 @@ import {
     Box,
     Eye,
     RefreshCw,
-    ShoppingCart,
+    ShoppingBag,
     Star,
     TrendingUp,
+    Trophy,
+    Medal,
+    Award,
 } from "lucide-react";
 
 const initialStats = {
@@ -22,89 +26,239 @@ const initialStats = {
 };
 
 const formatNumber = (value) => {
-    return new Intl.NumberFormat("en-IN").format(Number(value || 0));
+    return new Intl.NumberFormat("en-IN").format(
+        Number(value || 0)
+    );
 };
 
 const kpiConfig = [
     {
         key: "totalProducts",
         title: "Total Products",
-        description: "Active products in your store",
+        description: "Active products available in your store",
         icon: Box,
-        iconClassName:
-            "bg-gradient-to-br from-blue-500 to-cyan-500 shadow-blue-500/20",
-        glowClassName: "bg-blue-500/10",
-        valueFormatter: formatNumber,
+        iconBackground:
+            "bg-gradient-to-br from-blue-500 to-cyan-500",
+        iconShadow: "shadow-blue-500/20",
+        glow: "bg-blue-500/10",
+        formatter: formatNumber,
     },
     {
         key: "totalViews",
-        title: "Total Views",
-        description: "Combined product page views",
+        title: "Total Product Views",
+        description: "Combined views across all your products",
         icon: Eye,
-        iconClassName:
-            "bg-gradient-to-br from-violet-500 to-purple-500 shadow-violet-500/20",
-        glowClassName: "bg-violet-500/10",
-        valueFormatter: formatNumber,
+        iconBackground:
+            "bg-gradient-to-br from-violet-500 to-purple-600",
+        iconShadow: "shadow-violet-500/20",
+        glow: "bg-violet-500/10",
+        formatter: formatNumber,
     },
     {
         key: "totalSales",
-        title: "Total Sales",
-        description: "Products sold across your store",
-        icon: ShoppingCart,
-        iconClassName:
-            "bg-gradient-to-br from-emerald-500 to-green-500 shadow-emerald-500/20",
-        glowClassName: "bg-emerald-500/10",
-        valueFormatter: formatNumber,
+        title: "Total Units Sold",
+        description: "Total product quantities sold by your store",
+        icon: ShoppingBag,
+        iconBackground:
+            "bg-gradient-to-br from-emerald-500 to-green-600",
+        iconShadow: "shadow-emerald-500/20",
+        glow: "bg-emerald-500/10",
+        formatter: formatNumber,
     },
     {
         key: "averageRating",
         title: "Average Rating",
-        description: "Average rating of rated products",
+        description: "Average rating across your rated products",
         icon: Star,
-        iconClassName:
-            "bg-gradient-to-br from-yellow-400 to-orange-500 shadow-yellow-500/20",
-        glowClassName: "bg-yellow-500/10",
-        valueFormatter: (value) => Number(value || 0).toFixed(1),
+        iconBackground:
+            "bg-gradient-to-br from-yellow-400 to-orange-500",
+        iconShadow: "shadow-yellow-500/20",
+        glow: "bg-yellow-500/10",
+        formatter: (value) => Number(value || 0).toFixed(1),
         suffix: "/5",
     },
 ];
 
 function ProductAnalyticsSkeleton() {
     return (
-        <div className="space-y-8">
-            <div>
-                <div className="h-10 w-72 animate-pulse rounded-xl bg-white/10" />
+        <div className="min-h-screen bg-[#020617] p-4 text-white md:p-6 lg:p-8">
+            <div className="mx-auto max-w-[1600px] space-y-8">
+                <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 md:p-8">
+                    <div className="flex items-start gap-4">
+                        <div className="h-14 w-14 animate-pulse rounded-2xl bg-slate-800" />
 
-                <div className="mt-3 h-5 w-full max-w-xl animate-pulse rounded-lg bg-white/5" />
-            </div>
+                        <div className="flex-1">
+                            <div className="h-9 w-72 max-w-full animate-pulse rounded-xl bg-slate-800" />
 
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
-                {Array.from({ length: 4 }).map((_, index) => (
-                    <div
-                        key={index}
-                        className="
-              min-h-[190px]
-              animate-pulse
-              rounded-3xl
-              border
-              border-white/10
-              bg-white/5
-              p-6
-            "
-                    >
-                        <div className="flex items-start justify-between">
-                            <div className="h-14 w-14 rounded-2xl bg-white/10" />
-
-                            <div className="h-7 w-20 rounded-full bg-white/5" />
+                            <div className="mt-3 h-5 w-[520px] max-w-full animate-pulse rounded-lg bg-slate-800/70" />
                         </div>
-
-                        <div className="mt-8 h-9 w-28 rounded-lg bg-white/10" />
-
-                        <div className="mt-3 h-4 w-44 rounded bg-white/5" />
                     </div>
-                ))}
+                </div>
+
+                <div>
+                    <div className="mb-5">
+                        <div className="h-7 w-52 animate-pulse rounded-lg bg-slate-800" />
+
+                        <div className="mt-2 h-4 w-80 max-w-full animate-pulse rounded bg-slate-800/70" />
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+                        {Array.from({ length: 4 }).map((_, index) => (
+                            <div
+                                key={index}
+                                className="
+                  min-h-[205px]
+                  animate-pulse
+                  rounded-3xl
+                  border
+                  border-slate-800
+                  bg-slate-900
+                  p-6
+                "
+                            >
+                                <div className="flex items-start justify-between">
+                                    <div className="h-14 w-14 rounded-2xl bg-slate-800" />
+
+                                    <div className="h-7 w-20 rounded-full bg-slate-800" />
+                                </div>
+
+                                <div className="mt-8 h-10 w-28 rounded-lg bg-slate-800" />
+
+                                <div className="mt-3 h-5 w-36 rounded bg-slate-800" />
+
+                                <div className="mt-2 h-4 w-48 max-w-full rounded bg-slate-800/70" />
+                            </div>
+                        ))}
+                    </div>
+                </div>
             </div>
         </div>
+    );
+}
+
+function PageHeader({ refreshing, onRefresh }) {
+    return (
+        <section
+            className="
+        relative
+        overflow-hidden
+        rounded-3xl
+        border
+        border-slate-800
+        bg-gradient-to-br
+        from-slate-900
+        via-slate-900
+        to-slate-950
+        p-6
+        shadow-2xl
+        shadow-black/20
+        md:p-8
+      "
+        >
+            <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-violet-500/10 blur-3xl" />
+
+            <div className="pointer-events-none absolute -bottom-28 left-1/3 h-64 w-64 rounded-full bg-indigo-500/10 blur-3xl" />
+
+            <div
+                className="
+          relative
+          flex
+          flex-col
+          gap-6
+          sm:flex-row
+          sm:items-center
+          sm:justify-between
+        "
+            >
+                <div className="flex items-start gap-4">
+                    <div
+                        className="
+              flex
+              h-14
+              w-14
+              shrink-0
+              items-center
+              justify-center
+              rounded-2xl
+              bg-gradient-to-br
+              from-violet-500
+              to-indigo-600
+              shadow-lg
+              shadow-violet-500/20
+            "
+                    >
+                        <BarChart3 size={27} className="text-white" />
+                    </div>
+
+                    <div>
+                        <div className="flex flex-wrap items-center gap-3">
+                            <h1 className="text-3xl font-black tracking-tight text-white md:text-4xl">
+                                Product Analytics
+                            </h1>
+
+                            <span
+                                className="
+                  rounded-full
+                  border
+                  border-emerald-500/20
+                  bg-emerald-500/10
+                  px-3
+                  py-1
+                  text-xs
+                  font-bold
+                  text-emerald-300
+                "
+                            >
+                                Live Performance
+                            </span>
+                        </div>
+
+                        <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300 md:text-base">
+                            Track individual product sales, product views,
+                            ratings, stock and your top-selling products from
+                            one dashboard.
+                        </p>
+                    </div>
+                </div>
+
+                <button
+                    type="button"
+                    disabled={refreshing}
+                    onClick={onRefresh}
+                    className="
+            flex
+            w-fit
+            shrink-0
+            items-center
+            justify-center
+            gap-2
+            rounded-xl
+            border
+            border-slate-700
+            bg-slate-800
+            px-4
+            py-2.5
+            text-sm
+            font-bold
+            text-white
+            transition-all
+            duration-300
+            hover:-translate-y-0.5
+            hover:border-slate-600
+            hover:bg-slate-700
+            disabled:cursor-not-allowed
+            disabled:opacity-60
+          "
+                >
+                    <RefreshCw
+                        size={16}
+                        className={refreshing ? "animate-spin" : ""}
+                    />
+
+                    {refreshing ? "Refreshing..." : "Refresh Data"}
+                </button>
+            </div>
+        </section>
     );
 }
 
@@ -113,13 +267,14 @@ function KpiCard({
     description,
     value,
     icon: Icon,
-    iconClassName,
-    glowClassName,
+    iconBackground,
+    iconShadow,
+    glow,
     suffix,
     index,
 }) {
     return (
-        <motion.div
+        <motion.article
             initial={{
                 opacity: 0,
                 y: 20,
@@ -138,38 +293,37 @@ function KpiCard({
             className="
         group
         relative
-        min-h-[190px]
+        min-h-[205px]
         overflow-hidden
         rounded-3xl
         border
-        border-white/10
+        border-slate-800
         bg-gradient-to-br
-        from-white/[0.08]
-        via-white/[0.04]
-        to-transparent
+        from-slate-900
+        via-slate-900
+        to-slate-950
         p-6
         shadow-xl
-        shadow-black/10
-        backdrop-blur-xl
+        shadow-black/20
         transition-colors
         duration-300
-        hover:border-white/20
+        hover:border-slate-700
       "
         >
             <div
                 className={`
           pointer-events-none
           absolute
-          -right-14
-          -top-14
-          h-40
-          w-40
+          -right-16
+          -top-16
+          h-44
+          w-44
           rounded-full
           blur-3xl
           transition-transform
           duration-500
           group-hover:scale-125
-          ${glowClassName}
+          ${glow}
         `}
             />
 
@@ -183,13 +337,11 @@ function KpiCard({
             justify-center
             rounded-2xl
             shadow-lg
-            ${iconClassName}
+            ${iconBackground}
+            ${iconShadow}
           `}
                 >
-                    <Icon
-                        size={25}
-                        className="text-white"
-                    />
+                    <Icon size={25} className="text-white" />
                 </div>
 
                 <div
@@ -204,7 +356,7 @@ function KpiCard({
             px-2.5
             py-1
             text-xs
-            font-semibold
+            font-bold
             text-emerald-300
           "
                 >
@@ -216,26 +368,109 @@ function KpiCard({
 
             <div className="relative mt-7">
                 <div className="flex items-end gap-1.5">
-                    <h2 className="text-3xl font-black tracking-tight text-white">
+                    <p className="text-3xl font-black tracking-tight text-white md:text-4xl">
                         {value}
-                    </h2>
+                    </p>
 
                     {suffix && (
-                        <span className="mb-1 text-sm font-semibold text-slate-400">
+                        <span className="mb-1 text-sm font-bold text-slate-400">
                             {suffix}
                         </span>
                     )}
                 </div>
 
-                <h3 className="mt-2 text-sm font-bold text-slate-200">
+                <h2 className="mt-3 text-sm font-bold text-slate-100">
                     {title}
-                </h3>
+                </h2>
 
-                <p className="mt-1 text-xs leading-5 text-slate-500">
+                <p className="mt-1 text-xs leading-5 text-slate-400">
                     {description}
                 </p>
             </div>
-        </motion.div>
+        </motion.article>
+    );
+}
+
+function ErrorState({ message, onRetry, refreshing }) {
+    return (
+        <div className="min-h-screen bg-[#020617] p-4 text-white md:p-6 lg:p-8">
+            <div className="mx-auto max-w-[1600px] space-y-8">
+                <PageHeader
+                    refreshing={refreshing}
+                    onRefresh={onRetry}
+                />
+
+                <div
+                    className="
+            flex
+            min-h-[340px]
+            flex-col
+            items-center
+            justify-center
+            rounded-3xl
+            border
+            border-red-500/20
+            bg-slate-900
+            px-6
+            text-center
+            shadow-xl
+            shadow-black/20
+          "
+                >
+                    <div
+                        className="
+              flex
+              h-16
+              w-16
+              items-center
+              justify-center
+              rounded-2xl
+              bg-red-500/10
+            "
+                    >
+                        <AlertCircle size={30} className="text-red-400" />
+                    </div>
+
+                    <h2 className="mt-5 text-xl font-bold text-white">
+                        Failed to load product analytics
+                    </h2>
+
+                    <p className="mt-2 max-w-md text-sm leading-6 text-slate-400">
+                        {message}
+                    </p>
+
+                    <button
+                        type="button"
+                        disabled={refreshing}
+                        onClick={onRetry}
+                        className="
+              mt-6
+              flex
+              items-center
+              gap-2
+              rounded-xl
+              bg-white
+              px-5
+              py-2.5
+              text-sm
+              font-bold
+              text-slate-950
+              transition
+              hover:bg-slate-200
+              disabled:cursor-not-allowed
+              disabled:opacity-60
+            "
+                    >
+                        <RefreshCw
+                            size={16}
+                            className={refreshing ? "animate-spin" : ""}
+                        />
+
+                        {refreshing ? "Retrying..." : "Try Again"}
+                    </button>
+                </div>
+            </div>
+        </div>
     );
 }
 
@@ -268,7 +503,7 @@ export default function ProductAnalyticsPage() {
 
             setError(
                 error.response?.data?.error ||
-                "Unable to load product analytics."
+                "Unable to load product analytics. Please try again."
             );
         } finally {
             setLoading(false);
@@ -286,231 +521,402 @@ export default function ProductAnalyticsPage() {
 
     if (error && !analytics) {
         return (
-            <div className="space-y-8">
-                <PageHeader
-                    refreshing={refreshing}
-                    onRefresh={() => fetchAnalytics(true)}
-                />
-
-                <div
-                    className="
-            flex
-            min-h-[320px]
-            flex-col
-            items-center
-            justify-center
-            rounded-3xl
-            border
-            border-red-500/20
-            bg-red-500/5
-            px-6
-            text-center
-          "
-                >
-                    <div
-                        className="
-              flex
-              h-16
-              w-16
-              items-center
-              justify-center
-              rounded-2xl
-              bg-red-500/10
-            "
-                    >
-                        <AlertCircle
-                            size={30}
-                            className="text-red-400"
-                        />
-                    </div>
-
-                    <h2 className="mt-5 text-xl font-bold text-white">
-                        Failed to load analytics
-                    </h2>
-
-                    <p className="mt-2 max-w-md text-sm leading-6 text-slate-400">
-                        {error}
-                    </p>
-
-                    <button
-                        type="button"
-                        onClick={() => fetchAnalytics()}
-                        className="
-              mt-6
-              flex
-              items-center
-              gap-2
-              rounded-xl
-              bg-white
-              px-5
-              py-2.5
-              text-sm
-              font-bold
-              text-slate-950
-              transition
-              hover:bg-slate-200
-            "
-                    >
-                        <RefreshCw size={16} />
-
-                        Try Again
-                    </button>
-                </div>
-            </div>
+            <ErrorState
+                message={error}
+                refreshing={refreshing}
+                onRetry={() => fetchAnalytics(true)}
+            />
         );
     }
 
     const stats = analytics?.stats || initialStats;
 
     return (
-        <div className="space-y-8">
-            <PageHeader
-                refreshing={refreshing}
-                onRefresh={() => fetchAnalytics(true)}
-            />
+        <main className="min-h-screen bg-[#020617] p-4 text-white md:p-6 lg:p-8">
+            <div className="mx-auto max-w-[1600px] space-y-8">
+                <PageHeader
+                    refreshing={refreshing}
+                    onRefresh={() => fetchAnalytics(true)}
+                />
 
-            {error && (
-                <div
-                    className="
-            flex
-            items-center
-            gap-3
-            rounded-2xl
-            border
-            border-amber-500/20
-            bg-amber-500/10
-            px-4
-            py-3
-            text-sm
-            text-amber-200
-          "
-                >
-                    <AlertCircle
-                        size={18}
-                        className="shrink-0"
-                    />
+                {error && (
+                    <div
+                        className="
+              flex
+              items-center
+              gap-3
+              rounded-2xl
+              border
+              border-amber-500/20
+              bg-amber-500/10
+              px-4
+              py-3
+              text-sm
+              text-amber-200
+            "
+                    >
+                        <AlertCircle size={18} className="shrink-0" />
 
-                    {error}
-                </div>
-            )}
+                        {error}
+                    </div>
+                )}
 
-            <section>
-                <div className="mb-5 flex items-center justify-between gap-4">
-                    <div>
-                        <h2 className="text-xl font-bold text-white">
+                <section>
+                    <div className="mb-5">
+                        <h2 className="text-xl font-black text-white md:text-2xl">
                             Performance Overview
                         </h2>
 
-                        <p className="mt-1 text-sm text-slate-500">
-                            A quick summary of your current product performance.
+                        <p className="mt-1 text-sm text-slate-400">
+                            Current performance summary of all active products
+                            in your store.
                         </p>
                     </div>
-                </div>
 
-                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
-                    {kpiConfig.map((item, index) => (
-                        <KpiCard
-                            key={item.key}
-                            index={index}
-                            title={item.title}
-                            description={item.description}
-                            value={item.valueFormatter(stats[item.key])}
-                            icon={item.icon}
-                            iconClassName={item.iconClassName}
-                            glowClassName={item.glowClassName}
-                            suffix={item.suffix}
-                        />
-                    ))}
-                </div>
-            </section>
+                    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+                        {kpiConfig.map((item, index) => (
+                            <KpiCard
+                                key={item.key}
+                                index={index}
+                                title={item.title}
+                                description={item.description}
+                                value={item.formatter(stats[item.key])}
+                                icon={item.icon}
+                                iconBackground={item.iconBackground}
+                                iconShadow={item.iconShadow}
+                                glow={item.glow}
+                                suffix={item.suffix}
+                            />
+                        ))}
+                    </div>
+                </section>
 
-            {/* Next section will be added here:
-          Top Performing Products Table
-      */}
-        </div>
-    );
-}
-
-function PageHeader({ refreshing, onRefresh }) {
-    return (
-        <div
-            className="
-        flex
-        flex-col
-        gap-5
-        sm:flex-row
-        sm:items-center
-        sm:justify-between
-      "
-        >
-            <div className="flex items-start gap-4">
-                <div
+                <section
                     className="
+        rounded-3xl
+        border
+        border-slate-800
+        bg-gradient-to-br
+        from-slate-900
+        via-slate-900
+        to-slate-950
+        shadow-xl
+        shadow-black/20
+        overflow-hidden
+    "
+                >
+
+                    <div
+                        className="
             flex
-            h-14
-            w-14
-            shrink-0
             items-center
-            justify-center
-            rounded-2xl
-            bg-gradient-to-br
-            from-violet-500
-            to-indigo-600
-            shadow-lg
-            shadow-violet-500/20
+            justify-between
+            border-b
+            border-slate-800
+            px-6
+            py-5
+        "
+                    >
+
+                        <div>
+
+                            <h2 className="text-2xl font-black text-white">
+                                🏆 Top Selling Products
+                            </h2>
+
+                            <p className="mt-1 text-sm text-slate-400">
+                                Products ranked by total units sold.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                    <div className="overflow-x-auto">
+
+                        <table className="min-w-full">
+
+                            <thead>
+
+                                <tr className="border-b border-slate-800 text-left">
+
+                                    <th className="px-6 py-4 text-slate-400">
+                                        Rank
+                                    </th>
+
+                                    <th className="px-6 py-4 text-slate-400">
+                                        Product
+                                    </th>
+
+                                    <th className="px-6 py-4 text-center text-slate-400">
+                                        Sold
+                                    </th>
+
+                                    <th className="px-6 py-4 text-center text-slate-400">
+                                        Views
+                                    </th>
+
+                                    <th className="px-6 py-4 text-center text-slate-400">
+                                        Rating
+                                    </th>
+
+                                    <th className="px-6 py-4 text-center text-slate-400">
+                                        Stock
+                                    </th>
+
+                                    <th className="px-6 py-4 text-right text-slate-400">
+                                        Revenue
+                                    </th>
+
+                                </tr>
+
+                            </thead>
+
+                            <tbody>
+
+                                {analytics.topProducts.map((product) => (
+
+                                    <motion.tr
+
+                                        key={product.id}
+
+                                        initial={{
+                                            opacity: 0,
+                                            y: 15,
+                                        }}
+
+                                        whileInView={{
+                                            opacity: 1,
+                                            y: 0,
+                                        }}
+
+                                        viewport={{
+                                            once: true,
+                                        }}
+
+                                        className="
+                            border-b
+                            border-slate-800
+                            transition
+                            hover:bg-slate-800/40
+                        "
+                                    >
+
+                                        {/* Rank */}
+
+                                        <td className="px-6 py-5">
+
+                                            {product.rank === 1 && (
+
+                                                <div className="flex items-center gap-2 font-bold text-yellow-400">
+
+                                                    <Trophy size={20} />
+
+                                                    #1
+
+                                                </div>
+
+                                            )}
+
+                                            {product.rank === 2 && (
+
+                                                <div className="flex items-center gap-2 font-bold text-slate-300">
+
+                                                    <Medal size={20} />
+
+                                                    #2
+
+                                                </div>
+
+                                            )}
+
+                                            {product.rank === 3 && (
+
+                                                <div className="flex items-center gap-2 font-bold text-orange-400">
+
+                                                    <Award size={20} />
+
+                                                    #3
+
+                                                </div>
+
+                                            )}
+
+                                            {product.rank > 3 && (
+
+                                                <span className="font-bold text-white">
+
+                                                    #{product.rank}
+
+                                                </span>
+
+                                            )}
+
+                                        </td>
+
+                                        {/* Product */}
+
+                                        <td className="px-6 py-5">
+
+                                            <div className="flex items-center gap-4">
+
+                                                <div className="relative h-16 w-16 overflow-hidden rounded-xl border border-slate-700">
+
+                                                    <Image
+                                                        src={
+                                                            product.image ||
+                                                            "/placeholder.png"
+                                                        }
+                                                        alt={product.name}
+                                                        fill
+                                                        className="object-cover"
+                                                    />
+
+                                                </div>
+
+                                                <div>
+
+                                                    <h3 className="font-semibold text-white">
+
+                                                        {product.name}
+
+                                                    </h3>
+
+                                                    <p className="text-sm text-slate-400">
+
+                                                        {product.category}
+
+                                                    </p>
+
+                                                </div>
+
+                                            </div>
+
+                                        </td>
+
+                                        {/* Sold */}
+
+                                        <td className="px-6 py-5 text-center">
+
+                                            <div className="font-bold text-emerald-400 text-lg">
+
+                                                {product.sold}
+
+                                            </div>
+
+                                            <p className="text-xs text-slate-500">
+
+                                                Units
+
+                                            </p>
+
+                                        </td>
+
+                                        {/* Views */}
+
+                                        <td className="px-6 py-5 text-center">
+
+                                            <div className="font-semibold text-white">
+
+                                                {product.views.toLocaleString()}
+
+                                            </div>
+
+                                        </td>
+
+                                        {/* Rating */}
+
+                                        <td className="px-6 py-5 text-center">
+
+                                            <div className="inline-flex items-center gap-1 rounded-full bg-yellow-500/10 px-3 py-1">
+
+                                                <Star
+                                                    size={14}
+                                                    className="fill-yellow-400 text-yellow-400"
+                                                />
+
+                                                <span className="font-semibold text-yellow-300">
+
+                                                    {product.rating}
+
+                                                </span>
+
+                                            </div>
+
+                                        </td>
+
+                                        {/* Stock */}
+
+                                        <td className="px-6 py-5 text-center">
+
+                                            {product.stock === 0 ? (
+
+                                                <span className="rounded-full bg-red-500/10 px-3 py-1 text-xs font-bold text-red-400">
+
+                                                    Out of Stock
+
+                                                </span>
+
+                                            ) : product.stock <= 10 ? (
+
+                                                <span className="rounded-full bg-yellow-500/10 px-3 py-1 text-xs font-bold text-yellow-400">
+
+                                                    {product.stock} Left
+
+                                                </span>
+
+                                            ) : (
+
+                                                <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-400">
+
+                                                    {product.stock} In Stock
+
+                                                </span>
+
+                                            )}
+
+                                        </td>
+
+                                        {/* Revenue */}
+
+                                        <td className="px-6 py-5 text-right">
+
+                                            <div className="text-lg font-bold text-emerald-400">
+
+                                                ₹{product.revenue.toLocaleString()}
+
+                                            </div>
+
+                                        </td>
+
+                                    </motion.tr>
+
+                                ))}
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </section>
+
+                <section
+                    className="
+            rounded-3xl
+            border
+            border-dashed
+            border-slate-700
+            bg-slate-900/50
+            p-8
+            text-center
           "
                 >
-                    <BarChart3
-                        size={26}
-                        className="text-white"
-                    />
-                </div>
-
-                <div>
-                    <h1 className="text-3xl font-black tracking-tight text-white md:text-4xl">
-                        Product Analytics
-                    </h1>
-
-                    <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400 md:text-base">
-                        Track product views, sales, ratings and inventory
-                        performance from one place.
+                    <p className="text-sm font-semibold text-slate-400">
+                        Top Selling Products section will be added in Part 2.
                     </p>
-                </div>
+                </section>
             </div>
-
-            <button
-                type="button"
-                disabled={refreshing}
-                onClick={onRefresh}
-                className="
-          flex
-          w-fit
-          items-center
-          justify-center
-          gap-2
-          rounded-xl
-          border
-          border-white/10
-          bg-white/5
-          px-4
-          py-2.5
-          text-sm
-          font-semibold
-          text-slate-200
-          transition
-          hover:border-white/20
-          hover:bg-white/10
-          disabled:cursor-not-allowed
-          disabled:opacity-60
-        "
-            >
-                <RefreshCw
-                    size={16}
-                    className={refreshing ? "animate-spin" : ""}
-                />
-
-                {refreshing ? "Refreshing..." : "Refresh"}
-            </button>
-        </div>
+        </main>
     );
 }
