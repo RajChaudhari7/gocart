@@ -18,6 +18,18 @@ import {
     Award,
 } from "lucide-react";
 
+import {
+    ResponsiveContainer,
+    LineChart,
+    Line,
+    CartesianGrid,
+    XAxis,
+    YAxis,
+    Tooltip,
+    Legend,
+    ReferenceLine,
+} from "recharts";
+
 const initialStats = {
     totalProducts: 0,
     totalViews: 0,
@@ -474,6 +486,498 @@ function ErrorState({ message, onRetry, refreshing }) {
     );
 }
 
+function ViewsVsSalesTooltip({
+    active,
+    payload,
+    label,
+}) {
+
+    if (!active || !payload || !payload.length) {
+        return null;
+    }
+
+    const averageSales =
+        data.length > 0
+            ? data.reduce(
+                (sum, item) => sum + item.sales,
+                0
+            ) / data.length
+            : 0;
+
+    return (
+
+        <div
+            className="
+                rounded-2xl
+                border
+                border-slate-700
+                bg-slate-900
+                px-4
+                py-3
+                shadow-2xl
+            "
+        >
+
+            <p className="font-bold text-white">
+
+                {label}
+
+            </p>
+
+            <div className="mt-3 space-y-2">
+
+                <div className="flex items-center justify-between gap-6">
+
+                    <span className="text-slate-400">
+
+                        Views
+
+                    </span>
+
+                    <span className="font-bold text-sky-400">
+
+                        {payload[0]?.value?.toLocaleString()}
+
+                    </span>
+
+                </div>
+
+                <div className="flex items-center justify-between gap-6">
+
+                    <span className="text-slate-400">
+
+                        Sold
+
+                    </span>
+
+                    <span className="font-bold text-emerald-400">
+
+                        {payload[1]?.value?.toLocaleString()}
+
+                    </span>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    );
+
+}
+
+function ViewsVsSalesChart({
+
+    data = [],
+
+}) {
+
+    if (!data.length) {
+
+        return (
+
+            <section
+                className="
+                    rounded-3xl
+                    border
+                    border-slate-800
+                    bg-slate-900
+                    p-8
+                "
+            >
+
+                <h2 className="text-2xl font-black text-white">
+
+                    Views vs Sales
+
+                </h2>
+
+
+
+                <div className="flex h-56 items-center justify-center">
+
+                    <div className="text-center">
+
+                        <BarChart3
+                            className="mx-auto mb-4 text-slate-600"
+                            size={50}
+                        />
+
+                        <h3 className="text-lg font-semibold text-white">
+
+                            No Sales Yet
+
+                        </h3>
+
+                        <p className="mt-2 text-slate-400">
+
+                            Once customers start purchasing your
+                            products, analytics will appear here.
+
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+
+            </section>
+
+        );
+
+    }
+
+    return (
+
+        <section
+            className="
+                rounded-3xl
+                border
+                border-slate-800
+                bg-gradient-to-br
+                from-slate-900
+                via-slate-900
+                to-slate-950
+                p-6
+                shadow-xl
+                shadow-black/20
+            "
+        >
+
+            <div className="mb-8">
+
+                <div className="flex items-center gap-3">
+
+                    <div
+                        className="
+            flex
+            h-12
+            w-12
+            items-center
+            justify-center
+            rounded-xl
+            bg-gradient-to-br
+            from-sky-500
+            to-blue-600
+        "
+                    >
+
+                        <TrendingUp
+                            size={24}
+                            className="text-white"
+                        />
+
+                    </div>
+
+                    <div>
+
+                        <h2 className="text-2xl font-black text-white">
+
+                            Views vs Sales
+
+                        </h2>
+
+                        <p className="text-sm text-slate-400">
+
+                            Compare customer interest with
+                            actual purchases.
+
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <p className="mt-2 text-sm text-slate-400">
+
+                    Compare product visibility against actual
+                    sales.
+
+                </p>
+
+            </div>
+
+            <div className="h-[420px]">
+
+                <div className="mb-8 grid grid-cols-2 gap-5 md:grid-cols-4">
+
+                    <div className="rounded-2xl bg-slate-800/50 p-4">
+
+                        <p className="text-xs uppercase text-slate-400">
+
+                            Products
+
+                        </p>
+
+                        <p className="mt-2 text-2xl font-bold text-white">
+
+                            {data.length}
+
+                        </p>
+
+                    </div>
+
+                    <div className="rounded-2xl bg-slate-800/50 p-4">
+
+                        <p className="text-xs uppercase text-slate-400">
+
+                            Views
+
+                        </p>
+
+                        <p className="mt-2 text-2xl font-bold text-sky-400">
+
+                            {data
+                                .reduce(
+                                    (sum, item) => sum + item.views,
+                                    0
+                                )
+                                .toLocaleString()}
+
+                        </p>
+
+                    </div>
+
+                    <div className="rounded-2xl bg-slate-800/50 p-4">
+
+                        <p className="text-xs uppercase text-slate-400">
+
+                            Units Sold
+
+                        </p>
+
+                        <p className="mt-2 text-2xl font-bold text-emerald-400">
+
+                            {data
+                                .reduce(
+                                    (sum, item) => sum + item.sales,
+                                    0
+                                )
+                                .toLocaleString()}
+
+                        </p>
+
+                    </div>
+
+                    <div className="rounded-2xl bg-slate-800/50 p-4">
+
+                        <p className="text-xs uppercase text-slate-400">
+
+                            Conversion
+
+                        </p>
+
+                        <p className="mt-2 text-2xl font-bold text-violet-400">
+
+                            {(
+                                (
+                                    data.reduce(
+                                        (s, i) => s + i.sales,
+                                        0
+                                    ) /
+
+                                    Math.max(
+                                        data.reduce(
+                                            (s, i) => s + i.views,
+                                            0
+                                        ),
+                                        1
+                                    )
+                                ) * 100
+                            ).toFixed(1)}
+                            %
+
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <ResponsiveContainer
+                    width="100%"
+                    height="100%"
+                >
+
+                    <LineChart
+                        data={data}
+                        margin={{
+                            top: 10,
+                            right: 25,
+                            left: 5,
+                            bottom: 10,
+                        }}
+                    ><defs>
+
+                            <linearGradient
+                                id="viewsGradient"
+                                x1="0"
+                                y1="0"
+                                x2="1"
+                                y2="0"
+                            >
+
+                                <stop
+                                    offset="0%"
+                                    stopColor="#38bdf8"
+                                />
+
+                                <stop
+                                    offset="100%"
+                                    stopColor="#3b82f6"
+                                />
+
+                            </linearGradient>
+
+                            <linearGradient
+                                id="salesGradient"
+                                x1="0"
+                                y1="0"
+                                x2="1"
+                                y2="0"
+                            >
+
+                                <stop
+                                    offset="0%"
+                                    stopColor="#34d399"
+                                />
+
+                                <stop
+                                    offset="100%"
+                                    stopColor="#10b981"
+                                />
+
+                            </linearGradient>
+
+                        </defs><CartesianGrid
+                            strokeDasharray="3 3"
+                            opacity={0.3}
+                            stroke="#334155"
+                        />
+
+                        <XAxis
+                            dataKey="product"
+                            angle={-20}
+                            textAnchor="end"
+                            height={70}
+                            interval={0}
+                            tick={{
+                                fill: "#94a3b8",
+                                fontSize: 12,
+                            }}
+                        />
+
+                        <YAxis
+                            stroke="#94a3b8"
+                            tick={{
+                                fill: "#94a3b8",
+                                fontSize: 12,
+                            }}
+                        />
+
+                        <Tooltip
+                            content={<ViewsVsSalesTooltip />}
+                        />
+
+                        <Legend
+                            iconType="circle"
+                            iconSize={12}
+                            wrapperStyle={{
+                                color: "#fff",
+                                paddingTop: 20,
+                                fontSize: 13,
+                            }}
+                        />
+
+                        <ReferenceLine
+                            y={averageSales}
+                            stroke="#facc15"
+                            strokeDasharray="5 5"
+                            label={{
+                                value: "Average Sales",
+                                fill: "#facc15",
+                                fontSize: 12,
+                            }}
+                        />
+                        <Line
+
+                            type="natural"
+
+                            dataKey="views"
+
+                            name="Views"
+
+                            stroke="url(#viewsGradient)"
+
+                            strokeWidth={4}
+
+                            dot={{
+                                r: 4,
+                                strokeWidth: 2,
+                                stroke: "#fff",
+                            }}
+
+                            activeDot={{
+                                r: 10,
+                                stroke: "#fff",
+                                strokeWidth: 3,
+                            }}
+
+                            animationDuration={1200}
+
+                        />
+
+                        <Line
+
+                            type="natural"
+
+                            dataKey="sales"
+
+                            name="Sales"
+
+                            stroke="url(#salesGradient)"
+
+                            strokeWidth={4}
+
+                            dot={{
+                                r: 4,
+                                strokeWidth: 2,
+                                stroke: "#fff",
+                            }}
+
+                            activeDot={{
+                                r: 10,
+                                stroke: "#fff",
+                                strokeWidth: 3,
+                            }}
+
+                            animationDuration={1200}
+
+                        />
+                    </LineChart>
+
+                    <div className="mt-6 border-t border-slate-800 pt-4">
+
+                        <p className="text-xs text-slate-500">
+
+                            Tip: Products with high views but low sales may need
+                            better pricing, improved images, or more compelling
+                            descriptions.
+
+                        </p>
+
+                    </div>
+
+                </ResponsiveContainer>
+
+            </div>
+
+        </section>
+
+    );
+
+}
+
 export default function ProductAnalyticsPage() {
     const [analytics, setAnalytics] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -530,6 +1034,9 @@ export default function ProductAnalyticsPage() {
     }
 
     const stats = analytics?.stats || initialStats;
+
+    const viewsVsSalesData =
+        analytics?.charts?.viewsVsSales || [];
 
     return (
         <main className="min-h-screen bg-[#020617] p-4 text-white md:p-6 lg:p-8">
@@ -591,6 +1098,13 @@ export default function ProductAnalyticsPage() {
                     </div>
                 </section>
 
+                <div className="grid gap-6">
+
+                    <ViewsVsSalesChart
+                        data={viewsVsSalesData}
+                    />
+
+                </div>
                 <section
                     className="
         rounded-3xl
@@ -899,22 +1413,6 @@ export default function ProductAnalyticsPage() {
 
                     </div>
 
-                </section>
-
-                <section
-                    className="
-            rounded-3xl
-            border
-            border-dashed
-            border-slate-700
-            bg-slate-900/50
-            p-8
-            text-center
-          "
-                >
-                    <p className="text-sm font-semibold text-slate-400">
-                        Top Selling Products section will be added in Part 2.
-                    </p>
                 </section>
             </div>
         </main>

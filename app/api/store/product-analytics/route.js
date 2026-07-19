@@ -63,6 +63,33 @@ export async function GET() {
             },
         });
 
+        const orderItems = await prisma.orderItem.findMany({
+
+            where: {
+
+                order: {
+                    storeId: store.id,
+                    isPaid: true,
+                }
+
+            },
+
+            include: {
+
+                product: {
+
+                    select: {
+                        id: true,
+                        name: true,
+                        totalViews: true,
+                    }
+
+                }
+
+            }
+
+        });
+
         const totalProducts = products.length;
 
         const totalViews = products.reduce(
@@ -75,15 +102,7 @@ export async function GET() {
             0
         );
 
-        /*
-          Weighted average rating:
-    
-          Since the Product model only stores averageRating and does not store
-          the number of ratings directly, this calculates the average across
-          rated products.
-    
-          Products with no rating are excluded.
-        */
+
         const ratedProducts = products.filter(
             (product) => product.averageRating > 0
         );
@@ -137,6 +156,41 @@ export async function GET() {
                     ),
 
             }));
+
+        const viewsVsSalesChart = orderItems.reduce(
+
+            (acc, item) => {
+
+                const existing = acc.find(
+
+                    p => p.product === item.product.name
+                );
+
+                if (existing) {
+
+                    existing.sales += item.quantity;
+
+                } else {
+
+                    acc.push({
+
+                        product: item.product.name,
+
+                        views: item.product.totalViews,
+
+                        sales: item.quantity,
+
+                    });
+
+                }
+
+                return acc;
+
+            },
+
+            []
+
+        );
 
         const lowStockProducts = products
             .filter(
@@ -262,6 +316,12 @@ export async function GET() {
             highlights: {
                 bestSeller,
                 mostViewedProduct,
+            },
+
+            charts: {
+
+                viewsVsSales: viewsVsSalesChart,
+
             },
 
             topProducts,
