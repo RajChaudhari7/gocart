@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation"
 import {
+  BarChart3Icon,
   HomeIcon,
   LayoutListIcon,
   SquarePenIcon,
@@ -21,6 +22,7 @@ const StoreSidebar = ({ storeInfo, pendingOrdersCount = 0 }) => {
     { name: "Followers", href: "/store/followers", icon: UsersIcon, },
     { name: 'Add Product', href: '/store/add-product', icon: SquarePlusIcon },
     { name: 'Manage Products', href: '/store/manage-product', icon: SquarePenIcon },
+    { name: "Product Analytics", href: "/store/product-analytics", icon: BarChart3Icon },
     { name: 'Pending Orders', href: '/store/orders', icon: LayoutListIcon, badge: pendingOrdersCount },
     { name: 'Delivered Orders', href: '/store/delivered-orders', icon: TruckIcon },
   ]
