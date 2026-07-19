@@ -491,151 +491,195 @@ function ViewsVsSalesTooltip({
     payload,
     label,
 }) {
-
-    if (!active || !payload || !payload.length) {
+    if (!active || !payload?.length) {
         return null;
     }
 
+    const viewsEntry = payload.find(
+        (item) => item.dataKey === "views"
+    );
 
+    const salesEntry = payload.find(
+        (item) => item.dataKey === "sales"
+    );
+
+    const views = Number(viewsEntry?.value || 0);
+    const sales = Number(salesEntry?.value || 0);
+
+    const conversion =
+        views > 0
+            ? ((sales / views) * 100).toFixed(1)
+            : "0.0";
 
     return (
-
         <div
             className="
+                min-w-[210px]
                 rounded-2xl
                 border
                 border-slate-700
-                bg-slate-900
+                bg-slate-950/95
                 px-4
                 py-3
                 shadow-2xl
+                backdrop-blur-xl
             "
         >
-
-            <p className="font-bold text-white">
-
+            <p className="max-w-[260px] truncate font-bold text-white">
                 {label}
-
             </p>
 
             <div className="mt-3 space-y-2">
-
                 <div className="flex items-center justify-between gap-6">
-
-                    <span className="text-slate-400">
-
+                    <span className="text-sm text-slate-400">
                         Views
-
                     </span>
 
                     <span className="font-bold text-sky-400">
-
-                        {payload[0]?.value?.toLocaleString()}
-
+                        {views.toLocaleString("en-IN")}
                     </span>
-
                 </div>
 
                 <div className="flex items-center justify-between gap-6">
-
-                    <span className="text-slate-400">
-
-                        Sold
-
+                    <span className="text-sm text-slate-400">
+                        Units sold
                     </span>
 
                     <span className="font-bold text-emerald-400">
-
-                        {payload[1]?.value?.toLocaleString()}
-
+                        {sales.toLocaleString("en-IN")}
                     </span>
-
                 </div>
 
+                <div className="border-t border-slate-800 pt-2">
+                    <div className="flex items-center justify-between gap-6">
+                        <span className="text-sm text-slate-400">
+                            Conversion
+                        </span>
+
+                        <span className="font-bold text-violet-400">
+                            {conversion}%
+                        </span>
+                    </div>
+                </div>
             </div>
-
         </div>
-
     );
-
 }
 
-const averageSales =
-    data.length > 0
-        ? data.reduce(
-            (sum, item) => sum + item.sales,
-            0
-        ) / data.length
-        : 0;
-
 function ViewsVsSalesChart({
-
     data = [],
-
 }) {
+    const normalizedData = data.map((item) => ({
+        ...item,
+        views: Number(item.views || 0),
+        sales: Number(item.sales || 0),
+    }));
 
-    if (!data.length) {
+    const totalViews = normalizedData.reduce(
+        (sum, item) => sum + item.views,
+        0
+    );
 
+    const totalSales = normalizedData.reduce(
+        (sum, item) => sum + item.sales,
+        0
+    );
 
+    const averageSales =
+        normalizedData.length > 0
+            ? totalSales / normalizedData.length
+            : 0;
 
+    const conversionRate =
+        totalViews > 0
+            ? (totalSales / totalViews) * 100
+            : 0;
+
+    const bestProduct =
+        normalizedData.length > 0
+            ? normalizedData.reduce(
+                (best, current) =>
+                    current.sales > best.sales
+                        ? current
+                        : best,
+                normalizedData[0]
+            )
+            : null;
+
+    if (!normalizedData.length) {
         return (
-
             <section
                 className="
                     rounded-3xl
                     border
                     border-slate-800
-                    bg-slate-900
-                    p-8
+                    bg-gradient-to-br
+                    from-slate-900
+                    via-slate-900
+                    to-slate-950
+                    p-6
+                    shadow-xl
+                    shadow-black/20
                 "
             >
+                <div className="flex items-center gap-3">
+                    <div
+                        className="
+                            flex
+                            h-12
+                            w-12
+                            items-center
+                            justify-center
+                            rounded-xl
+                            bg-gradient-to-br
+                            from-sky-500
+                            to-blue-600
+                        "
+                    >
+                        <TrendingUp
+                            size={24}
+                            className="text-white"
+                        />
+                    </div>
 
-                <h2 className="text-2xl font-black text-white">
+                    <div>
+                        <h2 className="text-2xl font-black text-white">
+                            Views vs Sales
+                        </h2>
 
-                    Views vs Sales
+                        <p className="text-sm text-slate-400">
+                            Compare customer interest with actual
+                            purchases.
+                        </p>
+                    </div>
+                </div>
 
-                </h2>
-
-
-
-                <div className="flex h-56 items-center justify-center">
-
+                <div className="flex h-64 items-center justify-center">
                     <div className="text-center">
-
                         <BarChart3
                             className="mx-auto mb-4 text-slate-600"
                             size={50}
                         />
 
                         <h3 className="text-lg font-semibold text-white">
-
-                            No Sales Yet
-
+                            No Product Activity Yet
                         </h3>
 
-                        <p className="mt-2 text-slate-400">
-
-                            Once customers start purchasing your
-                            products, analytics will appear here.
-
+                        <p className="mt-2 max-w-md text-sm text-slate-400">
+                            Product views and sales analytics will
+                            appear when customers interact with your
+                            products.
                         </p>
-
                     </div>
-
                 </div>
-
-
-
             </section>
-
         );
-
     }
 
     return (
-
         <section
             className="
+                overflow-hidden
                 rounded-3xl
                 border
                 border-slate-800
@@ -643,343 +687,323 @@ function ViewsVsSalesChart({
                 from-slate-900
                 via-slate-900
                 to-slate-950
-                p-6
+                p-5
                 shadow-xl
                 shadow-black/20
+                md:p-6
             "
         >
-
-            <div className="mb-8">
-
+            <div
+                className="
+                    flex
+                    flex-col
+                    gap-4
+                    sm:flex-row
+                    sm:items-center
+                    sm:justify-between
+                "
+            >
                 <div className="flex items-center gap-3">
-
                     <div
                         className="
-            flex
-            h-12
-            w-12
-            items-center
-            justify-center
-            rounded-xl
-            bg-gradient-to-br
-            from-sky-500
-            to-blue-600
-        "
+                            flex
+                            h-12
+                            w-12
+                            shrink-0
+                            items-center
+                            justify-center
+                            rounded-xl
+                            bg-gradient-to-br
+                            from-sky-500
+                            to-blue-600
+                            shadow-lg
+                            shadow-sky-500/20
+                        "
                     >
-
                         <TrendingUp
                             size={24}
                             className="text-white"
                         />
-
                     </div>
 
                     <div>
-
-                        <h2 className="text-2xl font-black text-white">
-
+                        <h2 className="text-xl font-black text-white md:text-2xl">
                             Views vs Sales
-
                         </h2>
 
-                        <p className="text-sm text-slate-400">
-
-                            Compare customer interest with
-                            actual purchases.
-
+                        <p className="mt-1 text-sm text-slate-400">
+                            Compare customer interest with actual
+                            purchases.
                         </p>
-
                     </div>
-
                 </div>
 
-                <p className="mt-2 text-sm text-slate-400">
+                {bestProduct && (
+                    <div
+                        className="
+                            rounded-2xl
+                            border
+                            border-emerald-500/20
+                            bg-emerald-500/10
+                            px-4
+                            py-3
+                        "
+                    >
+                        <p className="text-xs font-bold uppercase tracking-wide text-emerald-300">
+                            Best seller
+                        </p>
 
-                    Compare product visibility against actual
-                    sales.
+                        <p className="mt-1 max-w-[240px] truncate text-sm font-bold text-white">
+                            {bestProduct.product}
+                        </p>
 
-                </p>
-
+                        <p className="mt-1 text-xs text-slate-400">
+                            {bestProduct.sales.toLocaleString(
+                                "en-IN"
+                            )}{" "}
+                            units sold
+                        </p>
+                    </div>
+                )}
             </div>
 
-            <div className="h-[420px]">
+            <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-5">
+                <div className="rounded-2xl border border-slate-800 bg-slate-800/40 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                        Products
+                    </p>
 
-                <div className="mb-8 grid grid-cols-2 gap-5 md:grid-cols-4">
-
-                    <div className="rounded-2xl bg-slate-800/50 p-4">
-
-                        <p className="text-xs uppercase text-slate-400">
-
-                            Products
-
-                        </p>
-
-                        <p className="mt-2 text-2xl font-bold text-white">
-
-                            {data.length}
-
-                        </p>
-
-                    </div>
-
-                    <div className="rounded-2xl bg-slate-800/50 p-4">
-
-                        <p className="text-xs uppercase text-slate-400">
-
-                            Views
-
-                        </p>
-
-                        <p className="mt-2 text-2xl font-bold text-sky-400">
-
-                            {data
-                                .reduce(
-                                    (sum, item) => sum + item.views,
-                                    0
-                                )
-                                .toLocaleString()}
-
-                        </p>
-
-                    </div>
-
-                    <div className="rounded-2xl bg-slate-800/50 p-4">
-
-                        <p className="text-xs uppercase text-slate-400">
-
-                            Units Sold
-
-                        </p>
-
-                        <p className="mt-2 text-2xl font-bold text-emerald-400">
-
-                            {data
-                                .reduce(
-                                    (sum, item) => sum + item.sales,
-                                    0
-                                )
-                                .toLocaleString()}
-
-                        </p>
-
-                    </div>
-
-                    <div className="rounded-2xl bg-slate-800/50 p-4">
-
-                        <p className="text-xs uppercase text-slate-400">
-
-                            Conversion
-
-                        </p>
-
-                        <p className="mt-2 text-2xl font-bold text-violet-400">
-
-                            {(
-                                (
-                                    data.reduce(
-                                        (s, i) => s + i.sales,
-                                        0
-                                    ) /
-
-                                    Math.max(
-                                        data.reduce(
-                                            (s, i) => s + i.views,
-                                            0
-                                        ),
-                                        1
-                                    )
-                                ) * 100
-                            ).toFixed(1)}
-                            %
-
-                        </p>
-
-                    </div>
-
+                    <p className="mt-2 text-2xl font-black text-white">
+                        {normalizedData.length}
+                    </p>
                 </div>
 
-                <ResponsiveContainer
-                    width="100%"
-                    height="100%"
+                <div className="rounded-2xl border border-slate-800 bg-slate-800/40 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                        Views
+                    </p>
+
+                    <p className="mt-2 text-2xl font-black text-sky-400">
+                        {totalViews.toLocaleString("en-IN")}
+                    </p>
+                </div>
+
+                <div className="rounded-2xl border border-slate-800 bg-slate-800/40 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                        Units Sold
+                    </p>
+
+                    <p className="mt-2 text-2xl font-black text-emerald-400">
+                        {totalSales.toLocaleString("en-IN")}
+                    </p>
+                </div>
+
+                <div className="rounded-2xl border border-slate-800 bg-slate-800/40 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                        Conversion
+                    </p>
+
+                    <p className="mt-2 text-2xl font-black text-violet-400">
+                        {conversionRate.toFixed(1)}%
+                    </p>
+                </div>
+            </div>
+
+            <div className="mt-7 overflow-x-auto">
+                <div
+                    className="h-[430px]"
+                    style={{
+                        minWidth: Math.max(
+                            700,
+                            normalizedData.length * 145
+                        ),
+                    }}
                 >
+                    <ResponsiveContainer
+                        width="100%"
+                        height="100%"
+                    >
+                        <LineChart
+                            data={normalizedData}
+                            margin={{
+                                top: 25,
+                                right: 30,
+                                left: 5,
+                                bottom: 65,
+                            }}
+                        >
+                            <defs>
+                                <linearGradient
+                                    id="viewsGradient"
+                                    x1="0"
+                                    y1="0"
+                                    x2="1"
+                                    y2="0"
+                                >
+                                    <stop
+                                        offset="0%"
+                                        stopColor="#38bdf8"
+                                    />
 
-                    <LineChart
-                        data={data}
-                        margin={{
-                            top: 10,
-                            right: 25,
-                            left: 5,
-                            bottom: 10,
-                        }}
-                    ><defs>
+                                    <stop
+                                        offset="100%"
+                                        stopColor="#3b82f6"
+                                    />
+                                </linearGradient>
 
-                            <linearGradient
-                                id="viewsGradient"
-                                x1="0"
-                                y1="0"
-                                x2="1"
-                                y2="0"
-                            >
+                                <linearGradient
+                                    id="salesGradient"
+                                    x1="0"
+                                    y1="0"
+                                    x2="1"
+                                    y2="0"
+                                >
+                                    <stop
+                                        offset="0%"
+                                        stopColor="#34d399"
+                                    />
 
-                                <stop
-                                    offset="0%"
-                                    stopColor="#38bdf8"
+                                    <stop
+                                        offset="100%"
+                                        stopColor="#10b981"
+                                    />
+                                </linearGradient>
+                            </defs>
+
+                            <CartesianGrid
+                                stroke="#334155"
+                                strokeDasharray="3 3"
+                                vertical={false}
+                                opacity={0.35}
+                            />
+
+                            <XAxis
+                                dataKey="product"
+                                angle={-22}
+                                textAnchor="end"
+                                height={90}
+                                interval={0}
+                                axisLine={{
+                                    stroke: "#334155",
+                                }}
+                                tickLine={false}
+                                tick={{
+                                    fill: "#94a3b8",
+                                    fontSize: 11,
+                                }}
+                                tickFormatter={(value) =>
+                                    value.length > 18
+                                        ? `${value.slice(0, 18)}...`
+                                        : value
+                                }
+                            />
+
+                            <YAxis
+                                allowDecimals={false}
+                                axisLine={false}
+                                tickLine={false}
+                                tick={{
+                                    fill: "#94a3b8",
+                                    fontSize: 12,
+                                }}
+                            />
+
+                            <Tooltip
+                                content={
+                                    <ViewsVsSalesTooltip />
+                                }
+                                cursor={{
+                                    stroke: "#475569",
+                                    strokeDasharray: "4 4",
+                                }}
+                            />
+
+                            <Legend
+                                iconType="circle"
+                                iconSize={10}
+                                verticalAlign="top"
+                                align="right"
+                                wrapperStyle={{
+                                    color: "#ffffff",
+                                    paddingBottom: 20,
+                                    fontSize: 13,
+                                }}
+                            />
+
+                            {averageSales > 0 && (
+                                <ReferenceLine
+                                    y={averageSales}
+                                    stroke="#facc15"
+                                    strokeDasharray="5 5"
+                                    ifOverflow="extendDomain"
+                                    label={{
+                                        value: `Average sales: ${averageSales.toFixed(
+                                            1
+                                        )}`,
+                                        fill: "#facc15",
+                                        fontSize: 11,
+                                        position: "insideTopRight",
+                                    }}
                                 />
+                            )}
 
-                                <stop
-                                    offset="100%"
-                                    stopColor="#3b82f6"
-                                />
+                            <Line
+                                type="monotone"
+                                dataKey="views"
+                                name="Views"
+                                stroke="url(#viewsGradient)"
+                                strokeWidth={3}
+                                connectNulls
+                                dot={{
+                                    r: 4,
+                                    fill: "#38bdf8",
+                                    stroke: "#ffffff",
+                                    strokeWidth: 2,
+                                }}
+                                activeDot={{
+                                    r: 7,
+                                    fill: "#38bdf8",
+                                    stroke: "#ffffff",
+                                    strokeWidth: 3,
+                                }}
+                                animationDuration={1000}
+                            />
 
-                            </linearGradient>
-
-                            <linearGradient
-                                id="salesGradient"
-                                x1="0"
-                                y1="0"
-                                x2="1"
-                                y2="0"
-                            >
-
-                                <stop
-                                    offset="0%"
-                                    stopColor="#34d399"
-                                />
-
-                                <stop
-                                    offset="100%"
-                                    stopColor="#10b981"
-                                />
-
-                            </linearGradient>
-
-                        </defs><CartesianGrid
-                            strokeDasharray="3 3"
-                            opacity={0.3}
-                            stroke="#334155"
-                        />
-
-                        <XAxis
-                            dataKey="product"
-                            angle={-20}
-                            textAnchor="end"
-                            height={70}
-                            interval={0}
-                            tick={{
-                                fill: "#94a3b8",
-                                fontSize: 12,
-                            }}
-                        />
-
-                        <YAxis
-                            stroke="#94a3b8"
-                            tick={{
-                                fill: "#94a3b8",
-                                fontSize: 12,
-                            }}
-                        />
-
-                        <Tooltip
-                            content={<ViewsVsSalesTooltip />}
-                        />
-
-                        <Legend
-                            iconType="circle"
-                            iconSize={12}
-                            wrapperStyle={{
-                                color: "#fff",
-                                paddingTop: 20,
-                                fontSize: 13,
-                            }}
-                        />
-
-                        <ReferenceLine
-                            y={averageSales}
-                            stroke="#facc15"
-                            strokeDasharray="5 5"
-                            label={{
-                                value: "Average Sales",
-                                fill: "#facc15",
-                                fontSize: 12,
-                            }}
-                        />
-                        <Line
-
-                            type="natural"
-
-                            dataKey="views"
-
-                            name="Views"
-
-                            stroke="url(#viewsGradient)"
-
-                            strokeWidth={4}
-
-                            dot={{
-                                r: 4,
-                                strokeWidth: 2,
-                                stroke: "#fff",
-                            }}
-
-                            activeDot={{
-                                r: 10,
-                                stroke: "#fff",
-                                strokeWidth: 3,
-                            }}
-
-                            animationDuration={1200}
-
-                        />
-
-                        <Line
-
-                            type="natural"
-
-                            dataKey="sales"
-
-                            name="Sales"
-
-                            stroke="url(#salesGradient)"
-
-                            strokeWidth={4}
-
-                            dot={{
-                                r: 4,
-                                strokeWidth: 2,
-                                stroke: "#fff",
-                            }}
-
-                            activeDot={{
-                                r: 10,
-                                stroke: "#fff",
-                                strokeWidth: 3,
-                            }}
-
-                            animationDuration={1200}
-
-                        />
-                    </LineChart>
-
-                    <div className="mt-6 border-t border-slate-800 pt-4">
-
-                        <p className="text-xs text-slate-500">
-
-                            Tip: Products with high views but low sales may need
-                            better pricing, improved images, or more compelling
-                            descriptions.
-
-                        </p>
-
-                    </div>
-
-                </ResponsiveContainer>
-
+                            <Line
+                                type="monotone"
+                                dataKey="sales"
+                                name="Sales"
+                                stroke="url(#salesGradient)"
+                                strokeWidth={3}
+                                connectNulls
+                                dot={{
+                                    r: 4,
+                                    fill: "#10b981",
+                                    stroke: "#ffffff",
+                                    strokeWidth: 2,
+                                }}
+                                activeDot={{
+                                    r: 7,
+                                    fill: "#10b981",
+                                    stroke: "#ffffff",
+                                    strokeWidth: 3,
+                                }}
+                                animationDuration={1200}
+                            />
+                        </LineChart>
+                    </ResponsiveContainer>
+                </div>
             </div>
 
+            <div className="mt-5 border-t border-slate-800 pt-4">
+                <p className="text-xs leading-5 text-slate-500">
+                    Tip: Products with high views but low sales
+                    may need better pricing, improved images or a
+                    stronger product description.
+                </p>
+            </div>
         </section>
-
     );
-
 }
 
 export default function ProductAnalyticsPage() {
