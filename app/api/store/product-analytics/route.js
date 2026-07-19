@@ -196,6 +196,35 @@ export async function GET() {
 
         ).sort((a, b) => b.sales - a.sales);
 
+        const topProductSalesChart = products
+            .filter((product) => product.totalSales > 0)
+            .sort((a, b) => b.totalSales - a.totalSales)
+            .slice(0, 10)
+            .map((product, index) => ({
+                rank: index + 1,
+
+                id: product.id,
+
+                product: product.name,
+
+                image: product.images?.[0] || null,
+
+                category: product.category,
+
+                sales: product.totalSales,
+
+                views: product.totalViews,
+
+                price: Number(product.price),
+
+                revenue: Number(
+                    (
+                        product.totalSales *
+                        product.price
+                    ).toFixed(2)
+                ),
+            }));
+
         const lowStockProducts = products
             .filter(
                 (product) =>
@@ -326,6 +355,7 @@ export async function GET() {
 
                 viewsVsSales: viewsVsSalesChart,
                 salesByCategory,
+                topProductSales: topProductSalesChart,
 
 
             },

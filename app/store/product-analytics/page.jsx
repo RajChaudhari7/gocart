@@ -31,6 +31,8 @@ import {
     PieChart,
     Pie,
     Cell,
+    BarChart,
+    Bar,
 } from "recharts";
 
 const initialStats = {
@@ -244,6 +246,567 @@ function SalesByCategoryChart({
 
     );
 
+}
+
+function TopProductSalesChart({
+    data = [],
+}) {
+    const normalizedData = data.map((item) => ({
+        ...item,
+
+        rank: Number(item.rank || 0),
+
+        sales: Number(item.sales || 0),
+
+        revenue: Number(item.revenue || 0),
+
+        views: Number(item.views || 0),
+
+        price: Number(item.price || 0),
+    }));
+
+    const totalUnitsSold = normalizedData.reduce(
+        (sum, item) => sum + item.sales,
+        0
+    );
+
+    const totalRevenue = normalizedData.reduce(
+        (sum, item) => sum + item.revenue,
+        0
+    );
+
+    const highestSales =
+        normalizedData.length > 0
+            ? Math.max(
+                ...normalizedData.map(
+                    (item) => item.sales
+                )
+            )
+            : 0;
+
+    const bestProduct =
+        normalizedData.length > 0
+            ? normalizedData[0]
+            : null;
+
+    if (!normalizedData.length) {
+        return (
+            <section
+                className="
+                    rounded-3xl
+                    border
+                    border-slate-800
+                    bg-gradient-to-br
+                    from-slate-900
+                    via-slate-900
+                    to-slate-950
+                    p-6
+                    shadow-xl
+                    shadow-black/20
+                "
+            >
+                <div className="flex items-center gap-3">
+                    <div
+                        className="
+                            flex
+                            h-12
+                            w-12
+                            items-center
+                            justify-center
+                            rounded-xl
+                            bg-gradient-to-br
+                            from-violet-500
+                            to-purple-600
+                        "
+                    >
+                        <BarChart3
+                            size={24}
+                            className="text-white"
+                        />
+                    </div>
+
+                    <div>
+                        <h2 className="text-2xl font-black text-white">
+                            Top Product Sales
+                        </h2>
+
+                        <p className="text-sm text-slate-400">
+                            Compare your best-selling products.
+                        </p>
+                    </div>
+                </div>
+
+                <div className="flex h-72 items-center justify-center">
+                    <div className="text-center">
+                        <BarChart3
+                            size={52}
+                            className="mx-auto text-slate-600"
+                        />
+
+                        <h3 className="mt-4 text-lg font-bold text-white">
+                            No Product Sales Yet
+                        </h3>
+
+                        <p className="mt-2 max-w-md text-sm text-slate-400">
+                            Your top-selling products will appear
+                            here after customers place orders.
+                        </p>
+                    </div>
+                </div>
+            </section>
+        );
+    }
+
+    return (
+        <section
+            className="
+                overflow-hidden
+                rounded-3xl
+                border
+                border-slate-800
+                bg-gradient-to-br
+                from-slate-900
+                via-slate-900
+                to-slate-950
+                p-5
+                shadow-xl
+                shadow-black/20
+                md:p-6
+            "
+        >
+            <div
+                className="
+                    flex
+                    flex-col
+                    gap-4
+                    lg:flex-row
+                    lg:items-center
+                    lg:justify-between
+                "
+            >
+                <div className="flex items-center gap-3">
+                    <div
+                        className="
+                            flex
+                            h-12
+                            w-12
+                            shrink-0
+                            items-center
+                            justify-center
+                            rounded-xl
+                            bg-gradient-to-br
+                            from-violet-500
+                            to-purple-600
+                            shadow-lg
+                            shadow-violet-500/20
+                        "
+                    >
+                        <BarChart3
+                            size={24}
+                            className="text-white"
+                        />
+                    </div>
+
+                    <div>
+                        <h2 className="text-xl font-black text-white md:text-2xl">
+                            Top 10 Product Sales
+                        </h2>
+
+                        <p className="mt-1 text-sm text-slate-400">
+                            Products ranked by total units sold.
+                        </p>
+                    </div>
+                </div>
+
+                {bestProduct && (
+                    <div
+                        className="
+                            rounded-2xl
+                            border
+                            border-amber-500/20
+                            bg-amber-500/10
+                            px-4
+                            py-3
+                        "
+                    >
+                        <p className="text-xs font-bold uppercase tracking-wide text-amber-300">
+                            Number one product
+                        </p>
+
+                        <p className="mt-1 max-w-[260px] truncate text-sm font-bold text-white">
+                            {bestProduct.product}
+                        </p>
+
+                        <p className="mt-1 text-xs text-slate-400">
+                            {bestProduct.sales.toLocaleString(
+                                "en-IN"
+                            )}{" "}
+                            units sold
+                        </p>
+                    </div>
+                )}
+            </div>
+
+            <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+                <div
+                    className="
+                        rounded-2xl
+                        border
+                        border-slate-800
+                        bg-slate-800/40
+                        p-4
+                    "
+                >
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                        Products
+                    </p>
+
+                    <p className="mt-2 text-2xl font-black text-white">
+                        {normalizedData.length}
+                    </p>
+                </div>
+
+                <div
+                    className="
+                        rounded-2xl
+                        border
+                        border-slate-800
+                        bg-slate-800/40
+                        p-4
+                    "
+                >
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                        Units Sold
+                    </p>
+
+                    <p className="mt-2 text-2xl font-black text-emerald-400">
+                        {totalUnitsSold.toLocaleString("en-IN")}
+                    </p>
+                </div>
+
+                <div
+                    className="
+                        rounded-2xl
+                        border
+                        border-slate-800
+                        bg-slate-800/40
+                        p-4
+                    "
+                >
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                        Revenue
+                    </p>
+
+                    <p className="mt-2 text-2xl font-black text-violet-400">
+                        ₹
+                        {totalRevenue.toLocaleString("en-IN", {
+                            notation: "compact",
+                            maximumFractionDigits: 1,
+                        })}
+                    </p>
+                </div>
+
+                <div
+                    className="
+                        rounded-2xl
+                        border
+                        border-slate-800
+                        bg-slate-800/40
+                        p-4
+                    "
+                >
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                        Highest Sales
+                    </p>
+
+                    <p className="mt-2 text-2xl font-black text-amber-400">
+                        {highestSales.toLocaleString("en-IN")}
+                    </p>
+                </div>
+            </div>
+
+            <div className="mt-8 overflow-x-auto">
+                <div
+                    className="h-[560px]"
+                    style={{
+                        minWidth: "750px",
+                    }}
+                >
+                    <ResponsiveContainer
+                        width="100%"
+                        height="100%"
+                    >
+                        <BarChart
+                            data={normalizedData}
+                            layout="vertical"
+                            margin={{
+                                top: 10,
+                                right: 70,
+                                left: 25,
+                                bottom: 10,
+                            }}
+                            barCategoryGap={16}
+                        >
+                            <defs>
+                                <linearGradient
+                                    id="topSalesBarGradient"
+                                    x1="0"
+                                    y1="0"
+                                    x2="1"
+                                    y2="0"
+                                >
+                                    <stop
+                                        offset="0%"
+                                        stopColor="#8b5cf6"
+                                    />
+
+                                    <stop
+                                        offset="100%"
+                                        stopColor="#6366f1"
+                                    />
+                                </linearGradient>
+
+                                <linearGradient
+                                    id="bestSalesBarGradient"
+                                    x1="0"
+                                    y1="0"
+                                    x2="1"
+                                    y2="0"
+                                >
+                                    <stop
+                                        offset="0%"
+                                        stopColor="#f59e0b"
+                                    />
+
+                                    <stop
+                                        offset="100%"
+                                        stopColor="#f97316"
+                                    />
+                                </linearGradient>
+                            </defs>
+
+                            <CartesianGrid
+                                stroke="#334155"
+                                strokeDasharray="3 3"
+                                horizontal={false}
+                                opacity={0.35}
+                            />
+
+                            <XAxis
+                                type="number"
+                                allowDecimals={false}
+                                axisLine={false}
+                                tickLine={false}
+                                tick={{
+                                    fill: "#94a3b8",
+                                    fontSize: 12,
+                                }}
+                            />
+
+                            <YAxis
+                                type="category"
+                                dataKey="product"
+                                width={190}
+                                axisLine={false}
+                                tickLine={false}
+                                tick={{
+                                    fill: "#cbd5e1",
+                                    fontSize: 12,
+                                }}
+                                tickFormatter={(value) =>
+                                    value.length > 23
+                                        ? `${value.slice(0, 23)}...`
+                                        : value
+                                }
+                            />
+
+                            <Tooltip
+                                content={
+                                    <TopProductSalesTooltip />
+                                }
+                                cursor={{
+                                    fill: "rgba(51, 65, 85, 0.25)",
+                                }}
+                            />
+
+                            <Bar
+                                dataKey="sales"
+                                name="Units Sold"
+                                radius={[0, 10, 10, 0]}
+                                maxBarSize={34}
+                                animationDuration={1200}
+                                label={{
+                                    position: "right",
+                                    fill: "#cbd5e1",
+                                    fontSize: 12,
+                                    fontWeight: 700,
+                                }}
+                            >
+                                {normalizedData.map(
+                                    (entry, index) => (
+                                        <Cell
+                                            key={entry.id || index}
+                                            fill={
+                                                index === 0
+                                                    ? "url(#bestSalesBarGradient)"
+                                                    : "url(#topSalesBarGradient)"
+                                            }
+                                        />
+                                    )
+                                )}
+                            </Bar>
+                        </BarChart>
+                    </ResponsiveContainer>
+                </div>
+            </div>
+
+            <div className="mt-5 border-t border-slate-800 pt-4">
+                <p className="text-xs leading-5 text-slate-500">
+                    The first bar represents your best-selling
+                    product. Use this information to maintain stock
+                    availability and plan promotions around your
+                    strongest products.
+                </p>
+            </div>
+        </section>
+    );
+}
+
+function TopProductSalesTooltip({
+    active,
+    payload,
+}) {
+    if (!active || !payload?.length) {
+        return null;
+    }
+
+    const product = payload[0]?.payload;
+
+    if (!product) {
+        return null;
+    }
+
+    return (
+        <div
+            className="
+                min-w-[250px]
+                rounded-2xl
+                border
+                border-slate-700
+                bg-slate-950/95
+                p-4
+                shadow-2xl
+                backdrop-blur-xl
+            "
+        >
+            <div className="flex items-center gap-3">
+                <div
+                    className="
+                        flex
+                        h-12
+                        w-12
+                        shrink-0
+                        items-center
+                        justify-center
+                        overflow-hidden
+                        rounded-xl
+                        border
+                        border-slate-700
+                        bg-slate-800
+                    "
+                >
+                    {product.image ? (
+                        <img
+                            src={product.image}
+                            alt={product.product}
+                            className="h-full w-full object-cover"
+                        />
+                    ) : (
+                        <Package
+                            size={22}
+                            className="text-slate-500"
+                        />
+                    )}
+                </div>
+
+                <div className="min-w-0">
+                    <p className="truncate font-bold text-white">
+                        {product.product}
+                    </p>
+
+                    <p className="mt-1 text-xs text-slate-400">
+                        {product.category || "Uncategorized"}
+                    </p>
+                </div>
+            </div>
+
+            <div className="mt-4 space-y-3 border-t border-slate-800 pt-4">
+                <div className="flex items-center justify-between gap-6">
+                    <span className="text-sm text-slate-400">
+                        Rank
+                    </span>
+
+                    <span className="font-bold text-amber-400">
+                        #{product.rank}
+                    </span>
+                </div>
+
+                <div className="flex items-center justify-between gap-6">
+                    <span className="text-sm text-slate-400">
+                        Units sold
+                    </span>
+
+                    <span className="font-bold text-emerald-400">
+                        {Number(
+                            product.sales || 0
+                        ).toLocaleString("en-IN")}
+                    </span>
+                </div>
+
+                <div className="flex items-center justify-between gap-6">
+                    <span className="text-sm text-slate-400">
+                        Views
+                    </span>
+
+                    <span className="font-bold text-sky-400">
+                        {Number(
+                            product.views || 0
+                        ).toLocaleString("en-IN")}
+                    </span>
+                </div>
+
+                <div className="flex items-center justify-between gap-6">
+                    <span className="text-sm text-slate-400">
+                        Price
+                    </span>
+
+                    <span className="font-bold text-white">
+                        ₹
+                        {Number(
+                            product.price || 0
+                        ).toLocaleString("en-IN", {
+                            maximumFractionDigits: 2,
+                        })}
+                    </span>
+                </div>
+
+                <div className="flex items-center justify-between gap-6 border-t border-slate-800 pt-3">
+                    <span className="text-sm text-slate-400">
+                        Revenue
+                    </span>
+
+                    <span className="font-black text-violet-400">
+                        ₹
+                        {Number(
+                            product.revenue || 0
+                        ).toLocaleString("en-IN", {
+                            maximumFractionDigits: 2,
+                        })}
+                    </span>
+                </div>
+            </div>
+        </div>
+    );
 }
 
 function ProductAnalyticsSkeleton() {
@@ -1224,6 +1787,9 @@ export default function ProductAnalyticsPage() {
     const salesByCategoryData =
         analytics?.charts?.salesByCategory || [];
 
+    const topProductSalesData =
+        analytics?.charts?.topProductSales || [];
+
     return (
         <main className="min-h-screen bg-[#020617] p-4 text-white md:p-6 lg:p-8">
             <div className="mx-auto max-w-[1600px] space-y-8">
@@ -1284,16 +1850,20 @@ export default function ProductAnalyticsPage() {
                     </div>
                 </section>
 
-                <div className="grid gap-6 xl:grid-cols-2">
+                <div className="space-y-6">
+                    <div className="grid gap-6 xl:grid-cols-2">
+                        <ViewsVsSalesChart
+                            data={viewsVsSalesData}
+                        />
 
-                    <ViewsVsSalesChart
-                        data={viewsVsSalesData}
+                        <SalesByCategoryChart
+                            data={salesByCategoryData}
+                        />
+                    </div>
+
+                    <TopProductSalesChart
+                        data={topProductSalesData}
                     />
-
-                    <SalesByCategoryChart
-                        data={salesByCategoryData}
-                    />
-
                 </div>
                 <section
                     className="
