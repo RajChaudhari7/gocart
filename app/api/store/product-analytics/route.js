@@ -166,6 +166,36 @@ export async function GET() {
             .sort((a, b) => b.views - a.views)
             .slice(0, 10);
 
+        const salesByCategory = Object.values(
+
+            products.reduce((acc, product) => {
+
+                const category = product.category || "Others";
+
+                if (!acc[category]) {
+
+                    acc[category] = {
+                        category,
+                        sales: 0,
+                        revenue: 0,
+                        products: 0,
+                    };
+
+                }
+
+                acc[category].sales += product.totalSales;
+
+                acc[category].revenue +=
+                    product.totalSales * product.price;
+
+                acc[category].products += 1;
+
+                return acc;
+
+            }, {})
+
+        ).sort((a, b) => b.sales - a.sales);
+
         const lowStockProducts = products
             .filter(
                 (product) =>
@@ -295,6 +325,8 @@ export async function GET() {
             charts: {
 
                 viewsVsSales: viewsVsSalesChart,
+                salesByCategory,
+
 
             },
 

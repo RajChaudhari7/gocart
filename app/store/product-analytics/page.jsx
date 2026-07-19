@@ -28,6 +28,9 @@ import {
     Tooltip,
     Legend,
     ReferenceLine,
+    PieChart,
+    Pie,
+    Cell,
 } from "recharts";
 
 const initialStats = {
@@ -42,6 +45,26 @@ const formatNumber = (value) => {
         Number(value || 0)
     );
 };
+
+const PIE_COLORS = [
+
+    "#3B82F6",
+
+    "#10B981",
+
+    "#F59E0B",
+
+    "#EF4444",
+
+    "#8B5CF6",
+
+    "#06B6D4",
+
+    "#F97316",
+
+    "#84CC16",
+
+];
 
 const kpiConfig = [
     {
@@ -90,6 +113,138 @@ const kpiConfig = [
         suffix: "/5",
     },
 ];
+
+function SalesByCategoryChart({
+
+    data = [],
+
+}) {
+
+    if (!data.length) {
+
+        return (
+
+            <section className="rounded-3xl border border-slate-800 bg-slate-900 p-6">
+
+                <h2 className="text-xl font-black text-white">
+
+                    Sales by Category
+
+                </h2>
+
+                <div className="flex h-72 items-center justify-center">
+
+                    <p className="text-slate-400">
+
+                        No category sales available.
+
+                    </p>
+
+                </div>
+
+            </section>
+
+        );
+
+    }
+
+    return (
+
+        <section
+            className="
+                rounded-3xl
+                border
+                border-slate-800
+                bg-gradient-to-br
+                from-slate-900
+                via-slate-900
+                to-slate-950
+                p-6
+                shadow-xl
+            "
+        >
+
+            <h2 className="text-2xl font-black text-white">
+
+                🥧 Sales by Category
+
+            </h2>
+
+            <p className="mt-2 text-sm text-slate-400">
+
+                Category-wise contribution to total product sales.
+
+            </p>
+
+            <div className="mt-6 h-[420px]">
+
+                <ResponsiveContainer
+                    width="100%"
+                    height="100%"
+                >
+
+                    <PieChart>
+
+                        <Pie
+
+                            data={data}
+
+                            dataKey="sales"
+
+                            nameKey="category"
+
+                            cx="50%"
+
+                            cy="50%"
+
+                            outerRadius={130}
+
+                            innerRadius={70}
+
+                            paddingAngle={3}
+
+                            label={({ category, percent }) =>
+                                `${category} (${(
+                                    percent * 100
+                                ).toFixed(0)}%)`
+                            }
+
+                        >
+
+                            {data.map((entry, index) => (
+
+                                <Cell
+
+                                    key={index}
+
+                                    fill={
+                                        PIE_COLORS[
+                                        index %
+                                        PIE_COLORS.length
+                                        ]
+                                    }
+
+                                />
+
+                            ))}
+
+                        </Pie>
+
+                        <Tooltip />
+
+                        <Legend />
+
+                    </PieChart>
+
+                </ResponsiveContainer>
+
+            </div>
+
+        </section>
+
+    );
+
+}
 
 function ProductAnalyticsSkeleton() {
     return (
@@ -1066,6 +1221,9 @@ export default function ProductAnalyticsPage() {
     const viewsVsSalesData =
         analytics?.charts?.viewsVsSales || [];
 
+    const salesByCategoryData =
+        analytics?.charts?.salesByCategory || [];
+
     return (
         <main className="min-h-screen bg-[#020617] p-4 text-white md:p-6 lg:p-8">
             <div className="mx-auto max-w-[1600px] space-y-8">
@@ -1126,10 +1284,14 @@ export default function ProductAnalyticsPage() {
                     </div>
                 </section>
 
-                <div className="grid gap-6">
+                <div className="grid gap-6 xl:grid-cols-2">
 
                     <ViewsVsSalesChart
                         data={viewsVsSalesData}
+                    />
+
+                    <SalesByCategoryChart
+                        data={salesByCategoryData}
                     />
 
                 </div>
