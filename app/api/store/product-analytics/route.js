@@ -122,7 +122,6 @@ export async function GET() {
         const topProducts = products
             .slice(0, 10)
             .map((product, index) => ({
-
                 rank: index + 1,
 
                 id: product.id,
@@ -139,7 +138,9 @@ export async function GET() {
 
                 stock: product.quantity,
 
-                rating: Number(product.averageRating.toFixed(1)),
+                rating: Number(
+                    product.averageRating.toFixed(1)
+                ),
 
                 price: product.price,
 
@@ -147,50 +148,23 @@ export async function GET() {
 
                 featured: product.featured,
 
-                revenue:
-                    Number(
-                        (
-                            product.totalSales *
-                            product.price
-                        ).toFixed(2)
-                    ),
-
+                revenue: Number(
+                    (
+                        product.totalSales *
+                        product.price
+                    ).toFixed(2)
+                ),
             }));
 
-        const viewsVsSalesChart = orderItems.reduce(
-
-            (acc, item) => {
-
-                const existing = acc.find(
-
-                    p => p.product === item.product.name
-                );
-
-                if (existing) {
-
-                    existing.sales += item.quantity;
-
-                } else {
-
-                    acc.push({
-
-                        product: item.product.name,
-
-                        views: item.product.totalViews,
-
-                        sales: item.quantity,
-
-                    });
-
-                }
-
-                return acc;
-
-            },
-
-            []
-
-        );
+        const viewsVsSalesChart = products
+            .map((product) => ({
+                id: product.id,
+                product: product.name,
+                views: product.totalViews,
+                sales: product.totalSales,
+            }))
+            .sort((a, b) => b.views - a.views)
+            .slice(0, 10);
 
         const lowStockProducts = products
             .filter(
