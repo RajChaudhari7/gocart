@@ -4,12 +4,8 @@ import { NextResponse } from "next/server";
 
 export async function GET() {
     try {
-        /*
-        |--------------------------------------------------------------------------
-        | 1. Authenticate seller
-        |--------------------------------------------------------------------------
-        */
 
+        // 1. Authenticate seller
         const { userId } = await auth();
 
         if (!userId) {
@@ -23,11 +19,8 @@ export async function GET() {
             );
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | 2. Find seller store
-        |--------------------------------------------------------------------------
-        */
+
+        // 2. Find seller store
 
         const store = await prisma.store.findUnique({
             where: {
@@ -51,23 +44,8 @@ export async function GET() {
             );
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | 3. Fetch active products
-        |--------------------------------------------------------------------------
-        |
-        | Product data is used for:
-        | - Product name
-        | - Images
-        | - Category
-        | - Stock
-        | - Views
-        | - Rating
-        | - Current selling price
-        |
-        | Product.totalSales will not be used as the analytics source.
-        |--------------------------------------------------------------------------
-        */
+        // 3. Fetch active products
+
 
         const products = await prisma.product.findMany({
             where: {
@@ -94,17 +72,9 @@ export async function GET() {
             },
         });
 
-        /*
-        |--------------------------------------------------------------------------
-        | 4. Fetch store orders
-        |--------------------------------------------------------------------------
-        |
-        | isPaid is intentionally not used because COD orders generally have
-        | isPaid = false until delivery/payment confirmation.
-        |
-        | For now, all store orders are included.
-        |--------------------------------------------------------------------------
-        */
+
+        // 4. Fetch store orders
+
 
         const orders = await prisma.order.findMany({
             where: {
@@ -114,9 +84,12 @@ export async function GET() {
             select: {
                 id: true,
                 total: true,
-                isPaid: true,
                 status: true,
+                isPaid: true,
                 paymentMethod: true,
+                commissionPercent: true,
+                deliveryFee: true,
+                driverFee: true,
                 createdAt: true,
 
                 orderItems: {
@@ -125,14 +98,6 @@ export async function GET() {
                         productId: true,
                         quantity: true,
                         price: true,
-
-                        product: {
-                            select: {
-                                id: true,
-                                name: true,
-                                price: true,
-                            },
-                        },
                     },
                 },
             },
@@ -142,11 +107,9 @@ export async function GET() {
             },
         });
 
-        /*
-        |--------------------------------------------------------------------------
-        | 5. Create product lookup map
-        |--------------------------------------------------------------------------
-        */
+
+        // 5. Create product lookup map
+
 
         const productMap = new Map(
             products.map((product) => [
@@ -155,44 +118,36 @@ export async function GET() {
             ])
         );
 
-        /*
-        |--------------------------------------------------------------------------
-        | 6. Create product sales map
-        |--------------------------------------------------------------------------
-        |
-        | Structure:
-        |
-        | productId => {
-        |     unitsSold,
-        |     revenue,
-        |     orderCount
-        | }
-        |--------------------------------------------------------------------------
-        */
+
+        // 6. Create product sales map
+
 
         const productSalesMap = new Map();
 
-        /*
-        |--------------------------------------------------------------------------
-        | 7. Create monthly sales map
-        |--------------------------------------------------------------------------
-        */
+        products.forEach((product) => {
+            productSalesMap.set(product.id, {
+                unitsSold: 0,
+                grossRevenue: 0,
+                commissionAmount: 0,
+                sellerEarnings: 0,
+                orderIds: new Set(),
+            });
+        });
+
+
+        // 7. Create monthly sales map
+
 
         const monthlySalesMap = new Map();
 
-        /*
-        |--------------------------------------------------------------------------
-        | 8. Create category sales map
-        |--------------------------------------------------------------------------
-        */
+
+        // 8. Create category sales map
+
 
         const categorySalesMap = new Map();
 
-        /*
-        |--------------------------------------------------------------------------
-        | 9. Process every order
-        |--------------------------------------------------------------------------
-        */
+        // 9. Process every order
+
 
         orders.forEach((order) => {
             const orderDate = new Date(order.createdAt);
@@ -209,11 +164,9 @@ export async function GET() {
                 }
             );
 
-            /*
-            |--------------------------------------------------------------------------
-            | Create monthly record
-            |--------------------------------------------------------------------------
-            */
+
+            // Create monthly record
+
 
             if (!monthlySalesMap.has(monthKey)) {
                 monthlySalesMap.set(monthKey, {
@@ -230,27 +183,17 @@ export async function GET() {
 
             monthlyRecord.orders += 1;
 
-            /*
-            |--------------------------------------------------------------------------
-            | Process each order item
-            |--------------------------------------------------------------------------
-            */
+
+            // Process each order item
+
 
             order.orderItems.forEach((item) => {
                 const product = productMap.get(
                     item.productId
                 );
 
-                /*
-                |--------------------------------------------------------------------------
-                | The historical order item price should be preferred.
-                |
-                | Fallback order:
-                | 1. item.price
-                | 2. related product price from OrderItem
-                | 3. current product price
-                |--------------------------------------------------------------------------
-                */
+
+                // The historical order item price should be preferred.
 
                 const itemPrice = Number(
                     item.price ??
@@ -263,60 +206,47 @@ export async function GET() {
                     item.quantity || 0
                 );
 
-                const itemRevenue =
-                    itemPrice * quantity;
+                const grossRevenue = itemPrice * quantity;
 
-                /*
-                |--------------------------------------------------------------------------
-                | Product sales aggregation
-                |--------------------------------------------------------------------------
-                */
+                const commissionPercent = Number(
+                    order.commissionPercent || 0
+                );
 
-                if (
-                    !productSalesMap.has(
-                        item.productId
-                    )
-                ) {
-                    productSalesMap.set(
-                        item.productId,
-                        {
-                            unitsSold: 0,
-                            revenue: 0,
-                            orderIds: new Set(),
-                        }
-                    );
-                }
+                const commissionAmount =
+                    grossRevenue *
+                    (commissionPercent / 100);
+
+                const sellerEarnings =
+                    grossRevenue - commissionAmount;
 
                 const productSales =
-                    productSalesMap.get(
-                        item.productId
-                    );
+                    productSalesMap.get(item.productId);
 
                 productSales.unitsSold += quantity;
 
-                productSales.revenue +=
-                    itemRevenue;
+                productSales.grossRevenue += grossRevenue;
+
+                productSales.commissionAmount += commissionAmount;
+
+                productSales.sellerEarnings += sellerEarnings;
+
+                productSales.orderIds.add(order.id);
 
                 productSales.orderIds.add(
                     order.id
                 );
 
-                /*
-                |--------------------------------------------------------------------------
-                | Monthly aggregation
-                |--------------------------------------------------------------------------
-                */
+
+                //Monthly aggregation
+
 
                 monthlyRecord.sales += quantity;
 
-                monthlyRecord.revenue +=
-                    itemRevenue;
+                monthlyRecord.revenue += sellerEarnings;
 
-                /*
-                |--------------------------------------------------------------------------
-                | Category aggregation
-                |--------------------------------------------------------------------------
-                */
+
+                // Category aggregation
+
 
                 const category =
                     product?.category ||
@@ -346,8 +276,7 @@ export async function GET() {
 
                 categorySales.sales += quantity;
 
-                categorySales.revenue +=
-                    itemRevenue;
+                categorySales.revenue += sellerEarnings;
 
                 categorySales.productIds.add(
                     item.productId
@@ -355,54 +284,38 @@ export async function GET() {
             });
         });
 
-        /*
-        |--------------------------------------------------------------------------
-        | 10. Normalize product sales map
-        |--------------------------------------------------------------------------
-        |
-        | Convert Set-based order IDs into an order count.
-        |--------------------------------------------------------------------------
-        */
+
+        // 10. Normalize product sales map
 
         const normalizedProductSalesMap =
             new Map();
 
         productSalesMap.forEach(
             (salesData, productId) => {
-                normalizedProductSalesMap.set(
-                    productId,
-                    {
-                        unitsSold:
-                            salesData.unitsSold,
+                normalizedProductSalesMap.set(productId, {
 
-                        revenue: Number(
-                            salesData.revenue.toFixed(
-                                2
-                            )
-                        ),
+                    unitsSold: salesData.unitsSold,
 
-                        orderCount:
-                            salesData.orderIds.size,
-                    }
-                );
+                    grossRevenue: Number(
+                        salesData.grossRevenue.toFixed(2)
+                    ),
+
+                    commissionAmount: Number(
+                        salesData.commissionAmount.toFixed(2)
+                    ),
+
+                    sellerEarnings: Number(
+                        salesData.sellerEarnings.toFixed(2)
+                    ),
+
+                    orderCount:
+                        salesData.orderIds.size,
+                });
             }
         );
 
-        /*
-        |--------------------------------------------------------------------------
-        | 11. Enrich every product with actual sales
-        |--------------------------------------------------------------------------
-        |
-        | All later tables and charts should use:
-        |
-        | product.unitsSold
-        | product.revenue
-        |
-        | instead of:
-        |
-        | product.totalSales
-        |--------------------------------------------------------------------------
-        */
+
+        // 11. Enrich every product with actual sales
 
         const enrichedProducts = products.map(
             (product) => {
@@ -441,8 +354,14 @@ export async function GET() {
                     unitsSold:
                         salesData.unitsSold,
 
-                    revenue:
-                        salesData.revenue,
+                    grossRevenue:
+                        salesData.grossRevenue,
+
+                    commissionAmount:
+                        salesData.commissionAmount,
+
+                    sellerEarnings:
+                        salesData.sellerEarnings,
 
                     orderCount:
                         salesData.orderCount,
@@ -450,11 +369,9 @@ export async function GET() {
             }
         );
 
-        /*
-        |--------------------------------------------------------------------------
-        | 12. Sorted products
-        |--------------------------------------------------------------------------
-        */
+
+        // 12. Sorted products
+
 
         const productsBySales = [
             ...enrichedProducts,
@@ -487,10 +404,26 @@ export async function GET() {
             0
         );
 
-        const totalRevenue = enrichedProducts.reduce(
-            (sum, product) => sum + product.revenue,
-            0
-        );
+        const totalGrossRevenue =
+            enrichedProducts.reduce(
+                (sum, product) =>
+                    sum + product.grossRevenue,
+                0
+            );
+
+        const totalCommission =
+            enrichedProducts.reduce(
+                (sum, product) =>
+                    sum + product.commissionAmount,
+                0
+            );
+
+        const totalSellerEarnings =
+            enrichedProducts.reduce(
+                (sum, product) =>
+                    sum + product.sellerEarnings,
+                0
+            );
 
         const ratedProducts = enrichedProducts.filter(
             (product) => product.averageRating > 0
@@ -528,8 +461,14 @@ export async function GET() {
 
                     sold: productsBySales[0].unitsSold,
 
-                    revenue:
-                        productsBySales[0].revenue,
+                    grossRevenue:
+                        productsBySales[0].grossRevenue,
+
+                    commission:
+                        productsBySales[0].commissionAmount,
+
+                    sellerEarnings:
+                        productsBySales[0].sellerEarnings,
 
                     views:
                         productsBySales[0].totalViews,
@@ -562,8 +501,14 @@ export async function GET() {
                     sold:
                         productsByViews[0].unitsSold,
 
-                    revenue:
-                        productsByViews[0].revenue,
+                    grossRevenue:
+                        productsBySales[0].grossRevenue,
+
+                    commission:
+                        productsBySales[0].commissionAmount,
+
+                    sellerEarnings:
+                        productsBySales[0].sellerEarnings,
 
                     views:
                         productsByViews[0].totalViews,
@@ -612,7 +557,14 @@ export async function GET() {
 
                 featured: product.featured,
 
-                revenue: product.revenue,
+                grossRevenue:
+                    productsBySales[0].grossRevenue,
+
+                commission:
+                    productsBySales[0].commissionAmount,
+
+                sellerEarnings:
+                    productsBySales[0].sellerEarnings,
             }));
 
         /*
@@ -665,7 +617,14 @@ export async function GET() {
 
                     price: product.price,
 
-                    revenue: product.revenue,
+                    grossRevenue:
+                        productsBySales[0].grossRevenue,
+
+                    commission:
+                        productsBySales[0].commissionAmount,
+
+                    sellerEarnings:
+                        productsBySales[0].sellerEarnings,
                 }));
 
         /*
@@ -683,9 +642,14 @@ export async function GET() {
 
                     sales: category.sales,
 
-                    revenue: Number(
-                        category.revenue.toFixed(2)
-                    ),
+                    grossRevenue:
+                        productsBySales[0].grossRevenue,
+
+                    commission:
+                        productsBySales[0].commissionAmount,
+
+                    sellerEarnings:
+                        productsBySales[0].sellerEarnings,
 
                     products:
                         category.productIds.size,
@@ -695,14 +659,8 @@ export async function GET() {
                         b.sales - a.sales
                 );
 
-        /*
-|--------------------------------------------------------------------------
-| Monthly Sales Chart
-|--------------------------------------------------------------------------
-|
-| monthlySalesMap was already populated while processing orders in Part 1.
-|--------------------------------------------------------------------------
-*/
+        // Monthly Sales Chart
+
 
         const monthlySalesChart = Array.from(
             monthlySalesMap.values()
@@ -714,9 +672,14 @@ export async function GET() {
 
                 sales: Number(item.sales || 0),
 
-                revenue: Number(
-                    Number(item.revenue || 0).toFixed(2)
-                ),
+                grossRevenue:
+                    productsBySales[0].grossRevenue,
+
+                commission:
+                    productsBySales[0].commissionAmount,
+
+                sellerEarnings:
+                    productsBySales[0].sellerEarnings,
 
                 orders: Number(item.orders || 0),
             }))
@@ -757,7 +720,14 @@ export async function GET() {
 
                 sales: product.unitsSold,
 
-                revenue: product.revenue,
+                grossRevenue:
+                    productsBySales[0].grossRevenue,
+
+                commission:
+                    productsBySales[0].commissionAmount,
+
+                sellerEarnings:
+                    productsBySales[0].sellerEarnings,
 
                 rating: Number(
                     product.averageRating.toFixed(1)
@@ -796,7 +766,14 @@ export async function GET() {
 
                 sales: product.unitsSold,
 
-                revenue: product.revenue,
+                grossRevenue:
+                    productsBySales[0].grossRevenue,
+
+                commission:
+                    productsBySales[0].commissionAmount,
+
+                sellerEarnings:
+                    productsBySales[0].sellerEarnings,
 
                 rating: Number(
                     product.averageRating.toFixed(1)
@@ -859,8 +836,14 @@ export async function GET() {
                     stock:
                         product.quantity,
 
-                    revenue:
-                        product.revenue,
+                    grossRevenue:
+                        productsBySales[0].grossRevenue,
+
+                    commission:
+                        productsBySales[0].commissionAmount,
+
+                    sellerEarnings:
+                        productsBySales[0].sellerEarnings,
 
                     rating: Number(
                         product.averageRating.toFixed(
@@ -918,8 +901,14 @@ export async function GET() {
                     stock:
                         product.quantity,
 
-                    revenue:
-                        product.revenue,
+                    grossRevenue:
+                        productsBySales[0].grossRevenue,
+
+                    commission:
+                        productsBySales[0].commissionAmount,
+
+                    sellerEarnings:
+                        productsBySales[0].sellerEarnings,
                 }));
 
         /*
@@ -942,10 +931,17 @@ export async function GET() {
 
                     totalSales,
 
-                    totalRevenue: Number(
-                        totalRevenue.toFixed(2)
+                    grossRevenue: Number(
+                        totalGrossRevenue.toFixed(2)
                     ),
 
+                    commission: Number(
+                        totalCommission.toFixed(2)
+                    ),
+
+                    sellerEarnings: Number(
+                        totalSellerEarnings.toFixed(2)
+                    ),
                     averageRating,
                 },
 
