@@ -156,7 +156,7 @@ export async function GET() {
                 orderDate.getMonth() + 1
             ).padStart(2, "0")}`;
 
-            const monthLabel = orderDate.toLocaleString(
+            const monthLabel = orderDate?.toLocaleString(
                 "en-IN",
                 {
                     month: "short",
