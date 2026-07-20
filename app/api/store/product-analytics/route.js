@@ -156,7 +156,7 @@ export async function GET() {
                 orderDate.getMonth() + 1
             ).padStart(2, "0")}`;
 
-            const monthLabel = orderDate?.toLocaleString(
+            const monthLabel = orderDate.toLocaleString(
                 "en-IN",
                 {
                     month: "short",
@@ -536,35 +536,37 @@ export async function GET() {
 
                 name: product.name,
 
-                image:
-                    product.images?.[0] || null,
+                image: product.images?.[0] || null,
 
                 category: product.category,
 
-                sold: product.unitsSold,
+                sold: Number(product.unitsSold || 0),
 
-                views: product.totalViews,
+                views: Number(product.totalViews || 0),
 
-                stock: product.quantity,
+                stock: Number(product.quantity || 0),
 
                 rating: Number(
-                    product.averageRating.toFixed(1)
+                    Number(product.averageRating || 0).toFixed(1)
                 ),
 
-                price: Number(product.price),
+                price: Number(product.price || 0),
 
-                mrp: Number(product.mrp),
+                mrp: Number(product.mrp || 0),
 
-                featured: product.featured,
+                featured: Boolean(product.featured),
 
-                grossRevenue:
-                    productsBySales[0].grossRevenue,
+                grossRevenue: Number(
+                    product.grossRevenue || 0
+                ),
 
-                commission:
-                    productsBySales[0].commissionAmount,
+                commission: Number(
+                    product.commissionAmount || 0
+                ),
 
-                sellerEarnings:
-                    productsBySales[0].sellerEarnings,
+                sellerEarnings: Number(
+                    product.sellerEarnings || 0
+                ),
             }));
 
         /*
