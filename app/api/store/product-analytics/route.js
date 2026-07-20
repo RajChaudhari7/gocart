@@ -227,10 +227,9 @@ export async function GET() {
 
         const monthlySalesMap = new Map();
 
-        const paidOrders = await prisma.order.findMany({
+        const orders = await prisma.order.findMany({
             where: {
                 storeId: store.id,
-                isPaid: true,
             },
 
             include: {
@@ -242,7 +241,7 @@ export async function GET() {
             },
         });
 
-        paidOrders.forEach((order) => {
+        orders.forEach((order) => {
             const orderDate = new Date(order.createdAt);
 
             const key = `${orderDate.getFullYear()}-${String(
