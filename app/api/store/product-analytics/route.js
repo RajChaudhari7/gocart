@@ -513,7 +513,7 @@ export async function GET() {
                 .map((product) => ({
                     id: product.id,
 
-                    product: product.name,
+                    name: product.name,
 
                     views: product.totalViews,
 
@@ -532,7 +532,7 @@ export async function GET() {
 
                     id: product.id,
 
-                    product: product.name,
+                    name: product.name,
 
                     image:
                         product.images?.[0] || null,
