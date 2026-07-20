@@ -45,6 +45,28 @@ export default function ProductAnalyticsPage() {
 
     const [filters, setFilters] = useState(DEFAULT_ANALYTICS_FILTERS);
 
+    const queryString = useMemo(() => {
+        const params = new URLSearchParams();
+
+        params.set("range", filters.range);
+        params.set("sort", filters.sort);
+        params.set("stock", filters.stock);
+
+        if (filters.search.trim()) {
+            params.set("search", filters.search.trim());
+        }
+
+        if (filters.category !== "all") {
+            params.set("category", filters.category);
+        }
+
+        if (filters.featured) {
+            params.set("featured", "true");
+        }
+
+        return params.toString();
+    }, [filters]);
+
     const fetchAnalytics = useCallback(
         async () => {
             try {
@@ -92,37 +114,6 @@ export default function ProductAnalyticsPage() {
         return () => clearTimeout(timeout);
     }, [fetchAnalytics]);
 
-    const queryString = useMemo(() => {
-        const params = new URLSearchParams();
-
-        params.set("range", filters.range);
-        params.set("sort", filters.sort);
-        params.set("stock", filters.stock);
-
-        if (filters.search.trim()) {
-            params.set(
-                "search",
-                filters.search.trim()
-            );
-        }
-
-        if (filters.category !== "all") {
-            params.set(
-                "category",
-                filters.category
-            );
-        }
-
-        if (filters.featured) {
-            params.set("featured", "true");
-        }
-
-        return params.toString();
-    }, [filters]);
-
-    useEffect(() => {
-        fetchAnalytics();
-    }, [fetchAnalytics]);
 
     if (loading) {
         return <ProductAnalyticsSkeleton />;
