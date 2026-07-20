@@ -36,6 +36,7 @@ import {
     AreaChart,
     Area,
 } from "recharts";
+import InsightCards from "@/components/store/product-analytics/InsightCards";
 
 const initialStats = {
     totalProducts: 0,
@@ -1988,6 +1989,10 @@ export default function ProductAnalyticsPage() {
                 </section>
 
                 <div className="space-y-6">
+
+                    {analytics && (
+                        <InsightCards analytics={analytics} />
+                    )}
                     <div className="grid gap-6 xl:grid-cols-2">
                         <ViewsVsSalesChart
                             data={viewsVsSalesData}
