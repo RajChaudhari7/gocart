@@ -243,42 +243,46 @@ export async function GET() {
         });
 
         paidOrders.forEach((order) => {
+            const orderDate = new Date(order.createdAt);
 
-            const key = `${order.createdAt.getFullYear()}-${String(
-                order.createdAt.getMonth() + 1
+            const key = `${orderDate.getFullYear()}-${String(
+                orderDate.getMonth() + 1
             ).padStart(2, "0")}`;
 
-            const label = order.createdAt.toLocaleString("en-IN", {
+            const label = orderDate.toLocaleString("en-IN", {
                 month: "short",
                 year: "2-digit",
             });
 
-            if (!monthlySalesMap.has(month)) {
-
-                monthlySalesMap.set(month, {
-                    month,
+            if (!monthlySalesMap.has(key)) {
+                monthlySalesMap.set(key, {
+                    key,
+                    month: label,
                     sales: 0,
                     revenue: 0,
                     orders: 0,
                 });
-
             }
 
-            const current = monthlySalesMap.get(month);
+            const current = monthlySalesMap.get(key);
 
             current.orders += 1;
 
-            current.revenue += Number(order.total);
+            current.revenue += Number(order.total || 0);
 
             current.sales += order.orderItems.reduce(
-                (sum, item) => sum + item.quantity,
+                (sum, item) =>
+                    sum + Number(item.quantity || 0),
                 0
             );
         });
 
         const monthlySalesChart = Array.from(
             monthlySalesMap.values()
-        );
+        ).map((item) => ({
+            ...item,
+            revenue: Number(item.revenue.toFixed(2)),
+        }));
 
         const lowStockProducts = products
             .filter(
