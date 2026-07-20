@@ -116,11 +116,12 @@ export async function GET() {
                 total: true,
                 isPaid: true,
                 status: true,
+                paymentMethod: true,
                 createdAt: true,
 
                 orderItems: {
                     select: {
-                        id: true,
+                        orderId: true,
                         productId: true,
                         quantity: true,
                         price: true,
