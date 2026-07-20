@@ -33,6 +33,8 @@ import {
     Cell,
     BarChart,
     Bar,
+    AreaChart,
+    Area,
 } from "recharts";
 
 const initialStats = {
@@ -1284,6 +1286,138 @@ function ViewsVsSalesTooltip({
     );
 }
 
+function MonthlySalesChart({
+    data = [],
+}) {
+    if (!data.length) {
+
+        return (
+
+            <section className="rounded-3xl border border-slate-800 bg-slate-900 p-6">
+
+                <h2 className="text-2xl font-black text-white">
+
+                    Monthly Sales
+
+                </h2>
+
+                <div className="flex h-72 items-center justify-center">
+
+                    <p className="text-slate-400">
+
+                        No monthly sales available.
+
+                    </p>
+
+                </div>
+
+            </section>
+
+        );
+
+    }
+    return (
+
+        <section className="rounded-3xl border border-slate-800 bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 p-6">
+
+            <h2 className="text-2xl font-black text-white">
+
+                Monthly Sales Trend
+
+            </h2>
+
+            <p className="mt-2 text-slate-400">
+
+                Track sales and revenue over time.
+
+            </p>
+
+            <div className="mt-8 h-[420px]">
+
+                <ResponsiveContainer
+                    width="100%"
+                    height="100%"
+                >
+
+                    <AreaChart
+                        data={data}
+                    >
+
+                        <defs>
+
+                            <linearGradient
+                                id="salesArea"
+                                x1="0"
+                                y1="0"
+                                x2="0"
+                                y2="1"
+                            >
+
+                                <stop
+                                    offset="5%"
+                                    stopColor="#10b981"
+                                    stopOpacity={0.7}
+                                />
+
+                                <stop
+                                    offset="95%"
+                                    stopColor="#10b981"
+                                    stopOpacity={0}
+                                />
+
+                            </linearGradient>
+
+                        </defs>
+
+                        <CartesianGrid
+                            strokeDasharray="3 3"
+                            stroke="#334155"
+                        />
+
+                        <XAxis
+                            dataKey="month"
+                            stroke="#94a3b8"
+                        />
+
+                        <YAxis
+                            stroke="#94a3b8"
+                        />
+
+                        <Tooltip />
+
+                        <Legend />
+
+                        <Area
+                            type="monotone"
+                            dataKey="sales"
+                            stroke="#10b981"
+                            fill="url(#salesArea)"
+                            strokeWidth={4}
+                            name="Units Sold"
+                        />
+
+                        <Line
+                            type="monotone"
+                            dataKey="revenue"
+                            stroke="#3b82f6"
+                            strokeWidth={3}
+                            dot={{
+                                r: 5
+                            }}
+                            name="Revenue"
+                        />
+
+                    </AreaChart>
+
+                </ResponsiveContainer>
+
+            </div>
+
+        </section>
+
+    );
+}
+
 function ViewsVsSalesChart({
     data = [],
 }) {
@@ -1790,6 +1924,9 @@ export default function ProductAnalyticsPage() {
     const topProductSalesData =
         analytics?.charts?.topProductSales || [];
 
+    const monthlySalesData =
+        analytics?.charts?.monthlySales || [];
+
     return (
         <main className="min-h-screen bg-[#020617] p-4 text-white md:p-6 lg:p-8">
             <div className="mx-auto max-w-[1600px] space-y-8">
@@ -1863,6 +2000,10 @@ export default function ProductAnalyticsPage() {
 
                     <TopProductSalesChart
                         data={topProductSalesData}
+                    />
+
+                    <MonthlySalesChart
+                        data={monthlySalesData}
                     />
                 </div>
                 <section

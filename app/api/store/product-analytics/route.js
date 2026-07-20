@@ -225,6 +225,61 @@ export async function GET() {
                 ),
             }));
 
+        const monthlySalesMap = new Map();
+
+        const paidOrders = await prisma.order.findMany({
+            where: {
+                storeId: store.id,
+                isPaid: true,
+            },
+
+            include: {
+                orderItems: true,
+            },
+
+            orderBy: {
+                createdAt: "asc",
+            },
+        });
+
+        paidOrders.forEach((order) => {
+
+            const key = `${order.createdAt.getFullYear()}-${String(
+                order.createdAt.getMonth() + 1
+            ).padStart(2, "0")}`;
+
+            const label = order.createdAt.toLocaleString("en-IN", {
+                month: "short",
+                year: "2-digit",
+            });
+
+            if (!monthlySalesMap.has(month)) {
+
+                monthlySalesMap.set(month, {
+                    month,
+                    sales: 0,
+                    revenue: 0,
+                    orders: 0,
+                });
+
+            }
+
+            const current = monthlySalesMap.get(month);
+
+            current.orders += 1;
+
+            current.revenue += Number(order.total);
+
+            current.sales += order.orderItems.reduce(
+                (sum, item) => sum + item.quantity,
+                0
+            );
+        });
+
+        const monthlySalesChart = Array.from(
+            monthlySalesMap.values()
+        );
+
         const lowStockProducts = products
             .filter(
                 (product) =>
@@ -356,7 +411,7 @@ export async function GET() {
                 viewsVsSales: viewsVsSalesChart,
                 salesByCategory,
                 topProductSales: topProductSalesChart,
-
+                monthlySales: monthlySalesChart,
 
             },
 
