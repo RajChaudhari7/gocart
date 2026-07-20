@@ -4,8 +4,6 @@ import { NextResponse } from "next/server";
 
 export async function GET() {
     try {
-
-        // 1. Authenticate seller
         const { userId } = await auth();
 
         if (!userId) {
@@ -18,9 +16,6 @@ export async function GET() {
                 }
             );
         }
-
-
-        // 2. Find seller store
 
         const store = await prisma.store.findUnique({
             where: {
@@ -43,9 +38,6 @@ export async function GET() {
                 }
             );
         }
-
-        // 3. Fetch active products
-
 
         const products = await prisma.product.findMany({
             where: {
@@ -71,9 +63,6 @@ export async function GET() {
                 createdAt: "desc",
             },
         });
-
-
-        // 4. Fetch store orders
 
 
         const orders = await prisma.order.findMany({
@@ -107,20 +96,12 @@ export async function GET() {
             },
         });
 
-
-        // 5. Create product lookup map
-
-
         const productMap = new Map(
             products.map((product) => [
                 product.id,
                 product,
             ])
         );
-
-
-        // 6. Create product sales map
-
 
         const productSalesMap = new Map();
 
@@ -134,19 +115,10 @@ export async function GET() {
             });
         });
 
-
-        // 7. Create monthly sales map
-
-
         const monthlySalesMap = new Map();
 
 
-        // 8. Create category sales map
-
-
         const categorySalesMap = new Map();
-
-        // 9. Process every order
 
 
         orders.forEach((order) => {
@@ -164,10 +136,6 @@ export async function GET() {
                 }
             );
 
-
-            // Create monthly record
-
-
             if (!monthlySalesMap.has(monthKey)) {
                 monthlySalesMap.set(monthKey, {
                     key: monthKey,
@@ -182,10 +150,6 @@ export async function GET() {
                 monthlySalesMap.get(monthKey);
 
             monthlyRecord.orders += 1;
-
-
-            // Process each order item
-
 
             order.orderItems.forEach((item) => {
                 const product = productMap.get(
@@ -236,10 +200,6 @@ export async function GET() {
                     order.id
                 );
 
-
-                //Monthly aggregation
-
-
                 monthlyRecord.sales += quantity;
 
                 monthlyRecord.revenue += sellerEarnings;
@@ -284,9 +244,6 @@ export async function GET() {
             });
         });
 
-
-        // 10. Normalize product sales map
-
         const normalizedProductSalesMap =
             new Map();
 
@@ -315,16 +272,14 @@ export async function GET() {
         );
 
 
-        // 11. Enrich every product with actual sales
-
         const enrichedProducts = products.map(
             (product) => {
                 const salesData =
-                    normalizedProductSalesMap.get(
-                        product.id
-                    ) || {
+                    normalizedProductSalesMap.get(product.id) || {
                         unitsSold: 0,
-                        revenue: 0,
+                        grossRevenue: 0,
+                        commissionAmount: 0,
+                        sellerEarnings: 0,
                         orderCount: 0,
                     };
 
@@ -368,11 +323,6 @@ export async function GET() {
                 };
             }
         );
-
-
-        // 12. Sorted products
-
-
         const productsBySales = [
             ...enrichedProducts,
         ].sort((a, b) => {
@@ -382,7 +332,7 @@ export async function GET() {
                 );
             }
 
-            return b.revenue - a.revenue;
+            return b.grossRevenue - a.grossRevenue;
         });
 
         const productsByViews = [
@@ -442,12 +392,6 @@ export async function GET() {
                     ).toFixed(1)
                 );
 
-        /*
-        |--------------------------------------------------------------------------
-        | Best Seller
-        |--------------------------------------------------------------------------
-        */
-
         const bestSeller =
             productsBySales.length > 0
                 ? {
@@ -480,13 +424,6 @@ export async function GET() {
                     ),
                 }
                 : null;
-
-        /*
-        |--------------------------------------------------------------------------
-        | Most Viewed Product
-        |--------------------------------------------------------------------------
-        */
-
         const mostViewedProduct =
             productsByViews.length > 0
                 ? {
@@ -502,13 +439,13 @@ export async function GET() {
                         productsByViews[0].unitsSold,
 
                     grossRevenue:
-                        productsBySales[0].grossRevenue,
+                        productsByViews[0].grossRevenue,
 
                     commission:
-                        productsBySales[0].commissionAmount,
+                        productsByViews[0].commissionAmount,
 
                     sellerEarnings:
-                        productsBySales[0].sellerEarnings,
+                        productsByViews[0].sellerEarnings,
 
                     views:
                         productsByViews[0].totalViews,
@@ -569,11 +506,6 @@ export async function GET() {
                 ),
             }));
 
-        /*
-        |--------------------------------------------------------------------------
-        | Views vs Sales Chart
-        |--------------------------------------------------------------------------
-        */
 
         const viewsVsSalesChart =
             productsByViews
@@ -587,12 +519,6 @@ export async function GET() {
 
                     sales: product.unitsSold,
                 }));
-
-        /*
-        |--------------------------------------------------------------------------
-        | Top Product Sales Chart
-        |--------------------------------------------------------------------------
-        */
 
         const topProductSalesChart =
             productsBySales
@@ -619,21 +545,12 @@ export async function GET() {
 
                     price: product.price,
 
-                    grossRevenue:
-                        productsBySales[0].grossRevenue,
+                    grossRevenue: product.grossRevenue,
 
-                    commission:
-                        productsBySales[0].commissionAmount,
+                    commission: product.commissionAmount,
 
-                    sellerEarnings:
-                        productsBySales[0].sellerEarnings,
+                    sellerEarnings: product.sellerEarnings,
                 }));
-
-        /*
-        |--------------------------------------------------------------------------
-        | Sales By Category
-        |--------------------------------------------------------------------------
-        */
 
         const salesByCategory =
             Array.from(
@@ -644,14 +561,7 @@ export async function GET() {
 
                     sales: category.sales,
 
-                    grossRevenue:
-                        productsBySales[0].grossRevenue,
-
-                    commission:
-                        productsBySales[0].commissionAmount,
-
-                    sellerEarnings:
-                        productsBySales[0].sellerEarnings,
+                    grossRevenue: Number(category.revenue.toFixed(2)),
 
                     products:
                         category.productIds.size,
@@ -663,7 +573,6 @@ export async function GET() {
 
         // Monthly Sales Chart
 
-
         const monthlySalesChart = Array.from(
             monthlySalesMap.values()
         )
@@ -674,26 +583,13 @@ export async function GET() {
 
                 sales: Number(item.sales || 0),
 
-                grossRevenue:
-                    productsBySales[0].grossRevenue,
-
-                commission:
-                    productsBySales[0].commissionAmount,
-
-                sellerEarnings:
-                    productsBySales[0].sellerEarnings,
+                grossRevenue: Number(item.revenue.toFixed(2)),
 
                 orders: Number(item.orders || 0),
             }))
             .sort((a, b) =>
                 a.key.localeCompare(b.key)
             );
-
-        /*
-        |--------------------------------------------------------------------------
-        | Low Stock Products
-        |--------------------------------------------------------------------------
-        */
 
         const lowStockProducts = enrichedProducts
             .filter(
@@ -722,25 +618,16 @@ export async function GET() {
 
                 sales: product.unitsSold,
 
-                grossRevenue:
-                    productsBySales[0].grossRevenue,
+                grossRevenue: product.grossRevenue,
 
-                commission:
-                    productsBySales[0].commissionAmount,
+                commission: product.commissionAmount,
 
-                sellerEarnings:
-                    productsBySales[0].sellerEarnings,
+                sellerEarnings: product.sellerEarnings,
 
                 rating: Number(
                     product.averageRating.toFixed(1)
                 ),
             }));
-
-        /*
-        |--------------------------------------------------------------------------
-        | Out of Stock Products
-        |--------------------------------------------------------------------------
-        */
 
         const outOfStockProducts = enrichedProducts
             .filter(
@@ -769,29 +656,19 @@ export async function GET() {
                 sales: product.unitsSold,
 
                 grossRevenue:
-                    productsBySales[0].grossRevenue,
+                    product.grossRevenue,
 
                 commission:
-                    productsBySales[0].commissionAmount,
+                    product.commissionAmount,
 
                 sellerEarnings:
-                    productsBySales[0].sellerEarnings,
+                    product.sellerEarnings,
 
                 rating: Number(
                     product.averageRating.toFixed(1)
                 ),
             }));
 
-        /*
-        |--------------------------------------------------------------------------
-        | High Views but Low Sales Products
-        |--------------------------------------------------------------------------
-        |
-        | A product qualifies when:
-        | - It has at least 100 views
-        | - It has sold 5 units or fewer
-        |--------------------------------------------------------------------------
-        */
 
         const highViewsLowSalesProducts =
             enrichedProducts
@@ -839,13 +716,13 @@ export async function GET() {
                         product.quantity,
 
                     grossRevenue:
-                        productsBySales[0].grossRevenue,
+                        product.grossRevenue,
 
                     commission:
-                        productsBySales[0].commissionAmount,
+                        product.commissionAmount,
 
                     sellerEarnings:
-                        productsBySales[0].sellerEarnings,
+                        product.sellerEarnings,
 
                     rating: Number(
                         product.averageRating.toFixed(
@@ -853,15 +730,6 @@ export async function GET() {
                         )
                     ),
                 }));
-
-        /*
-        |--------------------------------------------------------------------------
-        | Low Rated Products
-        |--------------------------------------------------------------------------
-        |
-        | Products without ratings are excluded.
-        |--------------------------------------------------------------------------
-        */
 
         const lowRatedProducts =
             enrichedProducts
@@ -904,20 +772,15 @@ export async function GET() {
                         product.quantity,
 
                     grossRevenue:
-                        productsBySales[0].grossRevenue,
+                        product.grossRevenue,
 
                     commission:
-                        productsBySales[0].commissionAmount,
+                        product.commissionAmount,
 
                     sellerEarnings:
-                        productsBySales[0].sellerEarnings,
+                        product.sellerEarnings,
                 }));
 
-        /*
-        |--------------------------------------------------------------------------
-        | Final API Response
-        |--------------------------------------------------------------------------
-        */
 
         return NextResponse.json(
             {

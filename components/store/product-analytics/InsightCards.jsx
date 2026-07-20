@@ -110,10 +110,10 @@ export default function InsightCards({
         outOfStockProducts.reduce(
             (sum, product) =>
                 sum +
-                Number(product.revenue || 0),
+                Number(product.sellerEarnings || 0),
             0
         );
-
+        
     const lowestStockProduct =
         lowStockProducts.length > 0
             ? [...lowStockProducts].sort(
@@ -142,9 +142,10 @@ export default function InsightCards({
             value: bestSeller?.name || "No sales yet",
             primaryLabel: "Units sold",
             primaryValue: bestSeller?.sold || 0,
-            secondaryLabel: "Revenue",
+            secondaryLabel: "Seller Earnings",
+
             secondaryValue: formatCurrency(
-                bestSeller?.revenue
+                bestSeller?.sellerEarnings
             ),
             footer: `${bestSellerConversion}% conversion`,
             products: bestSellerProducts,
