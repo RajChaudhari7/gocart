@@ -52,7 +52,7 @@ export default function ProductAnalyticsPage() {
                 setError("");
 
                 const response = await fetch(
-                    `/api/store/product-analytics?${queryString}`,
+                    `/api/store/product-analytics-filter?${queryString}`,
                     {
                         method: "GET",
                         cache: "no-store",
