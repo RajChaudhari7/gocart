@@ -110,10 +110,12 @@ export default function InsightCards({
         outOfStockProducts.reduce(
             (sum, product) =>
                 sum +
-                Number(product.sellerEarnings || 0),
+                Number(
+                    product.sellerEarnings || 0
+                ),
             0
         );
-        
+
     const lowestStockProduct =
         lowStockProducts.length > 0
             ? [...lowStockProducts].sort(
