@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import axios from "axios";
 import { AlertCircle } from "lucide-react";
 
@@ -14,6 +14,9 @@ import MonthlySalesChart from "@/components/store/product-analytics/MonthlySales
 import TopProductsTable from "@/components/store/product-analytics/TopProductsTable";
 import ProductAnalyticsSkeleton from "@/components/store/product-analytics/ProductAnalyticsSkeleton";
 import ErrorState from "@/components/store/product-analytics/ErrorState";
+import AnalyticsFilters from "@/components/store/product-analytics/AnalyticsFilters";
+import { DEFAULT_ANALYTICS_FILTERS, } from "@/components/store/product-analytics/constants";
+
 
 const initialStats = {
     totalProducts: 0,
@@ -40,39 +43,82 @@ export default function ProductAnalyticsPage() {
     const [error, setError] =
         useState("");
 
-    const fetchAnalytics = useCallback(
-        async (isRefresh = false) => {
-            try {
-                if (isRefresh) {
-                    setRefreshing(true);
-                } else {
-                    setLoading(true);
-                }
+    const [filters, setFilters] = useState(DEFAULT_ANALYTICS_FILTERS);
 
+    const fetchAnalytics = useCallback(
+        async () => {
+            try {
+                setLoading(true);
                 setError("");
 
-                const response = await axios.get(
-                    "/api/store/product-analytics"
+                const response = await fetch(
+                    `/api/store/product-analytics?${queryString}`,
+                    {
+                        method: "GET",
+                        cache: "no-store",
+                    }
                 );
 
-                setAnalytics(response.data);
+                const result =
+                    await response.json();
+
+                if (!response.ok) {
+                    throw new Error(
+                        result.error ||
+                        "Unable to load analytics"
+                    );
+                }
+
+                setAnalytics(result);
             } catch (error) {
-                console.error(
-                    "Failed to fetch product analytics:",
-                    error
-                );
+                console.error(error);
 
                 setError(
-                    error?.response?.data?.error ||
-                    "Unable to load product analytics. Please try again."
+                    error.message ||
+                    "Unable to load analytics"
                 );
             } finally {
                 setLoading(false);
-                setRefreshing(false);
             }
         },
-        []
+        [queryString]
     );
+
+    useEffect(() => {
+        const timeout = setTimeout(() => {
+            fetchAnalytics();
+        }, 350);
+
+        return () => clearTimeout(timeout);
+    }, [fetchAnalytics]);
+
+    const queryString = useMemo(() => {
+        const params = new URLSearchParams();
+
+        params.set("range", filters.range);
+        params.set("sort", filters.sort);
+        params.set("stock", filters.stock);
+
+        if (filters.search.trim()) {
+            params.set(
+                "search",
+                filters.search.trim()
+            );
+        }
+
+        if (filters.category !== "all") {
+            params.set(
+                "category",
+                filters.category
+            );
+        }
+
+        if (filters.featured) {
+            params.set("featured", "true");
+        }
+
+        return params.toString();
+    }, [filters]);
 
     useEffect(() => {
         fetchAnalytics();
@@ -114,6 +160,34 @@ export default function ProductAnalyticsPage() {
     const topProducts =
         analytics?.topProducts || [];
 
+    const categories = useMemo(() => {
+        const categorySet = new Set();
+
+        analytics?.topProducts?.forEach(
+            (product) => {
+                if (product.category) {
+                    categorySet.add(
+                        product.category
+                    );
+                }
+            }
+        );
+
+        analytics?.charts?.salesByCategory?.forEach(
+            (item) => {
+                if (item.category) {
+                    categorySet.add(
+                        item.category
+                    );
+                }
+            }
+        );
+
+        return Array.from(categorySet).sort(
+            (a, b) => a.localeCompare(b)
+        );
+    }, [analytics]);
+
     return (
         <main className="min-h-screen bg-[#020617] p-4 text-white md:p-6 lg:p-8">
             <div className="mx-auto max-w-[1600px] space-y-8">
@@ -139,6 +213,18 @@ export default function ProductAnalyticsPage() {
                         <span>{error}</span>
                     </div>
                 )}
+
+                <AnalyticsFilters
+                    filters={filters}
+                    categories={categories}
+                    loading={loading}
+                    onChange={setFilters}
+                    onReset={() =>
+                        setFilters(
+                            DEFAULT_ANALYTICS_FILTERS
+                        )
+                    }
+                />
 
                 {/* KPI cards */}
 

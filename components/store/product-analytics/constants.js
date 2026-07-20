@@ -176,3 +176,105 @@ export const EMPTY_MESSAGES = {
     tableDescription:
         "Your top-performing products will appear here after customers start purchasing products.",
 };
+
+export const TIME_FILTERS = [
+    {
+        label: "Today",
+        value: "today",
+    },
+    {
+        label: "Yesterday",
+        value: "yesterday",
+    },
+    {
+        label: "Last 7 Days",
+        value: "7d",
+    },
+    {
+        label: "Last 30 Days",
+        value: "30d",
+    },
+    {
+        label: "Last 90 Days",
+        value: "90d",
+    },
+    {
+        label: "This Month",
+        value: "thisMonth",
+    },
+    {
+        label: "Last Month",
+        value: "lastMonth",
+    },
+    {
+        label: "Last 12 Months",
+        value: "12m",
+    },
+    {
+        label: "All Time",
+        value: "all",
+    },
+];
+
+export const SORT_OPTIONS = [
+    {
+        label: "Best Selling",
+        value: "bestSelling",
+    },
+    {
+        label: "Most Viewed",
+        value: "mostViewed",
+    },
+    {
+        label: "Highest Gross Revenue",
+        value: "grossRevenue",
+    },
+    {
+        label: "Highest Seller Earnings",
+        value: "sellerEarnings",
+    },
+    {
+        label: "Highest Rating",
+        value: "highestRating",
+    },
+    {
+        label: "Lowest Stock",
+        value: "lowestStock",
+    },
+    {
+        label: "Newest Products",
+        value: "newest",
+    },
+    {
+        label: "Oldest Products",
+        value: "oldest",
+    },
+];
+
+export const STOCK_FILTERS = [
+    {
+        label: "All Stock",
+        value: "all",
+    },
+    {
+        label: "In Stock",
+        value: "inStock",
+    },
+    {
+        label: "Low Stock",
+        value: "lowStock",
+    },
+    {
+        label: "Out of Stock",
+        value: "outOfStock",
+    },
+];
+
+export const DEFAULT_ANALYTICS_FILTERS = {
+    range: "30d",
+    search: "",
+    category: "all",
+    sort: "bestSelling",
+    stock: "all",
+    featured: false,
+};
