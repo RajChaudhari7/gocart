@@ -31,19 +31,13 @@ const initialStats = {
 };
 
 export default function ProductAnalyticsPage() {
-    const [analytics, setAnalytics] =
-        useState(null);
-
-    const [loading, setLoading] =
-        useState(true);
-
-    const [refreshing, setRefreshing] =
-        useState(false);
-
-    const [error, setError] =
-        useState("");
-
-    const [filters, setFilters] = useState(DEFAULT_ANALYTICS_FILTERS);
+    const [analytics, setAnalytics] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
+    const [error, setError] = useState("");
+    const [filters, setFilters] = useState(
+        DEFAULT_ANALYTICS_FILTERS
+    );
 
     const queryString = useMemo(() => {
         const params = new URLSearchParams();
@@ -53,11 +47,17 @@ export default function ProductAnalyticsPage() {
         params.set("stock", filters.stock);
 
         if (filters.search.trim()) {
-            params.set("search", filters.search.trim());
+            params.set(
+                "search",
+                filters.search.trim()
+            );
         }
 
         if (filters.category !== "all") {
-            params.set("category", filters.category);
+            params.set(
+                "category",
+                filters.category
+            );
         }
 
         if (filters.featured) {
@@ -68,9 +68,14 @@ export default function ProductAnalyticsPage() {
     }, [filters]);
 
     const fetchAnalytics = useCallback(
-        async () => {
+        async (isRefresh = false) => {
             try {
-                setLoading(true);
+                if (isRefresh) {
+                    setRefreshing(true);
+                } else {
+                    setLoading(true);
+                }
+
                 setError("");
 
                 const response = await fetch(
@@ -101,6 +106,7 @@ export default function ProductAnalyticsPage() {
                 );
             } finally {
                 setLoading(false);
+                setRefreshing(false);
             }
         },
         [queryString]
@@ -113,43 +119,6 @@ export default function ProductAnalyticsPage() {
 
         return () => clearTimeout(timeout);
     }, [fetchAnalytics]);
-
-
-    if (loading) {
-        return <ProductAnalyticsSkeleton />;
-    }
-
-    if (error && !analytics) {
-        return (
-            <ErrorState
-                message={error}
-                refreshing={refreshing}
-                onRetry={() =>
-                    fetchAnalytics(true)
-                }
-            />
-        );
-    }
-
-    const stats = {
-        ...initialStats,
-        ...(analytics?.stats || {}),
-    };
-
-    const viewsVsSalesData =
-        analytics?.charts?.viewsVsSales || [];
-
-    const salesByCategoryData =
-        analytics?.charts?.salesByCategory || [];
-
-    const topProductSalesData =
-        analytics?.charts?.topProductSales || [];
-
-    const monthlySalesData =
-        analytics?.charts?.monthlySales || [];
-
-    const topProducts =
-        analytics?.topProducts || [];
 
     const categories = useMemo(() => {
         const categorySet = new Set();
@@ -178,6 +147,42 @@ export default function ProductAnalyticsPage() {
             (a, b) => a.localeCompare(b)
         );
     }, [analytics]);
+
+    const stats = {
+        ...initialStats,
+        ...(analytics?.stats || {}),
+    };
+
+    const viewsVsSalesData =
+        analytics?.charts?.viewsVsSales || [];
+
+    const salesByCategoryData =
+        analytics?.charts?.salesByCategory || [];
+
+    const topProductSalesData =
+        analytics?.charts?.topProductSales || [];
+
+    const monthlySalesData =
+        analytics?.charts?.monthlySales || [];
+
+    const topProducts =
+        analytics?.topProducts || [];
+
+    if (loading) {
+        return <ProductAnalyticsSkeleton />;
+    }
+
+    if (error && !analytics) {
+        return (
+            <ErrorState
+                message={error}
+                refreshing={refreshing}
+                onRetry={() =>
+                    fetchAnalytics(true)
+                }
+            />
+        );
+    }
 
     return (
         <main className="min-h-screen bg-[#020617] p-4 text-white md:p-6 lg:p-8">
