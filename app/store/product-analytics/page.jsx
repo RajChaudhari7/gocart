@@ -16,6 +16,7 @@ import ProductAnalyticsSkeleton from "@/components/store/product-analytics/Produ
 import ErrorState from "@/components/store/product-analytics/ErrorState";
 import AnalyticsFilters from "@/components/store/product-analytics/AnalyticsFilters";
 import { DEFAULT_ANALYTICS_FILTERS, } from "@/components/store/product-analytics/constants";
+import AIReviewSummary from "@/components/store/product-analytics/AIReviewSummary";
 
 
 const initialStats = {
@@ -35,6 +36,9 @@ export default function ProductAnalyticsPage() {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState("");
+    const [aiSummary, setAiSummary] = useState(null);
+    const [aiLoading, setAiLoading] = useState(false);
+    const [aiError, setAiError] = useState("");
     const [filters, setFilters] = useState(
         DEFAULT_ANALYTICS_FILTERS
     );
@@ -66,6 +70,11 @@ export default function ProductAnalyticsPage() {
 
         return params.toString();
     }, [filters]);
+
+    useEffect(() => {
+        setAiSummary(null);
+        setAiError("");
+    }, [queryString]);
 
     const fetchAnalytics = useCallback(
         async (isRefresh = false) => {
@@ -111,6 +120,65 @@ export default function ProductAnalyticsPage() {
         },
         [queryString]
     );
+
+    const generateAISummary = async () => {
+        try {
+            if (!analytics) {
+                setAiError("Analytics data is not available.");
+                return;
+            }
+
+            setAiLoading(true);
+            setAiError("");
+
+            const response = await fetch(
+                "/api/store/product-analytics-ai-summary",
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+
+                    body: JSON.stringify({
+                        stats: analytics.stats,
+
+                        highlights: analytics.highlights,
+
+                        topProducts: analytics.topProducts,
+
+                        insights: analytics.insights,
+
+                        charts: analytics.charts,
+
+                        filters,
+                    }),
+                }
+            );
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(
+                    data.error || "Failed to generate AI summary"
+                );
+            }
+
+            setAiSummary(data);
+        } catch (error) {
+            console.error(
+                "AI summary generation error:",
+                error
+            );
+
+            setAiError(
+                error.message ||
+                "Failed to generate AI review summary"
+            );
+        } finally {
+            setAiLoading(false);
+        }
+    };
 
     useEffect(() => {
         const timeout = setTimeout(() => {
@@ -226,6 +294,12 @@ export default function ProductAnalyticsPage() {
 
                 <AnalyticsStats
                     stats={stats}
+                />
+
+                <AIReviewSummary
+                    aiSummary={aiSummary}
+                    loading={aiLoading}
+                    onGenerate={generateAISummary}
                 />
 
                 {/* Smart insight cards */}
