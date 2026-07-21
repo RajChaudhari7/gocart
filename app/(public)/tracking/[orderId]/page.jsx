@@ -57,6 +57,69 @@ const formatDateTime = (dateStr) => {
     });
 };
 
+const toRadians = (degrees) => {
+    return degrees * (Math.PI / 180);
+};
+
+const calculateDistance = (
+    driverLatitude,
+    driverLongitude,
+    customerLatitude,
+    customerLongitude
+) => {
+    const earthRadiusKm = 6371;
+
+    const latitudeDifference = toRadians(
+        customerLatitude - driverLatitude
+    );
+
+    const longitudeDifference = toRadians(
+        customerLongitude - driverLongitude
+    );
+
+    const firstLatitude = toRadians(driverLatitude);
+    const secondLatitude = toRadians(customerLatitude);
+
+    const value =
+        Math.sin(latitudeDifference / 2) ** 2 +
+        Math.cos(firstLatitude) *
+        Math.cos(secondLatitude) *
+        Math.sin(longitudeDifference / 2) ** 2;
+
+    const centralAngle =
+        2 * Math.atan2(Math.sqrt(value), Math.sqrt(1 - value));
+
+    return earthRadiusKm * centralAngle;
+};
+
+const calculateETA = (distanceKm) => {
+    // Estimated average delivery speed inside a city
+    const averageSpeedKmPerHour = 20;
+
+    // Basic travel time
+    const travelMinutes =
+        (distanceKm / averageSpeedKmPerHour) * 60;
+
+    // Add a small road/traffic adjustment because Haversine
+    // calculates straight-line distance
+    const adjustedMinutes = travelMinutes * 1.35;
+
+    // Minimum ETA should not display 0 minutes
+    return Math.max(1, Math.ceil(adjustedMinutes));
+};
+
+const formatArrivalTime = (minutes) => {
+    const arrivalDate = new Date(
+        Date.now() + minutes * 60 * 1000
+    );
+
+    return arrivalDate.toLocaleTimeString("en-IN", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+    });
+};
+
 const LiveMap = dynamic(() => import("@/components/LiveMap"), {
     ssr: false,
     loading: () => <div className="h-full w-full flex items-center justify-center text-white/50 bg-white/5 animate-pulse">Loading Live Map...</div>
@@ -73,6 +136,11 @@ export default function TrackingPage() {
 
     // Real-time driver location state
     const [driverLocation, setDriverLocation] = useState(null);
+    const [deliveryInfo, setDeliveryInfo] = useState({
+        distanceKm: null,
+        etaMinutes: null,
+        arrivalTime: null,
+    });
 
     const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || "₹";
 
@@ -148,6 +216,75 @@ export default function TrackingPage() {
 
     const currentStep = order ? (TRACK_INDEX[order.status] ?? 0) : 0;
     const statusHistory = order?.statusHistory || {};
+
+    const customerLocation =
+        order?.address?.latitude != null &&
+            order?.address?.longitude != null
+            ? {
+                lat: Number(order.address.latitude),
+                lng: Number(order.address.longitude),
+            }
+            : null;
+
+    useEffect(() => {
+        if (!driverLocation || !customerLocation) {
+            setDeliveryInfo({
+                distanceKm: null,
+                etaMinutes: null,
+                arrivalTime: null,
+            });
+
+            return;
+        }
+
+        const driverLatitude = Number(driverLocation.lat);
+        const driverLongitude = Number(driverLocation.lng);
+
+        const customerLatitude = Number(customerLocation.lat);
+        const customerLongitude = Number(customerLocation.lng);
+
+        const coordinates = [
+            driverLatitude,
+            driverLongitude,
+            customerLatitude,
+            customerLongitude,
+        ];
+
+        const hasInvalidCoordinates = coordinates.some(
+            (coordinate) => !Number.isFinite(coordinate)
+        );
+
+        if (hasInvalidCoordinates) {
+            setDeliveryInfo({
+                distanceKm: null,
+                etaMinutes: null,
+                arrivalTime: null,
+            });
+
+            return;
+        }
+
+        const distanceKm = calculateDistance(
+            driverLatitude,
+            driverLongitude,
+            customerLatitude,
+            customerLongitude
+        );
+
+        const etaMinutes = calculateETA(distanceKm);
+        const arrivalTime = formatArrivalTime(etaMinutes);
+
+        setDeliveryInfo({
+            distanceKm,
+            etaMinutes,
+            arrivalTime,
+        });
+    }, [
+        driverLocation?.lat,
+        driverLocation?.lng,
+        customerLocation?.lat,
+        customerLocation?.lng,
+    ]);
 
     useEffect(() => {
         if (!order) return;
@@ -294,24 +431,95 @@ export default function TrackingPage() {
                     <div className="lg:col-span-2 space-y-6">
 
                         {/* LIVE MAP WIDGET */}
-                        {driverLocation && order.status !== "DELIVERED" && (
-                            <div className="bg-white/5 border border-white/10 rounded-2xl p-1 overflow-hidden backdrop-blur-xl shadow-2xl h-[350px] relative z-0">
+                        {driverLocation &&
+                            customerLocation &&
+                            order.status !== "DELIVERED" && (
+                                <div className="bg-white/5 border border-white/10 rounded-2xl p-1 overflow-hidden backdrop-blur-xl shadow-2xl h-[350px] relative z-0">
+                                    {/* ETA CARD */}
+                                    {deliveryInfo.etaMinutes !== null &&
+                                        order.status !== "DELIVERED" && (
+                                            <div className="rounded-2xl border border-emerald-500/20 bg-gradient-to-r from-emerald-500/10 via-white/5 to-indigo-500/10 p-5 shadow-2xl backdrop-blur-xl sm:p-6">
 
-                                <LiveMap
-                                    driverLocation={driverLocation}
-                                    customerLocation={{
-                                        lat: order.address?.latitude || order.store?.latitude,
-                                        lng: order.address?.longitude || order.store?.longitude
-                                    }}
-                                />
+                                                <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
 
-                                {/* Floating Status Badge */}
-                                <div className="absolute top-5 left-5 bg-black/80 text-emerald-400 px-4 py-2 rounded-full text-xs font-semibold backdrop-blur-md border border-white/10 flex items-center gap-2 shadow-lg z-[1000]">
-                                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                                    Live Navigation
+                                                    <div>
+                                                        <div className="mb-2 flex items-center gap-2 text-sm font-medium text-emerald-400">
+                                                            <span className="relative flex h-2.5 w-2.5">
+                                                                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                                                                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
+                                                            </span>
+
+                                                            Live delivery estimate
+                                                        </div>
+
+                                                        <h2 className="text-xl font-semibold text-white sm:text-2xl">
+                                                            Your order is on the way
+                                                        </h2>
+
+                                                        <p className="mt-2 text-sm text-white/50">
+                                                            ETA updates automatically as the driver moves.
+                                                        </p>
+                                                    </div>
+
+                                                    <div className="grid grid-cols-3 gap-3 sm:min-w-[360px]">
+
+                                                        <div className="rounded-xl border border-white/10 bg-black/20 p-3 text-center">
+                                                            <p className="text-xs text-white/45">
+                                                                Arriving in
+                                                            </p>
+
+                                                            <p className="mt-1 text-lg font-bold text-emerald-400">
+                                                                {deliveryInfo.etaMinutes} min
+                                                            </p>
+                                                        </div>
+
+                                                        <div className="rounded-xl border border-white/10 bg-black/20 p-3 text-center">
+                                                            <p className="text-xs text-white/45">
+                                                                Expected by
+                                                            </p>
+
+                                                            <p className="mt-1 text-lg font-bold text-white">
+                                                                {deliveryInfo.arrivalTime}
+                                                            </p>
+                                                        </div>
+
+                                                        <div className="rounded-xl border border-white/10 bg-black/20 p-3 text-center">
+                                                            <p className="text-xs text-white/45">
+                                                                Distance
+                                                            </p>
+
+                                                            <p className="mt-1 text-lg font-bold text-indigo-300">
+                                                                {deliveryInfo.distanceKm < 1
+                                                                    ? `${Math.round(
+                                                                        deliveryInfo.distanceKm * 1000
+                                                                    )} m`
+                                                                    : `${deliveryInfo.distanceKm.toFixed(
+                                                                        1
+                                                                    )} km`}
+                                                            </p>
+                                                        </div>
+
+                                                    </div>
+
+                                                </div>
+
+                                            </div>
+                                        )}
+
+                                    {customerLocation && (
+                                        <LiveMap
+                                            driverLocation={driverLocation}
+                                            customerLocation={customerLocation}
+                                        />
+                                    )}
+
+                                    {/* Floating Status Badge */}
+                                    <div className="absolute top-5 left-5 bg-black/80 text-emerald-400 px-4 py-2 rounded-full text-xs font-semibold backdrop-blur-md border border-white/10 flex items-center gap-2 shadow-lg z-[1000]">
+                                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                        Live Navigation
+                                    </div>
                                 </div>
-                            </div>
-                        )}
+                            )}
                         {/* TIMELINE */}
                         <div className="bg-white/5 border border-white/10 rounded-2xl p-8 backdrop-blur-xl shadow-2xl relative">
                             <h2 className="text-lg font-semibold mb-8 border-b border-white/10 pb-4">Tracking Timeline</h2>
