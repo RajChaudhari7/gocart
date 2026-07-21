@@ -2,7 +2,7 @@ import prisma from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
-export async function GET(request) {
+export async function GET() {
     try {
         const { userId } = await auth();
 
@@ -16,24 +16,6 @@ export async function GET(request) {
                 }
             );
         }
-
-        const { searchParams } = new URL(request.url);
-
-        const range = searchParams.get("range") || "30d";
-
-        const search = searchParams.get("search")?.trim() || "";
-
-        const category =
-            searchParams.get("category") || "all";
-
-        const sort =
-            searchParams.get("sort") || "bestSelling";
-
-        const featured =
-            searchParams.get("featured") === "true";
-
-        const stock =
-            searchParams.get("stock") || "all";
 
         const store = await prisma.store.findUnique({
             where: {
@@ -57,87 +39,10 @@ export async function GET(request) {
             );
         }
 
-        let startDate = null;
-
-        const now = new Date();
-
-        switch (range) {
-            case "today":
-                startDate = new Date();
-                startDate.setHours(0, 0, 0, 0);
-                break;
-
-            case "yesterday":
-                startDate = new Date();
-                startDate.setDate(
-                    startDate.getDate() - 1
-                );
-                startDate.setHours(0, 0, 0, 0);
-                break;
-
-            case "7d":
-                startDate = new Date();
-                startDate.setDate(
-                    startDate.getDate() - 7
-                );
-                break;
-
-            case "30d":
-                startDate = new Date();
-                startDate.setDate(
-                    startDate.getDate() - 30
-                );
-                break;
-
-            case "90d":
-                startDate = new Date();
-                startDate.setDate(
-                    startDate.getDate() - 90
-                );
-                break;
-
-            case "thisMonth":
-                startDate = new Date(
-                    now.getFullYear(),
-                    now.getMonth(),
-                    1
-                );
-                break;
-
-            case "lastMonth":
-                startDate = new Date(
-                    now.getFullYear(),
-                    now.getMonth() - 1,
-                    1
-                );
-                break;
-
-            case "12m":
-                startDate = new Date();
-                startDate.setMonth(
-                    startDate.getMonth() - 12
-                );
-                break;
-
-            default:
-                startDate = null;
-        }
-
         const products = await prisma.product.findMany({
             where: {
                 storeId: store.id,
                 isArchived: false,
-
-                ...(category !== "all" && {
-                    category,
-                }),
-
-                ...(search && {
-                    name: {
-                        contains: search,
-                        mode: "insensitive",
-                    },
-                }),
             },
 
             select: {
@@ -163,12 +68,6 @@ export async function GET(request) {
         const orders = await prisma.order.findMany({
             where: {
                 storeId: store.id,
-
-                ...(startDate && {
-                    createdAt: {
-                        gte: startDate,
-                    },
-                }),
             },
 
             select: {
@@ -218,6 +117,10 @@ export async function GET(request) {
 
         const monthlySalesMap = new Map();
 
+
+        const categorySalesMap = new Map();
+
+
         orders.forEach((order) => {
             const orderDate = new Date(order.createdAt);
 
@@ -249,13 +152,6 @@ export async function GET(request) {
             monthlyRecord.orders += 1;
 
             order.orderItems.forEach((item) => {
-                if (
-                    !filteredProductIds.has(
-                        item.productId
-                    )
-                ) {
-                    return;
-                }
                 const product = productMap.get(
                     item.productId
                 );
@@ -376,7 +272,7 @@ export async function GET(request) {
         );
 
 
-        let enrichedProducts = products.map(
+        const enrichedProducts = products.map(
             (product) => {
                 const salesData =
                     normalizedProductSalesMap.get(product.id) || {
@@ -390,9 +286,13 @@ export async function GET(request) {
                 return {
                     ...product,
 
-                    price: Number(product.price || 0),
+                    price: Number(
+                        product.price || 0
+                    ),
 
-                    mrp: Number(product.mrp || 0),
+                    mrp: Number(
+                        product.mrp || 0
+                    ),
 
                     averageRating: Number(
                         product.averageRating || 0
@@ -406,164 +306,23 @@ export async function GET(request) {
                         product.quantity || 0
                     ),
 
-                    unitsSold: Number(
-                        salesData.unitsSold || 0
-                    ),
+                    unitsSold:
+                        salesData.unitsSold,
 
-                    grossRevenue: Number(
-                        salesData.grossRevenue || 0
-                    ),
+                    grossRevenue:
+                        salesData.grossRevenue,
 
-                    commissionAmount: Number(
-                        salesData.commissionAmount || 0
-                    ),
+                    commissionAmount:
+                        salesData.commissionAmount,
 
-                    sellerEarnings: Number(
-                        salesData.sellerEarnings || 0
-                    ),
+                    sellerEarnings:
+                        salesData.sellerEarnings,
 
-                    orderCount: Number(
-                        salesData.orderCount || 0
-                    ),
-
-                    featured: Boolean(product.featured),
+                    orderCount:
+                        salesData.orderCount,
                 };
             }
         );
-
-
-
-        if (featured) {
-            enrichedProducts =
-                enrichedProducts.filter(
-                    (product) => product.featured
-                );
-        }
-
-        if (stock !== "all") {
-            enrichedProducts = enrichedProducts.filter((product) => {
-                switch (stock) {
-                    case "inStock":
-                        return product.quantity > 10;
-
-                    case "lowStock":
-                        return (
-                            product.quantity > 0 &&
-                            product.quantity <= 10
-                        );
-
-                    case "outOfStock":
-                        return product.quantity === 0;
-
-                    default:
-                        return true;
-                }
-            });
-        }
-
-        const filteredProductIds = new Set(
-            enrichedProducts.map(
-                (product) => product.id
-            )
-        );
-
-
-
-        switch (sort) {
-            case "bestSelling":
-                enrichedProducts.sort(
-                    (a, b) =>
-                        b.unitsSold - a.unitsSold
-                );
-                break;
-
-            case "mostViewed":
-                enrichedProducts.sort(
-                    (a, b) =>
-                        b.totalViews - a.totalViews
-                );
-                break;
-
-            case "grossRevenue":
-                enrichedProducts.sort(
-                    (a, b) =>
-                        b.grossRevenue -
-                        a.grossRevenue
-                );
-                break;
-
-            case "sellerEarnings":
-                enrichedProducts.sort(
-                    (a, b) =>
-                        b.sellerEarnings -
-                        a.sellerEarnings
-                );
-                break;
-
-            case "highestRating":
-                enrichedProducts.sort(
-                    (a, b) =>
-                        b.averageRating -
-                        a.averageRating
-                );
-                break;
-
-            case "lowestStock":
-                enrichedProducts.sort(
-                    (a, b) =>
-                        a.quantity - b.quantity
-                );
-                break;
-
-            case "newest":
-                enrichedProducts.sort(
-                    (a, b) =>
-                        new Date(b.createdAt) -
-                        new Date(a.createdAt)
-                );
-                break;
-
-            case "oldest":
-                enrichedProducts.sort(
-                    (a, b) =>
-                        new Date(a.createdAt) -
-                        new Date(b.createdAt)
-                );
-                break;
-
-            default:
-                enrichedProducts.sort(
-                    (a, b) =>
-                        b.unitsSold - a.unitsSold
-                );
-        }
-
-        const categorySalesMap = new Map();
-
-        enrichedProducts.forEach((product) => {
-            const key =
-                product.category || "Others";
-
-            if (!categorySalesMap.has(key)) {
-                categorySalesMap.set(key, {
-                    category: key,
-                    sales: 0,
-                    revenue: 0,
-                    productIds: new Set(),
-                });
-            }
-
-            const category =
-                categorySalesMap.get(key);
-
-            category.sales +=
-                product.unitsSold;
-
-            category.revenue +=
-                product.grossRevenue;
-
-            category.productIds.add(product.id);
-        });
         const productsBySales = [
             ...enrichedProducts,
         ].sort((a, b) => {
@@ -705,7 +464,7 @@ export async function GET(request) {
         |--------------------------------------------------------------------------
         */
 
-        const topProducts = enrichedProducts
+        const topProducts = productsBySales
             .slice(0, 10)
             .map((product, index) => ({
                 rank: index + 1,
@@ -714,96 +473,84 @@ export async function GET(request) {
 
                 name: product.name,
 
-                image:
-                    product.images?.[0] || null,
+                image: product.images?.[0] || null,
 
-                category:
-                    product.category || "Others",
+                category: product.category,
 
-                sold: product.unitsSold,
+                sold: Number(product.unitsSold || 0),
 
-                views: product.totalViews,
+                views: Number(product.totalViews || 0),
 
-                stock: product.quantity,
+                stock: Number(product.quantity || 0),
 
                 rating: Number(
-                    product.averageRating.toFixed(1)
+                    Number(product.averageRating || 0).toFixed(1)
                 ),
 
-                price: product.price,
+                price: Number(product.price || 0),
 
-                mrp: product.mrp,
+                mrp: Number(product.mrp || 0),
 
-                featured: product.featured,
+                featured: Boolean(product.featured),
 
-                grossRevenue:
-                    product.grossRevenue,
+                grossRevenue: Number(
+                    product.grossRevenue || 0
+                ),
 
-                commission:
-                    product.commissionAmount,
+                commission: Number(
+                    product.commissionAmount || 0
+                ),
 
-                sellerEarnings:
-                    product.sellerEarnings,
+                sellerEarnings: Number(
+                    product.sellerEarnings || 0
+                ),
             }));
 
-        const viewsVsSalesChart = [
-            ...enrichedProducts,
-        ]
-            .sort(
-                (a, b) =>
-                    b.totalViews - a.totalViews
-            )
-            .slice(0, 10)
-            .map((product) => ({
-                id: product.id,
 
-                name: product.name,
+        const viewsVsSalesChart =
+            productsByViews
+                .slice(0, 10)
+                .map((product) => ({
+                    id: product.id,
 
-                views: product.totalViews,
+                    name: product.name,
 
-                sales: product.unitsSold,
-            }));
+                    views: product.totalViews,
 
-        const topProductSalesChart = [
-            ...enrichedProducts,
-        ]
-            .filter(
-                (product) =>
-                    product.unitsSold > 0
-            )
-            .sort(
-                (a, b) =>
-                    b.unitsSold - a.unitsSold
-            )
-            .slice(0, 10)
-            .map((product, index) => ({
-                rank: index + 1,
+                    sales: product.unitsSold,
+                }));
 
-                id: product.id,
+        const topProductSalesChart =
+            productsBySales
+                .filter(
+                    (product) =>
+                        product.unitsSold > 0
+                )
+                .slice(0, 10)
+                .map((product, index) => ({
+                    rank: index + 1,
 
-                name: product.name,
+                    id: product.id,
 
-                image:
-                    product.images?.[0] || null,
+                    name: product.name,
 
-                category:
-                    product.category || "Others",
+                    image:
+                        product.images?.[0] || null,
 
-                sales: product.unitsSold,
+                    category: product.category,
 
-                views: product.totalViews,
+                    sales: product.unitsSold,
 
-                price: product.price,
+                    views: product.totalViews,
 
-                grossRevenue:
-                    product.grossRevenue,
+                    price: product.price,
 
-                commission:
-                    product.commissionAmount,
+                    grossRevenue: product.grossRevenue,
 
-                sellerEarnings:
-                    product.sellerEarnings,
-            }));
+                    commission: product.commissionAmount,
+
+                    sellerEarnings: product.sellerEarnings,
+                }));
 
         const salesByCategory =
             Array.from(
@@ -844,49 +591,43 @@ export async function GET(request) {
                 a.key.localeCompare(b.key)
             );
 
-        const lowStockProducts =
-            enrichedProducts
-                .filter(
-                    (product) =>
-                        product.quantity > 0 &&
-                        product.quantity <= 10
-                )
-                .sort(
-                    (a, b) =>
-                        a.quantity - b.quantity
-                )
-                .map((product) => ({
-                    id: product.id,
+        const lowStockProducts = enrichedProducts
+            .filter(
+                (product) =>
+                    product.quantity > 0 &&
+                    product.quantity <= 10
+            )
+            .sort(
+                (a, b) =>
+                    a.quantity - b.quantity
+            )
+            .map((product) => ({
+                id: product.id,
 
-                    name: product.name,
+                name: product.name,
 
-                    image:
-                        product.images?.[0] || null,
+                image:
+                    product.images?.[0] || null,
 
-                    category:
-                        product.category || "Others",
+                category:
+                    product.category || "Others",
 
-                    stock: product.quantity,
+                stock: product.quantity,
 
-                    views: product.totalViews,
+                views: product.totalViews,
 
-                    sales: product.unitsSold,
+                sales: product.unitsSold,
 
-                    grossRevenue:
-                        product.grossRevenue,
+                grossRevenue: product.grossRevenue,
 
-                    commission:
-                        product.commissionAmount,
+                commission: product.commissionAmount,
 
-                    sellerEarnings:
-                        product.sellerEarnings,
+                sellerEarnings: product.sellerEarnings,
 
-                    rating: Number(
-                        Number(
-                            product.averageRating || 0
-                        ).toFixed(1)
-                    ),
-                }));
+                rating: Number(
+                    product.averageRating.toFixed(1)
+                ),
+            }));
 
         const outOfStockProducts = enrichedProducts
             .filter(
@@ -1046,12 +787,6 @@ export async function GET(request) {
                 store: {
                     id: store.id,
                     name: store.name,
-                },
-
-                filters: {
-                    range,
-                    search,
-                    category,
                 },
 
                 stats: {
