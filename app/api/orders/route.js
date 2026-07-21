@@ -25,10 +25,6 @@ export async function POST(request) {
       );
     }
 
-
-
-
-
     const isPrimeMember = has({ plan: "prime" });
 
     let orderIds = [];
@@ -86,7 +82,7 @@ export async function POST(request) {
         `;
       }
 
-      
+
       for (const [storeId, sellerItems] of ordersByStore.entries()) {
 
         // Product total
@@ -194,6 +190,7 @@ export async function GET(request) {
         },
         address: true,
         driver: true,
+        driverRating: true,
       },
       orderBy: { createdAt: "desc" },
     });

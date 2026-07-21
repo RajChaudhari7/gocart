@@ -25,6 +25,7 @@ model User {
   userPreferences UserPreference[]
   activities      ProductView[]
   userActivity    UserActivity[]
+  driverRatings   DriverRating[]
 }
 
 model Product {
@@ -131,6 +132,8 @@ model Order {
   assignedAt     DateTime?
   pickedAt       DateTime?
   deliveredAt    DateTime?
+
+  driverRating DriverRating?
 
   /// Delivery Location
   deliveryLatitude  Float?
@@ -287,10 +290,10 @@ model Store {
   category       String?
   customCategory String?
 
-  Product        Product[]
-  Order          Order[]
-  user           User            @relation(fields: [userId], references: [id])
- followers StoreFollower[]
+  Product   Product[]
+  Order     Order[]
+  user      User            @relation(fields: [userId], references: [id])
+  followers StoreFollower[]
 }
 
 model Driver {
@@ -312,14 +315,40 @@ model Driver {
   isOnline Boolean @default(false)
   isActive Boolean @default(true)
 
+  totalDeliveries Int   @default(0)
+  totalRatings    Int   @default(0)
+  averageRating   Float @default(0)
+
   isAvailable Boolean @default(true)
   isLoggedIn  Boolean @default(false)
   sessionId   String?
 
   orders Order[]
 
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  driverRatings DriverRating[]
+}
+
+model DriverRating {
+  id String @id @default(cuid())
+
+  rating Int
+  review String?
+
+  driverId String
+  orderId  String @unique
+  userId   String
+
+  driver Driver @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  order  Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([driverId])
+  @@index([userId])
 }
 
 model PlatformSettings {

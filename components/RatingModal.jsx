@@ -17,6 +17,8 @@ const RatingModal = ({ order, onClose, onSuccess }) => {
 
   const [rating, setRating] = useState(0)
   const [review, setReview] = useState('')
+  const [driverRating, setDriverRating] = useState(0)
+  const [driverReview, setDriverReview] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
   const firstItem = useMemo(() => {
@@ -59,10 +61,30 @@ const RatingModal = ({ order, onClose, onSuccess }) => {
       })
 
       dispatch(addRating(data.rating))
+      if (
+        order?.driver &&
+        !order?.driverRating &&
+        driverRating > 0
+      ) {
+        await axios.post(
+          `/api/orders/${order.id}/driver-rating`,
+          {
+            rating: driverRating,
+            review: driverReview
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          }
+        );
+      }
       toast.success(data.message || 'Rating submitted', { id: toastId })
 
       setRating(0)
       setReview('')
+      setDriverRating(0)
+      setDriverReview('')
 
       onSuccess?.()
       onClose()
@@ -113,11 +135,10 @@ const RatingModal = ({ order, onClose, onSuccess }) => {
                 onClick={() => setRating(i + 1)}
               >
                 <Star
-                  className={`cursor-pointer ${
-                    rating > i
-                      ? 'text-yellow-400 fill-current scale-110'
-                      : 'text-gray-600'
-                  }`}
+                  className={`cursor-pointer ${rating > i
+                    ? 'text-yellow-400 fill-current scale-110'
+                    : 'text-gray-600'
+                    }`}
                 />
               </motion.div>
             ))}
@@ -136,6 +157,55 @@ const RatingModal = ({ order, onClose, onSuccess }) => {
             value={review}
             onChange={(e) => setReview(e.target.value)}
           />
+
+          {/* Driver Rating */}
+
+          {order?.driver && !order?.driverRating && (
+
+            <div className="mt-6 border-t border-white/10 pt-6">
+
+              <h3 className="text-lg font-semibold text-white text-center mb-2">
+                Rate Delivery Partner
+              </h3>
+
+              <p className="text-center text-white/60 text-sm mb-4">
+                {order.driver.name}
+              </p>
+
+              <div className="flex justify-center gap-2 mb-2">
+
+                {Array.from({ length: 5 }, (_, i) => (
+
+                  <motion.div
+                    key={i}
+                    whileTap={{ scale: 1.2 }}
+                    onClick={() => setDriverRating(i + 1)}
+                  >
+
+                    <Star
+                      className={`cursor-pointer ${driverRating > i
+                        ? "text-emerald-400 fill-current"
+                        : "text-gray-600"
+                        }`}
+                    />
+
+                  </motion.div>
+
+                ))}
+
+              </div>
+
+              <textarea
+                rows={3}
+                value={driverReview}
+                onChange={(e) => setDriverReview(e.target.value)}
+                placeholder="How was your delivery experience?"
+                className="mt-4 w-full rounded-xl border border-white/20 bg-white/5 p-3 text-white placeholder-white/50 focus:ring-2 focus:ring-emerald-400 outline-none"
+              />
+
+            </div>
+
+          )}
 
           <motion.button
             disabled={submitting}

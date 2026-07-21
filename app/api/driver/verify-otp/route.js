@@ -134,7 +134,11 @@ export async function POST(request) {
                     id: order.driverId
                 },
                 data: {
-                    isAvailable: true
+                    isAvailable: true,
+
+                    totalDeliveries: {
+                        increment: 1
+                    }
                 }
             })
 
