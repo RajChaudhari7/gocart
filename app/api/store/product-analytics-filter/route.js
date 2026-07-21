@@ -291,37 +291,31 @@ export async function GET(request) {
                 break;
 
         }
-        switch (filters.stock) {
+        const products = await prisma.product.findMany({
 
-            case "inStock":
+            where: productWhere,
 
-                productWhere.quantity = {
+            select: {
 
-                    gt: 10
+                id: true,
+                name: true,
+                images: true,
+                category: true,
+                quantity: true,
+                totalViews: true,
+                averageRating: true,
+                price: true,
+                mrp: true,
+                featured: true,
+                createdAt: true
 
-                };
+            },
 
-                break;
+            orderBy: {
+                createdAt: "desc"
+            }
 
-            case "lowStock":
-
-                productWhere.quantity = {
-
-                    gt: 0,
-
-                    lte: 10
-
-                };
-
-                break;
-
-            case "outOfStock":
-
-                productWhere.quantity = 0;
-
-                break;
-
-        }
+        });
         if (products.length === 0) {
 
             return NextResponse.json({
