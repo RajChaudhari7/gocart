@@ -673,222 +673,149 @@ export default function TrackingPage() {
 
                             </div>
                         )}
+                    </div>
 
-                        {/* RIGHT COLUMN: Map & Timeline */}
-                        <div className="lg:col-span-2 space-y-6">
+                    {/* RIGHT COLUMN: Map & Timeline */}
+                    <div className="lg:col-span-2 space-y-6">
 
-                            {/* ETA CARD */}
-                            {deliveryInfo.etaMinutes !== null &&
-                                order.status !== "DELIVERED" && (
-                                    <div className="rounded-2xl border border-emerald-500/20 bg-gradient-to-r from-emerald-500/10 via-white/5 to-indigo-500/10 p-5 shadow-2xl backdrop-blur-xl sm:p-6">
+                        {/* ETA CARD */}
+                        {deliveryInfo.etaMinutes !== null &&
+                            order.status !== "DELIVERED" && (
+                                <div className="rounded-2xl border border-emerald-500/20 bg-gradient-to-r from-emerald-500/10 via-white/5 to-indigo-500/10 p-5 shadow-2xl backdrop-blur-xl sm:p-6">
 
-                                        <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+                                    <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
 
-                                            <div>
-                                                <div className="mb-2 flex items-center gap-2 text-sm font-medium text-emerald-400">
-                                                    <span className="relative flex h-2.5 w-2.5">
-                                                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                                                        <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
-                                                    </span>
+                                        <div>
+                                            <div className="mb-2 flex items-center gap-2 text-sm font-medium text-emerald-400">
+                                                <span className="relative flex h-2.5 w-2.5">
+                                                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                                                    <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
+                                                </span>
 
-                                                    Live delivery estimate
-                                                </div>
+                                                Live delivery estimate
+                                            </div>
 
-                                                <h2 className="text-xl font-semibold text-white sm:text-2xl">
-                                                    Your order is on the way
-                                                </h2>
+                                            <h2 className="text-xl font-semibold text-white sm:text-2xl">
+                                                Your order is on the way
+                                            </h2>
 
-                                                <p className="mt-2 text-sm text-white/50">
-                                                    ETA updates automatically as the driver moves.
+                                            <p className="mt-2 text-sm text-white/50">
+                                                ETA updates automatically as the driver moves.
+                                            </p>
+                                        </div>
+
+                                        <div className="grid grid-cols-3 gap-3 sm:min-w-[360px]">
+
+                                            <div className="rounded-xl border border-white/10 bg-black/20 p-3 text-center">
+                                                <p className="text-xs text-white/45">
+                                                    Arriving in
+                                                </p>
+
+                                                <p className="mt-1 text-lg font-bold text-emerald-400">
+                                                    {deliveryInfo.etaMinutes} min
                                                 </p>
                                             </div>
 
-                                            <div className="grid grid-cols-3 gap-3 sm:min-w-[360px]">
+                                            <div className="rounded-xl border border-white/10 bg-black/20 p-3 text-center">
+                                                <p className="text-xs text-white/45">
+                                                    Expected by
+                                                </p>
 
-                                                <div className="rounded-xl border border-white/10 bg-black/20 p-3 text-center">
-                                                    <p className="text-xs text-white/45">
-                                                        Arriving in
-                                                    </p>
-
-                                                    <p className="mt-1 text-lg font-bold text-emerald-400">
-                                                        {deliveryInfo.etaMinutes} min
-                                                    </p>
-                                                </div>
-
-                                                <div className="rounded-xl border border-white/10 bg-black/20 p-3 text-center">
-                                                    <p className="text-xs text-white/45">
-                                                        Expected by
-                                                    </p>
-
-                                                    <p className="mt-1 text-lg font-bold text-white">
-                                                        {deliveryInfo.arrivalTime}
-                                                    </p>
-                                                </div>
-
-                                                <div className="rounded-xl border border-white/10 bg-black/20 p-3 text-center">
-                                                    <p className="text-xs text-white/45">
-                                                        Distance
-                                                    </p>
-
-                                                    <p className="mt-1 text-lg font-bold text-indigo-300">
-                                                        {deliveryInfo.distanceKm < 1
-                                                            ? `${Math.round(
-                                                                deliveryInfo.distanceKm * 1000
-                                                            )} m`
-                                                            : `${deliveryInfo.distanceKm.toFixed(
-                                                                1
-                                                            )} km`}
-                                                    </p>
-                                                </div>
-
+                                                <p className="mt-1 text-lg font-bold text-white">
+                                                    {deliveryInfo.arrivalTime}
+                                                </p>
                                             </div>
 
-                                        </div>
+                                            <div className="rounded-xl border border-white/10 bg-black/20 p-3 text-center">
+                                                <p className="text-xs text-white/45">
+                                                    Distance
+                                                </p>
 
-                                    </div>
-                                )}
-
-                            <div className="rounded-3xl border border-emerald-500/20 bg-gradient-to-r from-emerald-500/10 via-slate-900/60 to-indigo-500/10 p-7 backdrop-blur-xl shadow-2xl">
-
-                                <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-
-                                    <div>
-
-                                        <div className="mb-3 flex items-center gap-2">
-
-                                            <span className="h-3 w-3 rounded-full bg-emerald-500 animate-pulse"></span>
-
-                                            <span className="text-sm text-emerald-400 font-medium">
-                                                Live Delivery Status
-                                            </span>
-
-                                        </div>
-
-                                        <h2 className="text-3xl font-bold text-white">
-                                            {currentStatus.title}
-                                        </h2>
-
-                                        <p className="mt-2 text-white/60">
-                                            {currentStatus.description}
-                                        </p>
-
-                                    </div>
-
-                                    <div className="grid grid-cols-3 gap-4">
-
-                                        <div className="rounded-2xl bg-black/20 border border-white/10 p-4 text-center">
-
-                                            <p className="text-xs text-white/50">
-                                                Arriving In
-                                            </p>
-
-                                            <h3 className="mt-2 text-2xl font-bold text-emerald-400">
-
-                                                {deliveryInfo.etaMinutes} min
-
-                                            </h3>
-
-                                        </div>
-
-                                        <div className="rounded-2xl bg-black/20 border border-white/10 p-4 text-center">
-
-                                            <p className="text-xs text-white/50">
-                                                Distance
-                                            </p>
-
-                                            <h3 className="mt-2 text-2xl font-bold text-indigo-300">
-
-                                                {deliveryInfo.distanceKm?.toFixed(1)} km
-
-                                            </h3>
-
-                                        </div>
-
-                                        <div className="rounded-2xl bg-black/20 border border-white/10 p-4 text-center">
-
-                                            <p className="text-xs text-white/50">
-                                                Expected By
-                                            </p>
-
-                                            <h3 className="mt-2 text-xl font-bold text-white">
-
-                                                {deliveryInfo.arrivalTime}
-
-                                            </h3>
+                                                <p className="mt-1 text-lg font-bold text-indigo-300">
+                                                    {deliveryInfo.distanceKm < 1
+                                                        ? `${Math.round(
+                                                            deliveryInfo.distanceKm * 1000
+                                                        )} m`
+                                                        : `${deliveryInfo.distanceKm.toFixed(
+                                                            1
+                                                        )} km`}
+                                                </p>
+                                            </div>
 
                                         </div>
 
                                     </div>
 
                                 </div>
+                            )}
 
-                                <div className="mt-7">
+                        <div className="rounded-3xl border border-emerald-500/20 bg-gradient-to-r from-emerald-500/10 via-slate-900/60 to-indigo-500/10 p-7 backdrop-blur-xl shadow-2xl">
 
-                                    <div className="flex justify-between text-xs text-white/50 mb-2">
+                            <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
 
-                                        <span>Order Progress</span>
+                                <div>
 
-                                        <span>{Math.round(progressPercentage)}%</span>
+                                    <div className="mb-3 flex items-center gap-2">
+
+                                        <span className="h-3 w-3 rounded-full bg-emerald-500 animate-pulse"></span>
+
+                                        <span className="text-sm text-emerald-400 font-medium">
+                                            Live Delivery Status
+                                        </span>
 
                                     </div>
 
-                                    <div className="h-3 overflow-hidden rounded-full bg-white/10">
+                                    <h2 className="text-3xl font-bold text-white">
+                                        {currentStatus.title}
+                                    </h2>
 
-                                        <motion.div
-                                            initial={{ width: 0 }}
-                                            animate={{
-                                                width: `${progressPercentage}%`,
-                                            }}
-                                            transition={{
-                                                duration: 1.2,
-                                                ease: "easeOut"
-                                            }}
-                                            className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-indigo-500"
-                                        />
+                                    <p className="mt-2 text-white/60">
+                                        {currentStatus.description}
+                                    </p>
+
+                                </div>
+
+                                <div className="grid grid-cols-3 gap-4">
+
+                                    <div className="rounded-2xl bg-black/20 border border-white/10 p-4 text-center">
+
+                                        <p className="text-xs text-white/50">
+                                            Arriving In
+                                        </p>
+
+                                        <h3 className="mt-2 text-2xl font-bold text-emerald-400">
+
+                                            {deliveryInfo.etaMinutes} min
+
+                                        </h3>
 
                                     </div>
 
-                                    <div className="mt-4 flex justify-between text-xs">
+                                    <div className="rounded-2xl bg-black/20 border border-white/10 p-4 text-center">
 
-                                        <span
-                                            className={
-                                                currentStep >= 0
-                                                    ? "text-emerald-400"
-                                                    : "text-white/40"
-                                            }
-                                        >
-                                            Placed
-                                        </span>
+                                        <p className="text-xs text-white/50">
+                                            Distance
+                                        </p>
 
-                                        <span
-                                            className={
-                                                currentStep >= 3
-                                                    ? "text-emerald-400"
-                                                    : "text-white/40"
-                                            }
-                                        >
-                                            Packed
-                                        </span>
+                                        <h3 className="mt-2 text-2xl font-bold text-indigo-300">
 
-                                        <span
-                                            className={
-                                                currentStep >= 7
-                                                    ? "text-emerald-400"
-                                                    : "text-white/40"
-                                            }
-                                        >
-                                            Out
-                                        </span>
+                                            {deliveryInfo.distanceKm?.toFixed(1)} km
 
-                                        <span
-                                            className={
-                                                currentStep >= 9
-                                                    ? "text-emerald-400"
-                                                    : "text-white/40"
-                                            }
-                                        >
-                                            Delivered
-                                        </span>
+                                        </h3>
+
+                                    </div>
+
+                                    <div className="rounded-2xl bg-black/20 border border-white/10 p-4 text-center">
+
+                                        <p className="text-xs text-white/50">
+                                            Expected By
+                                        </p>
+
+                                        <h3 className="mt-2 text-xl font-bold text-white">
+
+                                            {deliveryInfo.arrivalTime}
+
+                                        </h3>
 
                                     </div>
 
@@ -896,83 +823,156 @@ export default function TrackingPage() {
 
                             </div>
 
+                            <div className="mt-7">
 
-                            {/* LIVE MAP WIDGET */}
-                            {driverLocation &&
-                                customerLocation &&
-                                order.status !== "DELIVERED" && (
-                                    <div className="bg-white/5 border border-white/10 rounded-2xl p-1 overflow-hidden backdrop-blur-xl shadow-2xl h-[350px] relative z-0">
+                                <div className="flex justify-between text-xs text-white/50 mb-2">
 
-                                        {customerLocation && (
-                                            <LiveMap
-                                                driverLocation={driverLocation}
-                                                customerLocation={customerLocation}
-                                            />
-                                        )}
+                                    <span>Order Progress</span>
 
-                                        {/* Floating Status Badge */}
-                                        <div className="absolute top-5 left-5 bg-black/80 text-emerald-400 px-4 py-2 rounded-full text-xs font-semibold backdrop-blur-md border border-white/10 flex items-center gap-2 shadow-lg z-[1000]">
-                                            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                                            Live Navigation
-                                        </div>
-                                    </div>
-                                )}
-                            {/* TIMELINE */}
-                            <div className="bg-white/5 border border-white/10 rounded-2xl p-8 backdrop-blur-xl shadow-2xl relative">
-                                <h2 className="text-lg font-semibold mb-8 border-b border-white/10 pb-4">Tracking Timeline</h2>
+                                    <span>{Math.round(progressPercentage)}%</span>
 
-                                <div className="relative pl-6">
-                                    {/* Static Base Line */}
-                                    <div className="absolute left-4 top-0 bottom-0 w-[2px] bg-white/10"></div>
+                                </div>
 
-                                    {/* Animated Progress Line */}
+                                <div className="h-3 overflow-hidden rounded-full bg-white/10">
+
                                     <motion.div
-                                        initial={{ height: 0 }}
-                                        animate={{ height: `${getLineHeight()}%` }}
-                                        transition={{ duration: 1, ease: "easeOut" }}
-                                        className="absolute left-4 top-0 w-[2px] bg-emerald-500"
+                                        initial={{ width: 0 }}
+                                        animate={{
+                                            width: `${progressPercentage}%`,
+                                        }}
+                                        transition={{
+                                            duration: 1.2,
+                                            ease: "easeOut"
+                                        }}
+                                        className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-indigo-500"
                                     />
 
-                                    {/* Timeline Steps */}
-                                    {TRACKING_STEPS.map((step, index) => {
-                                        const Icon = step.icon;
-                                        const isCompleted = index < currentStep;
-                                        const isActive = index === currentStep;
-                                        const updatedAt = statusHistory[step.key];
-                                        const formattedDate = formatDateTime(updatedAt);
+                                </div>
 
-                                        return (
-                                            <div key={step.key} className="flex gap-6 mb-8 last:mb-0 relative">
-                                                {/* Icon */}
-                                                <div
-                                                    className={`
+                                <div className="mt-4 flex justify-between text-xs">
+
+                                    <span
+                                        className={
+                                            currentStep >= 0
+                                                ? "text-emerald-400"
+                                                : "text-white/40"
+                                        }
+                                    >
+                                        Placed
+                                    </span>
+
+                                    <span
+                                        className={
+                                            currentStep >= 3
+                                                ? "text-emerald-400"
+                                                : "text-white/40"
+                                        }
+                                    >
+                                        Packed
+                                    </span>
+
+                                    <span
+                                        className={
+                                            currentStep >= 7
+                                                ? "text-emerald-400"
+                                                : "text-white/40"
+                                        }
+                                    >
+                                        Out
+                                    </span>
+
+                                    <span
+                                        className={
+                                            currentStep >= 9
+                                                ? "text-emerald-400"
+                                                : "text-white/40"
+                                        }
+                                    >
+                                        Delivered
+                                    </span>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+                        {/* LIVE MAP WIDGET */}
+                        {driverLocation &&
+                            customerLocation &&
+                            order.status !== "DELIVERED" && (
+                                <div className="bg-white/5 border border-white/10 rounded-2xl p-1 overflow-hidden backdrop-blur-xl shadow-2xl h-[350px] relative z-0">
+
+                                    {customerLocation && (
+                                        <LiveMap
+                                            driverLocation={driverLocation}
+                                            customerLocation={customerLocation}
+                                        />
+                                    )}
+
+                                    {/* Floating Status Badge */}
+                                    <div className="absolute top-5 left-5 bg-black/80 text-emerald-400 px-4 py-2 rounded-full text-xs font-semibold backdrop-blur-md border border-white/10 flex items-center gap-2 shadow-lg z-[1000]">
+                                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                        Live Navigation
+                                    </div>
+                                </div>
+                            )}
+                        {/* TIMELINE */}
+                        <div className="bg-white/5 border border-white/10 rounded-2xl p-8 backdrop-blur-xl shadow-2xl relative">
+                            <h2 className="text-lg font-semibold mb-8 border-b border-white/10 pb-4">Tracking Timeline</h2>
+
+                            <div className="relative pl-6">
+                                {/* Static Base Line */}
+                                <div className="absolute left-4 top-0 bottom-0 w-[2px] bg-white/10"></div>
+
+                                {/* Animated Progress Line */}
+                                <motion.div
+                                    initial={{ height: 0 }}
+                                    animate={{ height: `${getLineHeight()}%` }}
+                                    transition={{ duration: 1, ease: "easeOut" }}
+                                    className="absolute left-4 top-0 w-[2px] bg-emerald-500"
+                                />
+
+                                {/* Timeline Steps */}
+                                {TRACKING_STEPS.map((step, index) => {
+                                    const Icon = step.icon;
+                                    const isCompleted = index < currentStep;
+                                    const isActive = index === currentStep;
+                                    const updatedAt = statusHistory[step.key];
+                                    const formattedDate = formatDateTime(updatedAt);
+
+                                    return (
+                                        <div key={step.key} className="flex gap-6 mb-8 last:mb-0 relative">
+                                            {/* Icon */}
+                                            <div
+                                                className={`
                           w-10 h-10 flex items-center justify-center rounded-full border-2 relative z-10 -ml-5 shadow-lg bg-[#020617]
                           ${isCompleted ? "border-emerald-400 text-emerald-400" : ""}
                           ${isActive ? "border-indigo-400 text-indigo-400 animate-pulse shadow-[0_0_15px_rgba(99,102,241,0.5)]" : ""}
                           ${!isCompleted && !isActive ? "border-white/20 text-white/40" : ""}
                         `}
-                                                >
-                                                    <Icon size={18} />
-                                                </div>
-
-                                                {/* Text Context */}
-                                                <div className="pt-2">
-                                                    <p className={`text-base font-semibold tracking-wide
-                                                    ${isCompleted || isActive ? "text-white" : "text-white/40"}`}>
-                                                        {step.label}
-                                                    </p>
-                                                    <p className={`text-sm mt-1 ${isCompleted || isActive ? "text-white/60" : "text-white/30"}`}>
-                                                        {formattedDate || (isCompleted ? "Completed" : isActive ? "In Progress..." : "Pending update...")}
-                                                    </p>
-                                                </div>
+                                            >
+                                                <Icon size={18} />
                                             </div>
-                                        );
-                                    })}
-                                </div>
+
+                                            {/* Text Context */}
+                                            <div className="pt-2">
+                                                <p className={`text-base font-semibold tracking-wide
+                                                    ${isCompleted || isActive ? "text-white" : "text-white/40"}`}>
+                                                    {step.label}
+                                                </p>
+                                                <p className={`text-sm mt-1 ${isCompleted || isActive ? "text-white/60" : "text-white/30"}`}>
+                                                    {formattedDate || (isCompleted ? "Completed" : isActive ? "In Progress..." : "Pending update...")}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
-
                     </div>
+
                 </div>
             </div>
         </div>
