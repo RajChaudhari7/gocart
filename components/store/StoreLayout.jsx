@@ -95,7 +95,7 @@ const StoreLayout = ({ children }) => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900">
+    <div className="min-h-screen overflow-hidden flex flex-col bg-slate-50 text-slate-900">
 
       <SellerNavbar />
 
