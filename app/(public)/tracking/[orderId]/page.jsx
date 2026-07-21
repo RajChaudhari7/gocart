@@ -215,6 +215,10 @@ export default function TrackingPage() {
 
 
     const currentStep = order ? (TRACK_INDEX[order.status] ?? 0) : 0;
+
+    const progressPercentage =
+        (currentStep / (TRACKING_STEPS.length - 1)) * 100;
+
     const statusHistory = order?.statusHistory || {};
 
     const customerLocation =
@@ -236,6 +240,71 @@ export default function TrackingPage() {
 
             return;
         }
+
+        const STATUS_MESSAGES = {
+            ORDER_PLACED: {
+                title: "Order Placed",
+                description:
+                    "We've received your order successfully.",
+            },
+
+            ORDER_CONFIRMED: {
+                title: "Order Confirmed",
+                description:
+                    "The store has accepted your order.",
+            },
+
+            ORDER_PACKING: {
+                title: "Preparing Your Order",
+                description:
+                    "The store is packing your items carefully.",
+            },
+
+            ORDER_PACKED: {
+                title: "Order Packed",
+                description:
+                    "Your package is ready for pickup.",
+            },
+
+            DRIVER_ASSIGNED: {
+                title: "Driver Assigned",
+                description:
+                    "A delivery partner has been assigned.",
+            },
+
+            REACHED_SHOP: {
+                title: "Driver Reached Store",
+                description:
+                    "Driver has arrived at the pickup location.",
+            },
+
+            PICKED_UP: {
+                title: "Order Picked Up",
+                description:
+                    "Your order is now with the driver.",
+            },
+
+            OUT_FOR_DELIVERY: {
+                title: "Out For Delivery",
+                description:
+                    "Your driver is heading to your location.",
+            },
+
+            DELIVERY_INITIATED: {
+                title: "Driver Near You",
+                description:
+                    "Please keep your delivery OTP ready.",
+            },
+
+            DELIVERED: {
+                title: "Delivered",
+                description:
+                    "Enjoy your order!",
+            },
+        };
+
+        const currentStatus =
+            STATUS_MESSAGES[order.status];
 
         const driverLatitude = Number(driverLocation.lat);
         const driverLongitude = Number(driverLocation.lng);
@@ -500,6 +569,154 @@ export default function TrackingPage() {
 
                                 </div>
                             )}
+
+                        <div className="rounded-3xl border border-emerald-500/20 bg-gradient-to-r from-emerald-500/10 via-slate-900/60 to-indigo-500/10 p-7 backdrop-blur-xl shadow-2xl">
+
+                            <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+
+                                <div>
+
+                                    <div className="mb-3 flex items-center gap-2">
+
+                                        <span className="h-3 w-3 rounded-full bg-emerald-500 animate-pulse"></span>
+
+                                        <span className="text-sm text-emerald-400 font-medium">
+                                            Live Delivery Status
+                                        </span>
+
+                                    </div>
+
+                                    <h2 className="text-3xl font-bold text-white">
+                                        {currentStatus.title}
+                                    </h2>
+
+                                    <p className="mt-2 text-white/60">
+                                        {currentStatus.description}
+                                    </p>
+
+                                </div>
+
+                                <div className="grid grid-cols-3 gap-4">
+
+                                    <div className="rounded-2xl bg-black/20 border border-white/10 p-4 text-center">
+
+                                        <p className="text-xs text-white/50">
+                                            Arriving In
+                                        </p>
+
+                                        <h3 className="mt-2 text-2xl font-bold text-emerald-400">
+
+                                            {deliveryInfo.etaMinutes} min
+
+                                        </h3>
+
+                                    </div>
+
+                                    <div className="rounded-2xl bg-black/20 border border-white/10 p-4 text-center">
+
+                                        <p className="text-xs text-white/50">
+                                            Distance
+                                        </p>
+
+                                        <h3 className="mt-2 text-2xl font-bold text-indigo-300">
+
+                                            {deliveryInfo.distanceKm?.toFixed(1)} km
+
+                                        </h3>
+
+                                    </div>
+
+                                    <div className="rounded-2xl bg-black/20 border border-white/10 p-4 text-center">
+
+                                        <p className="text-xs text-white/50">
+                                            Expected By
+                                        </p>
+
+                                        <h3 className="mt-2 text-xl font-bold text-white">
+
+                                            {deliveryInfo.arrivalTime}
+
+                                        </h3>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                            <div className="mt-7">
+
+                                <div className="flex justify-between text-xs text-white/50 mb-2">
+
+                                    <span>Order Progress</span>
+
+                                    <span>{Math.round(progressPercentage)}%</span>
+
+                                </div>
+
+                                <div className="h-3 overflow-hidden rounded-full bg-white/10">
+
+                                    <motion.div
+                                        initial={{ width: 0 }}
+                                        animate={{
+                                            width: `${progressPercentage}%`,
+                                        }}
+                                        transition={{
+                                            duration: 1.2,
+                                            ease: "easeOut"
+                                        }}
+                                        className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-indigo-500"
+                                    />
+
+                                </div>
+
+                                <div className="mt-4 flex justify-between text-xs">
+
+                                    <span
+                                        className={
+                                            currentStep >= 0
+                                                ? "text-emerald-400"
+                                                : "text-white/40"
+                                        }
+                                    >
+                                        Placed
+                                    </span>
+
+                                    <span
+                                        className={
+                                            currentStep >= 3
+                                                ? "text-emerald-400"
+                                                : "text-white/40"
+                                        }
+                                    >
+                                        Packed
+                                    </span>
+
+                                    <span
+                                        className={
+                                            currentStep >= 7
+                                                ? "text-emerald-400"
+                                                : "text-white/40"
+                                        }
+                                    >
+                                        Out
+                                    </span>
+
+                                    <span
+                                        className={
+                                            currentStep >= 9
+                                                ? "text-emerald-400"
+                                                : "text-white/40"
+                                        }
+                                    >
+                                        Delivered
+                                    </span>
+
+                                </div>
+
+                            </div>
+
+                        </div>
 
 
                         {/* LIVE MAP WIDGET */}
