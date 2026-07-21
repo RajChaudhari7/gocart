@@ -430,81 +430,83 @@ export default function TrackingPage() {
                     {/* RIGHT COLUMN: Map & Timeline */}
                     <div className="lg:col-span-2 space-y-6">
 
+                        {/* ETA CARD */}
+                        {deliveryInfo.etaMinutes !== null &&
+                            order.status !== "DELIVERED" && (
+                                <div className="rounded-2xl border border-emerald-500/20 bg-gradient-to-r from-emerald-500/10 via-white/5 to-indigo-500/10 p-5 shadow-2xl backdrop-blur-xl sm:p-6">
+
+                                    <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+
+                                        <div>
+                                            <div className="mb-2 flex items-center gap-2 text-sm font-medium text-emerald-400">
+                                                <span className="relative flex h-2.5 w-2.5">
+                                                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                                                    <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
+                                                </span>
+
+                                                Live delivery estimate
+                                            </div>
+
+                                            <h2 className="text-xl font-semibold text-white sm:text-2xl">
+                                                Your order is on the way
+                                            </h2>
+
+                                            <p className="mt-2 text-sm text-white/50">
+                                                ETA updates automatically as the driver moves.
+                                            </p>
+                                        </div>
+
+                                        <div className="grid grid-cols-3 gap-3 sm:min-w-[360px]">
+
+                                            <div className="rounded-xl border border-white/10 bg-black/20 p-3 text-center">
+                                                <p className="text-xs text-white/45">
+                                                    Arriving in
+                                                </p>
+
+                                                <p className="mt-1 text-lg font-bold text-emerald-400">
+                                                    {deliveryInfo.etaMinutes} min
+                                                </p>
+                                            </div>
+
+                                            <div className="rounded-xl border border-white/10 bg-black/20 p-3 text-center">
+                                                <p className="text-xs text-white/45">
+                                                    Expected by
+                                                </p>
+
+                                                <p className="mt-1 text-lg font-bold text-white">
+                                                    {deliveryInfo.arrivalTime}
+                                                </p>
+                                            </div>
+
+                                            <div className="rounded-xl border border-white/10 bg-black/20 p-3 text-center">
+                                                <p className="text-xs text-white/45">
+                                                    Distance
+                                                </p>
+
+                                                <p className="mt-1 text-lg font-bold text-indigo-300">
+                                                    {deliveryInfo.distanceKm < 1
+                                                        ? `${Math.round(
+                                                            deliveryInfo.distanceKm * 1000
+                                                        )} m`
+                                                        : `${deliveryInfo.distanceKm.toFixed(
+                                                            1
+                                                        )} km`}
+                                                </p>
+                                            </div>
+
+                                        </div>
+
+                                    </div>
+
+                                </div>
+                            )}
+
+
                         {/* LIVE MAP WIDGET */}
                         {driverLocation &&
                             customerLocation &&
                             order.status !== "DELIVERED" && (
                                 <div className="bg-white/5 border border-white/10 rounded-2xl p-1 overflow-hidden backdrop-blur-xl shadow-2xl h-[350px] relative z-0">
-                                    {/* ETA CARD */}
-                                    {deliveryInfo.etaMinutes !== null &&
-                                        order.status !== "DELIVERED" && (
-                                            <div className="rounded-2xl border border-emerald-500/20 bg-gradient-to-r from-emerald-500/10 via-white/5 to-indigo-500/10 p-5 shadow-2xl backdrop-blur-xl sm:p-6">
-
-                                                <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-
-                                                    <div>
-                                                        <div className="mb-2 flex items-center gap-2 text-sm font-medium text-emerald-400">
-                                                            <span className="relative flex h-2.5 w-2.5">
-                                                                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                                                                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
-                                                            </span>
-
-                                                            Live delivery estimate
-                                                        </div>
-
-                                                        <h2 className="text-xl font-semibold text-white sm:text-2xl">
-                                                            Your order is on the way
-                                                        </h2>
-
-                                                        <p className="mt-2 text-sm text-white/50">
-                                                            ETA updates automatically as the driver moves.
-                                                        </p>
-                                                    </div>
-
-                                                    <div className="grid grid-cols-3 gap-3 sm:min-w-[360px]">
-
-                                                        <div className="rounded-xl border border-white/10 bg-black/20 p-3 text-center">
-                                                            <p className="text-xs text-white/45">
-                                                                Arriving in
-                                                            </p>
-
-                                                            <p className="mt-1 text-lg font-bold text-emerald-400">
-                                                                {deliveryInfo.etaMinutes} min
-                                                            </p>
-                                                        </div>
-
-                                                        <div className="rounded-xl border border-white/10 bg-black/20 p-3 text-center">
-                                                            <p className="text-xs text-white/45">
-                                                                Expected by
-                                                            </p>
-
-                                                            <p className="mt-1 text-lg font-bold text-white">
-                                                                {deliveryInfo.arrivalTime}
-                                                            </p>
-                                                        </div>
-
-                                                        <div className="rounded-xl border border-white/10 bg-black/20 p-3 text-center">
-                                                            <p className="text-xs text-white/45">
-                                                                Distance
-                                                            </p>
-
-                                                            <p className="mt-1 text-lg font-bold text-indigo-300">
-                                                                {deliveryInfo.distanceKm < 1
-                                                                    ? `${Math.round(
-                                                                        deliveryInfo.distanceKm * 1000
-                                                                    )} m`
-                                                                    : `${deliveryInfo.distanceKm.toFixed(
-                                                                        1
-                                                                    )} km`}
-                                                            </p>
-                                                        </div>
-
-                                                    </div>
-
-                                                </div>
-
-                                            </div>
-                                        )}
 
                                     {customerLocation && (
                                         <LiveMap
