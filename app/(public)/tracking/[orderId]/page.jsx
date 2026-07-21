@@ -125,6 +125,71 @@ const LiveMap = dynamic(() => import("@/components/LiveMap"), {
     loading: () => <div className="h-full w-full flex items-center justify-center text-white/50 bg-white/5 animate-pulse">Loading Live Map...</div>
 });
 
+const STATUS_MESSAGES = {
+    ORDER_PLACED: {
+        title: "Order Placed",
+        description:
+            "We've received your order successfully.",
+    },
+
+    ORDER_CONFIRMED: {
+        title: "Order Confirmed",
+        description:
+            "The store has accepted your order.",
+    },
+
+    ORDER_PACKING: {
+        title: "Preparing Your Order",
+        description:
+            "The store is packing your items carefully.",
+    },
+
+    ORDER_PACKED: {
+        title: "Order Packed",
+        description:
+            "Your package is ready for pickup.",
+    },
+
+    DRIVER_ASSIGNED: {
+        title: "Driver Assigned",
+        description:
+            "A delivery partner has been assigned.",
+    },
+
+    REACHED_SHOP: {
+        title: "Driver Reached Store",
+        description:
+            "Driver has arrived at the pickup location.",
+    },
+
+    PICKED_UP: {
+        title: "Order Picked Up",
+        description:
+            "Your order is now with the driver.",
+    },
+
+    OUT_FOR_DELIVERY: {
+        title: "Out For Delivery",
+        description:
+            "Your driver is heading to your location.",
+    },
+
+    DELIVERY_INITIATED: {
+        title: "Driver Near You",
+        description:
+            "Please keep your delivery OTP ready.",
+    },
+
+    DELIVERED: {
+        title: "Delivered",
+        description:
+            "Enjoy your order!",
+    },
+};
+
+const currentStatus =
+    STATUS_MESSAGES[order.status];
+
 export default function TrackingPage() {
     const { orderId } = useParams();
     const router = useRouter();
@@ -240,71 +305,6 @@ export default function TrackingPage() {
 
             return;
         }
-
-        const STATUS_MESSAGES = {
-            ORDER_PLACED: {
-                title: "Order Placed",
-                description:
-                    "We've received your order successfully.",
-            },
-
-            ORDER_CONFIRMED: {
-                title: "Order Confirmed",
-                description:
-                    "The store has accepted your order.",
-            },
-
-            ORDER_PACKING: {
-                title: "Preparing Your Order",
-                description:
-                    "The store is packing your items carefully.",
-            },
-
-            ORDER_PACKED: {
-                title: "Order Packed",
-                description:
-                    "Your package is ready for pickup.",
-            },
-
-            DRIVER_ASSIGNED: {
-                title: "Driver Assigned",
-                description:
-                    "A delivery partner has been assigned.",
-            },
-
-            REACHED_SHOP: {
-                title: "Driver Reached Store",
-                description:
-                    "Driver has arrived at the pickup location.",
-            },
-
-            PICKED_UP: {
-                title: "Order Picked Up",
-                description:
-                    "Your order is now with the driver.",
-            },
-
-            OUT_FOR_DELIVERY: {
-                title: "Out For Delivery",
-                description:
-                    "Your driver is heading to your location.",
-            },
-
-            DELIVERY_INITIATED: {
-                title: "Driver Near You",
-                description:
-                    "Please keep your delivery OTP ready.",
-            },
-
-            DELIVERED: {
-                title: "Delivered",
-                description:
-                    "Enjoy your order!",
-            },
-        };
-
-        const currentStatus =
-            STATUS_MESSAGES[order.status];
 
         const driverLatitude = Number(driverLocation.lat);
         const driverLongitude = Number(driverLocation.lng);
