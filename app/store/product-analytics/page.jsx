@@ -39,7 +39,7 @@ export default function ProductAnalyticsPage() {
     const [aiSummary, setAiSummary] = useState(null);
     const [aiLoading, setAiLoading] = useState(false);
     const [aiError, setAiError] = useState("");
-    const [summaryLanguage, setSummaryLanguage] = useState("Marathi");
+    const [summaryLanguage, setSummaryLanguage] = useState("English");
     const [filters, setFilters] = useState(
         DEFAULT_ANALYTICS_FILTERS
     );
@@ -153,6 +153,7 @@ export default function ProductAnalyticsPage() {
                         charts: analytics.charts,
 
                         filters,
+                        language: summaryLanguage
                     }),
                 }
             );
