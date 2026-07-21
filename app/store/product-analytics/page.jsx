@@ -39,6 +39,7 @@ export default function ProductAnalyticsPage() {
     const [aiSummary, setAiSummary] = useState(null);
     const [aiLoading, setAiLoading] = useState(false);
     const [aiError, setAiError] = useState("");
+    const [summaryLanguage, setSummaryLanguage] = useState("Marathi");
     const [filters, setFilters] = useState(
         DEFAULT_ANALYTICS_FILTERS
     );
@@ -300,6 +301,8 @@ export default function ProductAnalyticsPage() {
                     aiSummary={aiSummary}
                     loading={aiLoading}
                     onGenerate={generateAISummary}
+                    summaryLanguage={summaryLanguage}
+                    setSummaryLanguage={setSummaryLanguage}
                 />
 
                 {/* Smart insight cards */}

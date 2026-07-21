@@ -54,10 +54,10 @@ const Section = ({ title, icon: Icon, color, items }) => {
 export default function AIReviewSummary({
 
     aiSummary,
-
     loading,
-
     onGenerate,
+    summaryLanguage,
+    setSummaryLanguage
 
 }) {
 
@@ -65,146 +65,147 @@ export default function AIReviewSummary({
 
         <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
 
-            <div className="mb-6 flex items-center justify-between">
+            <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
 
                 <div className="flex items-center gap-3">
 
-                    <Sparkles
-                        className="text-yellow-400"
-                        size={22}
-                    />
+                    <select
+                        value={summaryLanguage}
+                        onChange={(e) =>
+                            setSummaryLanguage(e.target.value)
+                        }
+                        className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white"
+                    >
+                        <option value="English">English</option>
+                        <option value="Hindi">हिन्दी</option>
+                        <option value="Gujarati">ગુજરાતી</option>
+                        <option value="Marathi">मराठी</option>
+                        <option value="Tamil">தமிழ்</option>
+                        <option value="Telugu">తెలుగు</option>
+                        <option value="Kannada">ಕನ್ನಡ</option>
+                        <option value="Malayalam">മലയാളം</option>
+                        <option value="Bengali">বাংলা</option>
+                        <option value="Punjabi">ਪੰਜਾਬੀ</option>
+                    </select>
 
-                    <div>
+                    <button
+                        onClick={onGenerate}
+                        disabled={loading}
+                        className="flex items-center gap-2 rounded-lg bg-emerald-500 px-4 py-2 text-sm font-medium text-black transition hover:bg-emerald-400 disabled:opacity-50"
+                    >
 
-                        <h2 className="text-xl font-bold text-white">
-                            AI Review Summary
-                        </h2>
+                        <RefreshCcw
+                            size={16}
+                            className={loading ? "animate-spin" : ""}
+                        />
 
-                        <p className="text-sm text-slate-400">
-                            Personalized business insights
+                        {loading ? "Generating..." : "Generate"}
+
+                    </button>
+
+                </div>
+
+                {!aiSummary && !loading && (
+
+                    <div className="rounded-xl border border-dashed border-slate-700 p-10 text-center">
+
+                        <Sparkles
+                            size={40}
+                            className="mx-auto mb-4 text-yellow-400"
+                        />
+
+                        <h3 className="text-lg font-semibold text-white">
+                            Generate AI Review
+                        </h3>
+
+                        <p className="mt-2 text-sm text-slate-400">
+                            Click the button above to analyze your store.
                         </p>
 
                     </div>
 
-                </div>
+                )}
 
-                <button
-                    onClick={onGenerate}
-                    disabled={loading}
-                    className="flex items-center gap-2 rounded-lg bg-emerald-500 px-4 py-2 text-sm font-medium text-black transition hover:bg-emerald-400 disabled:opacity-50"
-                >
+                {loading && (
 
-                    <RefreshCcw
-                        size={16}
-                        className={loading ? "animate-spin" : ""}
-                    />
+                    <div className="space-y-4">
 
-                    {loading ? "Generating..." : "Generate"}
+                        <div className="h-6 w-3/4 animate-pulse rounded bg-slate-800" />
 
-                </button>
+                        <div className="h-4 w-full animate-pulse rounded bg-slate-800" />
 
-            </div>
+                        <div className="h-4 w-5/6 animate-pulse rounded bg-slate-800" />
 
-            {!aiSummary && !loading && (
+                        <div className="h-4 w-4/6 animate-pulse rounded bg-slate-800" />
 
-                <div className="rounded-xl border border-dashed border-slate-700 p-10 text-center">
+                    </div>
 
-                    <Sparkles
-                        size={40}
-                        className="mx-auto mb-4 text-yellow-400"
-                    />
+                )}
 
-                    <h3 className="text-lg font-semibold text-white">
-                        Generate AI Review
-                    </h3>
+                {aiSummary && !loading && (
 
-                    <p className="mt-2 text-sm text-slate-400">
-                        Click the button above to analyze your store.
-                    </p>
+                    <>
 
-                </div>
+                        <div className="mb-6 rounded-xl bg-slate-800 p-5">
 
-            )}
+                            <div className="mb-4 flex items-center justify-between">
 
-            {loading && (
+                                <div className="flex items-center gap-2">
 
-                <div className="space-y-4">
+                                    <Star
+                                        size={18}
+                                        className="text-yellow-400"
+                                    />
 
-                    <div className="h-6 w-3/4 animate-pulse rounded bg-slate-800" />
+                                    <span className="font-semibold text-white">
+                                        Store Health Score
+                                    </span>
 
-                    <div className="h-4 w-full animate-pulse rounded bg-slate-800" />
+                                </div>
 
-                    <div className="h-4 w-5/6 animate-pulse rounded bg-slate-800" />
-
-                    <div className="h-4 w-4/6 animate-pulse rounded bg-slate-800" />
-
-                </div>
-
-            )}
-
-            {aiSummary && !loading && (
-
-                <>
-
-                    <div className="mb-6 rounded-xl bg-slate-800 p-5">
-
-                        <div className="mb-4 flex items-center justify-between">
-
-                            <div className="flex items-center gap-2">
-
-                                <Star
-                                    size={18}
-                                    className="text-yellow-400"
-                                />
-
-                                <span className="font-semibold text-white">
-                                    Store Health Score
+                                <span className="text-3xl font-bold text-emerald-400">
+                                    {aiSummary.score}/100
                                 </span>
 
                             </div>
 
-                            <span className="text-3xl font-bold text-emerald-400">
-                                {aiSummary.score}/100
-                            </span>
+                            <p className="leading-7 text-slate-300">
+                                {aiSummary.summary}
+                            </p>
 
                         </div>
 
-                        <p className="leading-7 text-slate-300">
-                            {aiSummary.summary}
-                        </p>
+                        <div className="grid gap-8 lg:grid-cols-3">
 
-                    </div>
+                            <Section
+                                title="Strengths"
+                                icon={TrendingUp}
+                                color="text-emerald-400"
+                                items={aiSummary.strengths}
+                            />
 
-                    <div className="grid gap-8 lg:grid-cols-3">
+                            <Section
+                                title="Concerns"
+                                icon={AlertTriangle}
+                                color="text-red-400"
+                                items={aiSummary.concerns}
+                            />
 
-                        <Section
-                            title="Strengths"
-                            icon={TrendingUp}
-                            color="text-emerald-400"
-                            items={aiSummary.strengths}
-                        />
+                            <Section
+                                title="Recommendations"
+                                icon={Lightbulb}
+                                color="text-yellow-400"
+                                items={aiSummary.recommendations}
+                            />
 
-                        <Section
-                            title="Concerns"
-                            icon={AlertTriangle}
-                            color="text-red-400"
-                            items={aiSummary.concerns}
-                        />
+                        </div>
 
-                        <Section
-                            title="Recommendations"
-                            icon={Lightbulb}
-                            color="text-yellow-400"
-                            items={aiSummary.recommendations}
-                        />
+                    </>
 
-                    </div>
+                )}
 
-                </>
-
-            )}
+            </div>
 
         </div>
-
     );
-}
+}   
