@@ -187,9 +187,6 @@ const STATUS_MESSAGES = {
     },
 };
 
-const currentStatus =
-    STATUS_MESSAGES[order.status];
-
 export default function TrackingPage() {
     const { orderId } = useParams();
     const router = useRouter();
@@ -206,6 +203,9 @@ export default function TrackingPage() {
         etaMinutes: null,
         arrivalTime: null,
     });
+
+    const currentStatus =
+    STATUS_MESSAGES[order.status];
 
     const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || "₹";
 
