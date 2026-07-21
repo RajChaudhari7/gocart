@@ -204,8 +204,7 @@ export default function TrackingPage() {
         arrivalTime: null,
     });
 
-    const currentStatus =
-    STATUS_MESSAGES[order.status];
+
 
     const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || "₹";
 
@@ -213,6 +212,8 @@ export default function TrackingPage() {
     useEffect(() => {
 
         if (!orderId) return;
+
+
 
         let interval;
 
@@ -283,6 +284,9 @@ export default function TrackingPage() {
 
     const progressPercentage =
         (currentStep / (TRACKING_STEPS.length - 1)) * 100;
+
+    const currentStatus =
+        STATUS_MESSAGES[order.status];
 
     const statusHistory = order?.statusHistory || {};
 
