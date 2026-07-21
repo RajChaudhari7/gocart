@@ -13,8 +13,6 @@ import SellerSidebar from "./StoreSidebar"
 
 const StoreLayout = ({ children }) => {
   const { getToken } = useAuth()
-  const pathname = usePathname()
-  const router = useRouter()
 
   const [isSeller, setIsSeller] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -25,13 +23,17 @@ const StoreLayout = ({ children }) => {
     try {
       const token = await getToken()
 
-      const { data } = await axios.get('/api/store/is-seller', {
-        headers: { Authorization: `Bearer ${token}` }
-      })
+      const { data } = await axios.get(
+        "/api/store/is-seller",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      )
 
       setIsSeller(data.isSeller)
       setStoreInfo(data.storeInfo)
-
     } catch (error) {
       console.error(error)
     }
@@ -41,16 +43,20 @@ const StoreLayout = ({ children }) => {
     try {
       const token = await getToken()
 
-      const { data } = await axios.get('/api/store/orders', {
-        headers: { Authorization: `Bearer ${token}` }
-      })
+      const { data } = await axios.get(
+        "/api/store/orders",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      )
 
       const pending = data.orders.filter(
-        order => order.status === "PENDING"
+        (order) => order.status === "PENDING"
       ).length
 
       setPendingOrdersCount(pending)
-
     } catch (error) {
       console.error(error)
     }
@@ -60,7 +66,7 @@ const StoreLayout = ({ children }) => {
     const init = async () => {
       await Promise.all([
         fetchSellerInfo(),
-        fetchOrdersCount()
+        fetchOrdersCount(),
       ])
 
       setLoading(false)
@@ -71,7 +77,7 @@ const StoreLayout = ({ children }) => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="flex h-screen items-center justify-center bg-slate-50">
         <Loading />
       </div>
     )
@@ -79,34 +85,35 @@ const StoreLayout = ({ children }) => {
 
   if (!isSeller) {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center text-center px-6">
-        <h1 className="text-2xl sm:text-4xl font-semibold text-slate-700">
+      <div className="flex h-screen flex-col items-center justify-center bg-slate-50 px-6 text-center">
+        <h1 className="text-2xl font-semibold text-slate-700 sm:text-4xl">
           You are not authorized to access this page
         </h1>
 
         <Link
           href="/"
-          className="mt-8 inline-flex items-center gap-2 rounded-full bg-slate-900 text-white px-6 py-2 text-sm hover:bg-slate-800 transition"
+          className="mt-8 inline-flex items-center gap-2 rounded-full bg-slate-900 px-6 py-2 text-sm text-white transition hover:bg-slate-800"
         >
-          Go to home <ArrowRightIcon size={16} />
+          Go to home
+          <ArrowRightIcon size={16} />
         </Link>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen overflow-hidden flex flex-col bg-slate-50 text-slate-900">
+    <div className="flex h-screen flex-col overflow-hidden bg-slate-50 text-slate-900">
 
       <SellerNavbar />
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex min-h-0 flex-1 overflow-hidden">
 
         <SellerSidebar
           storeInfo={storeInfo}
           pendingOrdersCount={pendingOrdersCount}
         />
 
-        <main className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-10 py-6 pb-20 sm:pb-6">
+        <main className="min-w-0 flex-1 overflow-y-auto px-4 py-6 pb-20 sm:px-6 sm:pb-6 lg:px-10">
           {children}
         </main>
 

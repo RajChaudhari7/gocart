@@ -30,27 +30,29 @@ const StoreSidebar = ({ storeInfo, pendingOrdersCount = 0 }) => {
   return (
     <>
       {/* ================= DESKTOP SIDEBAR ================= */}
-      <aside className="hidden sm:flex h-full w-64 flex-col bg-black border-r border-white/10">
+      <aside className="hidden h-full w-64 shrink-0 flex-col overflow-hidden border-r border-white/10 bg-black sm:flex">
 
-        {/* Store Info */}
-        <div className="flex flex-col items-center gap-3 py-8 border-b border-white/10">
-          <Image
-            src={storeInfo?.logo || "/placeholder.png"}
-            alt="Store logo"
-            width={64}
-            height={64}
-            className="rounded-full border border-white/20"
-          />
-          <p className="text-sm font-medium text-white">
-            {storeInfo?.name}
-          </p>
-          <span className="text-xs text-white/50">
-            Seller Panel
-          </span>
+        <div className="shrink-0 border-b border-white/10 py-8">
+          <div className="flex flex-col items-center gap-3">
+            <Image
+              src={storeInfo?.logo || "/placeholder.png"}
+              alt="Store logo"
+              width={64}
+              height={64}
+              className="rounded-full border border-white/20"
+            />
+
+            <p className="text-sm font-medium text-white">
+              {storeInfo?.name}
+            </p>
+
+            <span className="text-xs text-white/50">
+              Seller Panel
+            </span>
+          </div>
         </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 px-3 py-4 space-y-1">
+        <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
           {sidebarLinks.map((link) => {
             const active = pathname === link.href
             const Icon = link.icon
@@ -60,12 +62,13 @@ const StoreSidebar = ({ storeInfo, pendingOrdersCount = 0 }) => {
                 key={link.href}
                 href={link.href}
                 className={`
-                  group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm
-                  transition-all duration-200
-                  ${active
-                    ? 'bg-white/10 text-white'
-                    : 'text-white/60 hover:bg-white/5 hover:text-white'}
-                `}
+            group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm
+            transition-all duration-200
+            ${active
+                    ? "bg-white/10 text-white"
+                    : "text-white/60 hover:bg-white/5 hover:text-white"
+                  }
+          `}
               >
                 <Icon size={18} />
 
@@ -73,19 +76,14 @@ const StoreSidebar = ({ storeInfo, pendingOrdersCount = 0 }) => {
                   {link.name}
                 </span>
 
-                {/* BADGE */}
                 {link.badge > 0 && (
-                  <span className="
-                    min-w-[20px] px-1.5 py-0.5 text-xs font-medium
-                    rounded-full bg-emerald-500 text-black text-center
-                  ">
+                  <span className="min-w-[20px] rounded-full bg-emerald-500 px-1.5 py-0.5 text-center text-xs font-medium text-black">
                     {link.badge}
                   </span>
                 )}
 
-                {/* Active Indicator */}
                 {active && (
-                  <span className="w-1.5 h-6 bg-emerald-400 rounded-full ml-2" />
+                  <span className="ml-2 h-6 w-1.5 rounded-full bg-emerald-400" />
                 )}
               </Link>
             )
