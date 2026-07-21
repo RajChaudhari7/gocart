@@ -286,7 +286,10 @@ export default function TrackingPage() {
         (currentStep / (TRACKING_STEPS.length - 1)) * 100;
 
     const currentStatus =
-        STATUS_MESSAGES[order.status];
+        STATUS_MESSAGES[order?.status] || {
+            title: "Loading...",
+            description: "Fetching latest order status...",
+        };
 
     const statusHistory = order?.statusHistory || {};
 
