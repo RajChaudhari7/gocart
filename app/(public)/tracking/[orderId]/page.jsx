@@ -748,155 +748,158 @@ export default function TrackingPage() {
 
                                 </div>
                             )}
+                        {order.status !== "DELIVERED" && (
+                            <div className="rounded-3xl border border-emerald-500/20 bg-gradient-to-r from-emerald-500/10 via-slate-900/60 to-indigo-500/10 p-7 backdrop-blur-xl shadow-2xl">
 
-                        <div className="rounded-3xl border border-emerald-500/20 bg-gradient-to-r from-emerald-500/10 via-slate-900/60 to-indigo-500/10 p-7 backdrop-blur-xl shadow-2xl">
+                                <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
 
-                            <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+                                    <div>
 
-                                <div>
+                                        <div className="mb-3 flex items-center gap-2">
 
-                                    <div className="mb-3 flex items-center gap-2">
+                                            <span className="h-3 w-3 rounded-full bg-emerald-500 animate-pulse"></span>
 
-                                        <span className="h-3 w-3 rounded-full bg-emerald-500 animate-pulse"></span>
+                                            <span className="text-sm text-emerald-400 font-medium">
+                                                Live Delivery Status
+                                            </span>
 
-                                        <span className="text-sm text-emerald-400 font-medium">
-                                            Live Delivery Status
+                                        </div>
+
+                                        <h2 className="text-3xl font-bold text-white">
+                                            {currentStatus.title}
+                                        </h2>
+
+                                        <p className="mt-2 text-white/60">
+                                            {currentStatus.description}
+                                        </p>
+
+                                    </div>
+
+
+
+                                    <div className="grid grid-cols-3 gap-4">
+
+                                        <div className="rounded-2xl bg-black/20 border border-white/10 p-4 text-center">
+
+                                            <p className="text-xs text-white/50">
+                                                Arriving In
+                                            </p>
+
+                                            <h3 className="mt-2 text-2xl font-bold text-emerald-400">
+
+                                                {deliveryInfo.etaMinutes} min
+
+                                            </h3>
+
+                                        </div>
+
+                                        <div className="rounded-2xl bg-black/20 border border-white/10 p-4 text-center">
+
+                                            <p className="text-xs text-white/50">
+                                                Distance
+                                            </p>
+
+                                            <h3 className="mt-2 text-2xl font-bold text-indigo-300">
+
+                                                {deliveryInfo.distanceKm?.toFixed(1)} km
+
+                                            </h3>
+
+                                        </div>
+
+                                        <div className="rounded-2xl bg-black/20 border border-white/10 p-4 text-center">
+
+                                            <p className="text-xs text-white/50">
+                                                Expected By
+                                            </p>
+
+                                            <h3 className="mt-2 text-xl font-bold text-white">
+
+                                                {deliveryInfo.arrivalTime}
+
+                                            </h3>
+
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+
+                                <div className="mt-7">
+
+                                    <div className="flex justify-between text-xs text-white/50 mb-2">
+
+                                        <span>Order Progress</span>
+
+                                        <span>{Math.round(progressPercentage)}%</span>
+
+                                    </div>
+
+                                    <div className="h-3 overflow-hidden rounded-full bg-white/10">
+
+                                        <motion.div
+                                            initial={{ width: 0 }}
+                                            animate={{
+                                                width: `${progressPercentage}%`,
+                                            }}
+                                            transition={{
+                                                duration: 1.2,
+                                                ease: "easeOut"
+                                            }}
+                                            className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-indigo-500"
+                                        />
+
+                                    </div>
+
+                                    <div className="mt-4 flex justify-between text-xs">
+
+                                        <span
+                                            className={
+                                                currentStep >= 0
+                                                    ? "text-emerald-400"
+                                                    : "text-white/40"
+                                            }
+                                        >
+                                            Placed
+                                        </span>
+
+                                        <span
+                                            className={
+                                                currentStep >= 3
+                                                    ? "text-emerald-400"
+                                                    : "text-white/40"
+                                            }
+                                        >
+                                            Packed
+                                        </span>
+
+                                        <span
+                                            className={
+                                                currentStep >= 7
+                                                    ? "text-emerald-400"
+                                                    : "text-white/40"
+                                            }
+                                        >
+                                            Out
+                                        </span>
+
+                                        <span
+                                            className={
+                                                currentStep >= 9
+                                                    ? "text-emerald-400"
+                                                    : "text-white/40"
+                                            }
+                                        >
+                                            Delivered
                                         </span>
 
                                     </div>
 
-                                    <h2 className="text-3xl font-bold text-white">
-                                        {currentStatus.title}
-                                    </h2>
-
-                                    <p className="mt-2 text-white/60">
-                                        {currentStatus.description}
-                                    </p>
-
-                                </div>
-
-                                <div className="grid grid-cols-3 gap-4">
-
-                                    <div className="rounded-2xl bg-black/20 border border-white/10 p-4 text-center">
-
-                                        <p className="text-xs text-white/50">
-                                            Arriving In
-                                        </p>
-
-                                        <h3 className="mt-2 text-2xl font-bold text-emerald-400">
-
-                                            {deliveryInfo.etaMinutes} min
-
-                                        </h3>
-
-                                    </div>
-
-                                    <div className="rounded-2xl bg-black/20 border border-white/10 p-4 text-center">
-
-                                        <p className="text-xs text-white/50">
-                                            Distance
-                                        </p>
-
-                                        <h3 className="mt-2 text-2xl font-bold text-indigo-300">
-
-                                            {deliveryInfo.distanceKm?.toFixed(1)} km
-
-                                        </h3>
-
-                                    </div>
-
-                                    <div className="rounded-2xl bg-black/20 border border-white/10 p-4 text-center">
-
-                                        <p className="text-xs text-white/50">
-                                            Expected By
-                                        </p>
-
-                                        <h3 className="mt-2 text-xl font-bold text-white">
-
-                                            {deliveryInfo.arrivalTime}
-
-                                        </h3>
-
-                                    </div>
-
                                 </div>
 
                             </div>
-
-                            <div className="mt-7">
-
-                                <div className="flex justify-between text-xs text-white/50 mb-2">
-
-                                    <span>Order Progress</span>
-
-                                    <span>{Math.round(progressPercentage)}%</span>
-
-                                </div>
-
-                                <div className="h-3 overflow-hidden rounded-full bg-white/10">
-
-                                    <motion.div
-                                        initial={{ width: 0 }}
-                                        animate={{
-                                            width: `${progressPercentage}%`,
-                                        }}
-                                        transition={{
-                                            duration: 1.2,
-                                            ease: "easeOut"
-                                        }}
-                                        className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-indigo-500"
-                                    />
-
-                                </div>
-
-                                <div className="mt-4 flex justify-between text-xs">
-
-                                    <span
-                                        className={
-                                            currentStep >= 0
-                                                ? "text-emerald-400"
-                                                : "text-white/40"
-                                        }
-                                    >
-                                        Placed
-                                    </span>
-
-                                    <span
-                                        className={
-                                            currentStep >= 3
-                                                ? "text-emerald-400"
-                                                : "text-white/40"
-                                        }
-                                    >
-                                        Packed
-                                    </span>
-
-                                    <span
-                                        className={
-                                            currentStep >= 7
-                                                ? "text-emerald-400"
-                                                : "text-white/40"
-                                        }
-                                    >
-                                        Out
-                                    </span>
-
-                                    <span
-                                        className={
-                                            currentStep >= 9
-                                                ? "text-emerald-400"
-                                                : "text-white/40"
-                                        }
-                                    >
-                                        Delivered
-                                    </span>
-
-                                </div>
-
-                            </div>
-
-                        </div>
-
+                        )}
 
                         {/* LIVE MAP WIDGET */}
                         {driverLocation &&
