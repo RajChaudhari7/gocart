@@ -67,3 +67,141 @@
 .animate-blink {
     animation: blink 1s infinite;
 }
+
+.custom-driver-icon,
+.custom-customer-icon {
+    background: transparent !important;
+    border: none !important;
+}
+
+.driver-marker-wrapper {
+    position: relative;
+    width: 52px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.driver-marker-direction {
+    position: relative;
+    z-index: 2;
+    width: 42px;
+    height: 42px;
+    transition: transform 0.35s ease;
+    transform-origin: center;
+}
+
+.driver-marker {
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: linear-gradient(135deg,
+            #10b981,
+            #059669);
+    border: 3px solid white;
+    box-shadow:
+        0 8px 24px rgba(16, 185, 129, 0.45),
+        0 0 0 3px rgba(16, 185, 129, 0.18);
+
+    animation:
+        driverFloat 1.8s ease-in-out infinite;
+}
+
+.driver-marker-pulse {
+    position: absolute;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(16, 185, 129, 0.32);
+    animation:
+        driverPulse 1.8s ease-out infinite;
+}
+
+.customer-marker-wrapper {
+    position: relative;
+    width: 48px;
+    height: 56px;
+    display: flex;
+    justify-content: center;
+}
+
+.customer-marker {
+    position: relative;
+    z-index: 2;
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 16px;
+    background: linear-gradient(135deg,
+            #6366f1,
+            #4f46e5);
+    border: 3px solid white;
+    box-shadow:
+        0 8px 24px rgba(99, 102, 241, 0.45),
+        0 0 0 3px rgba(99, 102, 241, 0.18);
+}
+
+.customer-marker-tip {
+    position: absolute;
+    top: 35px;
+    z-index: 1;
+    width: 15px;
+    height: 15px;
+    background: #4f46e5;
+    transform: rotate(45deg);
+    border-right: 3px solid white;
+    border-bottom: 3px solid white;
+}
+
+.customer-marker-pulse {
+    position: absolute;
+    top: 1px;
+    width: 44px;
+    height: 44px;
+    border-radius: 16px;
+    background: rgba(99, 102, 241, 0.25);
+    animation:
+        customerPulse 2.2s ease-out infinite;
+}
+
+@keyframes driverPulse {
+    0% {
+        transform: scale(0.8);
+        opacity: 0.7;
+    }
+
+    100% {
+        transform: scale(1.65);
+        opacity: 0;
+    }
+}
+
+@keyframes driverFloat {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-3px);
+    }
+}
+
+@keyframes customerPulse {
+    0% {
+        transform: scale(0.85);
+        opacity: 0.55;
+    }
+
+    100% {
+        transform: scale(1.55);
+        opacity: 0;
+    }
+}

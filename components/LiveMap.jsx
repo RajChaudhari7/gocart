@@ -13,77 +13,119 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
 // ----------------------------------------------------
-// CUSTOM ICONS
+// CUSTOMER ICON
 // ----------------------------------------------------
 
-const driverIcon = L.divIcon({
-    className: "custom-icon",
+const customerIcon = L.divIcon({
+    className: "custom-customer-icon",
     html: `
-        <div
-            style="
-                background-color: #10b981;
-                border: 2px solid white;
-                border-radius: 50%;
-                width: 36px;
-                height: 36px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                box-shadow: 0 0 15px rgba(16, 185, 129, 0.6);
-            "
-        >
-            <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="white"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-            >
-                <path d="M5 18H3a1 1 0 0 1-1-1v-2a1 1 0 0 1 1-1h5.5l2-4h5M15 11l-2 4h4.5a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-2M15 18a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0zM7 18a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z"></path>
-            </svg>
+        <div class="customer-marker-wrapper">
+            <div class="customer-marker-pulse"></div>
+
+            <div class="customer-marker">
+                <svg
+                    width="22"
+                    height="22"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="white"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                >
+                    <path d="M3 11l9-8 9 8"></path>
+                    <path d="M5 10v10h14V10"></path>
+                    <path d="M9 20v-6h6v6"></path>
+                </svg>
+            </div>
+
+            <div class="customer-marker-tip"></div>
         </div>
     `,
-    iconSize: [36, 36],
-    iconAnchor: [18, 18],
+    iconSize: [48, 56],
+    iconAnchor: [24, 54],
 });
 
-const customerIcon = L.divIcon({
-    className: "custom-icon",
-    html: `
-        <div
-            style="
-                background-color: #6366f1;
-                border: 2px solid white;
-                border-radius: 50%;
-                width: 32px;
-                height: 32px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                box-shadow: 0 0 15px rgba(99, 102, 241, 0.5);
-            "
-        >
-            <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="white"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-            >
-                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                <circle cx="12" cy="10" r="3"></circle>
-            </svg>
-        </div>
-    `,
-    iconSize: [32, 32],
-    iconAnchor: [16, 32],
-});
+// ----------------------------------------------------
+// DRIVER ICON WITH ROTATION
+// ----------------------------------------------------
+
+const createDriverIcon = (heading = 0) =>
+    L.divIcon({
+        className: "custom-driver-icon",
+
+        html: `
+            <div class="driver-marker-wrapper">
+
+                <div class="driver-marker-pulse"></div>
+
+                <div
+                    class="driver-marker-direction"
+                    style="transform: rotate(${heading}deg);"
+                >
+                    <div class="driver-marker">
+
+                        <svg
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="white"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <circle cx="6" cy="18" r="2.5"></circle>
+                            <circle cx="18" cy="18" r="2.5"></circle>
+
+                            <path d="M6 18h6"></path>
+                            <path d="M12 18h3"></path>
+                            <path d="M8 15l2-5h5l3 5"></path>
+                            <path d="M10 10h3"></path>
+                            <path d="M15 10l2-2"></path>
+                            <path d="M9 15H5"></path>
+                        </svg>
+
+                    </div>
+                </div>
+
+            </div>
+        `,
+
+        iconSize: [52, 52],
+        iconAnchor: [26, 26],
+    });
+
+// ----------------------------------------------------
+// CALCULATE DRIVER DIRECTION
+// ----------------------------------------------------
+
+const calculateBearing = (start, end) => {
+    if (!start || !end) return 0;
+
+    const startLat = start[0] * (Math.PI / 180);
+    const startLng = start[1] * (Math.PI / 180);
+
+    const endLat = end[0] * (Math.PI / 180);
+    const endLng = end[1] * (Math.PI / 180);
+
+    const longitudeDifference = endLng - startLng;
+
+    const y =
+        Math.sin(longitudeDifference) *
+        Math.cos(endLat);
+
+    const x =
+        Math.cos(startLat) * Math.sin(endLat) -
+        Math.sin(startLat) *
+        Math.cos(endLat) *
+        Math.cos(longitudeDifference);
+
+    const bearing =
+        Math.atan2(y, x) * (180 / Math.PI);
+
+    return (bearing + 360) % 360;
+};
 
 // ----------------------------------------------------
 // AUTO-ADJUST MAP BOUNDS
@@ -95,15 +137,12 @@ const MapBounds = ({
     routeCoords,
 }) => {
     const map = useMap();
+
     const hasInitiallyFitted = useRef(false);
 
     useEffect(() => {
         if (!driverPos || !customerPos) return;
 
-        /*
-         * When a route exists, fit the entire route.
-         * Otherwise, fit only the two markers.
-         */
         const positions =
             routeCoords.length > 0
                 ? routeCoords
@@ -111,10 +150,6 @@ const MapBounds = ({
 
         const bounds = L.latLngBounds(positions);
 
-        /*
-         * Avoid repeatedly resetting the user's zoom whenever
-         * the animated driver marker changes.
-         */
         if (!hasInitiallyFitted.current) {
             map.fitBounds(bounds, {
                 padding: [50, 50],
@@ -142,15 +177,23 @@ export default function LiveMap({
     customerLocation,
 }) {
     const [routeCoords, setRouteCoords] = useState([]);
-    const [routeLoading, setRouteLoading] = useState(false);
-    const [routeError, setRouteError] = useState(false);
 
-    /*
-     * The animated driver location may update many times per second.
-     * We therefore round the coordinates used for OSRM requests.
-     *
-     * This prevents a new API request on every animation frame.
-     */
+    const [routeLoading, setRouteLoading] =
+        useState(false);
+
+    const [routeError, setRouteError] =
+        useState(false);
+
+    const [driverHeading, setDriverHeading] =
+        useState(0);
+
+    const previousDriverPositionRef =
+        useRef(null);
+
+    // ------------------------------------------------
+    // NORMALIZE DRIVER LOCATION
+    // ------------------------------------------------
+
     const routeDriverLocation = useMemo(() => {
         if (
             driverLocation?.lat == null ||
@@ -172,6 +215,8 @@ export default function LiveMap({
         return {
             lat,
             lng,
+
+            // Rounded location used only for OSRM requests
             routeLat: Number(lat.toFixed(4)),
             routeLng: Number(lng.toFixed(4)),
         };
@@ -179,6 +224,10 @@ export default function LiveMap({
         driverLocation?.lat,
         driverLocation?.lng,
     ]);
+
+    // ------------------------------------------------
+    // NORMALIZE CUSTOMER LOCATION
+    // ------------------------------------------------
 
     const normalizedCustomerLocation = useMemo(() => {
         if (
@@ -222,6 +271,62 @@ export default function LiveMap({
         : null;
 
     // ------------------------------------------------
+    // CALCULATE DRIVER HEADING
+    // ------------------------------------------------
+
+    useEffect(() => {
+        if (!driverPos) return;
+
+        const previousPosition =
+            previousDriverPositionRef.current;
+
+        if (previousPosition) {
+            const latitudeDifference =
+                Math.abs(
+                    driverPos[0] -
+                    previousPosition[0]
+                );
+
+            const longitudeDifference =
+                Math.abs(
+                    driverPos[1] -
+                    previousPosition[1]
+                );
+
+            /*
+             * Ignore extremely tiny position changes.
+             * This prevents the icon from rotating randomly
+             * because of GPS noise.
+             */
+            const hasMeaningfulMovement =
+                latitudeDifference > 0.000001 ||
+                longitudeDifference > 0.000001;
+
+            if (hasMeaningfulMovement) {
+                const newHeading =
+                    calculateBearing(
+                        previousPosition,
+                        driverPos
+                    );
+
+                setDriverHeading(newHeading);
+            }
+        }
+
+        previousDriverPositionRef.current =
+            driverPos;
+    }, [
+        driverPos?.[0],
+        driverPos?.[1],
+    ]);
+
+    // Generate a new icon only when heading changes
+    const rotatingDriverIcon = useMemo(
+        () => createDriverIcon(driverHeading),
+        [driverHeading]
+    );
+
+    // ------------------------------------------------
     // FETCH ACTUAL ROAD ROUTE FROM OSRM
     // ------------------------------------------------
 
@@ -234,7 +339,8 @@ export default function LiveMap({
             return;
         }
 
-        const controller = new AbortController();
+        const controller =
+            new AbortController();
 
         const fetchRoute = async () => {
             try {
@@ -254,10 +360,13 @@ export default function LiveMap({
                     normalizedCustomerLocation.lat;
 
                 const url =
-                    `https://router.project-osrm.org/route/v1/driving/` +
+                    "https://router.project-osrm.org/" +
+                    "route/v1/driving/" +
                     `${driverLng},${driverLat};` +
                     `${customerLng},${customerLat}` +
-                    `?overview=full&geometries=geojson&steps=false`;
+                    "?overview=full" +
+                    "&geometries=geojson" +
+                    "&steps=false";
 
                 const response = await fetch(url, {
                     signal: controller.signal,
@@ -269,31 +378,40 @@ export default function LiveMap({
                     );
                 }
 
-                const data = await response.json();
+                const data =
+                    await response.json();
 
                 if (
                     data.code !== "Ok" ||
                     !data.routes?.length ||
-                    !data.routes[0]?.geometry?.coordinates
+                    !data.routes[0]?.geometry
+                        ?.coordinates
                 ) {
-                    throw new Error("No road route found");
+                    throw new Error(
+                        "No road route found"
+                    );
                 }
 
                 /*
-                 * OSRM returns:
+                 * OSRM:
                  * [longitude, latitude]
                  *
-                 * Leaflet requires:
+                 * Leaflet:
                  * [latitude, longitude]
                  */
                 const coordinates =
                     data.routes[0].geometry.coordinates.map(
-                        ([lng, lat]) => [lat, lng]
+                        ([lng, lat]) => [
+                            lat,
+                            lng,
+                        ]
                     );
 
                 setRouteCoords(coordinates);
             } catch (error) {
-                if (error.name === "AbortError") {
+                if (
+                    error.name === "AbortError"
+                ) {
                     return;
                 }
 
@@ -304,10 +422,7 @@ export default function LiveMap({
 
                 setRouteError(true);
 
-                /*
-                 * Fallback straight line so the map
-                 * does not become empty.
-                 */
+                // Straight-line fallback
                 setRouteCoords([
                     [
                         routeDriverLocation.lat,
@@ -325,11 +440,8 @@ export default function LiveMap({
             }
         };
 
-        /*
-         * Small delay prevents rapid OSRM requests
-         * while location data is changing.
-         */
-        const timeout = setTimeout(fetchRoute, 400);
+        const timeout =
+            setTimeout(fetchRoute, 400);
 
         return () => {
             clearTimeout(timeout);
@@ -347,9 +459,8 @@ export default function LiveMap({
     }
 
     return (
-        <div
-            className="relative h-full w-full overflow-hidden rounded-2xl"
-        >
+        <div className="relative h-full w-full overflow-hidden rounded-2xl">
+
             <MapContainer
                 center={driverPos}
                 zoom={14}
@@ -360,10 +471,11 @@ export default function LiveMap({
                 }}
                 zoomControl={false}
             >
+
                 {/* Dark map tiles */}
                 <TileLayer
                     url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-                    attribution='&copy; OpenStreetMap contributors &copy; CARTO'
+                    attribution="&copy; OpenStreetMap contributors &copy; CARTO"
                 />
 
                 {driverPos && customerPos && (
@@ -388,7 +500,7 @@ export default function LiveMap({
                     />
                 )}
 
-                {/* Main highlighted road route */}
+                {/* Main road route */}
                 {routeCoords.length > 0 && (
                     <Polyline
                         positions={routeCoords}
@@ -396,6 +508,7 @@ export default function LiveMap({
                             color: routeError
                                 ? "#64748b"
                                 : "#10b981",
+
                             weight: 6,
                             opacity: 0.95,
                             lineCap: "round",
@@ -404,28 +517,29 @@ export default function LiveMap({
                     />
                 )}
 
-                {/* Optional inner route highlight */}
-                {routeCoords.length > 0 && !routeError && (
-                    <Polyline
-                        positions={routeCoords}
-                        pathOptions={{
-                            color: "#6ee7b7",
-                            weight: 2,
-                            opacity: 0.7,
-                            lineCap: "round",
-                            lineJoin: "round",
-                        }}
-                    />
-                )}
+                {/* Inner route highlight */}
+                {routeCoords.length > 0 &&
+                    !routeError && (
+                        <Polyline
+                            positions={routeCoords}
+                            pathOptions={{
+                                color: "#6ee7b7",
+                                weight: 2,
+                                opacity: 0.7,
+                                lineCap: "round",
+                                lineJoin: "round",
+                            }}
+                        />
+                    )}
 
-                {/* Driver marker */}
+                {/* Rotating driver marker */}
                 <Marker
                     position={driverPos}
-                    icon={driverIcon}
+                    icon={rotatingDriverIcon}
                     zIndexOffset={1000}
                 />
 
-                {/* Customer destination marker */}
+                {/* Customer destination */}
                 {customerPos && (
                     <Marker
                         position={customerPos}
@@ -433,21 +547,24 @@ export default function LiveMap({
                         zIndexOffset={900}
                     />
                 )}
+
             </MapContainer>
 
             {/* Route loading indicator */}
             {routeLoading && (
-                <div className="pointer-events-none absolute bottom-4 left-1/2 z-[1000] -translate-x-1/2 rounded-full border border-white/10 bg-black/75 px-4 py-2 text-xs font-medium text-white/70 shadow-lg backdrop-blur-md">
+                <div className="pointer-events-none absolute bottom-4 left-1/2 z-[1000] -translate-x-1/2 whitespace-nowrap rounded-full border border-white/10 bg-black/75 px-4 py-2 text-xs font-medium text-white/70 shadow-lg backdrop-blur-md">
                     Updating road route...
                 </div>
             )}
 
-            {/* Fallback warning */}
-            {routeError && !routeLoading && (
-                <div className="pointer-events-none absolute bottom-4 left-1/2 z-[1000] -translate-x-1/2 whitespace-nowrap rounded-full border border-amber-500/20 bg-black/75 px-4 py-2 text-xs font-medium text-amber-300 shadow-lg backdrop-blur-md">
-                    Road route unavailable. Showing approximate path.
-                </div>
-            )}
+            {/* Route fallback warning */}
+            {routeError &&
+                !routeLoading && (
+                    <div className="pointer-events-none absolute bottom-4 left-1/2 z-[1000] -translate-x-1/2 whitespace-nowrap rounded-full border border-amber-500/20 bg-black/75 px-4 py-2 text-xs font-medium text-amber-300 shadow-lg backdrop-blur-md">
+                        Road route unavailable. Showing approximate path.
+                    </div>
+                )}
+
         </div>
     );
 }
