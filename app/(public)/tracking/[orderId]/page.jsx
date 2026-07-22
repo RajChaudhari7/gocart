@@ -1475,7 +1475,7 @@ export default function TrackingPage() {
                                                                         }`}
                                                                 >
                                                                     {
-                                                                        TRACKING_DESCRIPTIONS[
+                                                                        STATUS_MESSAGES[
                                                                         step.key
                                                                         ]
                                                                     }
