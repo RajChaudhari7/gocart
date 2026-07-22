@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import Image from "next/image";
@@ -206,6 +206,10 @@ export default function TrackingPage() {
     const [hasShownNearby, setHasShownNearby] = useState(false);
     const [hasShownArrived, setHasShownArrived] = useState(false);
 
+    const [animatedDriverLocation, setAnimatedDriverLocation] = useState(null);
+
+    const animationRef = useRef(null);
+
     // Real-time driver location state
     const [driverLocation, setDriverLocation] = useState(null);
     const [deliveryInfo, setDeliveryInfo] = useState({
@@ -275,6 +279,88 @@ export default function TrackingPage() {
         return () => clearInterval(interval);
 
     }, [orderId, getToken]);
+
+    const animateDriverMarker = (
+        startLocation,
+        endLocation,
+        duration = 4000
+    ) => {
+
+        if (!startLocation || !endLocation) {
+            setAnimatedDriverLocation(endLocation);
+            return;
+        }
+
+        if (animationRef.current) {
+            cancelAnimationFrame(animationRef.current);
+        }
+
+        const startTime = performance.now();
+
+        const startLat = Number(startLocation.lat);
+        const startLng = Number(startLocation.lng);
+
+        const endLat = Number(endLocation.lat);
+        const endLng = Number(endLocation.lng);
+
+        const animate = (currentTime) => {
+
+            const elapsed = currentTime - startTime;
+
+            const progress = Math.min(elapsed / duration, 1);
+
+            // Smooth easing instead of linear movement
+            const easedProgress =
+                progress < 0.5
+                    ? 2 * progress * progress
+                    : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+
+            const currentLat =
+                startLat + (endLat - startLat) * easedProgress;
+
+            const currentLng =
+                startLng + (endLng - startLng) * easedProgress;
+
+            setAnimatedDriverLocation({
+                lat: currentLat,
+                lng: currentLng
+            });
+
+            if (progress < 1) {
+                animationRef.current = requestAnimationFrame(animate);
+            }
+        };
+
+        animationRef.current = requestAnimationFrame(animate);
+    };
+
+    useEffect(() => {
+
+        if (
+            driverLocation?.lat == null ||
+            driverLocation?.lng == null
+        ) {
+            return;
+        }
+
+        const nextLocation = {
+            lat: Number(driverLocation.lat),
+            lng: Number(driverLocation.lng)
+        };
+
+        if (!animatedLocationRef.current) {
+            animatedLocationRef.current = nextLocation;
+            setAnimatedDriverLocation(nextLocation);
+            return;
+        }
+
+        animateDriverMarker(
+            animatedLocationRef.current,
+            nextLocation,
+            4000
+        );
+
+    }, [driverLocation?.lat, driverLocation?.lng]);
 
     useEffect(() => {
 
@@ -982,7 +1068,7 @@ export default function TrackingPage() {
 
                                     {customerLocation && (
                                         <LiveMap
-                                            driverLocation={driverLocation}
+                                            driverLocation={animatedDriverLocation || driverLocation}
                                             customerLocation={customerLocation}
                                         />
                                     )}
