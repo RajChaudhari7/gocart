@@ -202,6 +202,10 @@ export default function TrackingPage() {
     const [loading, setLoading] = useState(true);
     const [lineHeight, setLineHeight] = useState(0);
 
+    const [nearbyMessage, setNearbyMessage] = useState("");
+    const [hasShownNearby, setHasShownNearby] = useState(false);
+    const [hasShownArrived, setHasShownArrived] = useState(false);
+
     // Real-time driver location state
     const [driverLocation, setDriverLocation] = useState(null);
     const [deliveryInfo, setDeliveryInfo] = useState({
@@ -366,6 +370,39 @@ export default function TrackingPage() {
         driverLocation?.lng,
         customerLocation?.lat,
         customerLocation?.lng,
+    ]);
+
+    useEffect(() => {
+
+        if (!deliveryInfo?.distanceKm) return;
+
+        const distanceMeters = deliveryInfo.distanceKm * 1000;
+
+        if (
+            distanceMeters <= 100 &&
+            !hasShownArrived
+        ) {
+            toast.success("Your delivery partner has arrived.");
+            setNearbyMessage("🚪 Your delivery partner has arrived.");
+            setHasShownArrived(true);
+
+        }
+
+        else if (
+            distanceMeters <= 500 &&
+            !hasShownNearby
+        ) {
+
+            toast.success("Your delivery partner is nearby.");
+            setNearbyMessage("🚚 Your delivery partner is nearby.");
+            setHasShownNearby(true);
+
+        }
+
+    }, [
+        deliveryInfo.distanceKm,
+        hasShownNearby,
+        hasShownArrived
     ]);
 
     useEffect(() => {
@@ -539,6 +576,36 @@ export default function TrackingPage() {
                                         </div>
 
                                     </div>
+
+                                    {nearbyMessage && order.status !== "DELIVERED" && (
+
+                                        <div className="mb-5 overflow-hidden rounded-2xl border border-emerald-500/30 bg-gradient-to-r from-emerald-500/15 to-green-500/10 p-4">
+
+                                            <div className="flex items-center gap-3">
+
+                                                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500/20">
+
+                                                    🚚
+
+                                                </div>
+
+                                                <div>
+
+                                                    <p className="font-semibold text-emerald-300">
+                                                        {nearbyMessage}
+                                                    </p>
+
+                                                    <p className="text-sm text-white/60">
+                                                        Please be ready to receive your order.
+                                                    </p>
+
+                                                </div>
+
+                                            </div>
+
+                                        </div>
+
+                                    )}
 
                                     {/* Driver Profile */}
                                     <div className="flex items-center gap-4">
