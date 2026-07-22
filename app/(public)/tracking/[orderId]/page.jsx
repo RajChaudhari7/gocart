@@ -209,6 +209,7 @@ export default function TrackingPage() {
     const [animatedDriverLocation, setAnimatedDriverLocation] = useState(null);
 
     const animationRef = useRef(null);
+    const animatedLocationRef = useRef(null);
 
     // Real-time driver location state
     const [driverLocation, setDriverLocation] = useState(null);
@@ -287,7 +288,10 @@ export default function TrackingPage() {
     ) => {
 
         if (!startLocation || !endLocation) {
+
+            animatedLocationRef.current = endLocation;
             setAnimatedDriverLocation(endLocation);
+
             return;
         }
 
@@ -321,10 +325,13 @@ export default function TrackingPage() {
             const currentLng =
                 startLng + (endLng - startLng) * easedProgress;
 
-            setAnimatedDriverLocation({
+            const nextPosition = {
                 lat: currentLat,
                 lng: currentLng
-            });
+            };
+
+            animatedLocationRef.current = nextPosition;
+            setAnimatedDriverLocation(nextPosition);
 
             if (progress < 1) {
                 animationRef.current = requestAnimationFrame(animate);
@@ -361,6 +368,14 @@ export default function TrackingPage() {
         );
 
     }, [driverLocation?.lat, driverLocation?.lng]);
+
+    useEffect(() => {
+        return () => {
+            if (animationRef.current) {
+                cancelAnimationFrame(animationRef.current);
+            }
+        };
+    }, []);
 
     useEffect(() => {
 
