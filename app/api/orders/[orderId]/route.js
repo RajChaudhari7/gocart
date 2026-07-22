@@ -31,6 +31,7 @@ export async function GET(request, { params }) {
                 },
                 address: true,
                 driver: true,
+                driverRating: true,
                 store: true, // Helpful if you want to show store details later
             },
         });
