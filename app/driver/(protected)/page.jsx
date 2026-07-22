@@ -31,6 +31,7 @@ import axios from "axios";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import Loading from "@/components/Loading";
+import { useDriver } from "@/context/DriverContext";
 
 import {
     BarChart,
@@ -82,29 +83,14 @@ const formatCurrency = (value) => {
 export default function DriverDashboard() {
     const router = useRouter();
 
+    const { driver, isOnline, activeOrder, toggleStatus, refreshDriver, setActiveOrder, statusUpdating } = useDriver();
+
     /*
      * Authentication and dashboard data
      */
-    const [driver, setDriver] = useState(null);
     const [dashboard, setDashboard] = useState(null);
-
     const [isLoading, setIsLoading] = useState(true);
     const [dashboardLoading, setDashboardLoading] = useState(false);
-
-    /*
-     * Driver availability
-     *
-     * This currently controls the UI.
-     * Later, it can be connected to an API that updates:
-     * Driver.isOnline and Driver.isAvailable.
-     */
-    const [isOnline, setIsOnline] = useState(true);
-    const [isUpdatingAvailability, setIsUpdatingAvailability] =
-        useState(false);
-
-    /*
-     * Incoming-order state
-     */
     const [incomingOrder, setIncomingOrder] = useState(null);
     const [ignoredOrders, setIgnoredOrders] = useState([]);
     const [countdown, setCountdown] = useState(60);
@@ -163,48 +149,6 @@ export default function DriverDashboard() {
     }, []);
 
     /*
-     * Read the logged-in driver safely from localStorage.
-     */
-    useEffect(() => {
-        const storedDriver =
-            localStorage.getItem("driver");
-
-        if (!storedDriver) {
-            router.replace("/driver/login");
-            return;
-        }
-
-        try {
-            const parsedDriver =
-                JSON.parse(storedDriver);
-
-            if (!parsedDriver?.id) {
-                throw new Error(
-                    "Invalid driver session"
-                );
-            }
-
-            setDriver(parsedDriver);
-
-            setIsOnline(
-                parsedDriver.isOnline ??
-                parsedDriver.isAvailable ??
-                true
-            );
-
-            setIsLoading(false);
-        } catch (error) {
-            console.error(
-                "Invalid stored driver:",
-                error
-            );
-
-            localStorage.removeItem("driver");
-            router.replace("/driver/login");
-        }
-    }, [router]);
-
-    /*
      * Play notification audio while an order request is visible.
      */
     useEffect(() => {
@@ -261,6 +205,14 @@ export default function DriverDashboard() {
                     data.dashboard ||
                     data
                 );
+
+                setActiveOrder(
+                    data.dashboardData?.activeOrder ||
+                    data.dashboard?.activeOrder ||
+                    data.activeOrder ||
+                    null
+                );
+
             } catch (error) {
                 console.error(
                     "Failed to fetch driver dashboard:",
@@ -545,6 +497,7 @@ export default function DriverDashboard() {
 
             toast.success("Order accepted");
 
+            await refreshDriver();
             await fetchDashboard();
 
             router.push("/driver/orders");
@@ -602,6 +555,8 @@ export default function DriverDashboard() {
                 );
 
                 await fetchDashboard();
+                await refreshDriver();
+
             } catch (error) {
                 console.error(
                     "Failed to reassign order:",
@@ -681,80 +636,12 @@ export default function DriverDashboard() {
     ]);
 
     /*
-     * UI availability toggle.
-     *
-     * Currently this changes the dashboard state and polling.
-     * Replace the commented API call with your availability API
-     * when that route is ready.
-     */
-    const handleAvailabilityToggle =
-        async () => {
-            if (isUpdatingAvailability) return;
-
-            const nextOnlineState = !isOnline;
-
-            try {
-                setIsUpdatingAvailability(true);
-
-                /*
-                await axios.patch(
-                    "/api/driver/availability",
-                    {
-                        driverId: driver.id,
-                        isOnline: nextOnlineState,
-                        isAvailable: nextOnlineState,
-                    }
-                );
-                */
-
-                setIsOnline(nextOnlineState);
-
-                const updatedDriver = {
-                    ...driver,
-                    isOnline: nextOnlineState,
-                    isAvailable:
-                        nextOnlineState,
-                };
-
-                setDriver(updatedDriver);
-
-                localStorage.setItem(
-                    "driver",
-                    JSON.stringify(updatedDriver)
-                );
-
-                toast.success(
-                    nextOnlineState
-                        ? "You are now online"
-                        : "You are now offline"
-                );
-            } catch (error) {
-                console.error(
-                    "Failed to update availability:",
-                    error
-                );
-
-                toast.error(
-                    error?.response?.data?.error ||
-                    "Unable to update availability"
-                );
-            } finally {
-                setIsUpdatingAvailability(false);
-            }
-        };
-
-    /*
      * Derived dashboard values
      */
     const greeting = useMemo(
         () => getGreeting(),
         []
     );
-
-    const activeOrder =
-        dashboard?.activeOrder ||
-        dashboard?.currentOrder ||
-        null;
 
     const driverName =
         dashboard?.driver?.name ||
@@ -981,12 +868,8 @@ export default function DriverDashboard() {
 
                             <button
                                 type="button"
-                                onClick={
-                                    handleAvailabilityToggle
-                                }
-                                disabled={
-                                    isUpdatingAvailability
-                                }
+                                onClick={toggleStatus}
+                                disabled={statusUpdating}
                                 className={`flex min-h-[96px] min-w-[180px] items-center justify-center gap-3 rounded-3xl border px-6 py-5 font-semibold transition duration-300 disabled:cursor-not-allowed disabled:opacity-60 ${isOnline
                                     ? "border-red-400/20 bg-red-400/10 text-red-200 hover:bg-red-400/20"
                                     : "border-emerald-400/20 bg-emerald-400/10 text-emerald-200 hover:bg-emerald-400/20"
@@ -994,11 +877,13 @@ export default function DriverDashboard() {
                             >
                                 <Power size={21} />
 
-                                {isUpdatingAvailability
+                                {statusUpdating
                                     ? "Updating..."
-                                    : isOnline
-                                        ? "Go Offline"
-                                        : "Go Online"}
+                                    : activeOrder && isOnline
+                                        ? "On Delivery"
+                                        : isOnline
+                                            ? "Go Offline"
+                                            : "Go Online"}
 
                             </button>
 
