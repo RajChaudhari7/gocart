@@ -174,6 +174,30 @@ const formatArrivalTime = (minutes) => {
     });
 };
 
+const getMovementStatus = (speedKmh, orderStatus) => {
+    if (orderStatus === "DELIVERED") {
+        return "Delivery completed";
+    }
+
+    if (speedKmh < 1) {
+        return "Stopped";
+    }
+
+    if (speedKmh < 8) {
+        return "Moving slowly";
+    }
+
+    if (speedKmh < 25) {
+        return "Moving";
+    }
+
+    if (speedKmh < 45) {
+        return "Moving steadily";
+    }
+
+    return "Moving quickly";
+};
+
 const LiveMap = dynamic(() => import("@/components/LiveMap"), {
     ssr: false,
     loading: () => <div className="h-full w-full flex items-center justify-center text-white/50 bg-white/5 animate-pulse">Loading Live Map...</div>
@@ -290,6 +314,16 @@ export default function TrackingPage() {
 
     const animationRef = useRef(null);
     const animatedLocationRef = useRef(null);
+
+    const [driverMovement, setDriverMovement] = useState({
+        speedKmh: 0,
+        movementStatus: "Waiting for location",
+        isMoving: false,
+        lastUpdatedAt: null,
+    });
+
+    const previousGpsRef = useRef(null);
+    const smoothedSpeedRef = useRef(0);
 
     // Real-time driver location state
     const [driverLocation, setDriverLocation] = useState(null);
@@ -458,18 +492,166 @@ export default function TrackingPage() {
     }, []);
 
     useEffect(() => {
-
         if (!order?.driver?.id) return;
 
-        if (!order.driver.latitude) return;
+        if (
+            order.driver.latitude == null ||
+            order.driver.longitude == null
+        ) {
+            return;
+        }
+
+        const latitude = Number(order.driver.latitude);
+        const longitude = Number(order.driver.longitude);
+
+        if (
+            !Number.isFinite(latitude) ||
+            !Number.isFinite(longitude)
+        ) {
+            return;
+        }
 
         setDriverLocation({
-            lat: order.driver.latitude,
-            lng: order.driver.longitude
+            lat: latitude,
+            lng: longitude,
+        });
+    }, [
+        order?.driver?.id,
+        order?.driver?.latitude,
+        order?.driver?.longitude,
+    ]);
+
+    useEffect(() => {
+        if (
+            driverLocation?.lat == null ||
+            driverLocation?.lng == null
+        ) {
+            return;
+        }
+
+        const currentPosition = {
+            lat: Number(driverLocation.lat),
+            lng: Number(driverLocation.lng),
+            timestamp: Date.now(),
+        };
+
+        const previousPosition = previousGpsRef.current;
+
+        // First GPS update: store it and wait for the next one
+        if (!previousPosition) {
+            previousGpsRef.current = currentPosition;
+
+            setDriverMovement({
+                speedKmh: 0,
+                movementStatus: "Location connected",
+                isMoving: false,
+                lastUpdatedAt: currentPosition.timestamp,
+            });
+
+            return;
+        }
+
+        const elapsedMilliseconds =
+            currentPosition.timestamp -
+            previousPosition.timestamp;
+
+        const elapsedSeconds =
+            elapsedMilliseconds / 1000;
+
+        /*
+         * Ignore invalid or extremely fast duplicate updates.
+         * Your location currently refreshes approximately every 5 seconds.
+         */
+        if (elapsedSeconds < 1) {
+            return;
+        }
+
+        const distanceKm = calculateDistance(
+            previousPosition.lat,
+            previousPosition.lng,
+            currentPosition.lat,
+            currentPosition.lng
+        );
+
+        /*
+         * Raw speed:
+         * speed = distance / time
+         */
+        let rawSpeedKmh =
+            distanceKm / (elapsedSeconds / 3600);
+
+        if (!Number.isFinite(rawSpeedKmh)) {
+            rawSpeedKmh = 0;
+        }
+
+        /*
+         * GPS can drift slightly even while the driver is stopped.
+         * Treat movement below 5 metres as GPS noise.
+         */
+        const distanceMeters = distanceKm * 1000;
+
+        if (distanceMeters < 5) {
+            rawSpeedKmh = 0;
+        }
+
+        /*
+         * A delivery bike showing more than 90 km/h is probably
+         * a temporary GPS jump, so ignore that reading.
+         */
+        if (rawSpeedKmh > 90) {
+            previousGpsRef.current = currentPosition;
+            return;
+        }
+
+        /*
+         * Smooth the speed:
+         * 35% new reading + 65% previous reading
+         *
+         * This prevents the UI from jumping:
+         * 10 → 31 → 8 → 27 km/h
+         */
+        const smoothedSpeed =
+            rawSpeedKmh === 0
+                ? 0
+                : smoothedSpeedRef.current === 0
+                    ? rawSpeedKmh
+                    : rawSpeedKmh * 0.35 +
+                    smoothedSpeedRef.current * 0.65;
+
+        const roundedSpeed =
+            Math.round(smoothedSpeed);
+
+        smoothedSpeedRef.current = smoothedSpeed;
+
+        setDriverMovement({
+            speedKmh: roundedSpeed,
+            movementStatus: getMovementStatus(
+                roundedSpeed,
+                order?.status
+            ),
+            isMoving: roundedSpeed >= 1,
+            lastUpdatedAt: currentPosition.timestamp,
         });
 
-    }, [order]);
+        previousGpsRef.current = currentPosition;
+    }, [
+        driverLocation?.lat,
+        driverLocation?.lng,
+        order?.status,
+    ]);
 
+    useEffect(() => {
+        if (order?.status !== "DELIVERED") return;
+
+        smoothedSpeedRef.current = 0;
+
+        setDriverMovement((current) => ({
+            ...current,
+            speedKmh: 0,
+            movementStatus: "Delivery completed",
+            isMoving: false,
+        }));
+    }, [order?.status]);
 
     const currentStep = order ? (TRACK_INDEX[order.status] ?? 0) : 0;
 
@@ -852,6 +1034,40 @@ export default function TrackingPage() {
 
                                                 </div>
 
+                                                {/* Live driver movement */}
+                                                <div
+                                                    className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 ${driverMovement.isMoving
+                                                        ? "border-emerald-500/20 bg-emerald-500/10"
+                                                        : "border-white/10 bg-white/5"
+                                                        }`}
+                                                >
+                                                    <span className="relative flex h-2 w-2">
+                                                        {driverMovement.isMoving && (
+                                                            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                                                        )}
+
+                                                        <span
+                                                            className={`relative inline-flex h-2 w-2 rounded-full ${driverMovement.isMoving
+                                                                ? "bg-emerald-500"
+                                                                : "bg-white/30"
+                                                                }`}
+                                                        />
+                                                    </span>
+
+                                                    <span
+                                                        className={`text-xs font-medium ${driverMovement.isMoving
+                                                            ? "text-emerald-300"
+                                                            : "text-white/50"
+                                                            }`}
+                                                    >
+                                                        {order.status === "DELIVERED"
+                                                            ? "Completed"
+                                                            : driverMovement.speedKmh > 0
+                                                                ? `${driverMovement.speedKmh} km/h`
+                                                                : driverMovement.movementStatus}
+                                                    </span>
+                                                </div>
+
                                             </div>
 
                                         </div>
@@ -859,7 +1075,7 @@ export default function TrackingPage() {
                                     </div>
 
                                     {/* Current Delivery Information */}
-                                    <div className="mt-6 grid grid-cols-2 gap-3">
+                                    <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
 
                                         <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
 
@@ -876,6 +1092,35 @@ export default function TrackingPage() {
                                             <p className="mt-2 text-sm font-semibold text-white">
                                                 {currentStatus?.title || "Delivery in progress"}
                                             </p>
+
+                                        </div>
+
+                                        <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+
+                                            <div className="flex items-center gap-2 text-white/45">
+                                                <Truck size={14} />
+
+                                                <span className="text-xs">
+                                                    Driver Movement
+                                                </span>
+                                            </div>
+
+                                            <p
+                                                className={`mt-2 text-sm font-semibold ${driverMovement.isMoving
+                                                        ? "text-emerald-400"
+                                                        : "text-white/60"
+                                                    }`}
+                                            >
+                                                {driverMovement.movementStatus}
+                                            </p>
+
+                                            {order.status !== "DELIVERED" && (
+                                                <p className="mt-1 text-xs text-white/35">
+                                                    {driverMovement.speedKmh > 0
+                                                        ? `${driverMovement.speedKmh} km/h`
+                                                        : "0 km/h"}
+                                                </p>
+                                            )}
 
                                         </div>
 
