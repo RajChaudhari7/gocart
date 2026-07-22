@@ -306,9 +306,10 @@ model Driver {
   vehicle   String?
   vehicleNo String?
 
-  latitude     Float?
-  longitude    Float?
-  profilePhoto String?
+  latitude          Float?
+  longitude         Float?
+  locationUpdatedAt DateTime?
+  profilePhoto      String?
 
   reassignCount Int @default(0)
 
