@@ -241,6 +241,38 @@ const STATUS_MESSAGES = {
     },
 };
 
+const TRACKING_DESCRIPTIONS = {
+    ORDER_PLACED:
+        "We received your order successfully.",
+
+    ORDER_CONFIRMED:
+        "The store accepted and confirmed your order.",
+
+    ORDER_PACKING:
+        "The store is preparing your items carefully.",
+
+    ORDER_PACKED:
+        "Your package is ready for pickup.",
+
+    DRIVER_ASSIGNED:
+        "A delivery partner has been assigned.",
+
+    REACHED_SHOP:
+        "Your delivery partner reached the store.",
+
+    PICKED_UP:
+        "The driver collected your order from the store.",
+
+    OUT_FOR_DELIVERY:
+        "Your order is heading towards your location.",
+
+    DELIVERY_INITIATED:
+        "The driver is near you. Keep your OTP ready.",
+
+    DELIVERED:
+        "Your order was delivered successfully.",
+};
+
 export default function TrackingPage() {
     const { orderId } = useParams();
     const router = useRouter();
@@ -1475,7 +1507,7 @@ export default function TrackingPage() {
                                                                         }`}
                                                                 >
                                                                     {
-                                                                        STATUS_MESSAGES[
+                                                                        TRACKING_DESCRIPTIONS[
                                                                         step.key
                                                                         ]
                                                                     }
