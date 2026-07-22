@@ -578,8 +578,8 @@ export default function TrackingPage() {
                                                     />
 
                                                     <span className="text-xs font-semibold text-amber-200">
-                                                        {order.driver.rating
-                                                            ? Number(order.driver.rating).toFixed(1)
+                                                        {order.driver.totalRatings > 0
+                                                            ? `${Number(order.driver.averageRating).toFixed(1)} (${order.driver.totalRatings})`
                                                             : "New"}
                                                     </span>
 
@@ -633,15 +633,21 @@ export default function TrackingPage() {
                                                 <Clock3 size={14} />
 
                                                 <span className="text-xs">
-                                                    Arriving In
+                                                    {order.status === "DELIVERED"
+                                                        ? "Delivered At"
+                                                        : "Arriving In"}
                                                 </span>
 
                                             </div>
 
                                             <p className="mt-2 text-sm font-semibold text-emerald-400">
-                                                {deliveryInfo.etaMinutes != null
-                                                    ? `${deliveryInfo.etaMinutes} min`
-                                                    : "Calculating..."}
+
+                                                {order.status === "DELIVERED"
+                                                    ? new Date(order.updatedAt).toLocaleString()
+                                                    : deliveryInfo.etaMinutes != null
+                                                        ? `${deliveryInfo.etaMinutes} min`
+                                                        : "Calculating..."}
+
                                             </p>
 
                                         </div>
