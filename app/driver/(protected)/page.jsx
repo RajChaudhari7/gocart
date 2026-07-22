@@ -83,13 +83,12 @@ const formatCurrency = (value) => {
 export default function DriverDashboard() {
     const router = useRouter();
 
-    const { driver, isOnline, activeOrder, toggleStatus, refreshDriver, setActiveOrder, statusUpdating } = useDriver();
+    const { driver, isOnline, activeOrder, toggleStatus, refreshDriver, setActiveOrder, statusUpdating, loading } = useDriver();
 
     /*
      * Authentication and dashboard data
      */
     const [dashboard, setDashboard] = useState(null);
-    const [isLoading, setIsLoading] = useState(true);
     const [dashboardLoading, setDashboardLoading] = useState(false);
     const [incomingOrder, setIncomingOrder] = useState(null);
     const [ignoredOrders, setIgnoredOrders] = useState([]);
@@ -293,12 +292,6 @@ export default function DriverDashboard() {
         };
     }, [driver?.id, fetchDashboard]);
 
-    /*
-     * Add an order to the temporary ignored list.
-     *
-     * It prevents the same popup from repeatedly opening while
-     * the backend is processing acceptance or reassignment.
-     */
     const addIgnoredOrder = useCallback(
         (orderId) => {
             if (!orderId) return;
@@ -714,8 +707,12 @@ export default function DriverDashboard() {
         },
     ];
 
-    if (isLoading) {
+    if (loading) {
         return <Loading />;
+    }
+
+    if (!driver) {
+        return null;
     }
 
     return (
