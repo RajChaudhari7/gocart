@@ -63,6 +63,54 @@ const formatDateTime = (dateStr) => {
     });
 };
 
+const getRelativeTime = (dateStr) => {
+    if (!dateStr) return null;
+
+    const date = new Date(dateStr);
+    const now = new Date();
+
+    const differenceSeconds = Math.floor(
+        (now.getTime() - date.getTime()) / 1000
+    );
+
+    if (differenceSeconds < 10) {
+        return "Just now";
+    }
+
+    if (differenceSeconds < 60) {
+        return `${differenceSeconds} seconds ago`;
+    }
+
+    const differenceMinutes = Math.floor(
+        differenceSeconds / 60
+    );
+
+    if (differenceMinutes < 60) {
+        return `${differenceMinutes} ${differenceMinutes === 1 ? "minute" : "minutes"
+            } ago`;
+    }
+
+    const differenceHours = Math.floor(
+        differenceMinutes / 60
+    );
+
+    if (differenceHours < 24) {
+        return `${differenceHours} ${differenceHours === 1 ? "hour" : "hours"
+            } ago`;
+    }
+
+    const differenceDays = Math.floor(
+        differenceHours / 24
+    );
+
+    if (differenceDays < 7) {
+        return `${differenceDays} ${differenceDays === 1 ? "day" : "days"
+            } ago`;
+    }
+
+    return formatDateTime(dateStr);
+};
+
 const toRadians = (degrees) => {
     return degrees * (Math.PI / 180);
 };
@@ -394,7 +442,7 @@ export default function TrackingPage() {
     const currentStep = order ? (TRACK_INDEX[order.status] ?? 0) : 0;
 
     const progressPercentage =
-        (currentStep / (TRACKING_STEPS.length - 1)) * 100;
+        ((currentStep + 1) / TRACKING_STEPS.length) * 100;
 
     const currentStatus =
         STATUS_MESSAGES[order?.status] || {
@@ -403,6 +451,11 @@ export default function TrackingPage() {
         };
 
     const statusHistory = order?.statusHistory || {};
+
+    const deliveredAt =
+        statusHistory?.DELIVERED ||
+        order?.deliveredAt ||
+        order?.updatedAt;
 
     const customerLocation =
         order?.address?.latitude != null &&
@@ -1095,63 +1148,471 @@ export default function TrackingPage() {
                                     </div>
                                 </div>
                             )}
-                        {/* TIMELINE */}
-                        <div className="bg-white/5 border border-white/10 rounded-2xl p-8 backdrop-blur-xl shadow-2xl relative">
-                            <h2 className="text-lg font-semibold mb-8 border-b border-white/10 pb-4">Tracking Timeline</h2>
+                        {/* PREMIUM TRACKING TIMELINE */}
+                        <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-white/[0.07] via-white/[0.03] to-indigo-500/[0.07] p-5 shadow-2xl backdrop-blur-xl sm:p-8">
 
-                            <div className="relative pl-6">
-                                {/* Static Base Line */}
-                                <div className="absolute left-4 top-0 bottom-0 w-[2px] bg-white/10"></div>
+                            {/* Decorative background glow */}
+                            <div className="pointer-events-none absolute -right-24 -top-24 h-56 w-56 rounded-full bg-indigo-500/10 blur-3xl" />
 
-                                {/* Animated Progress Line */}
-                                <motion.div
-                                    initial={{ height: 0 }}
-                                    animate={{ height: `${getLineHeight()}%` }}
-                                    transition={{ duration: 1, ease: "easeOut" }}
-                                    className="absolute left-4 top-0 w-[2px] bg-emerald-500"
-                                />
+                            <div className="pointer-events-none absolute -bottom-24 -left-24 h-56 w-56 rounded-full bg-emerald-500/10 blur-3xl" />
 
-                                {/* Timeline Steps */}
-                                {TRACKING_STEPS.map((step, index) => {
-                                    const Icon = step.icon;
-                                    const isCompleted = index < currentStep;
-                                    const isActive = index === currentStep;
-                                    const updatedAt = statusHistory[step.key];
-                                    const formattedDate = formatDateTime(updatedAt);
+                            <div className="relative">
 
-                                    return (
-                                        <div key={step.key} className="flex gap-6 mb-8 last:mb-0 relative">
-                                            {/* Icon */}
-                                            <div
-                                                className={`
-                          w-10 h-10 flex items-center justify-center rounded-full border-2 relative z-10 -ml-5 shadow-lg bg-[#020617]
-                          ${isCompleted ? "border-emerald-400 text-emerald-400" : ""}
-                          ${isActive ? "border-indigo-400 text-indigo-400 animate-pulse shadow-[0_0_15px_rgba(99,102,241,0.5)]" : ""}
-                          ${!isCompleted && !isActive ? "border-white/20 text-white/40" : ""}
-                        `}
-                                            >
-                                                <Icon size={18} />
-                                            </div>
+                                {/* Header */}
+                                <div className="mb-8 flex flex-col gap-5 border-b border-white/10 pb-7 sm:flex-row sm:items-center sm:justify-between">
 
-                                            {/* Text Context */}
-                                            <div className="pt-2">
-                                                <p className={`text-base font-semibold tracking-wide
-                                                    ${isCompleted || isActive ? "text-white" : "text-white/40"}`}>
-                                                    {step.label}
-                                                </p>
-                                                <p className={`text-sm mt-1 ${isCompleted || isActive ? "text-white/60" : "text-white/30"}`}>
-                                                    {formattedDate || (isCompleted ? "Completed" : isActive ? "In Progress..." : "Pending update...")}
-                                                </p>
-                                            </div>
+                                    <div>
+
+                                        <div className="mb-2 flex items-center gap-2">
+
+                                            <span className="relative flex h-2.5 w-2.5">
+
+                                                {order.status !== "DELIVERED" && (
+                                                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                                                )}
+
+                                                <span
+                                                    className={`relative inline-flex h-2.5 w-2.5 rounded-full ${order.status === "DELIVERED"
+                                                        ? "bg-indigo-400"
+                                                        : "bg-emerald-500"
+                                                        }`}
+                                                />
+
+                                            </span>
+
+                                            <p className="text-sm font-medium text-emerald-300">
+                                                {order.status === "DELIVERED"
+                                                    ? "Delivery completed"
+                                                    : "Live order progress"}
+                                            </p>
+
                                         </div>
-                                    );
-                                })}
+
+                                        <h2 className="text-2xl font-bold text-white">
+                                            Tracking Timeline
+                                        </h2>
+
+                                        <p className="mt-2 text-sm text-white/45">
+                                            Follow every step of your delivery journey.
+                                        </p>
+
+                                    </div>
+
+                                    {/* Percentage */}
+                                    <div className="flex items-center gap-4">
+
+                                        <div className="text-right">
+
+                                            <p className="text-xs uppercase tracking-wider text-white/35">
+                                                Progress
+                                            </p>
+
+                                            <p className="mt-1 text-2xl font-bold text-emerald-400">
+                                                {Math.round(progressPercentage)}%
+                                            </p>
+
+                                        </div>
+
+                                        <div className="relative flex h-16 w-16 items-center justify-center rounded-full border border-emerald-500/20 bg-emerald-500/10">
+
+                                            <svg
+                                                className="absolute h-16 w-16 -rotate-90"
+                                                viewBox="0 0 64 64"
+                                            >
+                                                <circle
+                                                    cx="32"
+                                                    cy="32"
+                                                    r="27"
+                                                    fill="none"
+                                                    stroke="rgba(255,255,255,0.08)"
+                                                    strokeWidth="5"
+                                                />
+
+                                                <motion.circle
+                                                    cx="32"
+                                                    cy="32"
+                                                    r="27"
+                                                    fill="none"
+                                                    stroke="rgb(52,211,153)"
+                                                    strokeWidth="5"
+                                                    strokeLinecap="round"
+                                                    strokeDasharray={169.65}
+                                                    initial={{
+                                                        strokeDashoffset: 169.65,
+                                                    }}
+                                                    animate={{
+                                                        strokeDashoffset:
+                                                            169.65 -
+                                                            (169.65 *
+                                                                progressPercentage) /
+                                                            100,
+                                                    }}
+                                                    transition={{
+                                                        duration: 1.2,
+                                                        ease: "easeOut",
+                                                    }}
+                                                />
+                                            </svg>
+
+                                            <PackageCheck
+                                                size={22}
+                                                className="text-emerald-300"
+                                            />
+
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+                                {/* Horizontal progress bar */}
+                                <div className="mb-10">
+
+                                    <div className="mb-2 flex items-center justify-between text-xs">
+
+                                        <span className="text-white/40">
+                                            Order placed
+                                        </span>
+
+                                        <span className="font-medium text-emerald-300">
+                                            {currentStatus.title}
+                                        </span>
+
+                                    </div>
+
+                                    <div className="h-2.5 overflow-hidden rounded-full bg-white/10">
+
+                                        <motion.div
+                                            initial={{ width: 0 }}
+                                            animate={{
+                                                width: `${progressPercentage}%`,
+                                            }}
+                                            transition={{
+                                                duration: 1.3,
+                                                ease: "easeOut",
+                                            }}
+                                            className="relative h-full rounded-full bg-gradient-to-r from-emerald-400 via-teal-400 to-indigo-500"
+                                        >
+                                            {order.status !== "DELIVERED" && (
+                                                <motion.div
+                                                    animate={{
+                                                        x: ["-100%", "250%"],
+                                                    }}
+                                                    transition={{
+                                                        duration: 2,
+                                                        repeat: Infinity,
+                                                        ease: "linear",
+                                                    }}
+                                                    className="absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-white/50 to-transparent"
+                                                />
+                                            )}
+                                        </motion.div>
+
+                                    </div>
+
+                                </div>
+
+                                {/* Timeline cards */}
+                                <div className="relative">
+
+                                    {/* Background connector */}
+                                    <div className="absolute bottom-8 left-6 top-8 w-[3px] rounded-full bg-white/10 sm:left-7" />
+
+                                    {/* Completed connector */}
+                                    <motion.div
+                                        initial={{ height: 0 }}
+                                        animate={{
+                                            height: `${getLineHeight()}%`,
+                                        }}
+                                        transition={{
+                                            duration: 1.2,
+                                            ease: "easeOut",
+                                        }}
+                                        className="absolute left-6 top-8 w-[3px] rounded-full bg-gradient-to-b from-emerald-400 via-teal-400 to-indigo-500 sm:left-7"
+                                    />
+
+                                    <div className="space-y-5">
+
+                                        {TRACKING_STEPS.map((step, index) => {
+
+                                            const Icon = step.icon;
+
+                                            const isCompleted =
+                                                index < currentStep;
+
+                                            const isActive =
+                                                index === currentStep;
+
+                                            const isPending =
+                                                index > currentStep;
+
+                                            const updatedAt =
+                                                statusHistory[step.key];
+
+                                            const formattedDate =
+                                                formatDateTime(updatedAt);
+
+                                            const relativeTime =
+                                                getRelativeTime(updatedAt);
+
+                                            return (
+                                                <motion.div
+                                                    key={step.key}
+                                                    initial={{
+                                                        opacity: 0,
+                                                        x: -20,
+                                                    }}
+                                                    animate={{
+                                                        opacity: 1,
+                                                        x: 0,
+                                                    }}
+                                                    transition={{
+                                                        delay: index * 0.06,
+                                                        duration: 0.4,
+                                                    }}
+                                                    className="relative flex gap-4 sm:gap-6"
+                                                >
+
+                                                    {/* Timeline icon */}
+                                                    <div className="relative z-10 shrink-0">
+
+                                                        {isActive &&
+                                                            order.status !==
+                                                            "DELIVERED" && (
+                                                                <span className="absolute inset-0 animate-ping rounded-2xl bg-indigo-500/30" />
+                                                            )}
+
+                                                        <div
+                                                            className={`
+                                        relative flex h-12 w-12 items-center justify-center rounded-2xl border-2 shadow-xl transition-all duration-500 sm:h-14 sm:w-14
+                                        ${isCompleted
+                                                                    ? "border-emerald-400/60 bg-emerald-500/15 text-emerald-300 shadow-emerald-500/10"
+                                                                    : ""
+                                                                }
+                                        ${isActive
+                                                                    ? "border-indigo-400 bg-gradient-to-br from-indigo-500/30 to-emerald-500/20 text-white shadow-[0_0_25px_rgba(99,102,241,0.35)]"
+                                                                    : ""
+                                                                }
+                                        ${isPending
+                                                                    ? "border-white/10 bg-[#0b1120] text-white/25"
+                                                                    : ""
+                                                                }
+                                    `}
+                                                        >
+
+                                                            {isCompleted ? (
+                                                                <CheckCircle size={22} />
+                                                            ) : (
+                                                                <Icon size={22} />
+                                                            )}
+
+                                                        </div>
+
+                                                    </div>
+
+                                                    {/* Timeline card */}
+                                                    <div
+                                                        className={`
+                                    min-w-0 flex-1 rounded-2xl border p-4 transition-all duration-500 sm:p-5
+                                    ${isCompleted
+                                                                ? "border-emerald-500/15 bg-emerald-500/[0.06]"
+                                                                : ""
+                                                            }
+                                    ${isActive
+                                                                ? "border-indigo-400/35 bg-gradient-to-r from-indigo-500/15 via-white/[0.06] to-emerald-500/10 shadow-xl"
+                                                                : ""
+                                                            }
+                                    ${isPending
+                                                                ? "border-white/[0.06] bg-black/10 opacity-60"
+                                                                : ""
+                                                            }
+                                `}
+                                                    >
+
+                                                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+
+                                                            <div className="min-w-0">
+
+                                                                <div className="flex flex-wrap items-center gap-2">
+
+                                                                    <h3
+                                                                        className={`font-semibold ${isPending
+                                                                            ? "text-white/40"
+                                                                            : "text-white"
+                                                                            }`}
+                                                                    >
+                                                                        {step.label}
+                                                                    </h3>
+
+                                                                    {isCompleted && (
+                                                                        <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-emerald-300">
+                                                                            Completed
+                                                                        </span>
+                                                                    )}
+
+                                                                    {isActive &&
+                                                                        order.status !==
+                                                                        "DELIVERED" && (
+                                                                            <span className="rounded-full border border-indigo-400/25 bg-indigo-500/15 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-indigo-300">
+                                                                                In progress
+                                                                            </span>
+                                                                        )}
+
+                                                                    {step.key ===
+                                                                        "DELIVERED" &&
+                                                                        isActive && (
+                                                                            <span className="rounded-full border border-emerald-400/25 bg-emerald-500/15 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-emerald-300">
+                                                                                Delivered
+                                                                            </span>
+                                                                        )}
+
+                                                                </div>
+
+                                                                <p
+                                                                    className={`mt-2 text-sm leading-relaxed ${isPending
+                                                                        ? "text-white/25"
+                                                                        : "text-white/55"
+                                                                        }`}
+                                                                >
+                                                                    {
+                                                                        TRACKING_DESCRIPTIONS[
+                                                                        step.key
+                                                                        ]
+                                                                    }
+                                                                </p>
+
+                                                            </div>
+
+                                                            {/* Date and time */}
+                                                            <div className="shrink-0 sm:text-right">
+
+                                                                {updatedAt ? (
+                                                                    <>
+                                                                        <p className="text-xs font-medium text-emerald-300">
+                                                                            {relativeTime}
+                                                                        </p>
+
+                                                                        <p className="mt-1 text-xs text-white/35">
+                                                                            {formattedDate}
+                                                                        </p>
+                                                                    </>
+                                                                ) : (
+                                                                    <p className="text-xs text-white/25">
+                                                                        Waiting for update
+                                                                    </p>
+                                                                )}
+
+                                                            </div>
+
+                                                        </div>
+
+                                                        {/* Active status indicator */}
+                                                        {isActive &&
+                                                            order.status !==
+                                                            "DELIVERED" && (
+                                                                <div className="mt-4 flex items-center gap-2 border-t border-white/10 pt-4">
+
+                                                                    <span className="relative flex h-2 w-2">
+
+                                                                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-indigo-400 opacity-75" />
+
+                                                                        <span className="relative inline-flex h-2 w-2 rounded-full bg-indigo-400" />
+
+                                                                    </span>
+
+                                                                    <p className="text-xs text-indigo-200/70">
+                                                                        We will update this status automatically.
+                                                                    </p>
+
+                                                                </div>
+                                                            )}
+
+                                                    </div>
+
+                                                </motion.div>
+                                            );
+                                        })}
+
+                                    </div>
+
+                                </div>
+
+                                {/* Delivered success card */}
+                                {order.status === "DELIVERED" && (
+                                    <motion.div
+                                        initial={{
+                                            opacity: 0,
+                                            scale: 0.95,
+                                            y: 20,
+                                        }}
+                                        animate={{
+                                            opacity: 1,
+                                            scale: 1,
+                                            y: 0,
+                                        }}
+                                        transition={{
+                                            delay: 0.4,
+                                            duration: 0.5,
+                                        }}
+                                        className="mt-10 overflow-hidden rounded-3xl border border-emerald-400/25 bg-gradient-to-br from-emerald-500/20 via-white/[0.06] to-indigo-500/15 p-6 text-center shadow-[0_0_40px_rgba(16,185,129,0.12)] sm:p-8"
+                                    >
+
+                                        <motion.div
+                                            initial={{
+                                                scale: 0,
+                                                rotate: -30,
+                                            }}
+                                            animate={{
+                                                scale: 1,
+                                                rotate: 0,
+                                            }}
+                                            transition={{
+                                                delay: 0.6,
+                                                type: "spring",
+                                                stiffness: 180,
+                                            }}
+                                            className="mx-auto flex h-20 w-20 items-center justify-center rounded-full border border-emerald-400/30 bg-emerald-500/20"
+                                        >
+                                            <CheckCircle
+                                                size={40}
+                                                className="text-emerald-300"
+                                            />
+                                        </motion.div>
+
+                                        <h3 className="mt-5 text-2xl font-bold text-white">
+                                            Delivered Successfully
+                                        </h3>
+
+                                        <p className="mx-auto mt-2 max-w-md text-sm text-white/50">
+                                            Your order reached its destination. We hope you enjoy your purchase.
+                                        </p>
+
+                                        <div className="mx-auto mt-5 inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/20 px-4 py-2">
+
+                                            <Clock3
+                                                size={14}
+                                                className="text-emerald-300"
+                                            />
+
+                                            <span className="text-xs text-white/55">
+                                                Delivered at{" "}
+                                                <strong className="font-semibold text-white">
+                                                    {formatDateTime(deliveredAt)}
+                                                </strong>
+                                            </span>
+
+                                        </div>
+
+                                    </motion.div>
+                                )}
+
                             </div>
+
                         </div>
                     </div>
-
                 </div>
             </div>
+
         </div>
-    );
+    )
 }
