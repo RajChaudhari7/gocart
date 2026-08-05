@@ -7,6 +7,20 @@ import DeliveryMap from "@/components/DeliveryMap";
 import Image from "next/image";
 import { Package } from "lucide-react";
 
+const hasValidCoordinates = (lat, lng) => {
+  const latitude = Number(lat);
+  const longitude = Number(lng);
+
+  return (
+    Number.isFinite(latitude) &&
+    Number.isFinite(longitude) &&
+    latitude >= -90 &&
+    latitude <= 90 &&
+    longitude >= -180 &&
+    longitude <= 180
+  );
+};
+
 export default function DriverOrders() {
   const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -93,27 +107,48 @@ export default function DriverOrders() {
 
   useEffect(() => {
     const driverId = getDriverId();
-    if (!driverId) return;
+
+    if (!driverId || !navigator.geolocation) {
+      return;
+    }
 
     const watchId = navigator.geolocation.watchPosition(
       async (position) => {
-        const { latitude, longitude } = position.coords;
-        setDriverLocation([latitude, longitude]); // IMPORTANT: Update state here
+        const latitude = Number(position.coords.latitude);
+        const longitude = Number(position.coords.longitude);
+
+        if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+          return;
+        }
+
+        setDriverLocation({
+          lat: latitude,
+          lng: longitude,
+        });
+
         try {
           await axios.post("/api/driver/update-location", {
-            driverId: getDriverId(),
+            driverId,
             latitude,
             longitude,
           });
         } catch (error) {
-          console.error(error);
+          console.error("Failed to update driver location:", error);
         }
       },
-      (error) => console.error(error),
-      { enableHighAccuracy: true },
+      (error) => {
+        console.error("Unable to access location:", error);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 5000,
+      },
     );
 
-    return () => navigator.geolocation.clearWatch(watchId);
+    return () => {
+      navigator.geolocation.clearWatch(watchId);
+    };
   }, []);
 
   const fetchOrders = async () => {
@@ -443,26 +478,58 @@ export default function DriverOrders() {
                     key={order.id}
                     className="bg-white border border-gray-100 shadow-sm hover:shadow-md transition-shadow rounded-2xl p-5 md:p-6"
                   >
-                    {driverLocation && (
-                      <DeliveryMap
-                        driverPos={driverLocation}
-                        destinationPos={
-                          ["DRIVER_ASSIGNED", "REACHED_SHOP"].includes(
-                            order.status,
-                          )
-                            ? [order.store?.latitude, order.store?.longitude]
-                            : [
-                                order.address?.latitude,
-                                order.address?.longitude,
-                              ]
-                        }
-                        // Logic to switch icon color
-                        isGoingToShop={[
-                          "DRIVER_ASSIGNED",
-                          "REACHED_SHOP",
-                        ].includes(order.status)}
-                      />
-                    )}
+                    {(() => {
+                      const isGoingToShop = [
+                        "DRIVER_ASSIGNED",
+                        "REACHED_SHOP",
+                      ].includes(order.status);
+
+                      const destinationLat = isGoingToShop
+                        ? order.store?.latitude
+                        : order.address?.latitude;
+
+                      const destinationLng = isGoingToShop
+                        ? order.store?.longitude
+                        : order.address?.longitude;
+
+                      const canShowMap =
+                        hasValidCoordinates(
+                          driverLocation?.lat,
+                          driverLocation?.lng,
+                        ) &&
+                        hasValidCoordinates(destinationLat, destinationLng);
+
+                      if (!canShowMap) {
+                        return (
+                          <div className="mb-4 flex h-64 w-full items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 p-5 text-center">
+                            <div>
+                              <p className="font-medium text-slate-600">
+                                Map location unavailable
+                              </p>
+
+                              <p className="mt-1 text-xs text-slate-400">
+                                Waiting for valid driver and destination
+                                coordinates.
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <DeliveryMap
+                          driverPos={{
+                            lat: Number(driverLocation.lat),
+                            lng: Number(driverLocation.lng),
+                          }}
+                          destinationPos={{
+                            lat: Number(destinationLat),
+                            lng: Number(destinationLng),
+                          }}
+                          isGoingToShop={isGoingToShop}
+                        />
+                      );
+                    })()}
 
                     <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-6">
                       <div>
