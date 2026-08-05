@@ -49,8 +49,8 @@ export default function DeliveryMap({
   if (!driverPos || !destinationPos) return null;
 
   return (
-    <div className="mb-4 h-52 w-full overflow-hidden rounded-2xl border-2 border-indigo-100 shadow-inner sm:h-64">
-      <MapContainer center={driverPos} zoom={15} className="h-full w-full">
+    <div className="relative z-0 mb-4 h-52 w-full overflow-hidden rounded-2xl border-2 border-indigo-100 shadow-inner sm:h-64">
+      <MapContainer center={driverPos} zoom={15} className="h-full w-full z-0">
         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
 
         {/* Route Path (The highlighted road) */}
