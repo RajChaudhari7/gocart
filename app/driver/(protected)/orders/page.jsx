@@ -548,24 +548,26 @@ export default function DriverOrders() {
 
   return (
     <div className="space-y-6">
-      <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8">
-        <div className="max-w-3xl mx-auto">
-          <header className="mb-8 flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
+      <div className="min-h-screen bg-gray-50 px-3 py-4 sm:px-4 md:p-6 lg:p-8">
+        <div className="mx-auto w-full max-w-4xl">
+          <header className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">
                 Delivery Dashboard
               </h1>
-              <p className="text-gray-500 text-sm mt-1">
+
+              <p className="mt-1 text-sm text-gray-500">
                 Manage your active assignments
               </p>
             </div>
+
             <button
+              type="button"
               onClick={fetchOrders}
-              className="p-2 bg-white border shadow-sm rounded-full hover:bg-gray-50 transition"
-              title="Refresh Orders"
+              className="flex w-full items-center justify-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50 sm:w-auto sm:rounded-full sm:p-3"
             >
               <svg
-                className="w-5 h-5 text-gray-600"
+                className="h-5 w-5"
                 fill="none"
                 strokeWidth="2"
                 stroke="currentColor"
@@ -575,13 +577,15 @@ export default function DriverOrders() {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                ></path>
+                />
               </svg>
+
+              <span className="sm:hidden">Refresh Orders</span>
             </button>
           </header>
 
           {incomingOrder && (
-            <div className="fixed top-6 right-6 z-50 bg-white shadow-2xl border border-gray-100 rounded-2xl p-5 w-80 animate-in slide-in-from-top-4 duration-300">
+            <div className="fixed inset-x-3 top-3 z-[100] mx-auto max-h-[calc(100vh-1.5rem)] w-auto max-w-md overflow-y-auto rounded-3xl border border-gray-100 bg-white p-4 shadow-2xl sm:inset-x-auto sm:right-6 sm:top-6 sm:w-96 sm:p-5">
               <div className="flex items-center gap-3 mb-2">
                 <div className="bg-blue-100 p-2 rounded-full">
                   <svg
@@ -740,7 +744,7 @@ export default function DriverOrders() {
                 return (
                   <div
                     key={order.id}
-                    className="bg-white border border-gray-100 shadow-sm hover:shadow-md transition-shadow rounded-2xl p-5 md:p-6"
+                    className="overflow-hidden rounded-3xl border border-gray-100 bg-white p-3 shadow-sm transition-shadow hover:shadow-md sm:p-5 md:p-6"
                   >
                     {driverLocation && (
                       <DeliveryMap
@@ -765,7 +769,7 @@ export default function DriverOrders() {
 
                     <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-6">
                       <div>
-                        <div className="flex items-center gap-3 mb-3">
+                        <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                           <h2 className="text-lg font-bold text-gray-900">
                             {order.user?.name}
                           </h2>
@@ -791,12 +795,12 @@ export default function DriverOrders() {
                               </p>
                             </div>
 
-                            <div className="flex items-center gap-2">
-                              <span className="rounded-full bg-indigo-100 px-3 py-1 text-xs font-semibold text-indigo-700">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="rounded-full bg-indigo-100 px-2.5 py-1 text-[11px] font-semibold text-indigo-700 sm:px-3 sm:text-xs">
                                 {totalProducts} products
                               </span>
 
-                              <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
+                              <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 sm:px-3 sm:text-xs">
                                 {totalQuantity} units
                               </span>
                             </div>
@@ -812,10 +816,10 @@ export default function DriverOrders() {
                                 return (
                                   <div
                                     key={`${order.id}-${item.productId}`}
-                                    className="flex items-center gap-3 p-4"
+                                    className="grid grid-cols-[48px_minmax(0,1fr)] gap-3 p-3 sm:grid-cols-[56px_minmax(0,1fr)_auto] sm:items-center sm:p-4"
                                   >
                                     {/* Product Image */}
-                                    <div className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-gray-50">
+                                    <div className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-gray-50 sm:h-14 sm:w-14">
                                       {item.product?.images?.[0] ? (
                                         <Image
                                           src={item.product.images[0]}
@@ -858,14 +862,20 @@ export default function DriverOrders() {
                                     </div>
 
                                     {/* Item Total */}
-                                    <div className="shrink-0 text-right">
-                                      <p className="text-sm font-bold text-gray-900">
-                                        ₹{itemTotal.toFixed(2)}
-                                      </p>
-
-                                      <p className="text-[11px] text-gray-400">
+                                    <div className="col-span-2 flex items-center justify-between border-t border-gray-100 pt-2 text-right sm:col-span-1 sm:block sm:border-0 sm:pt-0">
+                                      <p className="text-xs text-gray-400 sm:hidden">
                                         Item total
                                       </p>
+
+                                      <div>
+                                        <p className="text-sm font-bold text-gray-900">
+                                          ₹{itemTotal.toFixed(2)}
+                                        </p>
+
+                                        <p className="hidden text-[11px] text-gray-400 sm:block">
+                                          Item total
+                                        </p>
+                                      </div>
                                     </div>
                                   </div>
                                 );
@@ -878,7 +888,7 @@ export default function DriverOrders() {
                           </div>
                         </div>
 
-                        <div className="flex items-start gap-2 text-gray-600 text-sm bg-gray-50 p-3 rounded-lg">
+                        <div className="flex items-start gap-3 rounded-2xl bg-gray-50 p-3 text-sm text-gray-600 sm:p-4">
                           <svg
                             className="w-5 h-5 text-gray-400 mt-0.5 shrink-0"
                             fill="none"
