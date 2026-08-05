@@ -7,20 +7,6 @@ import DeliveryMap from "@/components/DeliveryMap";
 import Image from "next/image";
 import { Package } from "lucide-react";
 
-const hasValidCoordinates = (lat, lng) => {
-  const latitude = Number(lat);
-  const longitude = Number(lng);
-
-  return (
-    Number.isFinite(latitude) &&
-    Number.isFinite(longitude) &&
-    latitude >= -90 &&
-    latitude <= 90 &&
-    longitude >= -180 &&
-    longitude <= 180
-  );
-};
-
 export default function DriverOrders() {
   const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -107,48 +93,27 @@ export default function DriverOrders() {
 
   useEffect(() => {
     const driverId = getDriverId();
-
-    if (!driverId || !navigator.geolocation) {
-      return;
-    }
+    if (!driverId) return;
 
     const watchId = navigator.geolocation.watchPosition(
       async (position) => {
-        const latitude = Number(position.coords.latitude);
-        const longitude = Number(position.coords.longitude);
-
-        if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
-          return;
-        }
-
-        setDriverLocation({
-          lat: latitude,
-          lng: longitude,
-        });
-
+        const { latitude, longitude } = position.coords;
+        setDriverLocation([latitude, longitude]); // IMPORTANT: Update state here
         try {
           await axios.post("/api/driver/update-location", {
-            driverId,
+            driverId: getDriverId(),
             latitude,
             longitude,
           });
         } catch (error) {
-          console.error("Failed to update driver location:", error);
+          console.error(error);
         }
       },
-      (error) => {
-        console.error("Unable to access location:", error);
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 5000,
-      },
+      (error) => console.error(error),
+      { enableHighAccuracy: true },
     );
 
-    return () => {
-      navigator.geolocation.clearWatch(watchId);
-    };
+    return () => navigator.geolocation.clearWatch(watchId);
   }, []);
 
   const fetchOrders = async () => {
@@ -463,192 +428,294 @@ export default function DriverOrders() {
                 </p>
               </div>
             )}
-            {!isLoading &&
-              orders.map((order) => {
-                const totalProducts = order.orderItems?.length || 0;
+            {!isLoading && orders.map((order) => {
+    const totalProducts =
+        order.orderItems?.length || 0;
 
-                const totalQuantity =
-                  order.orderItems?.reduce(
-                    (sum, item) => sum + Number(item.quantity || 0),
-                    0,
-                  ) || 0;
+    const totalQuantity =
+        order.orderItems?.reduce(
+            (sum, item) =>
+                sum + Number(item.quantity || 0),
+            0
+        ) || 0;
 
-                return (
-                  <div
-                    key={order.id}
-                    className="bg-white border border-gray-100 shadow-sm hover:shadow-md transition-shadow rounded-2xl p-5 md:p-6"
-                  >
-                    {(() => {
-                      const isGoingToShop = [
+    return (
+                <div
+                  key={order.id}
+                  className="bg-white border border-gray-100 shadow-sm hover:shadow-md transition-shadow rounded-2xl p-5 md:p-6"
+                >
+                  {driverLocation && (
+                    <DeliveryMap
+                      driverPos={driverLocation}
+                      destinationPos={
+                        ["DRIVER_ASSIGNED", "REACHED_SHOP"].includes(
+                          order.status,
+                        )
+                          ? [order.store?.latitude, order.store?.longitude]
+                          : [order.address?.latitude, order.address?.longitude]
+                      }
+                      // Logic to switch icon color
+                      isGoingToShop={[
                         "DRIVER_ASSIGNED",
                         "REACHED_SHOP",
-                      ].includes(order.status);
+                      ].includes(order.status)}
+                    />
+                  )}
 
-                      const destinationLat = isGoingToShop
-                        ? order.store?.latitude
-                        : order.address?.latitude;
+                  <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-6">
+                    <div>
+                      <div className="flex items-center gap-3 mb-3">
+                        <h2 className="text-lg font-bold text-gray-900">
+                          {order.user?.name}
+                        </h2>
+                        <StatusBadge status={order.status} />
+                      </div>
 
-                      const destinationLng = isGoingToShop
-                        ? order.store?.longitude
-                        : order.address?.longitude;
+                      {/* Inserted Highlighted Order ID here */}
+                      <HighlightOrderId id={order.id} />
 
-                      const canShowMap =
-                        hasValidCoordinates(
-                          driverLocation?.lat,
-                          driverLocation?.lng,
-                        ) &&
-                        hasValidCoordinates(destinationLat, destinationLng);
+                      <p className="text-xl font-bold text-gray-900 mb-4">
+                        ₹{order.total}
+                      </p>
+                      {/* Order Items Summary */}
+                      <div className="mb-5 overflow-hidden rounded-2xl border border-gray-200">
+                        <div className="flex flex-col gap-3 border-b border-gray-200 bg-gray-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                          <div>
+                            <h3 className="font-bold text-gray-900">
+                              Order Items
+                            </h3>
 
-                      if (!canShowMap) {
-                        return (
-                          <div className="mb-4 flex h-64 w-full items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 p-5 text-center">
-                            <div>
-                              <p className="font-medium text-slate-600">
-                                Map location unavailable
-                              </p>
-
-                              <p className="mt-1 text-xs text-slate-400">
-                                Waiting for valid driver and destination
-                                coordinates.
-                              </p>
-                            </div>
+                            <p className="text-xs text-gray-500">
+                              Verify all products before pickup
+                            </p>
                           </div>
-                        );
-                      }
 
-                      return (
-                        <DeliveryMap
-                          driverPos={{
-                            lat: Number(driverLocation.lat),
-                            lng: Number(driverLocation.lng),
-                          }}
-                          destinationPos={{
-                            lat: Number(destinationLat),
-                            lng: Number(destinationLng),
-                          }}
-                          isGoingToShop={isGoingToShop}
-                        />
-                      );
-                    })()}
+                          <div className="flex items-center gap-2">
+                            <span className="rounded-full bg-indigo-100 px-3 py-1 text-xs font-semibold text-indigo-700">
+                              {totalProducts} products
+                            </span>
 
-                    <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-6">
-                      <div>
-                        <div className="flex items-center gap-3 mb-3">
-                          <h2 className="text-lg font-bold text-gray-900">
-                            {order.user?.name}
-                          </h2>
-                          <StatusBadge status={order.status} />
+                            <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
+                              {totalQuantity} units
+                            </span>
+                          </div>
                         </div>
 
-                        {/* Inserted Highlighted Order ID here */}
-                        <HighlightOrderId id={order.id} />
+                        <div className="divide-y divide-gray-100">
+                          {order.orderItems?.length > 0 ? (
+                            order.orderItems.map((item) => {
+                              const itemTotal =
+                                Number(item.price || 0) *
+                                Number(item.quantity || 0);
 
-                        <p className="text-xl font-bold text-gray-900 mb-4">
-                          ₹{order.total}
-                        </p>
-                        {/* Order Items Summary */}
-                        <div className="mb-5 overflow-hidden rounded-2xl border border-gray-200">
-                          <div className="flex flex-col gap-3 border-b border-gray-200 bg-gray-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                            <div>
-                              <h3 className="font-bold text-gray-900">
-                                Order Items
-                              </h3>
-
-                              <p className="text-xs text-gray-500">
-                                Verify all products before pickup
-                              </p>
-                            </div>
-
-                            <div className="flex items-center gap-2">
-                              <span className="rounded-full bg-indigo-100 px-3 py-1 text-xs font-semibold text-indigo-700">
-                                {totalProducts} products
-                              </span>
-
-                              <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
-                                {totalQuantity} units
-                              </span>
-                            </div>
-                          </div>
-
-                          <div className="divide-y divide-gray-100">
-                            {order.orderItems?.length > 0 ? (
-                              order.orderItems.map((item) => {
-                                const itemTotal =
-                                  Number(item.price || 0) *
-                                  Number(item.quantity || 0);
-
-                                return (
-                                  <div
-                                    key={`${order.id}-${item.productId}`}
-                                    className="flex items-center gap-3 p-4"
-                                  >
-                                    {/* Product Image */}
-                                    <div className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-gray-50">
-                                      {item.product?.images?.[0] ? (
-                                        <Image
-                                          src={item.product.images[0]}
-                                          alt={item.product?.name || "Product"}
-                                          fill
-                                          sizes="56px"
-                                          className="object-contain p-1"
-                                        />
-                                      ) : (
-                                        <Package
-                                          size={22}
-                                          className="text-gray-400"
-                                        />
-                                      )}
-                                    </div>
-
-                                    {/* Product Details */}
-                                    <div className="min-w-0 flex-1">
-                                      <p className="truncate font-semibold text-gray-900">
-                                        {item.product?.name ||
-                                          "Product unavailable"}
-                                      </p>
-
-                                      <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
-                                        <span className="rounded-full bg-blue-50 px-2 py-1 font-semibold text-blue-700">
-                                          Qty: {item.quantity}
-                                        </span>
-
-                                        <span className="text-gray-500">
-                                          ₹{Number(item.price || 0).toFixed(2)}{" "}
-                                          each
-                                        </span>
-                                      </div>
-
-                                      {item.product?.category && (
-                                        <p className="mt-1 text-xs text-gray-400">
-                                          {item.product.category}
-                                        </p>
-                                      )}
-                                    </div>
-
-                                    {/* Item Total */}
-                                    <div className="shrink-0 text-right">
-                                      <p className="text-sm font-bold text-gray-900">
-                                        ₹{itemTotal.toFixed(2)}
-                                      </p>
-
-                                      <p className="text-[11px] text-gray-400">
-                                        Item total
-                                      </p>
-                                    </div>
+                              return (
+                                <div
+                                  key={`${order.id}-${item.productId}`}
+                                  className="flex items-center gap-3 p-4"
+                                >
+                                  {/* Product Image */}
+                                  <div className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-gray-50">
+                                    {item.product?.images?.[0] ? (
+                                      <Image
+                                        src={item.product.images[0]}
+                                        alt={item.product?.name || "Product"}
+                                        fill
+                                        sizes="56px"
+                                        className="object-contain p-1"
+                                      />
+                                    ) : (
+                                      <Package
+                                        size={22}
+                                        className="text-gray-400"
+                                      />
+                                    )}
                                   </div>
-                                );
-                              })
-                            ) : (
-                              <div className="p-5 text-center text-sm text-gray-500">
-                                Product details are unavailable.
-                              </div>
-                            )}
-                          </div>
-                        </div>
 
-                        <div className="flex items-start gap-2 text-gray-600 text-sm bg-gray-50 p-3 rounded-lg">
+                                  {/* Product Details */}
+                                  <div className="min-w-0 flex-1">
+                                    <p className="truncate font-semibold text-gray-900">
+                                      {item.product?.name ||
+                                        "Product unavailable"}
+                                    </p>
+
+                                    <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
+                                      <span className="rounded-full bg-blue-50 px-2 py-1 font-semibold text-blue-700">
+                                        Qty: {item.quantity}
+                                      </span>
+
+                                      <span className="text-gray-500">
+                                        ₹{Number(item.price || 0).toFixed(2)}{" "}
+                                        each
+                                      </span>
+                                    </div>
+
+                                    {item.product?.category && (
+                                      <p className="mt-1 text-xs text-gray-400">
+                                        {item.product.category}
+                                      </p>
+                                    )}
+                                  </div>
+
+                                  {/* Item Total */}
+                                  <div className="shrink-0 text-right">
+                                    <p className="text-sm font-bold text-gray-900">
+                                      ₹{itemTotal.toFixed(2)}
+                                    </p>
+
+                                    <p className="text-[11px] text-gray-400">
+                                      Item total
+                                    </p>
+                                  </div>
+                                </div>
+                              );
+                            })
+                          ) : (
+                            <div className="p-5 text-center text-sm text-gray-500">
+                              Product details are unavailable.
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-start gap-2 text-gray-600 text-sm bg-gray-50 p-3 rounded-lg">
+                        <svg
+                          className="w-5 h-5 text-gray-400 mt-0.5 shrink-0"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.243-4.243a8 8 0 1111.314 0z"
+                          ></path>
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                          ></path>
+                        </svg>
+                        <div>
+                          {["DRIVER_ASSIGNED", "REACHED_SHOP"].includes(
+                            order.status,
+                          ) ? (
+                            <>
+                              <p className="font-medium text-gray-900">
+                                Store: {order.store?.name}
+                              </p>
+                              <p>{order.store?.address}</p>
+                              <p className="text-blue-600 font-semibold">
+                                {order.distanceToStore
+                                  ? `${order.distanceToStore.toFixed(2)} km away`
+                                  : "Calculating distance..."}
+                              </p>
+                            </>
+                          ) : (
+                            <>
+                              <p className="font-medium text-gray-900">
+                                {order.address?.street}
+                              </p>
+                              <p>
+                                {order.address?.city},{order.address?.state}
+                              </p>
+                              <p className="text-blue-600 font-semibold">
+                                {order.distanceToCustomer
+                                  ? `${order.distanceToCustomer.toFixed(2)} km away`
+                                  : "Calculating distance..."}
+                              </p>
+                              <p className="mt-1 font-medium text-blue-600">
+                                {order.address?.phone}
+                              </p>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-4 border-t border-gray-100 flex flex-wrap gap-3">
+                    {order.status === "DRIVER_ASSIGNED" && (
+                      <div className="flex gap-3 w-full">
+                        <a
+                          href={`https://maps.google.com/?q=${order.store?.latitude},${order.store?.longitude}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-1 bg-purple-50 hover:bg-purple-100 text-purple-700 py-2.5 rounded-xl text-center font-medium transition-colors"
+                        >
+                          Navigate
+                        </a>
+
+                        <button
+                          disabled={
+                            !order.distanceToStore ||
+                            order.distanceToStore > 0.1
+                          }
+                          onClick={() => updateStatus(order.id, "REACHED_SHOP")}
+                          className={`flex-1 py-2.5 rounded-xl text-white font-medium transition-colors ${
+                            order.distanceToStore <= 0.1
+                              ? "bg-blue-600 hover:bg-blue-700 shadow-sm shadow-blue-200"
+                              : "bg-gray-400 cursor-not-allowed"
+                          }`}
+                        >
+                          Reached Shop
+                        </button>
+                      </div>
+                    )}
+
+                    {order.status === "REACHED_SHOP" && (
+                      <button
+                        onClick={() => updateStatus(order.id, "PICKED_UP")}
+                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2.5 rounded-xl transition shadow-sm shadow-indigo-200"
+                      >
+                        Confirm Pick Up
+                      </button>
+                    )}
+
+                    {order.status === "PICKED_UP" && (
+                      <button
+                        onClick={() =>
+                          updateStatus(order.id, "OUT_FOR_DELIVERY")
+                        }
+                        className="w-full bg-orange-600 hover:bg-orange-700 text-white font-medium px-4 py-2.5 rounded-xl transition shadow-sm shadow-orange-200"
+                      >
+                        Start Journey
+                      </button>
+                    )}
+
+                    {order.status === "OUT_FOR_DELIVERY" && (
+                      <div className="flex flex-col sm:flex-row gap-3 w-full">
+                        <a
+                          href={`https://maps.google.com/?q=${order.address?.latitude},${order.address?.longitude}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-1 flex items-center justify-center gap-2 bg-purple-50 hover:bg-purple-100 text-purple-700 font-medium px-4 py-2.5 rounded-xl transition-colors"
+                        >
+                          Navigate
+                        </a>
+
+                        <button
+                          onClick={() =>
+                            updateStatus(order.id, "DELIVERY_INITIATED")
+                          }
+                          className="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium px-4 py-2.5 rounded-xl transition shadow-sm shadow-green-200"
+                        >
+                          Arrived At Location
+                        </button>
+                      </div>
+                    )}
+
+                    {order.status === "DELIVERY_INITIATED" && (
+                      <div className="flex flex-col sm:flex-row w-full gap-3">
+                        <a
+                          href={`https://maps.google.com/?q=${order.address?.latitude},${order.address?.longitude}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-1 flex items-center justify-center gap-2 bg-purple-50 hover:bg-purple-100 text-purple-700 font-medium px-4 py-2.5 rounded-xl transition-colors"
+                        >
                           <svg
-                            className="w-5 h-5 text-gray-400 mt-0.5 shrink-0"
+                            className="w-5 h-5"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -657,182 +724,44 @@ export default function DriverOrders() {
                               strokeLinecap="round"
                               strokeLinejoin="round"
                               strokeWidth="2"
-                              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.243-4.243a8 8 0 1111.314 0z"
-                            ></path>
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth="2"
-                              d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                              d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
                             ></path>
                           </svg>
-                          <div>
-                            {["DRIVER_ASSIGNED", "REACHED_SHOP"].includes(
-                              order.status,
-                            ) ? (
-                              <>
-                                <p className="font-medium text-gray-900">
-                                  Store: {order.store?.name}
-                                </p>
-                                <p>{order.store?.address}</p>
-                                <p className="text-blue-600 font-semibold">
-                                  {order.distanceToStore
-                                    ? `${order.distanceToStore.toFixed(2)} km away`
-                                    : "Calculating distance..."}
-                                </p>
-                              </>
-                            ) : (
-                              <>
-                                <p className="font-medium text-gray-900">
-                                  {order.address?.street}
-                                </p>
-                                <p>
-                                  {order.address?.city},{order.address?.state}
-                                </p>
-                                <p className="text-blue-600 font-semibold">
-                                  {order.distanceToCustomer
-                                    ? `${order.distanceToCustomer.toFixed(2)} km away`
-                                    : "Calculating distance..."}
-                                </p>
-                                <p className="mt-1 font-medium text-blue-600">
-                                  {order.address?.phone}
-                                </p>
-                              </>
-                            )}
-                          </div>
-                        </div>
+                          Navigate
+                        </a>
+                        <button
+                          onClick={() => {
+                            setOtpOrder(order);
+                            setShowOtpModal(true);
+                          }}
+                          className="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium px-4 py-2.5 rounded-xl transition shadow-sm shadow-green-200"
+                        >
+                          Verify Delivery OTP
+                        </button>
+                        <button
+                          onClick={async () => {
+                            try {
+                              await axios.post("/api/order/resend-otp", {
+                                orderId: order.id,
+                              });
+                              toast.success("OTP resent successfully");
+                            } catch (error) {
+                              toast.error(
+                                error?.response?.data?.error ||
+                                  "Failed to resend OTP",
+                              );
+                            }
+                          }}
+                          className="flex-1 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 font-medium px-4 py-2.5 rounded-xl transition"
+                        >
+                          Resend OTP
+                        </button>
                       </div>
-                    </div>
-
-                    <div className="pt-4 border-t border-gray-100 flex flex-wrap gap-3">
-                      {order.status === "DRIVER_ASSIGNED" && (
-                        <div className="flex gap-3 w-full">
-                          <a
-                            href={`https://maps.google.com/?q=${order.store?.latitude},${order.store?.longitude}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex-1 bg-purple-50 hover:bg-purple-100 text-purple-700 py-2.5 rounded-xl text-center font-medium transition-colors"
-                          >
-                            Navigate
-                          </a>
-
-                          <button
-                            disabled={
-                              !order.distanceToStore ||
-                              order.distanceToStore > 0.1
-                            }
-                            onClick={() =>
-                              updateStatus(order.id, "REACHED_SHOP")
-                            }
-                            className={`flex-1 py-2.5 rounded-xl text-white font-medium transition-colors ${
-                              order.distanceToStore <= 0.1
-                                ? "bg-blue-600 hover:bg-blue-700 shadow-sm shadow-blue-200"
-                                : "bg-gray-400 cursor-not-allowed"
-                            }`}
-                          >
-                            Reached Shop
-                          </button>
-                        </div>
-                      )}
-
-                      {order.status === "REACHED_SHOP" && (
-                        <button
-                          onClick={() => updateStatus(order.id, "PICKED_UP")}
-                          className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2.5 rounded-xl transition shadow-sm shadow-indigo-200"
-                        >
-                          Confirm Pick Up
-                        </button>
-                      )}
-
-                      {order.status === "PICKED_UP" && (
-                        <button
-                          onClick={() =>
-                            updateStatus(order.id, "OUT_FOR_DELIVERY")
-                          }
-                          className="w-full bg-orange-600 hover:bg-orange-700 text-white font-medium px-4 py-2.5 rounded-xl transition shadow-sm shadow-orange-200"
-                        >
-                          Start Journey
-                        </button>
-                      )}
-
-                      {order.status === "OUT_FOR_DELIVERY" && (
-                        <div className="flex flex-col sm:flex-row gap-3 w-full">
-                          <a
-                            href={`https://maps.google.com/?q=${order.address?.latitude},${order.address?.longitude}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex-1 flex items-center justify-center gap-2 bg-purple-50 hover:bg-purple-100 text-purple-700 font-medium px-4 py-2.5 rounded-xl transition-colors"
-                          >
-                            Navigate
-                          </a>
-
-                          <button
-                            onClick={() =>
-                              updateStatus(order.id, "DELIVERY_INITIATED")
-                            }
-                            className="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium px-4 py-2.5 rounded-xl transition shadow-sm shadow-green-200"
-                          >
-                            Arrived At Location
-                          </button>
-                        </div>
-                      )}
-
-                      {order.status === "DELIVERY_INITIATED" && (
-                        <div className="flex flex-col sm:flex-row w-full gap-3">
-                          <a
-                            href={`https://maps.google.com/?q=${order.address?.latitude},${order.address?.longitude}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex-1 flex items-center justify-center gap-2 bg-purple-50 hover:bg-purple-100 text-purple-700 font-medium px-4 py-2.5 rounded-xl transition-colors"
-                          >
-                            <svg
-                              className="w-5 h-5"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2"
-                                d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
-                              ></path>
-                            </svg>
-                            Navigate
-                          </a>
-                          <button
-                            onClick={() => {
-                              setOtpOrder(order);
-                              setShowOtpModal(true);
-                            }}
-                            className="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium px-4 py-2.5 rounded-xl transition shadow-sm shadow-green-200"
-                          >
-                            Verify Delivery OTP
-                          </button>
-                          <button
-                            onClick={async () => {
-                              try {
-                                await axios.post("/api/order/resend-otp", {
-                                  orderId: order.id,
-                                });
-                                toast.success("OTP resent successfully");
-                              } catch (error) {
-                                toast.error(
-                                  error?.response?.data?.error ||
-                                    "Failed to resend OTP",
-                                );
-                              }
-                            }}
-                            className="flex-1 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 font-medium px-4 py-2.5 rounded-xl transition"
-                          >
-                            Resend OTP
-                          </button>
-                        </div>
-                      )}
-                    </div>
+                    )}
                   </div>
-                );
-              })}
+                 </div>
+              );
+            })}
           </div>
 
           {showOtpModal && otpOrder && (
