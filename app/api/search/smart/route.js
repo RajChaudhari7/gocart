@@ -10,8 +10,10 @@ export async function POST(request) {
       return NextResponse.json({ error: "Query is required" }, { status: 400 });
     }
 
+    const originalQuery = query.trim().toLowerCase();
+
     let aiSearch = {
-      keywords: [query.toLowerCase()],
+      keywords: [originalQuery],
       category: "",
       subCategory: "",
       minPrice: 0,
@@ -19,7 +21,10 @@ export async function POST(request) {
       sort: "POPULAR",
     };
 
-    // ---------- AI SEARCH ----------
+    // ------------------------------------------------
+    // AI QUERY PARSING
+    // ------------------------------------------------
+
     try {
       const completion = await searchAI.chat.completions.create({
         model: process.env.SEARCH_AI_MODEL || "gemini-3-flash-preview",
@@ -43,11 +48,18 @@ Return exactly:
   "sort":"POPULAR"
 }
 
-sort can be:
-POPULAR
-PRICE_LOW
-PRICE_HIGH
-RATING
+Rules:
+
+1. keywords should contain only important product-related words.
+2. Do not add unrelated words.
+3. Keep brand names and product names.
+4. category and subCategory should be empty if uncertain.
+5. minPrice and maxPrice should reflect price requests.
+6. sort can only be:
+   POPULAR
+   PRICE_LOW
+   PRICE_HIGH
+   RATING
 
 Return ONLY JSON.
 `,
@@ -64,16 +76,105 @@ Return ONLY JSON.
       const jsonMatch = raw.match(/\{[\s\S]*\}/);
 
       if (jsonMatch) {
-        aiSearch = JSON.parse(jsonMatch[0]);
+        const parsed = JSON.parse(jsonMatch[0]);
+
+        aiSearch = {
+          ...aiSearch,
+          ...parsed,
+        };
       }
-    } catch (e) {
-      console.log("AI Parsing Failed");
-      console.log(e.message);
+    } catch (error) {
+      console.log("AI Parsing Failed:", error.message);
     }
 
-    //-----------------------------------
-    // Fetch Products
-    //-----------------------------------
+    // ------------------------------------------------
+    // NORMALIZE AI DATA
+    // ------------------------------------------------
+
+    const aiKeywords = Array.isArray(aiSearch.keywords)
+      ? aiSearch.keywords
+          .map((word) => String(word).trim().toLowerCase())
+          .filter(Boolean)
+      : [];
+
+    /*
+     * Always include the original query.
+     * This protects search if the AI returns
+     * incomplete keywords.
+     */
+    const keywords = Array.from(new Set([originalQuery, ...aiKeywords]));
+
+    const minPrice =
+      Number(aiSearch.minPrice) >= 0 ? Number(aiSearch.minPrice) : 0;
+
+    const maxPrice =
+      Number(aiSearch.maxPrice) > 0 ? Number(aiSearch.maxPrice) : 999999;
+
+    // ------------------------------------------------
+    // DATABASE SEARCH CONDITIONS
+    // ------------------------------------------------
+
+    const searchConditions = [];
+
+    /*
+     * Strong match:
+     * search complete user query first.
+     */
+    searchConditions.push(
+      {
+        name: {
+          contains: originalQuery,
+          mode: "insensitive",
+        },
+      },
+      {
+        description: {
+          contains: originalQuery,
+          mode: "insensitive",
+        },
+      },
+    );
+
+    /*
+     * Then search individual AI keywords.
+     */
+    keywords.forEach((keyword) => {
+      searchConditions.push(
+        {
+          name: {
+            contains: keyword,
+            mode: "insensitive",
+          },
+        },
+        {
+          description: {
+            contains: keyword,
+            mode: "insensitive",
+          },
+        },
+        {
+          category: {
+            contains: keyword,
+            mode: "insensitive",
+          },
+        },
+        {
+          subCategory: {
+            contains: keyword,
+            mode: "insensitive",
+          },
+        },
+        {
+          keywords: {
+            has: keyword,
+          },
+        },
+      );
+    });
+
+    // ------------------------------------------------
+    // FETCH ONLY MATCHING PRODUCTS
+    // ------------------------------------------------
 
     const products = await prisma.product.findMany({
       where: {
@@ -88,23 +189,27 @@ Return ONLY JSON.
         },
 
         price: {
-          gte: aiSearch.minPrice || 0,
-          lte: aiSearch.maxPrice || 999999,
+          gte: minPrice,
+          lte: maxPrice,
         },
+
+        OR: searchConditions,
       },
 
       include: {
         store: true,
         rating: true,
       },
+
+      take: 60,
     });
 
-    //-----------------------------------
-    // Score Products
-    //-----------------------------------
+    // ------------------------------------------------
+    // SCORE MATCHING PRODUCTS
+    // ------------------------------------------------
 
     const scored = products.map((product) => {
-      let score = 0;
+      let relevanceScore = 0;
 
       const name = (product.name || "").toLowerCase();
 
@@ -114,81 +219,153 @@ Return ONLY JSON.
 
       const subCategory = (product.subCategory || "").toLowerCase();
 
-      const keywordsArray = Array.isArray(product.keywords)
-        ? product.keywords.map((k) => String(k).toLowerCase())
+      const productKeywords = Array.isArray(product.keywords)
+        ? product.keywords.map((keyword) =>
+            String(keyword).toLowerCase().trim(),
+          )
         : [];
 
-      const keywords = (aiSearch.keywords || []).map((k) => k.toLowerCase());
+      // Exact / strong query match
+      if (name === originalQuery) {
+        relevanceScore += 500;
+      }
 
+      if (name.startsWith(originalQuery)) {
+        relevanceScore += 300;
+      }
+
+      if (name.includes(originalQuery)) {
+        relevanceScore += 250;
+      }
+
+      if (description.includes(originalQuery)) {
+        relevanceScore += 100;
+      }
+
+      // AI keyword matches
       keywords.forEach((keyword) => {
-        if (name.includes(keyword)) score += 120;
+        if (name === keyword) {
+          relevanceScore += 200;
+        }
 
-        if (description.includes(keyword)) score += 60;
+        if (name.startsWith(keyword)) {
+          relevanceScore += 150;
+        }
 
-        if (category.includes(keyword)) score += 80;
+        if (name.includes(keyword)) {
+          relevanceScore += 120;
+        }
 
-        if (subCategory.includes(keyword)) score += 90;
-        if (keywordsArray.some((k) => k.includes(keyword))) {
-          score += 100;
+        if (description.includes(keyword)) {
+          relevanceScore += 40;
+        }
+
+        if (category.includes(keyword)) {
+          relevanceScore += 70;
+        }
+
+        if (subCategory.includes(keyword)) {
+          relevanceScore += 80;
+        }
+
+        if (
+          productKeywords.some(
+            (productKeyword) =>
+              productKeyword === keyword ||
+              productKeyword.includes(keyword) ||
+              keyword.includes(productKeyword),
+          )
+        ) {
+          relevanceScore += 100;
         }
       });
 
-      if (aiSearch.category && product.category === aiSearch.category) {
-        score += 150;
+      // Category intent from AI
+      const aiCategory = String(aiSearch.category || "")
+        .trim()
+        .toLowerCase();
+
+      const aiSubCategory = String(aiSearch.subCategory || "")
+        .trim()
+        .toLowerCase();
+
+      if (aiCategory && category === aiCategory) {
+        relevanceScore += 120;
       }
 
-      if (
-        aiSearch.subCategory &&
-        product.subCategory === aiSearch.subCategory
-      ) {
-        score += 200;
+      if (aiSubCategory && subCategory === aiSubCategory) {
+        relevanceScore += 150;
       }
 
-      score += (product.totalSales || 0) * 3;
-
-      score += (product.averageRating || 0) * 25;
-
-      score += (product.totalViews || 0) * 0.2;
-
-      if (product.featured) score += 100;
+      /*
+       * Popularity is now only a secondary
+       * ranking factor.
+       */
+      const popularityScore =
+        Math.min((product.totalSales || 0) * 2, 100) +
+        Math.min((product.averageRating || 0) * 10, 50) +
+        Math.min((product.totalViews || 0) * 0.05, 50) +
+        (product.featured ? 25 : 0);
 
       return {
         ...product,
-        score,
+
+        relevanceScore,
+
+        score: relevanceScore + popularityScore,
       };
     });
 
-    //-----------------------------------
-    // Sorting
-    //-----------------------------------
+    // ------------------------------------------------
+    // REMOVE WEAK / UNRELATED MATCHES
+    // ------------------------------------------------
+
+    let relevantProducts = scored.filter(
+      (product) => product.relevanceScore > 0,
+    );
+
+    // ------------------------------------------------
+    // SORT
+    // ------------------------------------------------
 
     switch (aiSearch.sort) {
       case "PRICE_LOW":
-        scored.sort((a, b) => a.price - b.price);
+        relevantProducts.sort((a, b) => a.price - b.price);
         break;
 
       case "PRICE_HIGH":
-        scored.sort((a, b) => b.price - a.price);
+        relevantProducts.sort((a, b) => b.price - a.price);
         break;
 
       case "RATING":
-        scored.sort((a, b) => (b.averageRating || 0) - (a.averageRating || 0));
+        relevantProducts.sort(
+          (a, b) => (b.averageRating || 0) - (a.averageRating || 0),
+        );
         break;
 
       default:
-        scored.sort((a, b) => b.score - a.score);
+        relevantProducts.sort((a, b) => b.score - a.score);
     }
 
     return NextResponse.json({
-      products: scored.slice(0, 30),
+      products: relevantProducts.slice(0, 30),
+
+      search: {
+        query: originalQuery,
+        keywords,
+        category: aiSearch.category || "",
+        subCategory: aiSearch.subCategory || "",
+        minPrice,
+        maxPrice,
+        sort: aiSearch.sort || "POPULAR",
+      },
     });
   } catch (error) {
-    console.log("SMART SEARCH ERROR");
-    console.log(error);
+    console.error("SMART SEARCH ERROR:", error);
 
     return NextResponse.json(
       {
-        error: error.message,
+        error: error?.message || "Search failed",
       },
       {
         status: 500,
