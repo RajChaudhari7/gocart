@@ -5,7 +5,13 @@ import axios from "axios";
 import { toast } from "sonner";
 import DeliveryMap from "@/components/DeliveryMap";
 import Image from "next/image";
-import { ArrowRight, ChevronRight, Package, X } from "lucide-react";
+import {
+  ArrowRight,
+  ChevronRight,
+  Package,
+  X,
+  ShieldCheck,
+} from "lucide-react";
 import { motion, useMotionValue, useTransform } from "framer-motion";
 import { useDriver } from "@/context/DriverContext";
 
@@ -1043,45 +1049,207 @@ export default function DriverOrders() {
           </div>
 
           {showOtpModal && otpOrder && (
-            <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-              <div className="bg-white p-6 md:p-8 rounded-2xl w-full max-w-sm shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-                <h2 className="text-xl font-bold text-gray-900 mb-2">
-                  Verify Delivery
-                </h2>
-                <p className="text-gray-500 text-sm mb-6">
-                  Ask the customer for the 6-digit OTP sent to their phone.
-                </p>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/75 p-3 backdrop-blur-md sm:p-4"
+            >
+              {/* Background glow */}
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1.2, opacity: 1 }}
+                transition={{ duration: 0.8 }}
+                className="pointer-events-none absolute h-72 w-72 rounded-full bg-emerald-500/10 blur-3xl"
+              />
 
-                <input
-                  type="text"
-                  maxLength={6}
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
-                  className="w-full border-2 border-gray-200 focus:border-blue-600 focus:ring-0 rounded-xl px-4 py-3 text-center text-2xl tracking-widest font-mono mb-6 outline-none transition"
-                  placeholder="000000"
-                  autoFocus
-                />
-
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => {
-                      setShowOtpModal(false);
-                      setOtp("");
+              <motion.div
+                initial={{
+                  opacity: 0,
+                  y: 40,
+                  scale: 0.92,
+                }}
+                animate={{
+                  opacity: 1,
+                  y: 0,
+                  scale: 1,
+                }}
+                transition={{
+                  type: "spring",
+                  stiffness: 260,
+                  damping: 22,
+                }}
+                className="relative w-full max-w-sm overflow-hidden rounded-[2rem] border border-white/10 bg-slate-900 shadow-2xl"
+              >
+                {/* Top accent */}
+                <div className="relative overflow-hidden bg-slate-950 px-5 pb-6 pt-6 text-center">
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{
+                      delay: 0.15,
+                      type: "spring",
+                      stiffness: 300,
                     }}
-                    className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-3 rounded-xl transition"
+                    className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-emerald-400/20 bg-emerald-500/10 shadow-lg shadow-emerald-500/10"
                   >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={verifyOtp}
-                    disabled={otp.length !== 6}
-                    className="flex-1 bg-green-600 disabled:bg-green-400 hover:bg-green-700 text-white font-medium py-3 rounded-xl transition"
+                    <ShieldCheck size={30} className="text-emerald-400" />
+                  </motion.div>
+
+                  <motion.h2
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                    className="mt-4 text-2xl font-black text-white"
                   >
-                    Complete
-                  </button>
+                    Verify Delivery
+                  </motion.h2>
+
+                  <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.25 }}
+                    className="mx-auto mt-2 max-w-xs text-xs leading-relaxed text-slate-400 sm:text-sm"
+                  >
+                    Ask the customer for the 6-digit OTP sent to their
+                    registered contact.
+                  </motion.p>
+
+                  {/* Decorative moving line */}
+                  <motion.div
+                    initial={{ x: "-100%" }}
+                    animate={{ x: "100%" }}
+                    transition={{
+                      duration: 2,
+                      repeat: Infinity,
+                      ease: "linear",
+                    }}
+                    className="absolute bottom-0 left-0 h-[2px] w-1/3 bg-emerald-400"
+                  />
                 </div>
-              </div>
-            </div>
+
+                <div className="p-5 sm:p-6">
+                  {/* Order reference */}
+                  <div className="mb-5 flex items-center justify-between rounded-2xl border border-slate-700/70 bg-slate-950/70 px-4 py-3">
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">
+                        Order
+                      </p>
+
+                      <p className="mt-1 font-mono text-sm font-bold text-white">
+                        #{otpOrder.id?.slice(-6)}
+                      </p>
+                    </div>
+
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10">
+                      <Package size={19} className="text-emerald-400" />
+                    </div>
+                  </div>
+
+                  {/* OTP boxes */}
+                  <div className="mb-3 flex justify-center gap-2">
+                    {Array.from({ length: 6 }).map((_, index) => {
+                      const value = otp[index] || "";
+
+                      return (
+                        <motion.div
+                          key={index}
+                          animate={{
+                            scale: value ? 1.05 : 1,
+                            borderColor: value
+                              ? "rgb(52 211 153)"
+                              : "rgb(51 65 85)",
+                          }}
+                          className={`flex h-14 w-11 items-center justify-center rounded-xl border-2 bg-slate-950 text-xl font-black text-white transition-all sm:h-16 sm:w-12
+                  ${value ? "shadow-md shadow-emerald-500/10" : ""}`}
+                        >
+                          {value || "•"}
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Hidden real input */}
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    value={otp}
+                    onChange={(e) =>
+                      setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))
+                    }
+                    autoFocus
+                    className="absolute h-0 w-0 opacity-0"
+                  />
+
+                  <p className="mb-5 text-center text-[11px] text-slate-500">
+                    Enter the verification code given by the customer
+                  </p>
+
+                  {/* Progress */}
+                  <div className="mb-5 h-1.5 overflow-hidden rounded-full bg-slate-800">
+                    <motion.div
+                      animate={{
+                        width: `${(otp.length / 6) * 100}%`,
+                      }}
+                      transition={{
+                        duration: 0.25,
+                      }}
+                      className="h-full rounded-full bg-emerald-500"
+                    />
+                  </div>
+
+                  {/* Buttons */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowOtpModal(false);
+                        setOtp("");
+                      }}
+                      className="rounded-2xl border border-slate-700 bg-slate-800 px-4 py-3.5 text-sm font-bold text-slate-300 transition hover:bg-slate-700 active:scale-[0.98]"
+                    >
+                      Cancel
+                    </button>
+
+                    <motion.button
+                      type="button"
+                      onClick={verifyOtp}
+                      disabled={otp.length !== 6}
+                      whileTap={otp.length === 6 ? { scale: 0.97 } : {}}
+                      className={`relative overflow-hidden rounded-2xl px-4 py-3.5 text-sm font-black transition
+              ${
+                otp.length === 6
+                  ? "bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/20 hover:bg-emerald-400"
+                  : "cursor-not-allowed bg-slate-800 text-slate-600"
+              }`}
+                    >
+                      {otp.length === 6 ? (
+                        <span className="flex items-center justify-center gap-2">
+                          <ShieldCheck size={17} />
+                          Verify
+                        </span>
+                      ) : (
+                        "Enter OTP"
+                      )}
+                    </motion.button>
+                  </div>
+
+                  {/* Security message */}
+                  <div className="mt-5 flex items-start gap-2 rounded-xl bg-slate-950/60 px-3 py-3">
+                    <ShieldCheck
+                      size={15}
+                      className="mt-0.5 shrink-0 text-emerald-500"
+                    />
+
+                    <p className="text-[10px] leading-relaxed text-slate-500">
+                      Only complete the delivery after confirming the OTP with
+                      the customer.
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
           )}
         </div>
       </div>
