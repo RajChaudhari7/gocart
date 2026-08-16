@@ -125,42 +125,49 @@ export default function DriverProfile() {
       return;
     }
 
-    const previewUrl = URL.createObjectURL(file);
-
-    setPhotoPreview(previewUrl);
-
-    /*
-     * IMPORTANT:
-     *
-     * Once you send me your Cloudinary/ImageKit
-     * upload API, replace this temporary section
-     * with the real upload.
-     */
-
     try {
       setUploadingPhoto(true);
 
-      // TEMPORARY:
-      // Only local preview right now.
-      //
-      // Example later:
-      //
-      // const uploadData = new FormData();
-      // uploadData.append("file", file);
-      //
-      // const { data } = await axios.post(
-      //   "/api/upload",
-      //   uploadData
-      // );
-      //
-      // updateField(
-      //   "profilePhoto",
-      //   data.url
-      // );
+      // Local preview immediately
+      const previewUrl = URL.createObjectURL(file);
+      setPhotoPreview(previewUrl);
 
-      toast.success("Photo selected. Save profile after upload setup.");
+      // Upload to ImageKit
+      const formData = new FormData();
+
+      formData.append("file", file);
+
+      const { data } = await axios.post("/api/driver/upload", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      if (!data?.url) {
+        throw new Error("Image upload did not return a URL");
+      }
+
+      // Store permanent ImageKit URL
+      setForm((current) => ({
+        ...current,
+        profilePhoto: data.url,
+      }));
+
+      // Replace temporary blob preview with permanent URL
+      setPhotoPreview(data.url);
+
+      toast.success("Profile photo uploaded successfully");
     } catch (error) {
-      toast.error("Unable to process photo");
+      console.error("PROFILE PHOTO UPLOAD ERROR:", error);
+
+      toast.error(
+        error?.response?.data?.error ||
+          error.message ||
+          "Unable to upload profile photo",
+      );
+
+      // Restore current profile image if upload fails
+      setPhotoPreview(driver?.profilePhoto || "");
     } finally {
       setUploadingPhoto(false);
     }
@@ -357,12 +364,10 @@ export default function DriverProfile() {
                 <div className="relative">
                   <div className="relative h-24 w-24 overflow-hidden rounded-full border-4 border-white bg-green-100 shadow-xl sm:h-32 sm:w-32">
                     {photoPreview ? (
-                      <Image
+                      <img
                         src={photoPreview}
                         alt={driver.name || "Driver"}
-                        fill
-                        sizes="128px"
-                        className="object-cover"
+                        className="h-full w-full object-cover"
                       />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center text-3xl font-black text-green-700 sm:text-4xl">
