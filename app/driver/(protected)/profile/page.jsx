@@ -137,7 +137,7 @@ export default function DriverProfile() {
 
       formData.append("file", file);
 
-      const { data } = await axios.post("/api/driver/upload", formData, {
+      const { data } = await axios.post("/api/upload", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
