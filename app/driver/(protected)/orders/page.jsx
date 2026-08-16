@@ -704,34 +704,252 @@ export default function DriverOrders() {
             )}
 
             {!isLoading && orders.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-24 px-4 text-center bg-white rounded-2xl border border-dashed border-gray-300">
-                <div className="relative flex justify-center items-center w-20 h-20 mb-6">
-                  <div className="absolute animate-ping inline-flex h-full w-full rounded-full bg-blue-200 opacity-60"></div>
-                  <div className="relative inline-flex rounded-full h-10 w-10 bg-blue-600 items-center justify-center">
-                    <svg
-                      className="w-5 h-5 text-white"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
+              <motion.section
+                initial={{ opacity: 0, y: 18 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.45 }}
+                className="relative overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm"
+              >
+                {/* Decorative background */}
+                <div className="pointer-events-none absolute -right-16 -top-20 h-52 w-52 rounded-full bg-emerald-100 blur-3xl" />
+                <div className="pointer-events-none absolute -bottom-20 -left-16 h-52 w-52 rounded-full bg-indigo-100 blur-3xl" />
+
+                <div className="relative px-4 py-7 sm:px-6 sm:py-9">
+                  {/* Top status */}
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">
+                        Driver Status
+                      </p>
+
+                      <h2 className="mt-1 text-xl font-black text-slate-900 sm:text-2xl">
+                        Ready for your next delivery
+                      </h2>
+                    </div>
+
+                    <div
+                      className={`flex shrink-0 items-center gap-2 rounded-full border px-3 py-2 text-xs font-bold ${
+                        isOnline
+                          ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                          : "border-red-200 bg-red-50 text-red-700"
+                      }`}
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                      />
-                    </svg>
+                      <span className="relative flex h-2 w-2">
+                        {isOnline && (
+                          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-70" />
+                        )}
+
+                        <span
+                          className={`relative inline-flex h-2 w-2 rounded-full ${
+                            isOnline ? "bg-emerald-500" : "bg-red-500"
+                          }`}
+                        />
+                      </span>
+
+                      {isOnline ? "Online" : "Offline"}
+                    </div>
+                  </div>
+
+                  {/* Main animated visual */}
+                  <div className="relative mt-8 flex min-h-[220px] items-center justify-center overflow-hidden rounded-[1.75rem] bg-slate-950 px-4 py-8 sm:min-h-[250px]">
+                    {/* Background road */}
+                    <div className="absolute bottom-10 left-0 right-0 h-[3px] bg-white/10">
+                      <motion.div
+                        animate={{
+                          x: [0, -70],
+                        }}
+                        transition={{
+                          duration: 1.2,
+                          repeat: Infinity,
+                          ease: "linear",
+                        }}
+                        className="absolute -top-[1px] flex gap-8"
+                      >
+                        {Array.from({
+                          length: 16,
+                        }).map((_, index) => (
+                          <span
+                            key={index}
+                            className="block h-[2px] w-8 rounded-full bg-white/30"
+                          />
+                        ))}
+                      </motion.div>
+                    </div>
+
+                    {/* Radar circles */}
+                    <motion.div
+                      animate={{
+                        scale: [1, 1.15, 1],
+                        opacity: [0.25, 0.5, 0.25],
+                      }}
+                      transition={{
+                        duration: 2.5,
+                        repeat: Infinity,
+                      }}
+                      className="absolute h-40 w-40 rounded-full border border-emerald-400/20"
+                    />
+
+                    <motion.div
+                      animate={{
+                        scale: [1, 1.3, 1],
+                        opacity: [0.15, 0.4, 0.15],
+                      }}
+                      transition={{
+                        duration: 3,
+                        repeat: Infinity,
+                        delay: 0.4,
+                      }}
+                      className="absolute h-28 w-28 rounded-full border border-emerald-400/20"
+                    />
+
+                    {/* Driver bike */}
+                    <motion.div
+                      animate={{
+                        y: [0, -4, 0],
+                      }}
+                      transition={{
+                        duration: 1.1,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                      }}
+                      className="relative z-10 flex h-20 w-20 items-center justify-center rounded-[1.6rem] border border-white/10 bg-white/5 shadow-2xl"
+                    >
+                      <motion.div
+                        animate={{
+                          x: [-2, 2, -2],
+                        }}
+                        transition={{
+                          duration: 1.4,
+                          repeat: Infinity,
+                        }}
+                      >
+                        <svg
+                          width="42"
+                          height="42"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="rgb(52 211 153)"
+                          strokeWidth="1.8"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <circle cx="6" cy="18" r="2.5" />
+                          <circle cx="18" cy="18" r="2.5" />
+                          <path d="M6 18h6" />
+                          <path d="M12 18h3" />
+                          <path d="M8 15l2-5h5l3 5" />
+                          <path d="M10 10h3" />
+                          <path d="M15 10l2-2" />
+                          <path d="M9 15H5" />
+                        </svg>
+                      </motion.div>
+                    </motion.div>
+
+                    {/* Text */}
+                    <div className="absolute bottom-16 left-4 right-4 text-center">
+                      <motion.p
+                        animate={{
+                          opacity: [0.55, 1, 0.55],
+                        }}
+                        transition={{
+                          duration: 2,
+                          repeat: Infinity,
+                        }}
+                        className="text-xs font-semibold text-emerald-300"
+                      >
+                        Scanning nearby delivery requests...
+                      </motion.p>
+                    </div>
+                  </div>
+
+                  {/* Friendly message */}
+                  <div className="mt-6 text-center">
+                    <h3 className="text-lg font-black text-slate-900">
+                      You&apos;re all set 🚚
+                    </h3>
+
+                    <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-slate-500">
+                      Keep the app open and stay online. We&apos;ll notify you
+                      as soon as a nearby delivery request is assigned.
+                    </p>
+                  </div>
+
+                  {/* Status cards */}
+                  <div className="mt-6 grid grid-cols-3 gap-2 sm:gap-3">
+                    <div className="rounded-2xl border border-slate-100 bg-slate-50 p-3 text-center sm:p-4">
+                      <div className="mx-auto flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-100">
+                        <ShieldCheck size={17} className="text-emerald-600" />
+                      </div>
+
+                      <p className="mt-2 text-xs font-bold text-slate-800">
+                        Online
+                      </p>
+
+                      <p className="mt-1 text-[9px] text-slate-400 sm:text-[10px]">
+                        Ready
+                      </p>
+                    </div>
+
+                    <div className="rounded-2xl border border-slate-100 bg-slate-50 p-3 text-center sm:p-4">
+                      <div className="mx-auto flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-100">
+                        <Package size={17} className="text-indigo-600" />
+                      </div>
+
+                      <p className="mt-2 text-xs font-bold text-slate-800">
+                        Orders
+                      </p>
+
+                      <p className="mt-1 text-[9px] text-slate-400 sm:text-[10px]">
+                        Auto match
+                      </p>
+                    </div>
+
+                    <div className="rounded-2xl border border-slate-100 bg-slate-50 p-3 text-center sm:p-4">
+                      <div className="mx-auto flex h-9 w-9 items-center justify-center rounded-xl bg-amber-100">
+                        <svg
+                          className="h-4 w-4 text-amber-600"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
+                          <path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7H14a3.5 3.5 0 010 7H6" />
+                        </svg>
+                      </div>
+
+                      <p className="mt-2 text-xs font-bold text-slate-800">
+                        Earnings
+                      </p>
+
+                      <p className="mt-1 text-[9px] text-slate-400 sm:text-[10px]">
+                        Keep moving
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Helpful strip */}
+                  <div className="mt-5 rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3">
+                    <div className="flex items-start gap-3">
+                      <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-100">
+                        <ShieldCheck size={15} className="text-emerald-600" />
+                      </div>
+
+                      <div>
+                        <p className="text-xs font-bold text-emerald-900">
+                          Stay available
+                        </p>
+
+                        <p className="mt-1 text-[10px] leading-relaxed text-emerald-700/70 sm:text-xs">
+                          Keep location enabled and remain online to receive
+                          nearby orders faster.
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <h2 className="text-xl font-bold text-gray-800 mb-2">
-                  Searching for new orders...
-                </h2>
-                <p className="text-gray-500 max-w-sm">
-                  Stay on this screen. New delivery assignments will appear here
-                  automatically once you are matched.
-                </p>
-              </div>
+              </motion.section>
             )}
+
             {!isLoading &&
               orders.map((order) => {
                 const totalProducts = order.orderItems?.length || 0;
