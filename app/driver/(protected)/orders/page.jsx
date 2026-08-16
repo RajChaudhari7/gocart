@@ -150,6 +150,7 @@ export default function DriverOrders() {
   const incomingOrderRef = useRef(null);
   const pollingRef = useRef(false);
   const notificationShownRef = useRef(new Set());
+  const otpInputRef = useRef(null);
 
   const [statusUpdatingId, setStatusUpdatingId] = useState(null);
 
@@ -1147,39 +1148,62 @@ export default function DriverOrders() {
                   </div>
 
                   {/* OTP boxes */}
-                  <div className="mb-3 flex justify-center gap-2">
+                  <div
+                    onClick={() => otpInputRef.current?.focus()}
+                    className="mb-3 flex cursor-text justify-center gap-2"
+                  >
                     {Array.from({ length: 6 }).map((_, index) => {
                       const value = otp[index] || "";
+
+                      const isActive = index === otp.length && otp.length < 6;
 
                       return (
                         <motion.div
                           key={index}
+                          onClick={() => otpInputRef.current?.focus()}
                           animate={{
                             scale: value ? 1.05 : 1,
-                            borderColor: value
-                              ? "rgb(52 211 153)"
-                              : "rgb(51 65 85)",
                           }}
-                          className={`flex h-14 w-11 items-center justify-center rounded-xl border-2 bg-slate-950 text-xl font-black text-white transition-all sm:h-16 sm:w-12
-                  ${value ? "shadow-md shadow-emerald-500/10" : ""}`}
+                          className={`
+          flex h-14 w-11 items-center justify-center
+          rounded-xl border-2 bg-slate-950
+          text-xl font-black text-white
+          transition-all
+          sm:h-16 sm:w-12
+
+          ${
+            value
+              ? "border-emerald-400 shadow-md shadow-emerald-500/10"
+              : isActive
+                ? "border-emerald-500"
+                : "border-slate-700"
+          }
+        `}
                         >
-                          {value || "•"}
+                          {value ? value : ""}
                         </motion.div>
                       );
                     })}
                   </div>
 
-                  {/* Hidden real input */}
+                  {/* Real OTP input */}
                   <input
+                    ref={otpInputRef}
                     type="text"
                     inputMode="numeric"
+                    pattern="[0-9]*"
+                    autoComplete="one-time-code"
                     maxLength={6}
                     value={otp}
-                    onChange={(e) =>
-                      setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))
-                    }
+                    onChange={(e) => {
+                      const value = e.target.value
+                        .replace(/\D/g, "")
+                        .slice(0, 6);
+
+                      setOtp(value);
+                    }}
                     autoFocus
-                    className="absolute h-0 w-0 opacity-0"
+                    className="absolute left-1/2 top-[260px] h-1 w-1 -translate-x-1/2 opacity-0"
                   />
 
                   <p className="mb-5 text-center text-[11px] text-slate-500">
