@@ -1,21 +1,22 @@
-import { Outfit } from "next/font/google"
+import { Outfit } from "next/font/google";
 // import { Toaster } from "react-hot-toast"
-import { Toaster } from "sonner"
-import { ClerkProvider } from "@clerk/nextjs"
-import StoreProvider from "@/app/StoreProvider"
-import SplashWrapper from "@/components/SplashWrapper"
-import { GoogleAnalytics } from "@next/third-parties/google"
-import "./globals.css"
-import AIChatButton from "@/components/AIChat/AIChatButton"
-import CompareBar from "@/components/CompareBar"
-import WishlistLoader from "@/components/WishlistLoader"
-import WishlistInitializer from "@/components/wishlist/WishlistInitializer"
-import FollowStoreInitializer from "@/lib/features/followStore/FollowStoreInitializer"
+import { Toaster } from "sonner";
+import { ClerkProvider } from "@clerk/nextjs";
+import StoreProvider from "@/app/StoreProvider";
+import SplashWrapper from "@/components/SplashWrapper";
+import { GoogleAnalytics } from "@next/third-parties/google";
+import "./globals.css";
+import AIChatButton from "@/components/AIChat/AIChatButton";
+import CompareBar from "@/components/CompareBar";
+import WishlistLoader from "@/components/WishlistLoader";
+import WishlistInitializer from "@/components/wishlist/WishlistInitializer";
+import FollowStoreInitializer from "@/lib/features/followStore/FollowStoreInitializer";
+import { CustomerLocationProvider } from "@/context/CustomerLocationContext";
 
 const outfit = Outfit({
   subsets: ["latin"],
   weight: ["400", "500", "600"],
-})
+});
 
 export const metadata = {
   metadataBase: new URL("https://gocart-delta.vercel.app"),
@@ -99,8 +100,7 @@ export const metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Nandurbar Bazar",
-    description:
-      "Order groceries online from local stores in Nandurbar.",
+    description: "Order groceries online from local stores in Nandurbar.",
 
     images: ["/seo-banner.png"],
   },
@@ -126,27 +126,23 @@ export default function RootLayout({ children }) {
   return (
     <ClerkProvider>
       <html lang="en">
-        <body className={`${outfit.className} antialiased bg-slate-50 text-slate-900`}>
+        <body
+          className={`${outfit.className} antialiased bg-slate-50 text-slate-900`}
+        >
           <StoreProvider>
-            <WishlistLoader />
-            <WishlistInitializer />
-            <FollowStoreInitializer />
-            <SplashWrapper>
-              {children}
-            </SplashWrapper>
-            <Toaster
-              richColors
-              position="top-right"
-              expand
-            />
-            <AIChatButton />
-            <CompareBar />
+            <CustomerLocationProvider>
+              <WishlistLoader />
+              <WishlistInitializer />
+              <FollowStoreInitializer />
+              <SplashWrapper>{children}</SplashWrapper>
+              <Toaster richColors position="top-right" expand />
+              <AIChatButton />
+              <CompareBar />
+            </CustomerLocationProvider>
           </StoreProvider>
-          <GoogleAnalytics
-            gaId={process.env.NEXT_PUBLIC_GA_ID}
-          />
+          <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID} />
         </body>
       </html>
     </ClerkProvider>
-  )
+  );
 }
