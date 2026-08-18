@@ -1,15 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import Link from "next/link";
 import { ArrowRight, Sparkles, Star } from "lucide-react";
 import { motion } from "framer-motion";
 import ProductCard from "./ProductCard";
+import { useCustomerLocation } from "@/context/CustomerLocationContext";
 
 export default function FeaturedCollection() {
-  const [products, setProducts] = useState([]);
+  const [allFeaturedProducts, setAllFeaturedProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const { filterNearbyProducts, locationLoading, serviceable } =
+    useCustomerLocation();
 
   useEffect(() => {
     loadProducts();
@@ -18,15 +22,21 @@ export default function FeaturedCollection() {
   async function loadProducts() {
     try {
       const { data } = await axios.get("/api/featured-products");
-      setProducts(data);
+
+      setAllFeaturedProducts(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Failed to load featured products:", error);
+      setAllFeaturedProducts([]);
     } finally {
       setLoading(false);
     }
   }
 
-  if (loading) {
+  const products = useMemo(() => {
+    return filterNearbyProducts(allFeaturedProducts);
+  }, [allFeaturedProducts, filterNearbyProducts]);
+
+  if (loading || locationLoading) {
     return (
       <section className="mt-10 md:mt-16">
         <div
@@ -111,7 +121,7 @@ export default function FeaturedCollection() {
     );
   }
 
-  if (products.length === 0) {
+  if (!serviceable || products.length === 0) {
     return null;
   }
 
@@ -210,11 +220,8 @@ export default function FeaturedCollection() {
               </div>
 
               <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300 md:text-base">
-                Handpicked premium products from the best local stores across{" "}
-                <span className="font-semibold text-yellow-300">
-                  Nandurbar Bazar
-                </span>
-                .
+                Handpicked premium products from nearby stores that can deliver
+                to your location.
               </p>
             </div>
           </div>
@@ -251,7 +258,7 @@ export default function FeaturedCollection() {
         <div className="relative mb-6 flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm text-slate-300">
             <span className="font-semibold text-white">{products.length}</span>{" "}
-            featured {products.length === 1 ? "product" : "products"}
+            featured {products.length === 1 ? "product" : "products"} nearby
           </p>
 
           <div className="hidden items-center gap-2 text-sm font-medium text-yellow-300 lg:flex">
@@ -260,6 +267,7 @@ export default function FeaturedCollection() {
           </div>
         </div>
 
+        {/* Desktop */}
         <div
           className="
             relative
@@ -291,6 +299,7 @@ export default function FeaturedCollection() {
           ))}
         </div>
 
+        {/* Mobile */}
         <div className="relative md:hidden">
           <div
             className="
