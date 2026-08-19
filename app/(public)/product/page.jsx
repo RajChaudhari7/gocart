@@ -18,6 +18,7 @@ import { useSelector } from "react-redux";
 import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
 import SearchDropdown from "@/components/SearchDropdown";
+import { useCustomerLocation } from "@/context/CustomerLocationContext";
 
 /* ✅ PRICE RANGES */
 const PRICE_RANGES = [
@@ -46,6 +47,16 @@ function ShopContent() {
 
   const allProducts = useSelector((state) => state.product.list || []);
 
+  const {
+    nearbyStoreIds,
+    locationLoading,
+    locationError,
+    serviceable,
+    serviceRadius,
+    loadNearbyStores,
+    filterNearbyProducts,
+  } = useCustomerLocation();
+
   const [category, setCategory] = useState(categoryFromURL || "all");
   const [subCategory, setSubCategory] = useState("all");
   const [sort, setSort] = useState("");
@@ -53,125 +64,16 @@ function ShopContent() {
   const [showMobileFilter, setShowMobileFilter] = useState(false);
   const [searchInput, setSearchInput] = useState("");
   const [smartProducts, setSmartProducts] = useState([]);
-  const [nearbyStores, setNearbyStores] = useState([]);
-
-  const [locationLoading, setLocationLoading] = useState(true);
-
-  const [locationError, setLocationError] = useState("");
-
-  const [serviceable, setServiceable] = useState(false);
-
-  const [serviceRadius, setServiceRadius] = useState(3);
-
-  const [customerLocation, setCustomerLocation] = useState(null);
-
-  const loadNearbyStores = () => {
-    setLocationLoading(true);
-    setLocationError("");
-    setServiceable(false);
-    setNearbyStores([]);
-
-    if (!navigator.geolocation) {
-      setLocationError("Location is not supported on this device.");
-
-      setLocationLoading(false);
-      return;
-    }
-
-    setLocationLoading(true);
-    setLocationError("");
-
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        try {
-          const latitude = Number(position.coords.latitude);
-
-          const longitude = Number(position.coords.longitude);
-
-          setCustomerLocation({
-            latitude,
-            longitude,
-          });
-
-          const { data } = await axios.get("/api/store/nearby", {
-            params: {
-              lat: latitude,
-              lng: longitude,
-            },
-          });
-
-          const stores = Array.isArray(data.stores) ? data.stores : [];
-
-          setNearbyStores(stores);
-
-          setServiceable(Boolean(data.serviceable));
-
-          setServiceRadius(Number(data.serviceRadiusKm || 3));
-        } catch (error) {
-          console.error("Nearby store error:", error);
-
-          setNearbyStores([]);
-
-          setLocationError(
-            error?.response?.data?.error ||
-              "Unable to find stores near your location.",
-          );
-        } finally {
-          setLocationLoading(false);
-        }
-      },
-
-      (error) => {
-        console.error("Location error:", error);
-
-        if (error.code === 1) {
-          setLocationError(
-            "Please allow location access to view products available near you.",
-          );
-        } else if (error.code === 2) {
-          setLocationError(
-            "We could not determine your location. Please check your location settings.",
-          );
-        } else if (error.code === 3) {
-          setLocationError("Location request timed out. Please try again.");
-        } else {
-          setLocationError("Unable to access your current location.");
-        }
-
-        setLocationLoading(false);
-      },
-
-      {
-        enableHighAccuracy: true,
-        timeout: 12000,
-        maximumAge: 60000,
-      },
-    );
-  };
-
-  useEffect(() => {
-    loadNearbyStores();
-  }, []);
-
-  const nearbyStoreIds = useMemo(() => {
-    return new Set(nearbyStores.map((store) => store.id));
-  }, [nearbyStores]);
 
   const products = useMemo(() => {
-    if (locationLoading) {
+    if (locationLoading || locationError || !serviceable) {
       return [];
     }
 
-    if (locationError || !serviceable) {
-      return [];
-    }
-
-    return allProducts.filter((product) =>
-      nearbyStoreIds.has(product.storeId || product.store?.id),
-    );
+    return filterNearbyProducts(allProducts);
   }, [
     allProducts,
-    nearbyStoreIds,
+    filterNearbyProducts,
     locationLoading,
     locationError,
     serviceable,

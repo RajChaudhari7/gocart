@@ -68,7 +68,7 @@ export default function TrendingProducts() {
               </h2>
 
               <p className="mt-1 text-sm text-slate-400">
-                Finding trending products available near you
+                Finding trending products available for your delivery location
               </p>
             </div>
           </div>
@@ -172,7 +172,7 @@ export default function TrendingProducts() {
               </div>
 
               <p className="mt-1 text-xs text-slate-400 sm:text-sm">
-                Popular products from shops that can deliver to you
+                Popular products available for your selected delivery location
               </p>
             </div>
           </div>

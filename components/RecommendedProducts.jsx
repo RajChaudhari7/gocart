@@ -64,7 +64,8 @@ export default function RecommendedProducts() {
               </h2>
 
               <p className="text-xs md:text-sm text-slate-400">
-                Finding personalized products available near you
+                Finding personalized products available for your delivery
+                location
               </p>
             </div>
           </div>
@@ -126,7 +127,7 @@ export default function RecommendedProducts() {
             </h2>
 
             <p className="text-xs md:text-sm text-slate-400">
-              Personalized picks from nearby shops that can deliver to you
+              Personalized picks available for your selected delivery location
             </p>
           </div>
         </div>

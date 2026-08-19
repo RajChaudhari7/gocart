@@ -13,6 +13,7 @@ import { useCustomerLocation } from "@/context/CustomerLocationContext";
 
 export default function Home() {
   const {
+    customerLocation,
     locationLoading,
     locationError,
     serviceable,
@@ -45,11 +46,11 @@ export default function Home() {
           <div className="h-12 w-12 rounded-full border-4 border-slate-800 border-t-emerald-400 animate-spin" />
 
           <h2 className="mt-6 text-xl font-bold text-white">
-            Finding stores near you
+            Checking delivery availability
           </h2>
 
           <p className="mt-2 text-sm text-slate-400">
-            Checking what can be delivered to your location...
+            Finding stores and products available for your delivery location...
           </p>
         </div>
       )}
@@ -86,7 +87,11 @@ export default function Home() {
 
             <p className="mt-4 text-sm leading-relaxed text-slate-400">
               We currently don&apos;t have partner stores within {serviceRadius}{" "}
-              km of your location.
+              km of{" "}
+              <span className="font-semibold text-white">
+                {customerLocation?.label || "your selected location"}
+              </span>
+              .
             </p>
 
             <p className="mt-2 text-xs text-slate-500">

@@ -10,7 +10,7 @@ export default function SimilarProducts({ productId }) {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const { nearbyStores, locationLoading, locationError, serviceable } =
+  const { filterNearbyProducts, locationLoading, locationError, serviceable } =
     useCustomerLocation();
 
   /* ================= FETCH SIMILAR PRODUCTS ================= */
@@ -37,12 +37,6 @@ export default function SimilarProducts({ productId }) {
     }
   };
 
-  /* ================= NEARBY STORE IDS ================= */
-
-  const nearbyStoreIds = useMemo(() => {
-    return new Set(nearbyStores.map((store) => store.id));
-  }, [nearbyStores]);
-
   /* ================= FILTER PRODUCTS ================= */
 
   const nearbyProducts = useMemo(() => {
@@ -50,12 +44,14 @@ export default function SimilarProducts({ productId }) {
       return [];
     }
 
-    return products.filter((product) => {
-      const storeId = product.storeId || product.store?.id;
-
-      return nearbyStoreIds.has(storeId);
-    });
-  }, [products, nearbyStoreIds, locationLoading, locationError, serviceable]);
+    return filterNearbyProducts(products);
+  }, [
+    products,
+    filterNearbyProducts,
+    locationLoading,
+    locationError,
+    serviceable,
+  ]);
 
   /* ================= LOADING ================= */
 
@@ -71,7 +67,7 @@ export default function SimilarProducts({ productId }) {
             </h2>
 
             <p className="text-slate-400 text-sm">
-              Finding products available near you
+              Finding products available for your delivery location
             </p>
           </div>
         </div>

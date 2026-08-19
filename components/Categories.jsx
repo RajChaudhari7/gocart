@@ -114,7 +114,7 @@ export default function Categories() {
         <div className="mb-8 flex flex-col gap-4 sm:mb-10 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.25em] text-indigo-400 sm:text-xs">
-              Available Near You
+              Available for Delivery
             </p>
 
             <h2 className="text-2xl font-black tracking-tight text-white sm:text-3xl md:text-4xl">
@@ -122,8 +122,8 @@ export default function Categories() {
             </h2>
 
             <p className="mt-2 max-w-xl text-xs leading-relaxed text-slate-400 sm:text-sm">
-              Explore categories available from nearby stores that can deliver
-              to your current location.
+              Explore categories available from stores that can deliver to your
+              selected location.
             </p>
           </div>
 

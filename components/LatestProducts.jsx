@@ -42,7 +42,7 @@ const LatestProducts = () => {
             nearbyProducts.length < displayQuantity
               ? nearbyProducts.length
               : displayQuantity
-          } of ${nearbyProducts.length} nearby products`}
+          } of ${nearbyProducts.length} products available for delivery`}
           href="/product"
           theme="dark"
         />

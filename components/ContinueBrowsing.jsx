@@ -64,7 +64,7 @@ export default function ContinueBrowsing() {
               </h2>
 
               <p className="text-slate-400 text-sm">
-                Checking products available near you
+                Checking products available for your delivery location
               </p>
             </div>
           </div>
@@ -109,7 +109,8 @@ export default function ContinueBrowsing() {
             </h2>
 
             <p className="text-slate-400 text-sm">
-              Pick up where you left off from stores near you
+              Pick up where you left off with products available for your
+              selected location
             </p>
           </div>
         </div>

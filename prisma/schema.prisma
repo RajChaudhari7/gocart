@@ -240,22 +240,43 @@ model Rating {
 }
 
 model Address {
-  id        String   @id @default(cuid())
-  userId    String
-  name      String
-  email     String
-  street    String
-  city      String
-  state     String
-  zip       String
-  country   String
-  phone     String
+  id     String @id @default(cuid())
+  userId String
+
+  // Customer details
+  name  String
+  email String
+  phone String
+
+  // Address
+  street  String
+  city    String
+  state   String
+  zip     String
+  country String
+
+  // Delivery coordinates
   latitude  Float?
   longitude Float?
-  createdAt DateTime @default(now())
 
-  Order Order[]
-  user  User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Home / Work / Other
+  label String @default("Home")
+
+  // Optional extra details
+  landmark String?
+
+  // Address management
+  isDefault  Boolean   @default(false)
+  lastUsedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+  Order     Order[]
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, lastUsedAt])
 }
 
 model Coupon {

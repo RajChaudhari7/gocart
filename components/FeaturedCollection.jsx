@@ -220,8 +220,8 @@ export default function FeaturedCollection() {
               </div>
 
               <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300 md:text-base">
-                Handpicked premium products from nearby stores that can deliver
-                to your location.
+                Handpicked premium products available for delivery to your
+                selected location.
               </p>
             </div>
           </div>
@@ -258,7 +258,7 @@ export default function FeaturedCollection() {
         <div className="relative mb-6 flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm text-slate-300">
             <span className="font-semibold text-white">{products.length}</span>{" "}
-            featured {products.length === 1 ? "product" : "products"} nearby
+            featured {products.length === 1 ? "product" : "products"} available
           </p>
 
           <div className="hidden items-center gap-2 text-sm font-medium text-yellow-300 lg:flex">

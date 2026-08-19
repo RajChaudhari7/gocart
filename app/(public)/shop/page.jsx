@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 
 import FollowStoreButton from "@/components/store/FollowStoreButton";
+import { useCustomerLocation } from "@/context/CustomerLocationContext";
 
 function ShopContent() {
   const searchParams = useSearchParams();
@@ -25,21 +26,21 @@ function ShopContent() {
 
   const router = useRouter();
 
-  const [stores, setStores] = useState([]);
+  const {
+    nearbyStores,
+    customerLocation,
+    locationLoading,
+    locationError,
+    serviceable,
+    serviceRadius,
+    loadNearbyStores,
+  } = useCustomerLocation();
+
+  const stores = nearbyStores;
 
   const [searchInput, setSearchInput] = useState(search || "");
 
   const [selectedCategory, setSelectedCategory] = useState("All");
-
-  const [locationLoading, setLocationLoading] = useState(true);
-
-  const [locationError, setLocationError] = useState("");
-
-  const [serviceable, setServiceable] = useState(true);
-
-  const [serviceRadius, setServiceRadius] = useState(3);
-
-  const [customerLocation, setCustomerLocation] = useState(null);
 
   // -----------------------------------------
   // Search URL sync
@@ -56,97 +57,6 @@ function ShopContent() {
 
     return () => clearTimeout(delay);
   }, [searchInput, router]);
-
-  // -----------------------------------------
-  // Load nearby stores
-  // -----------------------------------------
-
-  const loadNearbyStores = () => {
-    if (!navigator.geolocation) {
-      setLocationError("Location is not supported on this device.");
-
-      setLocationLoading(false);
-
-      return;
-    }
-
-    setLocationLoading(true);
-    setLocationError("");
-
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        try {
-          const latitude = Number(position.coords.latitude);
-
-          const longitude = Number(position.coords.longitude);
-
-          setCustomerLocation({
-            latitude,
-            longitude,
-          });
-
-          const response = await fetch(
-            `/api/store/nearby?lat=${latitude}&lng=${longitude}`,
-            {
-              cache: "no-store",
-            },
-          );
-
-          const data = await response.json();
-
-          if (!response.ok) {
-            throw new Error(data?.error || "Unable to load nearby stores");
-          }
-
-          setStores(Array.isArray(data.stores) ? data.stores : []);
-
-          setServiceable(Boolean(data.serviceable));
-
-          setServiceRadius(Number(data.serviceRadiusKm || 3));
-        } catch (error) {
-          console.error("Nearby stores error:", error);
-
-          setStores([]);
-
-          setLocationError(error?.message || "Unable to load nearby stores");
-        } finally {
-          setLocationLoading(false);
-        }
-      },
-
-      (error) => {
-        console.error("Location error:", error);
-
-        setStores([]);
-
-        if (error.code === 1) {
-          setLocationError(
-            "Location permission is required to show shops that can deliver to you.",
-          );
-        } else if (error.code === 2) {
-          setLocationError(
-            "Your current location could not be determined. Please check your device location settings.",
-          );
-        } else if (error.code === 3) {
-          setLocationError("Location request timed out. Please try again.");
-        } else {
-          setLocationError("Unable to access your current location.");
-        }
-
-        setLocationLoading(false);
-      },
-
-      {
-        enableHighAccuracy: true,
-        timeout: 12000,
-        maximumAge: 60000,
-      },
-    );
-  };
-
-  useEffect(() => {
-    loadNearbyStores();
-  }, []);
 
   // -----------------------------------------
   // Categories
@@ -522,9 +432,12 @@ function ShopContent() {
               </div>
 
               {customerLocation && (
-                <div className="hidden items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-[10px] text-white/40 sm:flex">
-                  <MapPin size={13} className="text-emerald-400" />
-                  Near you
+                <div className="hidden max-w-[220px] items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-[10px] text-white/40 sm:flex">
+                  <MapPin size={13} className="shrink-0 text-emerald-400" />
+
+                  <span className="truncate">
+                    {customerLocation.label || "Delivery location"}
+                  </span>
                 </div>
               )}
             </div>
