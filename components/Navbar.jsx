@@ -264,107 +264,118 @@ const Navbar = () => {
   return (
     <>
       {/* MOBILE TOP NAV */}
-      <nav className="sm:hidden fixed top-0 inset-x-0 z-50 border-b border-white/10 bg-black/80 backdrop-blur-2xl">
-        {/* Main row */}
-        <div className="flex items-center justify-between px-3 pt-2.5">
-          <Link href="/" className="flex items-center">
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, ease: "easeOut" }}
-            >
-              <Image
-                src="/app.png"
-                alt="Nandurbar Bazar Logo"
-                width={52}
-                height={52}
-                className="object-contain"
-                priority
-              />
-            </motion.div>
-          </Link>
-
-          <div className="flex items-center gap-2">
-            {!user ? (
-              <button
-                onClick={openSignIn}
-                className="rounded-full bg-gradient-to-r from-cyan-400 to-emerald-400 px-3.5 py-2 text-xs font-bold text-black"
+      <nav className="sm:hidden fixed top-0 inset-x-0 z-50 border-b border-white/10 bg-black/90 backdrop-blur-2xl">
+        <div className="mx-auto max-w-screen-sm">
+          {/* Main row */}
+          <div className="flex h-[64px] items-center justify-between px-3">
+            <Link href="/" className="flex items-center">
+              <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, ease: "easeOut" }}
               >
-                Login
-              </button>
-            ) : (
-              <UserButton
-                appearance={{
-                  elements: {
-                    userButtonAvatarBox: "w-9 h-9 border-2 border-cyan-400/30",
-                  },
-                }}
-              />
-            )}
+                <Image
+                  src="/app.png"
+                  alt="Nandurbar Bazar Logo"
+                  width={52}
+                  height={52}
+                  className="object-contain"
+                  priority
+                />
+              </motion.div>
+            </Link>
+
+            <div className="flex items-center gap-2">
+              {!user ? (
+                <button
+                  onClick={openSignIn}
+                  className="rounded-full bg-gradient-to-r from-cyan-400 to-emerald-400 px-3.5 py-2 text-xs font-bold text-black"
+                >
+                  Login
+                </button>
+              ) : (
+                <UserButton
+                  appearance={{
+                    elements: {
+                      userButtonAvatarBox:
+                        "w-9 h-9 border-2 border-cyan-400/30",
+                    },
+                  }}
+                />
+              )}
+            </div>
+          </div>
+
+          {/* Delivery Location */}
+          <div className="px-3 pb-3">
+            <button
+              type="button"
+              onClick={openLocationSelector}
+              className="
+          flex
+          w-full
+          items-center
+          gap-3
+          rounded-2xl
+          border
+          border-white/10
+          bg-white/[0.055]
+          px-3.5
+          py-2.5
+          text-left
+          transition
+          active:scale-[0.99]
+        "
+            >
+              {/* Icon */}
+              <div
+                className={`
+            flex
+            h-10
+            w-10
+            shrink-0
+            items-center
+            justify-center
+            rounded-xl
+            ${
+              serviceable
+                ? "bg-emerald-500/10 text-emerald-400"
+                : "bg-amber-500/10 text-amber-400"
+            }
+          `}
+              >
+                {locationLoading ? (
+                  <LocateFixed size={18} className="animate-pulse" />
+                ) : (
+                  <MapPin size={18} />
+                )}
+              </div>
+
+              {/* Address */}
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1">
+                  <p className="truncate text-xs font-black text-white">
+                    {getLocationTitle()}
+                  </p>
+
+                  <ChevronDown size={14} className="shrink-0 text-white/40" />
+                </div>
+
+                <p
+                  className={`mt-0.5 truncate text-[10px] ${
+                    !locationLoading && !serviceable
+                      ? "text-amber-400"
+                      : "text-white/40"
+                  }`}
+                >
+                  {getLocationSubtitle()}
+                </p>
+              </div>
+            </button>
           </div>
         </div>
-
-        {/* Delivery Location */}
-        <button
-          type="button"
-          onClick={openLocationSelector}
-          className="
-      mx-3
-      mb-3
-      mt-1
-      flex
-      w-[calc(100%-1.5rem)]
-      items-center
-      gap-3
-      rounded-2xl
-      border
-      border-white/10
-      bg-white/[0.055]
-      px-3.5
-      py-2.5
-      text-left
-      transition
-      active:scale-[0.99]
-    "
-        >
-          <div
-            className={`
-        flex h-10 w-10 shrink-0 items-center justify-center rounded-xl
-        ${
-          serviceable
-            ? "bg-emerald-500/10 text-emerald-400"
-            : "bg-amber-500/10 text-amber-400"
-        }
-      `}
-          >
-            {locationLoading ? (
-              <LocateFixed size={18} className="animate-pulse" />
-            ) : (
-              <MapPin size={18} />
-            )}
-          </div>
-
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1">
-              <p className="truncate text-xs font-black text-white">
-                {getLocationTitle()}
-              </p>
-
-              <ChevronDown size={14} className="shrink-0 text-white/40" />
-            </div>
-
-            <p
-              className={`mt-0.5 truncate text-[10px] ${
-                !locationLoading && !serviceable
-                  ? "text-amber-400"
-                  : "text-white/40"
-              }`}
-            >
-              {getLocationSubtitle()}
-            </p>
-          </div>
-        </button>
       </nav>
+      <div className="h-[128px] sm:hidden" />
 
       {/* DESKTOP NAV */}
 
