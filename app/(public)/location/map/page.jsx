@@ -37,6 +37,7 @@ function LocationMapContent() {
   const markerRef = useRef(null);
 
   const [mapsLoaded, setMapsLoaded] = useState(false);
+  const [mapError, setMapError] = useState("");
 
   const [initialLoading, setInitialLoading] = useState(true);
   const [reverseLoading, setReverseLoading] = useState(false);
@@ -50,9 +51,14 @@ function LocationMapContent() {
   const [serviceRadius, setServiceRadius] = useState(3);
   const [nearbyStoreCount, setNearbyStoreCount] = useState(0);
 
-  // --------------------------------------------------
+  useEffect(() => {
+    // Google Maps may already be loaded from a previous page/navigation.
+    if (window.google?.maps) {
+      setMapsLoaded(true);
+    }
+  }, []);
+
   // CHECK SERVICEABILITY
-  // --------------------------------------------------
 
   const checkServiceability = useCallback(async (latitude, longitude) => {
     try {
@@ -74,9 +80,7 @@ function LocationMapContent() {
     }
   }, []);
 
-  // --------------------------------------------------
   // REVERSE GEOCODE COORDINATES
-  // --------------------------------------------------
 
   const reverseGeocode = useCallback(
     async (latitude, longitude) => {
@@ -169,9 +173,7 @@ function LocationMapContent() {
     [labelFromURL],
   );
 
-  // --------------------------------------------------
   // LOAD INITIAL LOCATION
-  // --------------------------------------------------
 
   useEffect(() => {
     const loadInitialLocation = async () => {
@@ -242,63 +244,62 @@ function LocationMapContent() {
     checkServiceability,
   ]);
 
-  // --------------------------------------------------
   // BUILD GOOGLE MAP
-  // --------------------------------------------------
 
   useEffect(() => {
-    if (
-      !mapsLoaded ||
-      !location ||
-      !mapContainerRef.current ||
-      !window.google?.maps
-    ) {
+    if (!mapsLoaded) return;
+    if (!location) return;
+    if (!mapContainerRef.current) return;
+    if (!window.google?.maps) return;
+
+    const latitude = Number(location.latitude);
+    const longitude = Number(location.longitude);
+
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+      console.error("Invalid map coordinates:", {
+        latitude,
+        longitude,
+      });
+
       return;
     }
 
     const position = {
-      lat: Number(location.latitude),
-      lng: Number(location.longitude),
+      lat: latitude,
+      lng: longitude,
     };
 
+    console.log("INITIALIZING MAP:", position);
+
+    // Create map only once
     if (!mapRef.current) {
       mapRef.current = new window.google.maps.Map(mapContainerRef.current, {
         center: position,
-
         zoom: 17,
-
         disableDefaultUI: true,
-
         zoomControl: true,
-
         gestureHandling: "greedy",
-
         clickableIcons: false,
-
         mapTypeControl: false,
-
         streetViewControl: false,
-
         fullscreenControl: false,
       });
 
       markerRef.current = new window.google.maps.Marker({
         position,
-
         map: mapRef.current,
-
         draggable: true,
-
         animation: window.google.maps.Animation.DROP,
       });
 
+      // MARKER DRAG
+
       markerRef.current.addListener("dragend", async () => {
-        const markerPosition = markerRef.current.getPosition();
+        const markerPosition = markerRef.current?.getPosition();
 
         if (!markerPosition) return;
 
         const latitude = markerPosition.lat();
-
         const longitude = markerPosition.lng();
 
         setLocation((current) => ({
@@ -309,21 +310,21 @@ function LocationMapContent() {
           addressId: null,
         }));
 
-        await Promise.all([
+        await Promise.allSettled([
           reverseGeocode(latitude, longitude),
-
           checkServiceability(latitude, longitude),
         ]);
       });
+
+      // MAP CLICK
 
       mapRef.current.addListener("click", async (event) => {
         if (!event.latLng) return;
 
         const latitude = event.latLng.lat();
-
         const longitude = event.latLng.lng();
 
-        markerRef.current.setPosition({
+        markerRef.current?.setPosition({
           lat: latitude,
           lng: longitude,
         });
@@ -336,37 +337,56 @@ function LocationMapContent() {
           addressId: null,
         }));
 
-        await Promise.all([
+        await Promise.allSettled([
           reverseGeocode(latitude, longitude),
-
           checkServiceability(latitude, longitude),
         ]);
       });
     } else {
+      // Map already exists, just update its position
       mapRef.current.setCenter(position);
 
       markerRef.current?.setPosition(position);
     }
 
-    /*
-     * If location came from GPS and we don't
-     * yet have an address name, reverse geocode it.
-     */
-    if (!location.formattedAddress) {
-      reverseGeocode(position.lat, position.lng);
+    // Important when map container has just become visible
+    requestAnimationFrame(() => {
+      if (!mapRef.current) return;
+
+      window.google.maps.event.trigger(mapRef.current, "resize");
+
+      mapRef.current.setCenter(position);
+    });
+  }, [
+    mapsLoaded,
+    location?.latitude,
+    location?.longitude,
+    reverseGeocode,
+    checkServiceability,
+  ]);
+
+  useEffect(() => {
+    if (!mapsLoaded) return;
+    if (!location) return;
+    if (location.formattedAddress) return;
+
+    const latitude = Number(location.latitude);
+    const longitude = Number(location.longitude);
+
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+      return;
     }
+
+    reverseGeocode(latitude, longitude);
   }, [
     mapsLoaded,
     location?.latitude,
     location?.longitude,
     location?.formattedAddress,
     reverseGeocode,
-    checkServiceability,
   ]);
 
-  // --------------------------------------------------
   // RECENTER TO DEVICE LOCATION
-  // --------------------------------------------------
 
   const recenterToCurrentLocation = () => {
     if (!navigator.geolocation) {
@@ -411,9 +431,8 @@ function LocationMapContent() {
           addressId: null,
         }));
 
-        await Promise.all([
+        await Promise.allSettled([
           reverseGeocode(latitude, longitude),
-
           checkServiceability(latitude, longitude),
         ]);
       },
@@ -442,9 +461,7 @@ function LocationMapContent() {
     );
   };
 
-  // --------------------------------------------------
   // CONFIRM LOCATION
-  // --------------------------------------------------
 
   const confirmLocation = async () => {
     if (!location) return;
@@ -486,9 +503,22 @@ function LocationMapContent() {
   return (
     <>
       <Script
-        src={`https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`}
+        id="google-maps-script"
+        src={`https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&loading=async`}
         strategy="afterInteractive"
-        onLoad={() => setMapsLoaded(true)}
+        onReady={() => {
+          console.log("Google Maps ready:", !!window.google?.maps);
+
+          if (window.google?.maps) {
+            setMapsLoaded(true);
+            setMapError("");
+          }
+        }}
+        onError={(error) => {
+          console.error("GOOGLE MAPS SCRIPT ERROR:", error);
+
+          setMapError("Unable to load Google Maps.");
+        }}
       />
 
       <main className="min-h-screen bg-[#020617] text-white">
