@@ -141,8 +141,18 @@ export default function LocationPage() {
   const handleSelectAddress = async (address) => {
     try {
       if (address.latitude == null || address.longitude == null) {
-        setError(
-          "This saved address does not have a map location yet. Please update its location.",
+        const query = [
+          address.street,
+          address.landmark,
+          address.city,
+          address.state,
+          address.zip,
+        ]
+          .filter(Boolean)
+          .join(", ");
+
+        router.push(
+          `/location/search?q=${encodeURIComponent(query)}&addressId=${address.id}`,
         );
 
         return;
@@ -193,32 +203,61 @@ export default function LocationPage() {
   // USE CURRENT LOCATION
   // ==========================================
 
-  const handleCurrentLocation = async () => {
+  const handleCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      setError("Location is not supported on this device.");
+      return;
+    }
+
     try {
       setCurrentLocationLoading(true);
-
       setError("");
 
-      await useCurrentLocation();
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const latitude = Number(position.coords.latitude);
+          const longitude = Number(position.coords.longitude);
 
-      /*
-       * Later we will replace this with:
-       *
-       * /location/map
-       *
-       * so the customer can confirm the exact
-       * pin and area before selecting.
-       *
-       * For now the current GPS coordinates
-       * become the active delivery location.
-       */
+          if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+            throw new Error("Unable to determine your current location.");
+          }
 
-      router.back();
+          const params = new URLSearchParams({
+            lat: String(latitude),
+            lng: String(longitude),
+            source: "CURRENT",
+            label: "Current Location",
+          });
+
+          router.push(`/location/map?${params.toString()}`);
+        },
+
+        (error) => {
+          let message = "Unable to access your current location.";
+
+          if (error.code === 1) {
+            message = "Please allow location permission.";
+          } else if (error.code === 2) {
+            message = "Your current location could not be determined.";
+          } else if (error.code === 3) {
+            message = "Location request timed out.";
+          }
+
+          setError(message);
+          setCurrentLocationLoading(false);
+        },
+
+        {
+          enableHighAccuracy: true,
+          timeout: 12000,
+          maximumAge: 30000,
+        },
+      );
     } catch (error) {
       console.error("CURRENT LOCATION ERROR:", error);
 
       setError(error?.message || "Unable to use your current location.");
-    } finally {
+
       setCurrentLocationLoading(false);
     }
   };

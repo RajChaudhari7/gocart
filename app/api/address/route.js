@@ -21,6 +21,7 @@ export async function POST(request) {
       phone,
 
       street,
+      landmark,
       city,
       state,
       zip,
@@ -30,29 +31,38 @@ export async function POST(request) {
       longitude,
 
       label = "Home",
-      landmark = null,
       isDefault = false,
     } = body.address || body;
 
-    if (
-      !name ||
-      !email ||
-      !phone ||
-      !street ||
-      !city ||
-      !state ||
-      !zip ||
-      !country
-    ) {
+    // -----------------------------------------
+    // BASIC VALIDATION
+    // -----------------------------------------
+
+    if (!name?.trim()) {
       return NextResponse.json(
         {
-          error: "Please fill all required address fields.",
+          error: "Recipient name is required.",
         },
         {
           status: 400,
         },
       );
     }
+
+    if (!phone?.trim()) {
+      return NextResponse.json(
+        {
+          error: "Phone number is required.",
+        },
+        {
+          status: 400,
+        },
+      );
+    }
+
+    // -----------------------------------------
+    // COORDINATES
+    // -----------------------------------------
 
     const lat =
       latitude !== undefined && latitude !== null && latitude !== ""
@@ -64,10 +74,15 @@ export async function POST(request) {
         ? Number(longitude)
         : null;
 
-    if (lat !== null && !Number.isFinite(lat)) {
+    if (
+      lat === null ||
+      lng === null ||
+      !Number.isFinite(lat) ||
+      !Number.isFinite(lng)
+    ) {
       return NextResponse.json(
         {
-          error: "Invalid latitude.",
+          error: "Please select a valid location on the map.",
         },
         {
           status: 400,
@@ -75,69 +90,72 @@ export async function POST(request) {
       );
     }
 
-    if (lng !== null && !Number.isFinite(lng)) {
-      return NextResponse.json(
-        {
-          error: "Invalid longitude.",
-        },
-        {
-          status: 400,
-        },
-      );
-    }
+    // -----------------------------------------
+    // DEFAULT ADDRESS
+    // -----------------------------------------
 
-    /*
-     * If this address becomes default,
-     * remove default status from other addresses first.
-     */
     if (isDefault) {
       await prisma.address.updateMany({
         where: {
           userId,
           isDefault: true,
         },
+
         data: {
           isDefault: false,
         },
       });
     }
 
+    // -----------------------------------------
+    // CREATE ADDRESS
+    // -----------------------------------------
+
     const newAddress = await prisma.address.create({
       data: {
         userId,
 
         name: name.trim(),
-        email: email.trim(),
+
+        email: email?.trim() || "",
+
         phone: phone.trim(),
 
-        street: street.trim(),
-        city: city.trim(),
-        state: state.trim(),
-        zip: zip.trim(),
-        country: country.trim(),
+        street: street?.trim() || "",
+
+        landmark: landmark?.trim() || null,
+
+        city: city?.trim() || "",
+
+        state: state?.trim() || "",
+
+        zip: zip?.trim() || "",
+
+        country: country?.trim() || "India",
 
         latitude: lat,
         longitude: lng,
 
         label: label?.trim() || "Home",
 
-        landmark: landmark?.trim() || null,
-
         isDefault: Boolean(isDefault),
 
         /*
-         * Newly created address is considered
-         * recently used when it is selected later,
-         * so we don't need to set lastUsedAt here.
+         * Since this address is being created
+         * from the active delivery-location flow,
+         * it makes sense to mark it as recently used.
          */
+        lastUsedAt: new Date(),
       },
     });
 
     return NextResponse.json(
       {
         success: true,
+
         newAddress,
-        message: "Address added successfully",
+
+        message: "Address saved successfully",
       },
       {
         status: 201,
@@ -149,6 +167,54 @@ export async function POST(request) {
     return NextResponse.json(
       {
         error: error instanceof Error ? error.message : "Unable to add address",
+      },
+      {
+        status: 500,
+      },
+    );
+  }
+}
+
+// =========================
+// GET ADDRESSES
+// =========================
+export async function GET(request) {
+  try {
+    const { userId } = getAuth(request);
+
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const addresses = await prisma.address.findMany({
+      where: {
+        userId,
+      },
+
+      orderBy: [
+        {
+          isDefault: "desc",
+        },
+        {
+          lastUsedAt: "desc",
+        },
+        {
+          createdAt: "desc",
+        },
+      ],
+    });
+
+    return NextResponse.json({
+      success: true,
+      addresses,
+    });
+  } catch (error) {
+    console.error("GET ADDRESSES ERROR:", error);
+
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error ? error.message : "Unable to load addresses",
       },
       {
         status: 500,

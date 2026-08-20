@@ -16,7 +16,7 @@ import {
   Store,
 } from "lucide-react";
 
-import { useCustomerLocation } from "@/context/CustomerLocationContext";
+import AddressModal from "@/components/AddressModal";
 
 function LocationMapContent() {
   const router = useRouter();
@@ -31,7 +31,9 @@ function LocationMapContent() {
 
   const formattedFromURL = searchParams.get("formattedAddress") || "";
 
-  const { selectDeliveryLocation } = useCustomerLocation();
+  const from = searchParams.get("from");
+
+  const [showAddressModal, setShowAddressModal] = useState(false);
 
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
@@ -432,39 +434,6 @@ function LocationMapContent() {
   ]);
 
   // ==================================================
-  // INITIAL REVERSE GEOCODE
-  // ==================================================
-
-  useEffect(() => {
-    if (!location) return;
-
-    /*
-     * Search result may already contain
-     * formattedAddress. In that case we don't
-     * need an immediate reverse request.
-     */
-
-    if (location.formattedAddress) {
-      return;
-    }
-
-    const latitude = Number(location.latitude);
-
-    const longitude = Number(location.longitude);
-
-    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
-      return;
-    }
-
-    reverseGeocode(latitude, longitude);
-  }, [
-    location?.latitude,
-    location?.longitude,
-    location?.formattedAddress,
-    reverseGeocode,
-  ]);
-
-  // ==================================================
   // RECENTER TO CURRENT GPS
   // ==================================================
 
@@ -539,48 +508,10 @@ function LocationMapContent() {
   // CONFIRM LOCATION
   // ==================================================
 
-  const confirmLocation = async () => {
+  const confirmLocation = () => {
     if (!location) return;
 
-    try {
-      setConfirming(true);
-      setError("");
-
-      await selectDeliveryLocation({
-        latitude: location.latitude,
-
-        longitude: location.longitude,
-
-        label: location.label || labelFromURL || "Selected Location",
-
-        formattedAddress: location.formattedAddress || "",
-
-        source: location.source || sourceFromURL || "SEARCH",
-
-        addressId: location.addressId || null,
-
-        // Useful later for checkout / saved addresses
-        street: location.street || "",
-
-        area: location.area || "",
-
-        city: location.city || "",
-
-        state: location.state || "",
-
-        zip: location.zip || "",
-
-        country: location.country || "India",
-      });
-
-      router.push("/location");
-    } catch (error) {
-      console.error("CONFIRM LOCATION ERROR:", error);
-
-      setError(error?.message || "Unable to select this delivery location.");
-    } finally {
-      setConfirming(false);
-    }
+    setShowAddressModal(true);
   };
 
   // ==================================================
@@ -840,6 +771,38 @@ function LocationMapContent() {
             )}
           </div>
         </div>
+      )}
+
+      {showAddressModal && location && (
+        <AddressModal
+          setShowAddressModal={setShowAddressModal}
+          initialLocation={{
+            latitude: location.latitude,
+            longitude: location.longitude,
+
+            street: location.street || location.area || "",
+
+            area: location.area || "",
+
+            city: location.city || "",
+
+            state: location.state || "",
+
+            zip: location.zip || "",
+
+            country: location.country || "India",
+
+            formattedAddress: location.formattedAddress || "",
+          }}
+          onAddressSaved={() => {
+            if (from === "checkout") {
+              router.push("/cart");
+              return;
+            }
+
+            router.push("/location");
+          }}
+        />
       )}
     </main>
   );

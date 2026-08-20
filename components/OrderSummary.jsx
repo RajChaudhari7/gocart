@@ -12,7 +12,6 @@ import {
   PackageIcon,
 } from "lucide-react";
 import React, { useEffect, useState } from "react";
-import AddressModal from "./AddressModal";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -20,6 +19,7 @@ import { Protect, useAuth, useUser } from "@clerk/nextjs";
 import axios from "axios";
 import { clearCart } from "@/lib/features/cart/cartSlice";
 import { motion, AnimatePresence } from "framer-motion";
+import { useCustomerLocation } from "@/context/CustomerLocationContext";
 
 const OrderSummary = ({ totalPrice, items }) => {
   const { user } = useUser();
@@ -36,11 +36,12 @@ const OrderSummary = ({ totalPrice, items }) => {
 
   const [paymentMethod, setPaymentMethod] = useState("COD");
   const [selectedAddress, setSelectedAddress] = useState(null);
-  const [showAddressModal, setShowAddressModal] = useState(false);
   const [couponCodeInput, setCouponCodeInput] = useState("");
   const [coupon, setCoupon] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [checkoutAnimating, setCheckoutAnimating] = useState(false);
+
+  const { customerLocation, selectDeliveryLocation } = useCustomerLocation();
 
   const stores = items.reduce((acc, item) => {
     const storeId = item.storeId;
@@ -69,6 +70,31 @@ const OrderSummary = ({ totalPrice, items }) => {
   const discount = coupon ? (coupon.discount / 100) * totalPrice : 0;
   const finalTotal = totalPrice + shippingCost - discount;
 
+  useEffect(() => {
+    if (!Array.isArray(addressList) || addressList.length === 0) {
+      return;
+    }
+
+    // 1. Prefer currently active delivery address
+    if (customerLocation?.addressId) {
+      const matchedAddress = addressList.find(
+        (address) => address.id === customerLocation.addressId,
+      );
+
+      if (matchedAddress) {
+        setSelectedAddress(matchedAddress);
+        return;
+      }
+    }
+
+    // 2. Otherwise use default saved address
+    const defaultAddress = addressList.find((address) => address.isDefault);
+
+    if (defaultAddress) {
+      setSelectedAddress(defaultAddress);
+    }
+  }, [addressList, customerLocation?.addressId]);
+
   /* ---------------- COUPON ---------------- */
   const handleCouponCode = async (e) => {
     e.preventDefault();
@@ -92,6 +118,48 @@ const OrderSummary = ({ totalPrice, items }) => {
   };
 
   const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  const handleCheckoutAddressChange = async (addressId) => {
+    const address = addressList.find((item) => item.id === addressId);
+
+    if (!address) return;
+
+    setSelectedAddress(address);
+
+    if (address.latitude != null && address.longitude != null) {
+      try {
+        await selectDeliveryLocation({
+          latitude: address.latitude,
+          longitude: address.longitude,
+
+          label: address.label || "Delivery Address",
+
+          formattedAddress: [
+            address.street,
+            address.landmark,
+            address.city,
+            address.state,
+            address.zip,
+          ]
+            .filter(Boolean)
+            .join(", "),
+
+          source: "SAVED",
+
+          addressId: address.id,
+
+          street: address.street || "",
+          landmark: address.landmark || "",
+          city: address.city || "",
+          state: address.state || "",
+          zip: address.zip || "",
+          country: address.country || "India",
+        });
+      } catch (error) {
+        console.error("CHECKOUT ADDRESS LOCATION ERROR:", error);
+      }
+    }
+  };
 
   /* ---------------- PLACE ORDER ---------------- */
   const handlePlaceOrder = async (e) => {
@@ -234,10 +302,12 @@ const OrderSummary = ({ totalPrice, items }) => {
             Delivery Address
           </p>
           <button
-            onClick={() => setShowAddressModal(true)}
+            type="button"
+            onClick={() => router.push("/location/search?from=checkout")}
             className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 flex items-center gap-1 transition-colors"
           >
-            <PlusIcon size={14} /> Add New
+            <PlusIcon size={14} />
+            Add New
           </button>
         </div>
 
@@ -253,8 +323,43 @@ const OrderSummary = ({ totalPrice, items }) => {
                   {selectedAddress.name}
                 </p>
                 <p className="text-xs text-slate-400 leading-relaxed">
-                  {selectedAddress.city}, {selectedAddress.state} <br />{" "}
-                  {selectedAddress.zip}
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <p className="text-sm font-bold text-white">
+                        {selectedAddress.label ||
+                          selectedAddress.name ||
+                          "Delivery Address"}
+                      </p>
+
+                      {selectedAddress.isDefault && (
+                        <span className="rounded-full bg-indigo-500/10 px-2 py-0.5 text-[9px] font-bold uppercase text-indigo-300">
+                          Default
+                        </span>
+                      )}
+                    </div>
+
+                    <p className="text-xs font-medium text-slate-300">
+                      {selectedAddress.name}
+                    </p>
+
+                    <p className="mt-1 text-xs text-slate-400 leading-relaxed">
+                      {[
+                        selectedAddress.street,
+                        selectedAddress.landmark,
+                        selectedAddress.city,
+                        selectedAddress.state,
+                        selectedAddress.zip,
+                      ]
+                        .filter(Boolean)
+                        .join(", ")}
+                    </p>
+
+                    {selectedAddress.phone && (
+                      <p className="mt-2 text-xs text-slate-500">
+                        +91 {selectedAddress.phone}
+                      </p>
+                    )}
+                  </div>
                 </p>
               </div>
             </div>
@@ -269,19 +374,17 @@ const OrderSummary = ({ totalPrice, items }) => {
           <div className="relative">
             {/* FIXED SELECT DROPDOWN */}
             <select
+              value={selectedAddress?.id || ""}
+              onChange={(e) => handleCheckoutAddressChange(e.target.value)}
               className="w-full bg-slate-950 text-white text-sm border border-slate-700 hover:border-slate-600 rounded-xl p-3.5 appearance-none outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all cursor-pointer"
-              onChange={(e) => {
-                const index = e.target.value;
-                if (index !== "") setSelectedAddress(addressList[index]);
-              }}
-              defaultValue=""
             >
-              <option value="" disabled className="bg-slate-900 text-slate-400">
+              <option value="" disabled>
                 Choose an address...
               </option>
-              {addressList.map((addr, i) => (
-                <option key={i} value={i} className="bg-slate-900 text-white">
-                  {addr.name} — {addr.city}
+
+              {addressList.map((addr) => (
+                <option key={addr.id} value={addr.id}>
+                  {addr.label || addr.name} — {addr.city}
                 </option>
               ))}
             </select>
@@ -585,10 +688,6 @@ const OrderSummary = ({ totalPrice, items }) => {
           )}
         </AnimatePresence>
       </button>
-
-      {showAddressModal && (
-        <AddressModal setShowAddressModal={setShowAddressModal} />
-      )}
     </div>
   );
 };

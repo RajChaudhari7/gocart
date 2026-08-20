@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -27,7 +27,6 @@ export default function LocationSearchPage() {
   const {
     customerLocation,
     recentLocations,
-    useCurrentLocation,
     locationLoading,
   } = useCustomerLocation();
 
@@ -36,7 +35,8 @@ export default function LocationSearchPage() {
 
   const [searchLoading, setSearchLoading] = useState(false);
   const [currentLocationLoading, setCurrentLocationLoading] = useState(false);
-
+  const searchParams = useSearchParams();
+  const from = searchParams.get("from");
   const [error, setError] = useState("");
   const [selectedPrediction, setSelectedPrediction] = useState(null);
 
@@ -175,6 +175,10 @@ export default function LocationSearchPage() {
         formattedAddress,
       });
 
+      if (from) {
+        params.get("from", from);
+      }
+
       router.push(`/location/map?${params.toString()}`);
     } catch (error) {
       console.error("SELECT LOCATION ERROR:", error);
@@ -188,35 +192,63 @@ export default function LocationSearchPage() {
   // USE CURRENT GPS LOCATION
   // ==================================================
 
-  const handleUseCurrentLocation = async () => {
-    try {
-      setCurrentLocationLoading(true);
-      setError("");
-
-      const location = await useCurrentLocation();
-
-      const latitude = Number(location?.latitude);
-      const longitude = Number(location?.longitude);
-
-      if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
-        throw new Error("Unable to determine your current location.");
-      }
-
-      const params = new URLSearchParams({
-        lat: String(latitude),
-        lng: String(longitude),
-        source: "CURRENT",
-        label: "Current Location",
-      });
-
-      router.push(`/location/map?${params.toString()}`);
-    } catch (error) {
-      console.error("CURRENT LOCATION ERROR:", error);
-
-      setError(error?.message || "Unable to access your current location.");
-    } finally {
-      setCurrentLocationLoading(false);
+  const handleUseCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      setError("Location is not supported on this device.");
+      return;
     }
+
+    setCurrentLocationLoading(true);
+    setError("");
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const latitude = Number(position.coords.latitude);
+        const longitude = Number(position.coords.longitude);
+
+        if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+          setError("Unable to determine your current location.");
+          setCurrentLocationLoading(false);
+          return;
+        }
+
+        const params = new URLSearchParams({
+          lat: String(latitude),
+          lng: String(longitude),
+          source: "CURRENT",
+          label: "Current Location",
+        });
+
+        if (from) {
+          params.set("from", from);
+        }
+
+        router.push(`/location/map?${params.toString()}`);
+      },
+
+      (error) => {
+        console.error("CURRENT LOCATION ERROR:", error);
+
+        let message = "Unable to access your current location.";
+
+        if (error.code === 1) {
+          message = "Please allow location permission.";
+        } else if (error.code === 2) {
+          message = "Your current location could not be determined.";
+        } else if (error.code === 3) {
+          message = "Location request timed out.";
+        }
+
+        setError(message);
+        setCurrentLocationLoading(false);
+      },
+
+      {
+        enableHighAccuracy: true,
+        timeout: 12000,
+        maximumAge: 30000,
+      },
+    );
   };
 
   // ==================================================
@@ -258,6 +290,10 @@ export default function LocationSearchPage() {
       label: location.label || "Recent Location",
       formattedAddress: location.formattedAddress || "",
     });
+
+    if (from) {
+      params.set("from", from);
+    }
 
     router.push(`/location/map?${params.toString()}`);
   };
