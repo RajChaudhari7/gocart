@@ -1,830 +1,717 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import axios from "axios";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+
 import {
   ArrowLeft,
-  CheckCircle2,
+  ChevronRight,
+  Clock3,
   Crosshair,
+  Home,
   Loader2,
+  LocateFixed,
   MapPin,
   Navigation,
-  Store,
+  Search,
+  X,
 } from "lucide-react";
 
 import { useCustomerLocation } from "@/context/CustomerLocationContext";
 
-function LocationMapContent() {
+export default function LocationSearchPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
 
-  const latFromURL = searchParams.get("lat");
-  const lngFromURL = searchParams.get("lng");
+  const {
+    customerLocation,
+    recentLocations,
+    useCurrentLocation,
+    locationLoading,
+  } = useCustomerLocation();
 
-  const sourceFromURL = searchParams.get("source") || "SEARCH";
+  const [searchInput, setSearchInput] = useState("");
+  const [predictions, setPredictions] = useState([]);
 
-  const labelFromURL = searchParams.get("label") || "Selected Location";
-
-  const formattedFromURL = searchParams.get("formattedAddress") || "";
-
-  const { selectDeliveryLocation } = useCustomerLocation();
-
-  const mapContainerRef = useRef(null);
-  const mapRef = useRef(null);
-  const markerRef = useRef(null);
-  const leafletRef = useRef(null);
-
-  const [mapReady, setMapReady] = useState(false);
-
-  const [initialLoading, setInitialLoading] = useState(true);
-
-  const [reverseLoading, setReverseLoading] = useState(false);
-
-  const [confirming, setConfirming] = useState(false);
-
+  const [searchLoading, setSearchLoading] = useState(false);
   const [currentLocationLoading, setCurrentLocationLoading] = useState(false);
 
   const [error, setError] = useState("");
+  const [selectedPrediction, setSelectedPrediction] = useState(null);
 
-  const [location, setLocation] = useState(null);
-
-  const [serviceable, setServiceable] = useState(false);
-
-  const [serviceRadius, setServiceRadius] = useState(3);
-
-  const [nearbyStoreCount, setNearbyStoreCount] = useState(0);
+  const inputRef = useRef(null);
+  const requestCounterRef = useRef(0);
 
   // ==================================================
-  // SERVICEABILITY
-  // ==================================================
-
-  const checkServiceability = useCallback(async (latitude, longitude) => {
-    try {
-      const { data } = await axios.get("/api/store/nearby", {
-        params: {
-          lat: latitude,
-          lng: longitude,
-        },
-      });
-
-      setServiceable(Boolean(data.serviceable));
-
-      setServiceRadius(Number(data.serviceRadiusKm || 3));
-
-      setNearbyStoreCount(Array.isArray(data.stores) ? data.stores.length : 0);
-    } catch (error) {
-      console.error("SERVICEABILITY ERROR:", error);
-
-      setServiceable(false);
-      setNearbyStoreCount(0);
-    }
-  }, []);
-
-  // ==================================================
-  // REVERSE GEOCODING
-  // ==================================================
-
-  const reverseGeocode = useCallback(async (latitude, longitude) => {
-    try {
-      setReverseLoading(true);
-      setError("");
-
-      const { data } = await axios.post("/api/location/reverse", {
-        latitude,
-        longitude,
-      });
-
-      const resolved = data.location;
-
-      if (!resolved) {
-        throw new Error("Unable to identify this location.");
-      }
-
-      setLocation((current) => ({
-        ...current,
-
-        latitude,
-        longitude,
-
-        label: resolved.label || current?.label || "Selected Location",
-
-        formattedAddress:
-          resolved.formattedAddress || current?.formattedAddress || "",
-
-        street: resolved.street || "",
-
-        area: resolved.area || "",
-
-        city: resolved.city || "",
-
-        state: resolved.state || "",
-
-        zip: resolved.zip || "",
-
-        country: resolved.country || "India",
-
-        osmType: resolved.osmType || null,
-
-        osmId: resolved.osmId || null,
-
-        source: "MAP",
-
-        addressId: null,
-      }));
-    } catch (error) {
-      console.error("REVERSE GEOCODING ERROR:", error?.response?.data || error);
-
-      setError(
-        error?.response?.data?.error ||
-          error?.message ||
-          "We found the location, but could not identify the exact address.",
-      );
-    } finally {
-      setReverseLoading(false);
-    }
-  }, []);
-
-  // ==================================================
-  // INITIAL LOCATION
+  // AUTO FOCUS SEARCH
   // ==================================================
 
   useEffect(() => {
-    const loadInitialLocation = async () => {
+    const timer = setTimeout(() => {
+      inputRef.current?.focus();
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  // ==================================================
+  // SEARCH LOCATIONS
+  // ==================================================
+
+  useEffect(() => {
+    const query = searchInput.trim();
+
+    if (query.length < 2) {
+      requestCounterRef.current += 1;
+
+      setPredictions([]);
+      setSearchLoading(false);
+      setError("");
+
+      return;
+    }
+
+    const timeout = setTimeout(async () => {
+      const requestId = ++requestCounterRef.current;
+
       try {
-        setInitialLoading(true);
+        setSearchLoading(true);
         setError("");
 
-        const latitude = Number(latFromURL);
+        const payload = {
+          input: query,
+        };
 
-        const longitude = Number(lngFromURL);
-
-        if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
-          throw new Error("No valid location was provided.");
+        // Bias results toward the currently selected location
+        if (
+          customerLocation?.latitude != null &&
+          customerLocation?.longitude != null
+        ) {
+          payload.latitude = Number(customerLocation.latitude);
+          payload.longitude = Number(customerLocation.longitude);
         }
 
-        setLocation({
-          latitude,
-          longitude,
+        const { data } = await axios.post(
+          "/api/location/autocomplete",
+          payload,
+        );
 
-          label: labelFromURL,
+        // Ignore old requests
+        if (requestId !== requestCounterRef.current) {
+          return;
+        }
 
-          formattedAddress: formattedFromURL,
-
-          source: sourceFromURL,
-
-          addressId: null,
-        });
-
-        await checkServiceability(latitude, longitude);
+        setPredictions(Array.isArray(data.predictions) ? data.predictions : []);
       } catch (error) {
-        console.error("MAP LOCATION LOAD ERROR:", error);
+        console.error("LOCATION SEARCH ERROR:", error?.response?.data || error);
 
-        setError(error?.message || "Unable to load this location.");
+        if (requestId !== requestCounterRef.current) {
+          return;
+        }
+
+        setPredictions([]);
+
+        setError(
+          error?.response?.data?.error ||
+            error?.message ||
+            "Unable to search locations right now.",
+        );
       } finally {
-        setInitialLoading(false);
-      }
-    };
-
-    loadInitialLocation();
-  }, [
-    latFromURL,
-    lngFromURL,
-    sourceFromURL,
-    labelFromURL,
-    formattedFromURL,
-    checkServiceability,
-  ]);
-
-  // ==================================================
-  // LOAD LEAFLET
-  // ==================================================
-
-  useEffect(() => {
-    let mounted = true;
-
-    const loadLeaflet = async () => {
-      try {
-        const leafletModule = await import("leaflet");
-
-        const L = leafletModule.default || leafletModule;
-
-        if (!mounted) return;
-
-        /*
-         * Leaflet's default marker image URLs
-         * don't always work correctly with Next.js.
-         *
-         * We use divIcon instead, so no PNG marker
-         * assets are required.
-         */
-
-        leafletRef.current = L;
-        setMapReady(true);
-      } catch (error) {
-        console.error("LEAFLET LOAD ERROR:", error);
-
-        setError("Unable to load the map.");
-      }
-    };
-
-    loadLeaflet();
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  // ==================================================
-  // HANDLE POSITION CHANGE
-  // ==================================================
-
-  const updateLocationFromMap = useCallback(
-    async (latitude, longitude, source = "MAP") => {
-      setLocation((current) => ({
-        ...current,
-
-        latitude,
-        longitude,
-
-        source,
-
-        addressId: null,
-      }));
-
-      await Promise.allSettled([
-        reverseGeocode(latitude, longitude),
-
-        checkServiceability(latitude, longitude),
-      ]);
-    },
-    [reverseGeocode, checkServiceability],
-  );
-
-  // ==================================================
-  // BUILD LEAFLET MAP
-  // ==================================================
-
-  useEffect(() => {
-    if (!mapReady) return;
-    if (!location) return;
-    if (!mapContainerRef.current) return;
-
-    const L = leafletRef.current;
-
-    if (!L) return;
-
-    const latitude = Number(location.latitude);
-
-    const longitude = Number(location.longitude);
-
-    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
-      return;
-    }
-
-    const position = [latitude, longitude];
-
-    // --------------------------------------------
-    // CREATE MAP
-    // --------------------------------------------
-
-    if (!mapRef.current) {
-      mapRef.current = L.map(mapContainerRef.current, {
-        center: position,
-
-        zoom: 17,
-
-        zoomControl: false,
-
-        attributionControl: true,
-
-        doubleClickZoom: false,
-      });
-
-      // ------------------------------------------
-      // OSM TILES
-      // ------------------------------------------
-
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        maxZoom: 19,
-
-        attribution:
-          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-      }).addTo(mapRef.current);
-
-      // ------------------------------------------
-      // ZOOM CONTROL
-      // ------------------------------------------
-
-      L.control
-        .zoom({
-          position: "bottomleft",
-        })
-        .addTo(mapRef.current);
-
-      // ------------------------------------------
-      // CUSTOM MARKER
-      // ------------------------------------------
-
-      const markerIcon = L.divIcon({
-        className: "",
-
-        html: `
-          <div
-            style="
-              width:44px;
-              height:44px;
-              border-radius:50% 50% 50% 0;
-              background:#06b6d4;
-              border:4px solid white;
-              box-shadow:0 8px 25px rgba(0,0,0,.35);
-              transform:rotate(-45deg);
-              display:flex;
-              align-items:center;
-              justify-content:center;
-            "
-          >
-            <div
-              style="
-                width:12px;
-                height:12px;
-                border-radius:50%;
-                background:#020617;
-                transform:rotate(45deg);
-              "
-            ></div>
-          </div>
-        `,
-
-        iconSize: [44, 44],
-
-        iconAnchor: [22, 44],
-      });
-
-      markerRef.current = L.marker(position, {
-        draggable: true,
-        icon: markerIcon,
-      }).addTo(mapRef.current);
-
-      // ------------------------------------------
-      // DRAG MARKER
-      // ------------------------------------------
-
-      markerRef.current.on("dragend", async (event) => {
-        const marker = event.target;
-
-        const next = marker.getLatLng();
-
-        await updateLocationFromMap(next.lat, next.lng, "MAP");
-      });
-
-      // ------------------------------------------
-      // MAP CLICK
-      // ------------------------------------------
-
-      mapRef.current.on("click", async (event) => {
-        const latitude = event.latlng.lat;
-
-        const longitude = event.latlng.lng;
-
-        markerRef.current?.setLatLng([latitude, longitude]);
-
-        await updateLocationFromMap(latitude, longitude, "MAP");
-      });
-
-      // ------------------------------------------
-      // RESIZE FIX
-      // ------------------------------------------
-
-      setTimeout(() => {
-        mapRef.current?.invalidateSize();
-      }, 150);
-    } else {
-      mapRef.current.setView(position, mapRef.current.getZoom(), {
-        animate: true,
-      });
-
-      markerRef.current?.setLatLng(position);
-    }
-  }, [
-    mapReady,
-    location?.latitude,
-    location?.longitude,
-    updateLocationFromMap,
-  ]);
-
-  // ==================================================
-  // INITIAL REVERSE GEOCODING
-  // ==================================================
-
-  useEffect(() => {
-    if (!location) return;
-
-    if (location.formattedAddress) {
-      return;
-    }
-
-    const latitude = Number(location.latitude);
-
-    const longitude = Number(location.longitude);
-
-    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
-      return;
-    }
-
-    reverseGeocode(latitude, longitude);
-  }, [
-    location?.latitude,
-    location?.longitude,
-    location?.formattedAddress,
-    reverseGeocode,
-  ]);
-
-  // ==================================================
-  // CURRENT GPS LOCATION
-  // ==================================================
-
-  const recenterToCurrentLocation = () => {
-    if (!navigator.geolocation) {
-      setError("Location is not supported on this device.");
-
-      return;
-    }
-
-    setCurrentLocationLoading(true);
-    setError("");
-
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        try {
-          const latitude = Number(position.coords.latitude);
-
-          const longitude = Number(position.coords.longitude);
-
-          if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
-            throw new Error("Invalid current location.");
-          }
-
-          const nextPosition = [latitude, longitude];
-
-          mapRef.current?.setView(nextPosition, 17, {
-            animate: true,
-          });
-
-          markerRef.current?.setLatLng(nextPosition);
-
-          await updateLocationFromMap(latitude, longitude, "CURRENT");
-        } catch (error) {
-          console.error("RECENTER ERROR:", error);
-
-          setError(error?.message || "Unable to use your current location.");
-        } finally {
-          setCurrentLocationLoading(false);
+        if (requestId === requestCounterRef.current) {
+          setSearchLoading(false);
         }
-      },
+      }
+    }, 450);
 
-      (error) => {
-        console.error("CURRENT LOCATION ERROR:", error);
+    return () => clearTimeout(timeout);
+  }, [searchInput, customerLocation?.latitude, customerLocation?.longitude]);
 
-        let message = "Unable to access your current location.";
+  // ==================================================
+  // SELECT SEARCH RESULT
+  // ==================================================
 
-        if (error.code === 1) {
-          message = "Please allow location permission.";
-        } else if (error.code === 2) {
-          message = "Your current location could not be determined.";
-        } else if (error.code === 3) {
-          message = "Location request timed out.";
-        }
+  const handleSelectPrediction = (prediction) => {
+    const latitude = Number(prediction.latitude ?? prediction.lat);
 
-        setError(message);
-
-        setCurrentLocationLoading(false);
-      },
-
-      {
-        enableHighAccuracy: true,
-
-        timeout: 12000,
-
-        maximumAge: 30000,
-      },
+    const longitude = Number(
+      prediction.longitude ?? prediction.lng ?? prediction.lon,
     );
-  };
 
-  // ==================================================
-  // CONFIRM LOCATION
-  // ==================================================
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+      setError("This location does not contain valid coordinates.");
 
-  const confirmLocation = async () => {
-    if (!location) return;
+      console.error("INVALID LOCATION RESULT:", prediction);
+
+      return;
+    }
 
     try {
-      setConfirming(true);
+      const predictionId =
+        prediction.id || prediction.osmId || `${latitude}-${longitude}`;
+
+      setSelectedPrediction(predictionId);
       setError("");
 
-      await selectDeliveryLocation({
-        latitude: location.latitude,
+      const label =
+        prediction.mainText ||
+        prediction.label ||
+        prediction.name ||
+        prediction.text ||
+        "Selected Location";
 
-        longitude: location.longitude,
+      const formattedAddress =
+        prediction.formattedAddress ||
+        prediction.displayName ||
+        prediction.secondaryText ||
+        prediction.address ||
+        "";
 
-        label: location.label || labelFromURL || "Selected Location",
-
-        formattedAddress: location.formattedAddress || "",
-
-        source: location.source || sourceFromURL || "SEARCH",
-
-        addressId: location.addressId || null,
+      const params = new URLSearchParams({
+        lat: String(latitude),
+        lng: String(longitude),
+        source: "SEARCH",
+        label,
+        formattedAddress,
       });
 
-      router.push("/location");
+      router.push(`/location/map?${params.toString()}`);
     } catch (error) {
-      console.error("CONFIRM LOCATION ERROR:", error);
+      console.error("SELECT LOCATION ERROR:", error);
 
-      setError(error?.message || "Unable to select this delivery location.");
-    } finally {
-      setConfirming(false);
+      setError("Unable to open this location.");
+      setSelectedPrediction(null);
     }
   };
 
   // ==================================================
-  // CLEANUP MAP
+  // USE CURRENT GPS LOCATION
   // ==================================================
 
-  useEffect(() => {
-    return () => {
-      if (mapRef.current) {
-        mapRef.current.remove();
-        mapRef.current = null;
+  const handleUseCurrentLocation = async () => {
+    try {
+      setCurrentLocationLoading(true);
+      setError("");
+
+      const location = await useCurrentLocation();
+
+      const latitude = Number(location?.latitude);
+      const longitude = Number(location?.longitude);
+
+      if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+        throw new Error("Unable to determine your current location.");
       }
 
-      markerRef.current = null;
-    };
-  }, []);
+      const params = new URLSearchParams({
+        lat: String(latitude),
+        lng: String(longitude),
+        source: "CURRENT",
+        label: "Current Location",
+      });
+
+      router.push(`/location/map?${params.toString()}`);
+    } catch (error) {
+      console.error("CURRENT LOCATION ERROR:", error);
+
+      setError(error?.message || "Unable to access your current location.");
+    } finally {
+      setCurrentLocationLoading(false);
+    }
+  };
+
+  // ==================================================
+  // RECENT LOCATIONS
+  // ==================================================
+
+  const displayRecentLocations = useMemo(() => {
+    if (!Array.isArray(recentLocations)) {
+      return [];
+    }
+
+    return recentLocations
+      .filter((location) => {
+        const latitude = Number(location?.latitude);
+        const longitude = Number(location?.longitude);
+
+        return Number.isFinite(latitude) && Number.isFinite(longitude);
+      })
+      .slice(0, 5);
+  }, [recentLocations]);
+
+  // ==================================================
+  // SELECT RECENT LOCATION
+  // ==================================================
+
+  const handleRecentLocation = (location) => {
+    const latitude = Number(location.latitude);
+    const longitude = Number(location.longitude);
+
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+      setError("This recent location is invalid.");
+      return;
+    }
+
+    const params = new URLSearchParams({
+      lat: String(latitude),
+      lng: String(longitude),
+      source: location.source || "RECENT",
+      label: location.label || "Recent Location",
+      formattedAddress: location.formattedAddress || "",
+    });
+
+    router.push(`/location/map?${params.toString()}`);
+  };
+
+  // ==================================================
+  // CLEAR SEARCH
+  // ==================================================
+
+  const clearSearch = () => {
+    requestCounterRef.current += 1;
+
+    setSearchInput("");
+    setPredictions([]);
+    setSearchLoading(false);
+    setError("");
+
+    inputRef.current?.focus();
+  };
+
+  // ==================================================
+  // UI
+  // ==================================================
 
   return (
     <main className="min-h-screen bg-[#020617] text-white">
-      {/* ======================================== */}
+      {/* ======================================= */}
       {/* HEADER */}
-      {/* ======================================== */}
+      {/* ======================================= */}
 
-      <div className="fixed inset-x-0 top-0 z-[1000] border-b border-white/10 bg-[#020617]/90 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-4xl items-center gap-3 px-3 py-3 sm:px-6 sm:py-4">
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 transition hover:bg-white/10"
-          >
-            <ArrowLeft size={20} />
-          </button>
+      <div className="sticky top-0 z-50 border-b border-white/10 bg-[#020617]/90 backdrop-blur-2xl">
+        <div className="mx-auto max-w-3xl px-3 pb-3 pt-3 sm:px-6 sm:pb-4 sm:pt-4">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => router.back()}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white transition hover:bg-white/10"
+            >
+              <ArrowLeft size={20} />
+            </button>
 
-          <div className="min-w-0">
-            <h1 className="text-lg font-black">Confirm delivery location</h1>
+            <div className="min-w-0">
+              <h1 className="text-lg font-black sm:text-xl">
+                Search delivery location
+              </h1>
 
-            <p className="mt-0.5 truncate text-xs text-white/35">
-              Drag the pin or tap the map to choose your exact location
-            </p>
+              <p className="mt-0.5 hidden text-xs text-white/35 sm:block">
+                Search by area, street, landmark or building
+              </p>
+            </div>
+          </div>
+
+          {/* SEARCH */}
+
+          <div className="relative mt-4">
+            <Search
+              size={19}
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30"
+            />
+
+            <input
+              ref={inputRef}
+              type="text"
+              value={searchInput}
+              onChange={(event) => setSearchInput(event.target.value)}
+              placeholder="Search area, street or landmark..."
+              autoComplete="off"
+              spellCheck={false}
+              className="
+                w-full
+                rounded-2xl
+                border
+                border-white/10
+                bg-white/[0.055]
+                py-3.5
+                pl-11
+                pr-12
+                text-sm
+                font-medium
+                text-white
+                outline-none
+                transition
+                placeholder:text-white/25
+                focus:border-cyan-400/40
+                focus:bg-white/[0.07]
+                focus:ring-2
+                focus:ring-cyan-400/5
+                sm:py-4
+                sm:text-base
+              "
+            />
+
+            <div className="absolute right-4 top-1/2 flex -translate-y-1/2 items-center">
+              {searchLoading ? (
+                <Loader2 size={18} className="animate-spin text-cyan-400" />
+              ) : searchInput ? (
+                <button
+                  type="button"
+                  onClick={clearSearch}
+                  className="flex h-7 w-7 items-center justify-center rounded-full bg-white/5 text-white/40 transition hover:bg-white/10 hover:text-white"
+                >
+                  <X size={14} />
+                </button>
+              ) : null}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* ======================================== */}
-      {/* MAP */}
-      {/* ======================================== */}
+      {/* ======================================= */}
+      {/* CONTENT */}
+      {/* ======================================= */}
 
-      <section className="relative h-[58vh] min-h-[430px] pt-[65px] sm:h-[63vh] sm:pt-[73px]">
-        {initialLoading ? (
-          <div className="flex h-full flex-col items-center justify-center bg-slate-950">
-            <Loader2 size={34} className="animate-spin text-cyan-400" />
+      <div className="mx-auto max-w-3xl px-3 pb-28 pt-4 sm:px-6 sm:pt-6">
+        {/* CURRENT LOCATION */}
 
-            <p className="mt-4 text-sm font-semibold text-white/50">
-              Loading your location...
+        <motion.button
+          type="button"
+          whileTap={{
+            scale: 0.985,
+          }}
+          disabled={currentLocationLoading || locationLoading}
+          onClick={handleUseCurrentLocation}
+          className="
+            group
+            flex
+            w-full
+            items-center
+            gap-3
+            rounded-2xl
+            border
+            border-emerald-500/20
+            bg-emerald-500/[0.07]
+            p-4
+            text-left
+            transition
+            hover:border-emerald-400/35
+            hover:bg-emerald-500/[0.1]
+            disabled:cursor-not-allowed
+            disabled:opacity-60
+          "
+        >
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-400">
+            {currentLocationLoading ? (
+              <Loader2 size={20} className="animate-spin" />
+            ) : (
+              <LocateFixed size={21} />
+            )}
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <p className="font-bold text-emerald-400">Use current location</p>
+
+            <p className="mt-0.5 text-xs text-white/35">
+              Use GPS to detect your precise delivery point
             </p>
           </div>
-        ) : error && !location ? (
-          <div className="flex h-full items-center justify-center px-5">
-            <div className="max-w-sm text-center">
-              <MapPin size={36} className="mx-auto text-red-400" />
 
-              <h2 className="mt-4 text-xl font-black">Unable to load map</h2>
+          <Crosshair size={18} className="shrink-0 text-emerald-400/60" />
+        </motion.button>
 
-              <p className="mt-2 text-sm text-white/40">{error}</p>
-            </div>
-          </div>
-        ) : (
-          <>
-            <div ref={mapContainerRef} className="h-full w-full bg-slate-900" />
+        {/* ======================================= */}
+        {/* ERROR */}
+        {/* ======================================= */}
 
-            {/* CENTER DECORATION */}
-
-            <div className="pointer-events-none absolute left-1/2 top-[calc(50%+25px)] z-[500] -translate-x-1/2 -translate-y-full">
-              <motion.div
-                animate={{
-                  y: [0, -5, 0],
-                }}
-                transition={{
-                  duration: 1.5,
-                  repeat: Infinity,
-                }}
-                className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-[#020617]/90 text-cyan-400 shadow-xl backdrop-blur-xl"
-              >
-                <Navigation size={19} />
-              </motion.div>
-            </div>
-
-            {/* CURRENT LOCATION BUTTON */}
-
-            <button
-              type="button"
-              onClick={recenterToCurrentLocation}
-              disabled={currentLocationLoading}
-              className="absolute bottom-5 right-4 z-[500] flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-[#020617]/90 text-cyan-400 shadow-xl backdrop-blur-xl transition hover:bg-slate-900 disabled:opacity-60"
+        <AnimatePresence>
+          {error && (
+            <motion.div
+              initial={{
+                opacity: 0,
+                height: 0,
+              }}
+              animate={{
+                opacity: 1,
+                height: "auto",
+              }}
+              exit={{
+                opacity: 0,
+                height: 0,
+              }}
+              className="overflow-hidden"
             >
-              {currentLocationLoading ? (
-                <Loader2 size={20} className="animate-spin" />
-              ) : (
-                <Crosshair size={21} />
+              <div className="mt-3 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-xs leading-relaxed text-red-300">
+                {error}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ======================================= */}
+        {/* SEARCH RESULTS */}
+        {/* ======================================= */}
+
+        {searchInput.trim().length >= 2 && (
+          <section className="mt-6">
+            <div className="mb-3 flex items-center justify-between px-1">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30">
+                Search results
+              </p>
+
+              {searchLoading && (
+                <p className="text-[10px] text-cyan-400/70">Searching...</p>
               )}
-            </button>
-          </>
-        )}
-      </section>
-
-      {/* ======================================== */}
-      {/* LOCATION DETAILS */}
-      {/* ======================================== */}
-
-      {location && (
-        <section className="relative z-[600] -mt-5 rounded-t-[2rem] border-t border-white/10 bg-[#020617] px-4 pb-32 pt-6 shadow-[0_-15px_45px_rgba(0,0,0,0.35)] sm:px-6">
-          <div className="mx-auto max-w-3xl">
-            {/* ADDRESS */}
-
-            <div className="flex items-start gap-4">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-cyan-500/10 text-cyan-400">
-                {reverseLoading ? (
-                  <Loader2 size={21} className="animate-spin" />
-                ) : (
-                  <MapPin size={22} />
-                )}
-              </div>
-
-              <div className="min-w-0 flex-1">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30">
-                  Delivery location
-                </p>
-
-                <h2 className="mt-1 text-lg font-black text-white sm:text-xl">
-                  {location.label || "Selected Location"}
-                </h2>
-
-                <p className="mt-1 text-xs leading-relaxed text-white/40 sm:text-sm">
-                  {reverseLoading
-                    ? "Finding exact address..."
-                    : location.formattedAddress || "Exact address unavailable"}
-                </p>
-              </div>
             </div>
 
-            {/* SERVICEABILITY */}
+            {!searchLoading && predictions.length === 0 ? (
+              <motion.div
+                initial={{
+                  opacity: 0,
+                }}
+                animate={{
+                  opacity: 1,
+                }}
+                className="rounded-2xl border border-dashed border-white/10 bg-white/[0.025] px-5 py-10 text-center"
+              >
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white/5">
+                  <MapPin size={23} className="text-white/25" />
+                </div>
 
-            <div
-              className={`mt-5 rounded-2xl border p-4 ${
-                serviceable
-                  ? "border-emerald-500/20 bg-emerald-500/[0.07]"
-                  : "border-amber-500/20 bg-amber-500/[0.07]"
-              }`}
-            >
-              <div className="flex items-start gap-3">
-                <div
-                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
-                    serviceable
-                      ? "bg-emerald-500/15 text-emerald-400"
-                      : "bg-amber-500/15 text-amber-400"
-                  }`}
+                <h3 className="mt-4 text-sm font-bold text-white">
+                  No matching locations
+                </h3>
+
+                <p className="mx-auto mt-2 max-w-sm text-xs leading-relaxed text-white/30">
+                  Try searching for an area, landmark, road, building or
+                  locality name.
+                </p>
+              </motion.div>
+            ) : (
+              <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.035]">
+                <AnimatePresence initial={false}>
+                  {predictions.map((prediction, index) => {
+                    const latitude = Number(
+                      prediction.latitude ?? prediction.lat,
+                    );
+
+                    const longitude = Number(
+                      prediction.longitude ?? prediction.lng ?? prediction.lon,
+                    );
+
+                    const predictionId =
+                      prediction.id ||
+                      prediction.osmId ||
+                      `${latitude}-${longitude}-${index}`;
+
+                    return (
+                      <motion.button
+                        key={predictionId}
+                        type="button"
+                        initial={{
+                          opacity: 0,
+                          y: 8,
+                        }}
+                        animate={{
+                          opacity: 1,
+                          y: 0,
+                        }}
+                        transition={{
+                          delay: Math.min(index * 0.025, 0.12),
+                        }}
+                        disabled={selectedPrediction === predictionId}
+                        onClick={() => handleSelectPrediction(prediction)}
+                        className={`
+                            group
+                            flex
+                            w-full
+                            items-start
+                            gap-3
+                            p-4
+                            text-left
+                            transition
+                            hover:bg-white/[0.05]
+                            disabled:cursor-wait
+                            disabled:opacity-60
+                            sm:p-5
+
+                            ${
+                              index !== predictions.length - 1
+                                ? "border-b border-white/[0.07]"
+                                : ""
+                            }
+                          `}
+                      >
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-cyan-500/10 text-cyan-400">
+                          {selectedPrediction === predictionId ? (
+                            <Loader2 size={18} className="animate-spin" />
+                          ) : (
+                            <MapPin size={18} />
+                          )}
+                        </div>
+
+                        <div className="min-w-0 flex-1">
+                          <p className="line-clamp-1 text-sm font-bold text-white sm:text-base">
+                            {prediction.mainText ||
+                              prediction.label ||
+                              prediction.name ||
+                              prediction.text ||
+                              "Location"}
+                          </p>
+
+                          {(prediction.secondaryText ||
+                            prediction.formattedAddress ||
+                            prediction.displayName) && (
+                            <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-white/35">
+                              {prediction.secondaryText ||
+                                prediction.formattedAddress ||
+                                prediction.displayName}
+                            </p>
+                          )}
+
+                          {prediction.distanceMeters != null && (
+                            <p className="mt-2 text-[10px] font-semibold text-cyan-400/70">
+                              {formatDistance(prediction.distanceMeters)}
+                            </p>
+                          )}
+                        </div>
+
+                        <ChevronRight
+                          size={18}
+                          className="mt-2 shrink-0 text-white/20 transition group-hover:translate-x-1 group-hover:text-cyan-400"
+                        />
+                      </motion.button>
+                    );
+                  })}
+                </AnimatePresence>
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* ======================================= */}
+        {/* RECENT LOCATIONS */}
+        {/* ======================================= */}
+
+        {searchInput.trim().length < 2 && displayRecentLocations.length > 0 && (
+          <section className="mt-8">
+            <div className="mb-4 flex items-center gap-2 px-1">
+              <Clock3 size={14} className="text-indigo-400" />
+
+              <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30">
+                Recent locations
+              </h2>
+            </div>
+
+            <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.035]">
+              {displayRecentLocations.map((location, index) => (
+                <button
+                  type="button"
+                  key={`${location.latitude}-${location.longitude}-${index}`}
+                  onClick={() => handleRecentLocation(location)}
+                  className={`
+                        group
+                        flex
+                        w-full
+                        items-start
+                        gap-3
+                        p-4
+                        text-left
+                        transition
+                        hover:bg-white/[0.05]
+                        sm:p-5
+
+                        ${
+                          index !== displayRecentLocations.length - 1
+                            ? "border-b border-white/[0.07]"
+                            : ""
+                        }
+                      `}
                 >
-                  {serviceable ? (
-                    <CheckCircle2 size={19} />
-                  ) : (
-                    <Store size={19} />
-                  )}
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-400">
+                    {getRecentIcon(location)}
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-bold text-white">
+                      {location.label || "Recent Location"}
+                    </p>
+
+                    <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-white/35">
+                      {location.formattedAddress ||
+                        "Recently selected delivery location"}
+                    </p>
+                  </div>
+
+                  <ChevronRight
+                    size={18}
+                    className="mt-2 shrink-0 text-white/20 transition group-hover:translate-x-1 group-hover:text-indigo-400"
+                  />
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* ======================================= */}
+        {/* SEARCH HINT */}
+        {/* ======================================= */}
+
+        {searchInput.trim().length < 2 && (
+          <section className="mt-8">
+            <div className="relative overflow-hidden rounded-[1.7rem] border border-white/10 bg-white/[0.03] p-5 sm:p-6">
+              <div className="pointer-events-none absolute -right-12 -top-12 h-32 w-32 rounded-full bg-cyan-500/10 blur-3xl" />
+
+              <div className="relative flex items-start gap-4">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-cyan-500/10 text-cyan-400">
+                  <Navigation size={20} />
                 </div>
 
                 <div>
-                  <p
-                    className={`font-bold ${
-                      serviceable ? "text-emerald-300" : "text-amber-300"
-                    }`}
-                  >
-                    {serviceable
-                      ? "Delivery available here"
-                      : "Currently not serviceable"}
-                  </p>
+                  <h3 className="text-sm font-bold text-white">
+                    Find your exact delivery point
+                  </h3>
 
-                  <p className="mt-1 text-xs leading-relaxed text-white/35">
-                    {serviceable
-                      ? `${nearbyStoreCount} ${
-                          nearbyStoreCount === 1 ? "store can" : "stores can"
-                        } currently deliver within ${serviceRadius} km of this location.`
-                      : `We currently don't have a partner store within ${serviceRadius} km of this location.`}
+                  <p className="mt-2 text-xs leading-relaxed text-white/35">
+                    Search for your building, street, colony, landmark or area.
+                    You can adjust the exact pin on the map before confirming.
                   </p>
                 </div>
               </div>
             </div>
-
-            {/* ERROR */}
-
-            {error && (
-              <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-xs leading-relaxed text-red-300">
-                {error}
-              </div>
-            )}
-
-            {/* TIP */}
-
-            <div className="mt-5 rounded-2xl border border-white/5 bg-white/[0.025] px-4 py-3">
-              <p className="text-[11px] leading-relaxed text-white/35">
-                Drag the marker or tap anywhere on the map to set your exact
-                entrance or delivery point.
-              </p>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* ======================================== */}
-      {/* CONFIRM BUTTON */}
-      {/* ======================================== */}
-
-      {location && (
-        <div className="fixed inset-x-0 bottom-0 z-[1000] border-t border-white/10 bg-[#020617]/95 p-3 backdrop-blur-2xl sm:p-4">
-          <div className="mx-auto max-w-3xl">
-            <button
-              type="button"
-              onClick={confirmLocation}
-              disabled={confirming || reverseLoading}
-              className={`
-                flex
-                w-full
-                items-center
-                justify-center
-                gap-2
-                rounded-2xl
-                px-5
-                py-4
-                text-sm
-                font-black
-                transition
-                active:scale-[0.99]
-
-                ${
-                  serviceable
-                    ? "bg-emerald-500 text-slate-950 hover:bg-emerald-400"
-                    : "bg-amber-500 text-slate-950 hover:bg-amber-400"
-                }
-
-                disabled:cursor-not-allowed
-                disabled:opacity-60
-              `}
-            >
-              {confirming ? (
-                <>
-                  <Loader2 size={18} className="animate-spin" />
-                  Selecting location...
-                </>
-              ) : (
-                <>
-                  <Navigation size={18} />
-
-                  {serviceable
-                    ? "Confirm Delivery Location"
-                    : "Use This Location Anyway"}
-                </>
-              )}
-            </button>
-
-            {!serviceable && (
-              <p className="mt-2 text-center text-[10px] text-amber-400/70">
-                You can save this location, but products and stores will remain
-                unavailable until service reaches this area.
-              </p>
-            )}
-          </div>
-        </div>
-      )}
+          </section>
+        )}
+      </div>
     </main>
   );
 }
 
-export default function LocationMapPage() {
-  return (
-    <Suspense
-      fallback={
-        <div className="flex min-h-screen items-center justify-center bg-[#020617] text-white">
-          <Loader2 className="animate-spin text-cyan-400" />
-        </div>
-      }
-    >
-      <LocationMapContent />
-    </Suspense>
-  );
+// ==================================================
+// HELPERS
+// ==================================================
+
+function formatDistance(distanceMeters) {
+  const meters = Number(distanceMeters);
+
+  if (!Number.isFinite(meters)) {
+    return "";
+  }
+
+  if (meters < 1000) {
+    return `${Math.round(meters)} m away`;
+  }
+
+  return `${(meters / 1000).toFixed(1)} km away`;
+}
+
+function getRecentIcon(location) {
+  const label = location?.label?.toLowerCase()?.trim() || "";
+
+  if (label === "home") {
+    return <Home size={18} />;
+  }
+
+  if (location?.source === "CURRENT") {
+    return <LocateFixed size={18} />;
+  }
+
+  return <MapPin size={18} />;
 }
