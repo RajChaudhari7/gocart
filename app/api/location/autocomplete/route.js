@@ -4,13 +4,9 @@ export async function POST(request) {
   try {
     const body = await request.json();
 
-    const { input, sessionToken, latitude, longitude } = body;
+    const input = body.input?.trim();
 
-    // VALIDATION
-
-    const query = input?.trim();
-
-    if (!query) {
+    if (!input) {
       return NextResponse.json(
         {
           error: "Search input is required.",
@@ -21,132 +17,115 @@ export async function POST(request) {
       );
     }
 
-    const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+    const params = new URLSearchParams({
+      q: input,
+      format: "jsonv2",
+      addressdetails: "1",
+      countrycodes: "in",
+      limit: "8",
+    });
 
-    if (!apiKey) {
-      console.error("GOOGLE_MAPS_API_KEY is missing.");
+    /*
+     * If we already know customer's selected/current
+     * location, bias the search around that area.
+     */
+    const latitude = Number(body.latitude);
+    const longitude = Number(body.longitude);
 
-      return NextResponse.json(
-        {
-          error: "Google Maps configuration is missing.",
-        },
-        {
-          status: 500,
-        },
+    if (Number.isFinite(latitude) && Number.isFinite(longitude)) {
+      /*
+       * Approximate viewbox around current location.
+       * This does not strictly restrict results because
+       * bounded=0, but helps ranking nearby addresses.
+       */
+
+      const delta = 0.3;
+
+      params.set(
+        "viewbox",
+        [
+          longitude - delta,
+          latitude + delta,
+          longitude + delta,
+          latitude - delta,
+        ].join(","),
       );
+
+      params.set("bounded", "0");
     }
-
-    // GOOGLE REQUEST BODY
-
-    const googleBody = {
-      input: query,
-
-      // Keep results inside India
-      includedRegionCodes: ["in"],
-
-      // Format results for India
-      regionCode: "in",
-
-      languageCode: "en",
-    };
-
-    // SESSION TOKEN
-
-    if (sessionToken) {
-      googleBody.sessionToken = sessionToken;
-    }
-
-    // LOCATION BIAS
-
-    const lat = Number(latitude);
-    const lng = Number(longitude);
-
-    if (Number.isFinite(lat) && Number.isFinite(lng)) {
-      googleBody.locationBias = {
-        circle: {
-          center: {
-            latitude: lat,
-            longitude: lng,
-          },
-
-          // 50 KM search preference
-          radius: 50000,
-        },
-      };
-    }
-
-    // GOOGLE PLACES AUTOCOMPLETE
 
     const response = await fetch(
-      "https://places.googleapis.com/v1/places:autocomplete",
+      `https://nominatim.openstreetmap.org/search?${params.toString()}`,
       {
-        method: "POST",
-
         headers: {
-          "Content-Type": "application/json",
-
-          "X-Goog-Api-Key": apiKey,
-
-          "X-Goog-FieldMask": [
-            "suggestions.placePrediction.placeId",
-            "suggestions.placePrediction.text.text",
-            "suggestions.placePrediction.structuredFormat.mainText.text",
-            "suggestions.placePrediction.structuredFormat.secondaryText.text",
-            "suggestions.placePrediction.types",
-            "suggestions.placePrediction.distanceMeters",
-          ].join(","),
+          /*
+           * Nominatim requires a meaningful User-Agent.
+           */
+          "User-Agent": "NandurbarBazar/1.0",
+          Accept: "application/json",
         },
-
-        body: JSON.stringify(googleBody),
 
         cache: "no-store",
       },
     );
 
-    const data = await response.json();
-
-    // GOOGLE ERROR
-
     if (!response.ok) {
-      console.error("GOOGLE AUTOCOMPLETE ERROR:", data);
-
-      return NextResponse.json(
-        {
-          error: data?.error?.message || "Unable to search locations.",
-        },
-        {
-          status: response.status,
-        },
-      );
+      throw new Error("Unable to search locations.");
     }
 
-    // CLEAN RESPONSE
+    const results = await response.json();
 
-    const predictions = (data.suggestions || [])
-      .map((suggestion) => {
-        const place = suggestion.placePrediction;
+    const predictions = Array.isArray(results)
+      ? results.map((item) => {
+          const address = item.address || {};
 
-        if (!place) {
-          return null;
-        }
+          const mainText =
+            address.road ||
+            address.neighbourhood ||
+            address.suburb ||
+            address.village ||
+            address.town ||
+            address.city ||
+            item.name ||
+            "Location";
 
-        return {
-          placeId: place.placeId,
+          const secondaryParts = [
+            address.suburb,
+            address.city || address.town || address.village,
+            address.state,
+            address.postcode,
+          ].filter(Boolean);
 
-          text: place.text?.text || "",
+          return {
+            /*
+             * Keep the same shape your search page
+             * already expects.
+             *
+             * We're no longer using Google placeId,
+             * so use OSM's type + id combination.
+             */
+            placeId: `${item.osm_type}-${item.osm_id}`,
 
-          mainText: place.structuredFormat?.mainText?.text || "",
+            osmType: item.osm_type,
+            osmId: item.osm_id,
 
-          secondaryText: place.structuredFormat?.secondaryText?.text || "",
+            latitude: Number(item.lat),
+            longitude: Number(item.lon),
 
-          types: place.types || [],
+            text: item.display_name || "",
 
-          distanceMeters: place.distanceMeters ?? null,
-        };
-      })
-      .filter(Boolean);
+            mainText,
 
-    // RESPONSE
+            secondaryText: secondaryParts.join(", "),
+
+            type: item.type || "",
+
+            class: item.class || "",
+
+            address,
+          };
+        })
+      : [];
 
     return NextResponse.json({
       predictions,
@@ -156,7 +135,10 @@ export async function POST(request) {
 
     return NextResponse.json(
       {
-        error: "Something went wrong while searching locations.",
+        error:
+          error instanceof Error
+            ? error.message
+            : "Unable to search locations.",
       },
       {
         status: 500,

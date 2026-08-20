@@ -6,6 +6,7 @@ import StoreProvider from "@/app/StoreProvider";
 import SplashWrapper from "@/components/SplashWrapper";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import "./globals.css";
+import "leaflet/dist/leaflet.css";
 import AIChatButton from "@/components/AIChat/AIChatButton";
 import CompareBar from "@/components/CompareBar";
 import WishlistLoader from "@/components/WishlistLoader";
