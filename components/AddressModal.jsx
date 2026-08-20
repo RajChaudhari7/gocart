@@ -18,7 +18,6 @@ const AddressModal = ({
   onAddressSaved,
 }) => {
   const { getToken } = useAuth();
-
   const dispatch = useDispatch();
 
   const { selectDeliveryLocation } = useCustomerLocation();
@@ -26,33 +25,22 @@ const AddressModal = ({
   const [address, setAddress] = useState({
     name: "",
     email: "",
-
     label: "Home",
-
     street: "",
     landmark: "",
-
     city: "",
     state: "",
     zip: "",
-
     country: INDIA_NAME,
-
     phone: "",
-
     latitude: initialLocation?.latitude ?? null,
-
     longitude: initialLocation?.longitude ?? null,
   });
 
   const [errors, setErrors] = useState({});
-
   const [states, setStates] = useState([]);
-
   const [pinLoading, setPinLoading] = useState(false);
-
   const [isPinVerified, setIsPinVerified] = useState(false);
-
   const [saving, setSaving] = useState(false);
 
   // ==================================================
@@ -81,7 +69,6 @@ const AddressModal = ({
       ...prev,
 
       latitude: initialLocation.latitude ?? prev.latitude,
-
       longitude: initialLocation.longitude ?? prev.longitude,
 
       street:
@@ -98,11 +85,6 @@ const AddressModal = ({
       country: initialLocation.country || INDIA_NAME,
     }));
 
-    /*
-     * If reverse geocoding already gave us
-     * a valid 6-digit Indian PIN, consider it
-     * verified.
-     */
     if (/^\d{6}$/.test(incomingZip)) {
       setIsPinVerified(true);
     }
@@ -116,28 +98,14 @@ const AddressModal = ({
     const { name, value } = e.target;
 
     if (name === "phone") {
-      if (!/^\d*$/.test(value)) {
-        return;
-      }
-
-      if (value.length > 10) {
-        return;
-      }
+      if (!/^\d*$/.test(value)) return;
+      if (value.length > 10) return;
     }
 
     if (name === "zip") {
-      if (!/^\d*$/.test(value)) {
-        return;
-      }
+      if (!/^\d*$/.test(value)) return;
+      if (value.length > 6) return;
 
-      if (value.length > 6) {
-        return;
-      }
-
-      setIsPinVerified(false);
-    }
-
-    if (name === "city") {
       setIsPinVerified(false);
     }
 
@@ -172,8 +140,6 @@ const AddressModal = ({
       ...prev,
       state: e.target.value,
     }));
-
-    setIsPinVerified(false);
 
     setErrors((prev) => ({
       ...prev,
@@ -266,9 +232,7 @@ const AddressModal = ({
   };
 
   const handlePinBlur = async () => {
-    if (address.zip.length !== 6) {
-      return;
-    }
+    if (address.zip.length !== 6) return;
 
     await verifyPin();
   };
@@ -322,11 +286,6 @@ const AddressModal = ({
       return false;
     }
 
-    /*
-     * If PIN came from map/reverse geocoding
-     * and hasn't been verified yet, verify it
-     * before submission.
-     */
     if (address.country === INDIA_NAME && !isPinVerified) {
       const validPin = await verifyPin();
 
@@ -364,6 +323,7 @@ const AddressModal = ({
         ...address,
 
         name: address.name.trim(),
+
         email: address.email.trim(),
 
         label: address.label?.trim() || "Home",
@@ -407,11 +367,8 @@ const AddressModal = ({
 
       const savedAddress = data.newAddress;
 
-      // Redux address list
       dispatch(addAddress(savedAddress));
 
-      // Make this exact saved address
-      // the active delivery location.
       await selectDeliveryLocation({
         latitude: savedAddress.latitude,
 
@@ -448,10 +405,6 @@ const AddressModal = ({
 
       toast.success(data.message || "Address saved successfully");
 
-      /*
-       * Parent (map page / checkout)
-       * decides what should happen next.
-       */
       if (onAddressSaved) {
         await onAddressSaved(savedAddress);
       }
@@ -476,7 +429,7 @@ const AddressModal = ({
     <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/70 px-3 backdrop-blur-md sm:px-4">
       <form
         onSubmit={handleSubmit}
-        className="
+        className={`
           relative
           max-h-[92vh]
           w-full
@@ -490,14 +443,14 @@ const AddressModal = ({
           text-white
           shadow-2xl
           sm:p-6
-        "
+        `}
       >
         {/* CLOSE */}
 
         <button
           type="button"
           onClick={() => setShowAddressModal(false)}
-          className="
+          className={`
             absolute
             right-4
             top-4
@@ -512,7 +465,7 @@ const AddressModal = ({
             transition
             hover:bg-white/10
             hover:text-white
-          "
+          `}
         >
           <XIcon size={19} />
         </button>
@@ -718,8 +671,6 @@ const AddressModal = ({
             />
           </Field>
 
-          {/* LOCATION ERROR */}
-
           {errors.location && (
             <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-xs text-red-300">
               {errors.location}
@@ -727,12 +678,10 @@ const AddressModal = ({
           )}
         </div>
 
-        {/* SUBMIT */}
-
         <button
           type="submit"
           disabled={saving || pinLoading}
-          className="
+          className={`
             mt-6
             flex
             w-full
@@ -750,7 +699,7 @@ const AddressModal = ({
             active:scale-[0.99]
             disabled:cursor-not-allowed
             disabled:opacity-60
-          "
+          `}
         >
           {saving ? (
             <>
@@ -799,10 +748,6 @@ const AddressModal = ({
     </div>
   );
 };
-
-// ==================================================
-// SMALL COMPONENTS
-// ==================================================
 
 function Field({ label, error, children }) {
   return (
