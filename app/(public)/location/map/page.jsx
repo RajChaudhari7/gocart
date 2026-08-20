@@ -82,96 +82,58 @@ function LocationMapContent() {
 
   // REVERSE GEOCODE COORDINATES
 
-  const reverseGeocode = useCallback(
-    async (latitude, longitude) => {
-      if (typeof window === "undefined" || !window.google?.maps) {
-        return;
+  const reverseGeocode = useCallback(async (latitude, longitude) => {
+    try {
+      setReverseLoading(true);
+      setError("");
+
+      const { data } = await axios.post("/api/location/reverse", {
+        latitude,
+        longitude,
+      });
+
+      const resolved = data.location;
+
+      if (!resolved) {
+        throw new Error("Unable to identify this location.");
       }
 
-      try {
-        setReverseLoading(true);
+      setLocation((current) => ({
+        ...current,
 
-        const geocoder = new window.google.maps.Geocoder();
+        latitude,
+        longitude,
 
-        const response = await geocoder.geocode({
-          location: {
-            lat: latitude,
-            lng: longitude,
-          },
-        });
+        label: resolved.label || current?.label || "Selected Location",
 
-        const result = response.results?.[0];
+        formattedAddress:
+          resolved.formattedAddress || current?.formattedAddress || "",
 
-        if (!result) {
-          setLocation((current) => ({
-            ...current,
-            latitude,
-            longitude,
-            formattedAddress: current?.formattedAddress || "",
-          }));
+        placeId: resolved.placeId || null,
 
-          return;
-        }
+        street: resolved.street || "",
+        area: resolved.area || "",
+        city: resolved.city || "",
+        state: resolved.state || "",
+        zip: resolved.zip || "",
+        country: resolved.country || "India",
 
-        const getComponent = (type) => {
-          const item = result.address_components?.find((component) =>
-            component.types?.includes(type),
-          );
+        source: "MAP",
 
-          return item?.long_name || "";
-        };
+        addressId: null,
+      }));
+    } catch (error) {
+      console.error("REVERSE GEOCODING ERROR:", error);
 
-        const street = [getComponent("street_number"), getComponent("route")]
-          .filter(Boolean)
-          .join(" ");
-
-        const area =
-          getComponent("sublocality_level_1") ||
-          getComponent("sublocality") ||
-          getComponent("neighborhood");
-
-        const city =
-          getComponent("locality") ||
-          getComponent("administrative_area_level_2");
-
-        const state = getComponent("administrative_area_level_1");
-
-        const zip = getComponent("postal_code");
-
-        const country = getComponent("country") || "India";
-
-        const displayLabel =
-          area || street || city || labelFromURL || "Selected Location";
-
-        setLocation((current) => ({
-          ...current,
-
-          latitude,
-          longitude,
-
-          label: displayLabel,
-
-          formattedAddress: result.formatted_address || "",
-
-          street,
-          area,
-          city,
-          state,
-          zip,
-          country,
-        }));
-      } catch (error) {
-        console.error("REVERSE GEOCODING ERROR:", error);
-
-        setError(
+      setError(
+        error?.response?.data?.error ||
+          error?.message ||
           "We found the location, but could not identify the exact address.",
-        );
-      } finally {
-        setReverseLoading(false);
-      }
-    },
-    [labelFromURL],
-  );
+      );
+    } finally {
+      setReverseLoading(false);
+    }
+  }, []);
 
   // LOAD INITIAL LOCATION
 
