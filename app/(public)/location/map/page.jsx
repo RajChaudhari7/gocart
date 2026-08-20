@@ -1,10 +1,11 @@
 "use client";
 
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+
 import { useRouter, useSearchParams } from "next/navigation";
-import Script from "next/script";
 import axios from "axios";
 import { motion } from "framer-motion";
+
 import {
   ArrowLeft,
   CheckCircle2,
@@ -14,20 +15,20 @@ import {
   Navigation,
   Store,
 } from "lucide-react";
+
 import { useCustomerLocation } from "@/context/CustomerLocationContext";
 
 function LocationMapContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const placeId = searchParams.get("placeId");
-  const sessionToken = searchParams.get("sessionToken");
-
   const latFromURL = searchParams.get("lat");
   const lngFromURL = searchParams.get("lng");
 
   const sourceFromURL = searchParams.get("source") || "SEARCH";
+
   const labelFromURL = searchParams.get("label") || "Selected Location";
+
   const formattedFromURL = searchParams.get("formattedAddress") || "";
 
   const { selectDeliveryLocation } = useCustomerLocation();
@@ -35,30 +36,31 @@ function LocationMapContent() {
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
   const markerRef = useRef(null);
+  const leafletRef = useRef(null);
 
-  const [mapsLoaded, setMapsLoaded] = useState(false);
-  const [mapError, setMapError] = useState("");
+  const [leafletLoaded, setLeafletLoaded] = useState(false);
 
   const [initialLoading, setInitialLoading] = useState(true);
+
   const [reverseLoading, setReverseLoading] = useState(false);
+
   const [confirming, setConfirming] = useState(false);
+
+  const [currentLocationLoading, setCurrentLocationLoading] = useState(false);
 
   const [error, setError] = useState("");
 
   const [location, setLocation] = useState(null);
 
   const [serviceable, setServiceable] = useState(false);
+
   const [serviceRadius, setServiceRadius] = useState(3);
+
   const [nearbyStoreCount, setNearbyStoreCount] = useState(0);
 
-  useEffect(() => {
-    // Google Maps may already be loaded from a previous page/navigation.
-    if (window.google?.maps) {
-      setMapsLoaded(true);
-    }
-  }, []);
-
+  // ==================================================
   // CHECK SERVICEABILITY
+  // ==================================================
 
   const checkServiceability = useCallback(async (latitude, longitude) => {
     try {
@@ -70,7 +72,9 @@ function LocationMapContent() {
       });
 
       setServiceable(Boolean(data.serviceable));
+
       setServiceRadius(Number(data.serviceRadiusKm || 3));
+
       setNearbyStoreCount(Array.isArray(data.stores) ? data.stores.length : 0);
     } catch (error) {
       console.error("SERVICEABILITY ERROR:", error);
@@ -80,7 +84,9 @@ function LocationMapContent() {
     }
   }, []);
 
-  // REVERSE GEOCODE COORDINATES
+  // ==================================================
+  // REVERSE GEOCODE
+  // ==================================================
 
   const reverseGeocode = useCallback(async (latitude, longitude) => {
     try {
@@ -109,14 +115,21 @@ function LocationMapContent() {
         formattedAddress:
           resolved.formattedAddress || current?.formattedAddress || "",
 
-        placeId: resolved.placeId || null,
-
         street: resolved.street || "",
+
         area: resolved.area || "",
+
         city: resolved.city || "",
+
         state: resolved.state || "",
+
         zip: resolved.zip || "",
+
         country: resolved.country || "India",
+
+        osmType: resolved.osmType || null,
+
+        osmId: resolved.osmId || null,
 
         source: "MAP",
 
@@ -135,7 +148,9 @@ function LocationMapContent() {
     }
   }, []);
 
-  // LOAD INITIAL LOCATION
+  // ==================================================
+  // LOAD INITIAL LOCATION FROM URL
+  // ==================================================
 
   useEffect(() => {
     const loadInitialLocation = async () => {
@@ -143,52 +158,32 @@ function LocationMapContent() {
         setInitialLoading(true);
         setError("");
 
-        if (placeId) {
-          const { data } = await axios.post("/api/location/place", {
-            placeId,
-            sessionToken,
-          });
-
-          const resolved = data.location;
-
-          setLocation(resolved);
-
-          await checkServiceability(resolved.latitude, resolved.longitude);
-
-          return;
-        }
-
         const latitude = Number(latFromURL);
+
         const longitude = Number(lngFromURL);
 
-        if (Number.isFinite(latitude) && Number.isFinite(longitude)) {
-          setLocation({
-            latitude,
-            longitude,
-
-            label: labelFromURL,
-
-            formattedAddress: formattedFromURL,
-
-            source: sourceFromURL,
-
-            addressId: null,
-          });
-
-          await checkServiceability(latitude, longitude);
-
-          return;
+        if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+          throw new Error("No valid location was provided.");
         }
 
-        throw new Error("No valid location was provided.");
+        setLocation({
+          latitude,
+          longitude,
+
+          label: labelFromURL,
+
+          formattedAddress: formattedFromURL,
+
+          source: sourceFromURL,
+
+          addressId: null,
+        });
+
+        await checkServiceability(latitude, longitude);
       } catch (error) {
         console.error("MAP LOCATION LOAD ERROR:", error);
 
-        setError(
-          error?.response?.data?.error ||
-            error?.message ||
-            "Unable to load this location.",
-        );
+        setError(error?.message || "Unable to load this location.");
       } finally {
         setInitialLoading(false);
       }
@@ -196,8 +191,6 @@ function LocationMapContent() {
 
     loadInitialLocation();
   }, [
-    placeId,
-    sessionToken,
     latFromURL,
     lngFromURL,
     sourceFromURL,
@@ -206,133 +199,257 @@ function LocationMapContent() {
     checkServiceability,
   ]);
 
-  // BUILD GOOGLE MAP
+  // ==================================================
+  // LOAD LEAFLET CLIENT SIDE
+  // ==================================================
 
   useEffect(() => {
-    if (!mapsLoaded) return;
+    let mounted = true;
+
+    const loadLeaflet = async () => {
+      try {
+        const leafletModule = await import("leaflet");
+
+        const L = leafletModule.default || leafletModule;
+
+        if (!mounted) return;
+
+        leafletRef.current = L;
+
+        setLeafletLoaded(true);
+      } catch (error) {
+        console.error("LEAFLET LOAD ERROR:", error);
+
+        setError("Unable to load the map.");
+      }
+    };
+
+    loadLeaflet();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // ==================================================
+  // UPDATE LOCATION FROM MAP
+  // ==================================================
+
+  const updateLocationFromMap = useCallback(
+    async (latitude, longitude, source = "MAP") => {
+      setLocation((current) => ({
+        ...current,
+
+        latitude,
+        longitude,
+
+        source,
+
+        addressId: null,
+
+        /*
+         * Clear old address first so user
+         * sees loading state while reverse
+         * geocoding the new point.
+         */
+        formattedAddress: "",
+      }));
+
+      await Promise.allSettled([
+        reverseGeocode(latitude, longitude),
+
+        checkServiceability(latitude, longitude),
+      ]);
+    },
+    [reverseGeocode, checkServiceability],
+  );
+
+  // ==================================================
+  // CREATE LEAFLET MAP
+  // ==================================================
+
+  useEffect(() => {
+    if (!leafletLoaded) return;
     if (!location) return;
     if (!mapContainerRef.current) return;
-    if (!window.google?.maps) return;
+
+    const L = leafletRef.current;
+
+    if (!L) return;
 
     const latitude = Number(location.latitude);
+
     const longitude = Number(location.longitude);
 
     if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
-      console.error("Invalid map coordinates:", {
-        latitude,
-        longitude,
-      });
-
       return;
     }
 
-    const position = {
-      lat: latitude,
-      lng: longitude,
-    };
+    const position = [latitude, longitude];
 
-    console.log("INITIALIZING MAP:", position);
+    // --------------------------------------------
+    // CREATE ONLY ONCE
+    // --------------------------------------------
 
-    // Create map only once
     if (!mapRef.current) {
-      mapRef.current = new window.google.maps.Map(mapContainerRef.current, {
+      mapRef.current = L.map(mapContainerRef.current, {
         center: position,
+
         zoom: 17,
-        disableDefaultUI: true,
-        zoomControl: true,
-        gestureHandling: "greedy",
-        clickableIcons: false,
-        mapTypeControl: false,
-        streetViewControl: false,
-        fullscreenControl: false,
+
+        zoomControl: false,
+
+        attributionControl: true,
+
+        doubleClickZoom: false,
+
+        scrollWheelZoom: true,
       });
 
-      markerRef.current = new window.google.maps.Marker({
-        position,
-        map: mapRef.current,
+      // ------------------------------------------
+      // OPENSTREETMAP TILES
+      // ------------------------------------------
+
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        minZoom: 3,
+
+        maxZoom: 19,
+
+        attribution:
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      }).addTo(mapRef.current);
+
+      // ------------------------------------------
+      // ZOOM CONTROL
+      // ------------------------------------------
+
+      L.control
+        .zoom({
+          position: "bottomleft",
+        })
+        .addTo(mapRef.current);
+
+      // ------------------------------------------
+      // CUSTOM LOCATION MARKER
+      // ------------------------------------------
+
+      const markerIcon = L.divIcon({
+        className: "nandurbar-location-marker",
+
+        html: `
+            <div
+              style="
+                width:44px;
+                height:44px;
+                border-radius:50% 50% 50% 0;
+                background:#06b6d4;
+                border:4px solid #ffffff;
+                box-shadow:0 8px 25px rgba(0,0,0,.4);
+                transform:rotate(-45deg);
+                display:flex;
+                align-items:center;
+                justify-content:center;
+              "
+            >
+              <div
+                style="
+                  width:12px;
+                  height:12px;
+                  border-radius:50%;
+                  background:#020617;
+                "
+              ></div>
+            </div>
+          `,
+
+        iconSize: [44, 44],
+
+        iconAnchor: [22, 44],
+      });
+
+      markerRef.current = L.marker(position, {
         draggable: true,
-        animation: window.google.maps.Animation.DROP,
-      });
+        icon: markerIcon,
+      }).addTo(mapRef.current);
 
+      // ------------------------------------------
       // MARKER DRAG
+      // ------------------------------------------
 
-      markerRef.current.addListener("dragend", async () => {
-        const markerPosition = markerRef.current?.getPosition();
+      markerRef.current.on("dragend", async (event) => {
+        const marker = event.target;
 
-        if (!markerPosition) return;
+        const next = marker.getLatLng();
 
-        const latitude = markerPosition.lat();
-        const longitude = markerPosition.lng();
-
-        setLocation((current) => ({
-          ...current,
-          latitude,
-          longitude,
-          source: "MAP",
-          addressId: null,
-        }));
-
-        await Promise.allSettled([
-          reverseGeocode(latitude, longitude),
-          checkServiceability(latitude, longitude),
-        ]);
+        await updateLocationFromMap(next.lat, next.lng, "MAP");
       });
 
+      // ------------------------------------------
       // MAP CLICK
+      // ------------------------------------------
 
-      mapRef.current.addListener("click", async (event) => {
-        if (!event.latLng) return;
+      mapRef.current.on("click", async (event) => {
+        const latitude = event.latlng.lat;
 
-        const latitude = event.latLng.lat();
-        const longitude = event.latLng.lng();
+        const longitude = event.latlng.lng;
 
-        markerRef.current?.setPosition({
-          lat: latitude,
-          lng: longitude,
-        });
+        markerRef.current?.setLatLng([latitude, longitude]);
 
-        setLocation((current) => ({
-          ...current,
-          latitude,
-          longitude,
-          source: "MAP",
-          addressId: null,
-        }));
-
-        await Promise.allSettled([
-          reverseGeocode(latitude, longitude),
-          checkServiceability(latitude, longitude),
-        ]);
+        await updateLocationFromMap(latitude, longitude, "MAP");
       });
+
+      // ------------------------------------------
+      // RESIZE FIX
+      // ------------------------------------------
+
+      requestAnimationFrame(() => {
+        mapRef.current?.invalidateSize();
+      });
+
+      setTimeout(() => {
+        mapRef.current?.invalidateSize();
+      }, 250);
+
+      setTimeout(() => {
+        mapRef.current?.invalidateSize();
+      }, 700);
     } else {
-      // Map already exists, just update its position
-      mapRef.current.setCenter(position);
+      // ------------------------------------------
+      // UPDATE EXISTING MAP
+      // ------------------------------------------
 
-      markerRef.current?.setPosition(position);
+      mapRef.current.setView(position, mapRef.current.getZoom(), {
+        animate: true,
+      });
+
+      markerRef.current?.setLatLng(position);
     }
-
-    // Important when map container has just become visible
-    requestAnimationFrame(() => {
-      if (!mapRef.current) return;
-
-      window.google.maps.event.trigger(mapRef.current, "resize");
-
-      mapRef.current.setCenter(position);
-    });
   }, [
-    mapsLoaded,
+    leafletLoaded,
     location?.latitude,
     location?.longitude,
-    reverseGeocode,
-    checkServiceability,
+    updateLocationFromMap,
   ]);
 
+  // ==================================================
+  // INITIAL REVERSE GEOCODE
+  // ==================================================
+
   useEffect(() => {
-    if (!mapsLoaded) return;
     if (!location) return;
-    if (location.formattedAddress) return;
+
+    /*
+     * Search result may already contain
+     * formattedAddress. In that case we don't
+     * need an immediate reverse request.
+     */
+
+    if (location.formattedAddress) {
+      return;
+    }
 
     const latitude = Number(location.latitude);
+
     const longitude = Number(location.longitude);
 
     if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
@@ -341,14 +458,15 @@ function LocationMapContent() {
 
     reverseGeocode(latitude, longitude);
   }, [
-    mapsLoaded,
     location?.latitude,
     location?.longitude,
     location?.formattedAddress,
     reverseGeocode,
   ]);
 
-  // RECENTER TO DEVICE LOCATION
+  // ==================================================
+  // RECENTER TO CURRENT GPS
+  // ==================================================
 
   const recenterToCurrentLocation = () => {
     if (!navigator.geolocation) {
@@ -357,50 +475,40 @@ function LocationMapContent() {
       return;
     }
 
+    setCurrentLocationLoading(true);
     setError("");
 
     navigator.geolocation.getCurrentPosition(
       async (position) => {
-        const latitude = Number(position.coords.latitude);
+        try {
+          const latitude = Number(position.coords.latitude);
 
-        const longitude = Number(position.coords.longitude);
+          const longitude = Number(position.coords.longitude);
 
-        if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
-          return;
+          if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+            throw new Error("Invalid current location.");
+          }
+
+          const nextPosition = [latitude, longitude];
+
+          mapRef.current?.setView(nextPosition, 17, {
+            animate: true,
+          });
+
+          markerRef.current?.setLatLng(nextPosition);
+
+          await updateLocationFromMap(latitude, longitude, "CURRENT");
+        } catch (error) {
+          console.error("RECENTER ERROR:", error);
+
+          setError(error?.message || "Unable to use your current location.");
+        } finally {
+          setCurrentLocationLoading(false);
         }
-
-        const nextPosition = {
-          lat: latitude,
-          lng: longitude,
-        };
-
-        mapRef.current?.panTo(nextPosition);
-
-        mapRef.current?.setZoom(17);
-
-        markerRef.current?.setPosition(nextPosition);
-
-        setLocation((current) => ({
-          ...current,
-
-          latitude,
-          longitude,
-
-          label: "Current Location",
-
-          source: "CURRENT",
-
-          addressId: null,
-        }));
-
-        await Promise.allSettled([
-          reverseGeocode(latitude, longitude),
-          checkServiceability(latitude, longitude),
-        ]);
       },
 
       (error) => {
-        console.error("RECENTER LOCATION ERROR:", error);
+        console.error("CURRENT LOCATION ERROR:", error);
 
         let message = "Unable to access your current location.";
 
@@ -413,17 +521,23 @@ function LocationMapContent() {
         }
 
         setError(message);
+
+        setCurrentLocationLoading(false);
       },
 
       {
         enableHighAccuracy: true,
+
         timeout: 12000,
+
         maximumAge: 30000,
       },
     );
   };
 
+  // ==================================================
   // CONFIRM LOCATION
+  // ==================================================
 
   const confirmLocation = async () => {
     if (!location) return;
@@ -434,6 +548,7 @@ function LocationMapContent() {
 
       await selectDeliveryLocation({
         latitude: location.latitude,
+
         longitude: location.longitude,
 
         label: location.label || labelFromURL || "Selected Location",
@@ -443,15 +558,21 @@ function LocationMapContent() {
         source: location.source || sourceFromURL || "SEARCH",
 
         addressId: location.addressId || null,
+
+        // Useful later for checkout / saved addresses
+        street: location.street || "",
+
+        area: location.area || "",
+
+        city: location.city || "",
+
+        state: location.state || "",
+
+        zip: location.zip || "",
+
+        country: location.country || "India",
       });
 
-      /*
-       * Return to main location page.
-       *
-       * Navbar + home/shop/product pages
-       * will automatically read the new
-       * CustomerLocationContext value.
-       */
       router.push("/location");
     } catch (error) {
       console.error("CONFIRM LOCATION ERROR:", error);
@@ -462,265 +583,265 @@ function LocationMapContent() {
     }
   };
 
+  // ==================================================
+  // CLEANUP LEAFLET
+  // ==================================================
+
+  useEffect(() => {
+    return () => {
+      try {
+        if (mapRef.current) {
+          mapRef.current.off();
+          mapRef.current.remove();
+
+          mapRef.current = null;
+        }
+
+        markerRef.current = null;
+      } catch (error) {
+        console.error("MAP CLEANUP ERROR:", error);
+      }
+    };
+  }, []);
+
+  // ==================================================
+  // UI
+  // ==================================================
+
   return (
-    <>
-      <Script
-        id="google-maps-script"
-        src={`https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&loading=async`}
-        strategy="afterInteractive"
-        onReady={() => {
-          console.log("Google Maps ready:", !!window.google?.maps);
+    <main className="min-h-screen bg-[#020617] text-white">
+      {/* ======================================== */}
+      {/* HEADER */}
+      {/* ======================================== */}
 
-          if (window.google?.maps) {
-            setMapsLoaded(true);
-            setMapError("");
-          }
-        }}
-        onError={(error) => {
-          console.error("GOOGLE MAPS SCRIPT ERROR:", error);
+      <div className="fixed inset-x-0 top-0 z-[1000] border-b border-white/10 bg-[#020617]/90 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-4xl items-center gap-3 px-3 py-3 sm:px-6 sm:py-4">
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 transition hover:bg-white/10"
+          >
+            <ArrowLeft size={20} />
+          </button>
 
-          setMapError("Unable to load Google Maps.");
-        }}
-      />
+          <div className="min-w-0">
+            <h1 className="text-lg font-black">Confirm delivery location</h1>
 
-      <main className="min-h-screen bg-[#020617] text-white">
-        {/* ================= HEADER ================= */}
-
-        <div className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-[#020617]/90 backdrop-blur-xl">
-          <div className="mx-auto flex max-w-4xl items-center gap-3 px-3 py-3 sm:px-6 sm:py-4">
-            <button
-              type="button"
-              onClick={() => router.back()}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5"
-            >
-              <ArrowLeft size={20} />
-            </button>
-
-            <div>
-              <h1 className="text-lg font-black">Confirm delivery location</h1>
-
-              <p className="mt-0.5 text-xs text-white/35">
-                Move the pin to your exact delivery point
-              </p>
-            </div>
+            <p className="mt-0.5 truncate text-xs text-white/35">
+              Drag the pin or tap the map to choose your exact delivery point
+            </p>
           </div>
         </div>
+      </div>
 
-        {/* ================= MAP ================= */}
+      {/* ======================================== */}
+      {/* MAP */}
+      {/* ======================================== */}
 
-        <section className="relative h-[58vh] min-h-[420px] pt-[65px] sm:h-[62vh] sm:pt-[73px]">
-          {initialLoading ? (
-            <div className="flex h-full flex-col items-center justify-center bg-slate-950">
-              <Loader2 size={34} className="animate-spin text-cyan-400" />
+      <section className="relative h-[58vh] min-h-[430px] pt-[65px] sm:h-[63vh] sm:pt-[73px]">
+        {initialLoading ? (
+          <div className="flex h-full flex-col items-center justify-center bg-slate-950">
+            <Loader2 size={34} className="animate-spin text-cyan-400" />
 
-              <p className="mt-4 text-sm font-semibold text-white/50">
-                Loading your location...
-              </p>
+            <p className="mt-4 text-sm font-semibold text-white/50">
+              Loading your location...
+            </p>
+          </div>
+        ) : error && !location ? (
+          <div className="flex h-full items-center justify-center px-5">
+            <div className="max-w-sm text-center">
+              <MapPin size={36} className="mx-auto text-red-400" />
+
+              <h2 className="mt-4 text-xl font-black">Unable to load map</h2>
+
+              <p className="mt-2 text-sm text-white/40">{error}</p>
             </div>
-          ) : error && !location ? (
-            <div className="flex h-full items-center justify-center px-5">
-              <div className="max-w-sm text-center">
-                <MapPin size={36} className="mx-auto text-red-400" />
+          </div>
+        ) : (
+          <>
+            <div ref={mapContainerRef} className="h-full w-full bg-slate-900" />
 
-                <h2 className="mt-4 text-xl font-black">Unable to load map</h2>
+            {/* CURRENT LOCATION */}
 
-                <p className="mt-2 text-sm text-white/40">{error}</p>
-              </div>
-            </div>
-          ) : (
-            <>
-              <div ref={mapContainerRef} className="h-full w-full" />
-
-              {/* Fixed center decoration */}
-
-              <div className="pointer-events-none absolute left-1/2 top-[calc(50%+30px)] z-20 -translate-x-1/2 -translate-y-full">
-                <motion.div
-                  animate={{
-                    y: [0, -5, 0],
-                  }}
-                  transition={{
-                    duration: 1.4,
-                    repeat: Infinity,
-                  }}
-                  className="flex h-11 w-11 items-center justify-center rounded-full bg-slate-950/90 shadow-xl"
-                >
-                  <Navigation size={19} className="text-cyan-400" />
-                </motion.div>
-              </div>
-
-              {/* CURRENT LOCATION */}
-
-              <button
-                type="button"
-                onClick={recenterToCurrentLocation}
-                className="absolute bottom-5 right-4 z-30 flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-slate-950/90 text-cyan-400 shadow-xl backdrop-blur-xl"
-              >
+            <button
+              type="button"
+              onClick={recenterToCurrentLocation}
+              disabled={currentLocationLoading}
+              className="absolute bottom-5 right-4 z-[500] flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-[#020617]/90 text-cyan-400 shadow-xl backdrop-blur-xl transition hover:bg-slate-900 disabled:opacity-60"
+              title="Use current location"
+            >
+              {currentLocationLoading ? (
+                <Loader2 size={20} className="animate-spin" />
+              ) : (
                 <Crosshair size={21} />
-              </button>
-            </>
-          )}
-        </section>
+              )}
+            </button>
+          </>
+        )}
+      </section>
 
-        {/* ================= DETAILS ================= */}
+      {/* ======================================== */}
+      {/* DETAILS */}
+      {/* ======================================== */}
 
-        {location && (
-          <section className="relative z-30 -mt-5 rounded-t-[2rem] border-t border-white/10 bg-[#020617] px-4 pb-32 pt-6 shadow-[0_-15px_45px_rgba(0,0,0,0.35)] sm:px-6">
-            <div className="mx-auto max-w-3xl">
-              {/* ADDRESS */}
+      {location && (
+        <section className="relative z-[600] -mt-5 rounded-t-[2rem] border-t border-white/10 bg-[#020617] px-4 pb-32 pt-6 shadow-[0_-15px_45px_rgba(0,0,0,0.35)] sm:px-6">
+          <div className="mx-auto max-w-3xl">
+            {/* ADDRESS */}
 
-              <div className="flex items-start gap-4">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-cyan-500/10 text-cyan-400">
-                  {reverseLoading ? (
-                    <Loader2 size={21} className="animate-spin" />
+            <div className="flex items-start gap-4">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-cyan-500/10 text-cyan-400">
+                {reverseLoading ? (
+                  <Loader2 size={21} className="animate-spin" />
+                ) : (
+                  <MapPin size={22} />
+                )}
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30">
+                  Delivery location
+                </p>
+
+                <h2 className="mt-1 text-lg font-black text-white sm:text-xl">
+                  {location.label || "Selected Location"}
+                </h2>
+
+                <p className="mt-1 text-xs leading-relaxed text-white/40 sm:text-sm">
+                  {reverseLoading
+                    ? "Finding exact address..."
+                    : location.formattedAddress || "Exact address unavailable"}
+                </p>
+              </div>
+            </div>
+
+            {/* SERVICEABILITY */}
+
+            <div
+              className={`mt-5 rounded-2xl border p-4 ${
+                serviceable
+                  ? "border-emerald-500/20 bg-emerald-500/[0.07]"
+                  : "border-amber-500/20 bg-amber-500/[0.07]"
+              }`}
+            >
+              <div className="flex items-start gap-3">
+                <div
+                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+                    serviceable
+                      ? "bg-emerald-500/15 text-emerald-400"
+                      : "bg-amber-500/15 text-amber-400"
+                  }`}
+                >
+                  {serviceable ? (
+                    <CheckCircle2 size={19} />
                   ) : (
-                    <MapPin size={22} />
+                    <Store size={19} />
                   )}
                 </div>
 
-                <div className="min-w-0 flex-1">
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30">
-                    Delivery location
-                  </p>
-
-                  <h2 className="mt-1 text-lg font-black text-white sm:text-xl">
-                    {location.label || "Selected Location"}
-                  </h2>
-
-                  <p className="mt-1 text-xs leading-relaxed text-white/40 sm:text-sm">
-                    {reverseLoading
-                      ? "Finding exact address..."
-                      : location.formattedAddress ||
-                        "Exact address unavailable"}
-                  </p>
-                </div>
-              </div>
-
-              {/* SERVICEABILITY */}
-
-              <div
-                className={`mt-5 rounded-2xl border p-4 ${
-                  serviceable
-                    ? "border-emerald-500/20 bg-emerald-500/[0.07]"
-                    : "border-amber-500/20 bg-amber-500/[0.07]"
-                }`}
-              >
-                <div className="flex items-start gap-3">
-                  <div
-                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
-                      serviceable
-                        ? "bg-emerald-500/15 text-emerald-400"
-                        : "bg-amber-500/15 text-amber-400"
+                <div>
+                  <p
+                    className={`font-bold ${
+                      serviceable ? "text-emerald-300" : "text-amber-300"
                     }`}
                   >
-                    {serviceable ? (
-                      <CheckCircle2 size={19} />
-                    ) : (
-                      <Store size={19} />
-                    )}
-                  </div>
+                    {serviceable
+                      ? "Delivery available here"
+                      : "Currently not serviceable"}
+                  </p>
 
-                  <div>
-                    <p
-                      className={`font-bold ${
-                        serviceable ? "text-emerald-300" : "text-amber-300"
-                      }`}
-                    >
-                      {serviceable
-                        ? "Delivery available here"
-                        : "Currently not serviceable"}
-                    </p>
-
-                    <p className="mt-1 text-xs leading-relaxed text-white/35">
-                      {serviceable
-                        ? `${nearbyStoreCount} ${
-                            nearbyStoreCount === 1 ? "store can" : "stores can"
-                          } currently deliver within ${serviceRadius} km of this location.`
-                        : `We currently don't have a partner store within ${serviceRadius} km of this location.`}
-                    </p>
-                  </div>
+                  <p className="mt-1 text-xs leading-relaxed text-white/35">
+                    {serviceable
+                      ? `${nearbyStoreCount} ${
+                          nearbyStoreCount === 1 ? "store can" : "stores can"
+                        } currently deliver within ${serviceRadius} km of this location.`
+                      : `We currently don't have a partner store within ${serviceRadius} km of this location.`}
+                  </p>
                 </div>
-              </div>
-
-              {/* ERROR */}
-
-              {error && (
-                <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-xs text-red-300">
-                  {error}
-                </div>
-              )}
-
-              {/* TIP */}
-
-              <div className="mt-5 rounded-2xl border border-white/5 bg-white/[0.025] px-4 py-3">
-                <p className="text-[11px] leading-relaxed text-white/35">
-                  Drag the red map pin or tap another point on the map to set
-                  your exact entrance or delivery point.
-                </p>
               </div>
             </div>
-          </section>
-        )}
 
-        {/* ================= BOTTOM CONFIRM ================= */}
+            {/* ERROR */}
 
-        {location && (
-          <div className="fixed inset-x-0 bottom-0 z-50 border-t border-white/10 bg-[#020617]/95 p-3 backdrop-blur-2xl sm:p-4">
-            <div className="mx-auto max-w-3xl">
-              <button
-                type="button"
-                onClick={confirmLocation}
-                disabled={confirming || reverseLoading}
-                className={`
-                  flex
-                  w-full
-                  items-center
-                  justify-center
-                  gap-2
-                  rounded-2xl
-                  px-5
-                  py-4
-                  text-sm
-                  font-black
-                  transition
-                  active:scale-[0.99]
+            {error && (
+              <div className="mt-4 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-xs leading-relaxed text-red-300">
+                {error}
+              </div>
+            )}
 
-                  ${
-                    serviceable
-                      ? "bg-emerald-500 text-slate-950 hover:bg-emerald-400"
-                      : "bg-amber-500 text-slate-950 hover:bg-amber-400"
-                  }
+            {/* TIP */}
 
-                  disabled:cursor-not-allowed
-                  disabled:opacity-60
-                `}
-              >
-                {confirming ? (
-                  <>
-                    <Loader2 size={18} className="animate-spin" />
-                    Selecting location...
-                  </>
-                ) : (
-                  <>
-                    <Navigation size={18} />
-
-                    {serviceable
-                      ? "Confirm Delivery Location"
-                      : "Use This Location Anyway"}
-                  </>
-                )}
-              </button>
-
-              {!serviceable && (
-                <p className="mt-2 text-center text-[10px] text-amber-400/70">
-                  You can save this location, but products and stores will
-                  remain unavailable until service reaches this area.
-                </p>
-              )}
+            <div className="mt-5 rounded-2xl border border-white/5 bg-white/[0.025] px-4 py-3">
+              <p className="text-[11px] leading-relaxed text-white/35">
+                Drag the cyan marker or tap anywhere on the map to set your
+                exact entrance or delivery point.
+              </p>
             </div>
           </div>
-        )}
-      </main>
-    </>
+        </section>
+      )}
+
+      {/* ======================================== */}
+      {/* CONFIRM */}
+      {/* ======================================== */}
+
+      {location && (
+        <div className="fixed inset-x-0 bottom-0 z-[1000] border-t border-white/10 bg-[#020617]/95 p-3 backdrop-blur-2xl sm:p-4">
+          <div className="mx-auto max-w-3xl">
+            <button
+              type="button"
+              onClick={confirmLocation}
+              disabled={confirming || reverseLoading}
+              className={`
+                flex
+                w-full
+                items-center
+                justify-center
+                gap-2
+                rounded-2xl
+                px-5
+                py-4
+                text-sm
+                font-black
+                transition
+                active:scale-[0.99]
+
+                ${
+                  serviceable
+                    ? "bg-emerald-500 text-slate-950 hover:bg-emerald-400"
+                    : "bg-amber-500 text-slate-950 hover:bg-amber-400"
+                }
+
+                disabled:cursor-not-allowed
+                disabled:opacity-60
+              `}
+            >
+              {confirming ? (
+                <>
+                  <Loader2 size={18} className="animate-spin" />
+                  Selecting location...
+                </>
+              ) : (
+                <>
+                  <Navigation size={18} />
+
+                  {serviceable
+                    ? "Confirm Delivery Location"
+                    : "Use This Location Anyway"}
+                </>
+              )}
+            </button>
+
+            {!serviceable && (
+              <p className="mt-2 text-center text-[10px] text-amber-400/70">
+                You can save this location, but products and stores will remain
+                unavailable until service reaches this area.
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+    </main>
   );
 }
 
