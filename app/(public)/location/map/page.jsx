@@ -123,7 +123,7 @@ function LocationMapContent() {
         addressId: null,
       }));
     } catch (error) {
-      console.error("REVERSE GEOCODING ERROR:", error);
+      console.error("REVERSE GEOCODING ERROR:", error?.response?.data || error);
 
       setError(
         error?.response?.data?.error ||
