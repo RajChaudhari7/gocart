@@ -271,6 +271,7 @@ function LocationMapContent() {
   // ==================================================
 
   useEffect(() => {
+    if (initialLoading) return;
     if (!leafletLoaded) return;
     if (!location) return;
     if (!mapContainerRef.current) return;
@@ -280,7 +281,6 @@ function LocationMapContent() {
     if (!L) return;
 
     const latitude = Number(location.latitude);
-
     const longitude = Number(location.longitude);
 
     if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
@@ -290,21 +290,16 @@ function LocationMapContent() {
     const position = [latitude, longitude];
 
     // --------------------------------------------
-    // CREATE ONLY ONCE
+    // CREATE MAP ONLY ONCE
     // --------------------------------------------
 
     if (!mapRef.current) {
       mapRef.current = L.map(mapContainerRef.current, {
         center: position,
-
         zoom: 17,
-
         zoomControl: false,
-
         attributionControl: true,
-
         doubleClickZoom: false,
-
         scrollWheelZoom: true,
       });
 
@@ -314,9 +309,7 @@ function LocationMapContent() {
 
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         minZoom: 3,
-
         maxZoom: 19,
-
         attribution:
           '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
       }).addTo(mapRef.current);
@@ -339,33 +332,32 @@ function LocationMapContent() {
         className: "nandurbar-location-marker",
 
         html: `
-            <div
-              style="
-                width:44px;
-                height:44px;
-                border-radius:50% 50% 50% 0;
-                background:#06b6d4;
-                border:4px solid #ffffff;
-                box-shadow:0 8px 25px rgba(0,0,0,.4);
-                transform:rotate(-45deg);
-                display:flex;
-                align-items:center;
-                justify-content:center;
-              "
-            >
-              <div
-                style="
-                  width:12px;
-                  height:12px;
-                  border-radius:50%;
-                  background:#020617;
-                "
-              ></div>
-            </div>
-          `,
+        <div
+          style="
+            width:44px;
+            height:44px;
+            border-radius:50% 50% 50% 0;
+            background:#06b6d4;
+            border:4px solid #ffffff;
+            box-shadow:0 8px 25px rgba(0,0,0,.4);
+            transform:rotate(-45deg);
+            display:flex;
+            align-items:center;
+            justify-content:center;
+          "
+        >
+          <div
+            style="
+              width:12px;
+              height:12px;
+              border-radius:50%;
+              background:#020617;
+            "
+          ></div>
+        </div>
+      `,
 
         iconSize: [44, 44],
-
         iconAnchor: [22, 44],
       });
 
@@ -380,7 +372,6 @@ function LocationMapContent() {
 
       markerRef.current.on("dragend", async (event) => {
         const marker = event.target;
-
         const next = marker.getLatLng();
 
         await updateLocationFromMap(next.lat, next.lng, "MAP");
@@ -392,7 +383,6 @@ function LocationMapContent() {
 
       mapRef.current.on("click", async (event) => {
         const latitude = event.latlng.lat;
-
         const longitude = event.latlng.lng;
 
         markerRef.current?.setLatLng([latitude, longitude]);
@@ -401,16 +391,32 @@ function LocationMapContent() {
       });
 
       // ------------------------------------------
-      // RESIZE FIX
+      // IMPORTANT: FORCE LEAFLET RESIZE
       // ------------------------------------------
 
       requestAnimationFrame(() => {
-        mapRef.current?.invalidateSize();
+        if (!mapRef.current) return;
+
+        mapRef.current.invalidateSize();
+
+        mapRef.current.setView(position, 17, {
+          animate: false,
+        });
       });
 
       setTimeout(() => {
+        if (!mapRef.current) return;
+
+        mapRef.current.invalidateSize();
+
+        mapRef.current.setView(position, 17, {
+          animate: false,
+        });
+      }, 100);
+
+      setTimeout(() => {
         mapRef.current?.invalidateSize();
-      }, 250);
+      }, 350);
 
       setTimeout(() => {
         mapRef.current?.invalidateSize();
@@ -420,6 +426,8 @@ function LocationMapContent() {
       // UPDATE EXISTING MAP
       // ------------------------------------------
 
+      mapRef.current.invalidateSize();
+
       mapRef.current.setView(position, mapRef.current.getZoom(), {
         animate: true,
       });
@@ -427,6 +435,7 @@ function LocationMapContent() {
       markerRef.current?.setLatLng(position);
     }
   }, [
+    initialLoading,
     leafletLoaded,
     location?.latitude,
     location?.longitude,
@@ -570,16 +579,26 @@ function LocationMapContent() {
       {/* ======================================== */}
 
       <section className="relative h-[58vh] min-h-[430px] pt-[65px] sm:h-[63vh] sm:pt-[73px]">
-        {initialLoading ? (
-          <div className="flex h-full flex-col items-center justify-center bg-slate-950">
+        {/* MAP CONTAINER - ALWAYS MOUNTED */}
+
+        <div ref={mapContainerRef} className="h-full w-full bg-slate-900" />
+
+        {/* INITIAL LOADING OVERLAY */}
+
+        {initialLoading && (
+          <div className="absolute inset-0 z-[600] flex h-full flex-col items-center justify-center bg-slate-950">
             <Loader2 size={34} className="animate-spin text-cyan-400" />
 
             <p className="mt-4 text-sm font-semibold text-white/50">
               Loading your location...
             </p>
           </div>
-        ) : error && !location ? (
-          <div className="flex h-full items-center justify-center px-5">
+        )}
+
+        {/* ERROR OVERLAY */}
+
+        {!initialLoading && error && !location && (
+          <div className="absolute inset-0 z-[600] flex items-center justify-center bg-slate-950 px-5">
             <div className="max-w-sm text-center">
               <MapPin size={36} className="mx-auto text-red-400" />
 
@@ -588,26 +607,24 @@ function LocationMapContent() {
               <p className="mt-2 text-sm text-white/40">{error}</p>
             </div>
           </div>
-        ) : (
-          <>
-            <div ref={mapContainerRef} className="h-full w-full bg-slate-900" />
+        )}
 
-            {/* CURRENT LOCATION */}
+        {/* CURRENT LOCATION */}
 
-            <button
-              type="button"
-              onClick={recenterToCurrentLocation}
-              disabled={currentLocationLoading}
-              className="absolute bottom-5 right-4 z-[500] flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-[#020617]/90 text-cyan-400 shadow-xl backdrop-blur-xl transition hover:bg-slate-900 disabled:opacity-60"
-              title="Use current location"
-            >
-              {currentLocationLoading ? (
-                <Loader2 size={20} className="animate-spin" />
-              ) : (
-                <Crosshair size={21} />
-              )}
-            </button>
-          </>
+        {!initialLoading && location && (
+          <button
+            type="button"
+            onClick={recenterToCurrentLocation}
+            disabled={currentLocationLoading}
+            className="absolute bottom-5 right-4 z-[500] flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-[#020617]/90 text-cyan-400 shadow-xl backdrop-blur-xl transition hover:bg-slate-900 disabled:opacity-60"
+            title="Use current location"
+          >
+            {currentLocationLoading ? (
+              <Loader2 size={20} className="animate-spin" />
+            ) : (
+              <Crosshair size={21} />
+            )}
+          </button>
         )}
       </section>
 
