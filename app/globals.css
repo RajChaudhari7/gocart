@@ -205,3 +205,13 @@
         opacity: 0;
     }
 }
+
+@keyframes gradient {
+    0% {
+        background-position: 0% center;
+    }
+
+    100% {
+        background-position: 200% center;
+    }
+}
