@@ -14,6 +14,7 @@ import {
   Navigation,
 } from "lucide-react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { useSelector } from "react-redux";
 import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
 import SearchDropdown from "@/components/SearchDropdown";
@@ -40,21 +41,11 @@ function ShopContent() {
     suggestions: [],
   });
 
-  const [products, setProducts] = useState([]);
-
-  const [productsLoading, setProductsLoading] = useState(false);
-
-  const [loadingMore, setLoadingMore] = useState(false);
-
-  const [nextCursor, setNextCursor] = useState(null);
-
-  const [hasMore, setHasMore] = useState(false);
-
-  const [productsError, setProductsError] = useState("");
-
   const [showDropdown, setShowDropdown] = useState(false);
 
   const [loadingSearch, setLoadingSearch] = useState(false);
+
+  const allProducts = useSelector((state) => state.product.list || []);
 
   const {
     nearbyStoreIds,
@@ -74,6 +65,20 @@ function ShopContent() {
   const [searchInput, setSearchInput] = useState("");
   const [smartProducts, setSmartProducts] = useState([]);
 
+  const products = useMemo(() => {
+    if (locationLoading || locationError || !serviceable) {
+      return [];
+    }
+
+    return filterNearbyProducts(allProducts);
+  }, [
+    allProducts,
+    filterNearbyProducts,
+    locationLoading,
+    locationError,
+    serviceable,
+  ]);
+
   const searchProducts = (text) => {
     const cleanText = text.trim();
 
@@ -84,116 +89,6 @@ function ShopContent() {
 
     router.push(`/product?search=${encodeURIComponent(cleanText)}`);
   };
-
-  const fetchProducts = async ({ cursor = null, append = false } = {}) => {
-    if (locationLoading || locationError || !serviceable) {
-      return;
-    }
-
-    const storeIds = Array.from(nearbyStoreIds || []);
-
-    if (storeIds.length === 0) {
-      setProducts([]);
-      setNextCursor(null);
-      setHasMore(false);
-
-      return;
-    }
-
-    try {
-      if (append) {
-        setLoadingMore(true);
-      } else {
-        setProductsLoading(true);
-      }
-
-      setProductsError("");
-
-      const params = {
-        limit: 12,
-
-        storeIds: storeIds.join(","),
-
-        category,
-
-        subCategory,
-
-        priceRange,
-
-        sort,
-      };
-
-      if (cursor) {
-        params.cursor = cursor;
-      }
-
-      const { data } = await axios.get("/api/product", {
-        params,
-      });
-
-      const incomingProducts = Array.isArray(data.products)
-        ? data.products
-        : [];
-
-      if (append) {
-        setProducts((current) => {
-          /*
-           * Avoid duplicate products in case
-           * pagination changes while loading.
-           */
-          const existingIds = new Set(current.map((product) => product.id));
-
-          const unique = incomingProducts.filter(
-            (product) => !existingIds.has(product.id),
-          );
-
-          return [...current, ...unique];
-        });
-      } else {
-        setProducts(incomingProducts);
-      }
-
-      setNextCursor(data.pagination?.nextCursor || null);
-
-      setHasMore(Boolean(data.pagination?.hasMore));
-    } catch (error) {
-      console.error("LOAD PRODUCTS ERROR:", error);
-
-      setProductsError(
-        error?.response?.data?.error || "Unable to load products.",
-      );
-    } finally {
-      setProductsLoading(false);
-      setLoadingMore(false);
-    }
-  };
-
-  useEffect(() => {
-    if (searchFromURL) {
-      return;
-    }
-
-    if (locationLoading || locationError || !serviceable) {
-      return;
-    }
-
-    setNextCursor(null);
-    setHasMore(false);
-
-    fetchProducts({
-      append: false,
-    });
-  }, [
-    nearbyStoreIds,
-    serviceable,
-    locationLoading,
-    locationError,
-    category,
-    subCategory,
-    priceRange,
-    sort,
-    searchFromURL,
-  ]);
 
   const filterCategory = (cat) => {
     setShowDropdown(false);
@@ -392,33 +287,50 @@ function ShopContent() {
 
   /* 🔥 FILTER + SORT */
 
+  const sourceProducts = searchFromURL ? smartProducts : products;
+
   const filteredProducts = useMemo(() => {
-    if (searchFromURL) {
-      return smartProducts
-        .filter((product) => {
-          if (category === "all") {
+    return sourceProducts
+      .filter((p) =>
+        category === "all"
+          ? true
+          : p.category?.trim().toLowerCase() === category.trim().toLowerCase(),
+      )
+      .filter((p) =>
+        subCategory === "all"
+          ? true
+          : p.subCategory?.trim().toLowerCase() ===
+            subCategory.trim().toLowerCase(),
+      )
+      .filter((p) => {
+        const price = Number(p.price) || 0;
+        switch (priceRange) {
+          case "UNDER_500":
+            return price < 500;
+          case "500_5K":
+            return price >= 500 && price <= 5000;
+          case "5K_10K":
+            return price > 5000 && price <= 10000;
+          case "ABOVE_10K":
+            return price > 10000;
+          default:
             return true;
-          }
+        }
+      })
+      .sort((a, b) => {
+        // Featured products first
+        if (a.featured && !b.featured) return -1;
+        if (!a.featured && b.featured) return 1;
 
-          return (
-            product.category?.trim().toLowerCase() ===
-            category.trim().toLowerCase()
-          );
-        })
-        .filter((product) => {
-          if (subCategory === "all") {
-            return true;
-          }
+        // Price sorting still works if selected
+        if (sort === "low-high") return a.price - b.price;
 
-          return (
-            product.subCategory?.trim().toLowerCase() ===
-            subCategory.trim().toLowerCase()
-          );
-        });
-    }
+        if (sort === "high-low") return b.price - a.price;
 
-    return products;
-  }, [searchFromURL, smartProducts, products, category, subCategory]);
+        // Default AI Ranking
+        return getAIScore(b) - getAIScore(a);
+      });
+  }, [sourceProducts, category, subCategory, priceRange, sort]);
 
   // Custom handler for Category selection
   const handleCategoryChange = (newCat) => {
@@ -821,54 +733,6 @@ function ShopContent() {
                         />
                       ))}
                     </motion.div>
-
-                    {!searchFromURL && hasMore && (
-                      <div className="mt-10 flex justify-center">
-                        <button
-                          type="button"
-                          disabled={loadingMore}
-                          onClick={() =>
-                            fetchProducts({
-                              cursor: nextCursor,
-                              append: true,
-                            })
-                          }
-                          className="
-        flex
-        min-w-[170px]
-        items-center
-        justify-center
-        gap-2
-        rounded-2xl
-        border
-        border-indigo-500/30
-        bg-indigo-500/10
-        px-6
-        py-3.5
-        text-sm
-        font-bold
-        text-indigo-300
-        transition
-        hover:border-indigo-400/50
-        hover:bg-indigo-500/20
-        disabled:cursor-not-allowed
-        disabled:opacity-50
-      "
-                        >
-                          {loadingMore ? (
-                            <>
-                              <RefreshCw size={16} className="animate-spin" />
-                              Loading...
-                            </>
-                          ) : (
-                            <>
-                              Load More
-                              <ChevronRight size={16} />
-                            </>
-                          )}
-                        </button>
-                      </div>
-                    )}
                   </AnimatePresence>
                 ) : (
                   <div className="flex flex-col items-center justify-center py-20 text-center">
