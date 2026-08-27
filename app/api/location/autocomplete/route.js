@@ -1,7 +1,25 @@
 import { NextResponse } from "next/server";
 
+import { searchRateLimit } from "@/lib/ratelimit";
+import { getRateLimitIdentifier } from "@/lib/getRateLimitIdentifier";
+import { rateLimitResponse } from "@/lib/rateLimitResponse";
+
 export async function POST(request) {
   try {
+    // RATE LIMIT
+
+    const identifier = getRateLimitIdentifier(request);
+
+    const rateLimit = await searchRateLimit.limit(
+      `location-autocomplete:${identifier}`,
+    );
+
+    if (!rateLimit.success) {
+      return rateLimitResponse(rateLimit);
+    }
+
+    // BODY
+
     const body = await request.json();
 
     const input = body.input?.trim();
@@ -17,6 +35,25 @@ export async function POST(request) {
       );
     }
 
+    /*
+     * Don't allow extremely large search strings.
+     *
+     * This also protects the third-party
+     * Nominatim request.
+     */
+    if (input.length > 120) {
+      return NextResponse.json(
+        {
+          error: "Search input is too long.",
+        },
+        {
+          status: 400,
+        },
+      );
+    }
+
+    // NOMINATIM PARAMS
+
     const params = new URLSearchParams({
       q: input,
       format: "jsonv2",
@@ -26,19 +63,13 @@ export async function POST(request) {
     });
 
     /*
-     * If we already know customer's selected/current
-     * location, bias the search around that area.
+     * Bias results toward current/selected
+     * delivery location when available.
      */
     const latitude = Number(body.latitude);
     const longitude = Number(body.longitude);
 
     if (Number.isFinite(latitude) && Number.isFinite(longitude)) {
-      /*
-       * Approximate viewbox around current location.
-       * This does not strictly restrict results because
-       * bounded=0, but helps ranking nearby addresses.
-       */
-
       const delta = 0.3;
 
       params.set(
@@ -54,24 +85,51 @@ export async function POST(request) {
       params.set("bounded", "0");
     }
 
-    const response = await fetch(
-      `https://nominatim.openstreetmap.org/search?${params.toString()}`,
-      {
-        headers: {
-          /*
-           * Nominatim requires a meaningful User-Agent.
-           */
-          "User-Agent": "NandurbarBazar/1.0",
-          Accept: "application/json",
-        },
+    // REQUEST TIMEOUT
 
-        cache: "no-store",
-      },
-    );
+    const controller = new AbortController();
+
+    const timeout = setTimeout(() => {
+      controller.abort();
+    }, 5000);
+
+    let response;
+
+    try {
+      response = await fetch(
+        `https://nominatim.openstreetmap.org/search?${params.toString()}`,
+        {
+          headers: {
+            "User-Agent": "NandurbarBazar/1.0",
+
+            Accept: "application/json",
+          },
+
+          signal: controller.signal,
+
+          cache: "no-store",
+        },
+      );
+    } finally {
+      clearTimeout(timeout);
+    }
+
+    // THIRD-PARTY ERROR
 
     if (!response.ok) {
-      throw new Error("Unable to search locations.");
+      console.error("NOMINATIM SEARCH ERROR:", response.status);
+
+      return NextResponse.json(
+        {
+          error: "Location search is temporarily unavailable.",
+        },
+        {
+          status: 502,
+        },
+      );
     }
+
+    // RESULTS
 
     const results = await response.json();
 
@@ -91,25 +149,23 @@ export async function POST(request) {
 
           const secondaryParts = [
             address.suburb,
+
             address.city || address.town || address.village,
+
             address.state,
+
             address.postcode,
           ].filter(Boolean);
 
           return {
-            /*
-             * Keep the same shape your search page
-             * already expects.
-             *
-             * We're no longer using Google placeId,
-             * so use OSM's type + id combination.
-             */
             placeId: `${item.osm_type}-${item.osm_id}`,
 
             osmType: item.osm_type,
+
             osmId: item.osm_id,
 
             latitude: Number(item.lat),
+
             longitude: Number(item.lon),
 
             text: item.display_name || "",
@@ -127,10 +183,36 @@ export async function POST(request) {
         })
       : [];
 
-    return NextResponse.json({
-      predictions,
-    });
+    // RESPONSE
+
+    return NextResponse.json(
+      {
+        predictions,
+      },
+      {
+        headers: {
+          "X-RateLimit-Limit": String(rateLimit.limit),
+
+          "X-RateLimit-Remaining": String(rateLimit.remaining),
+
+          "X-RateLimit-Reset": String(rateLimit.reset),
+        },
+      },
+    );
   } catch (error) {
+    // Abort timeout
+
+    if (error?.name === "AbortError") {
+      return NextResponse.json(
+        {
+          error: "Location search timed out. Please try again.",
+        },
+        {
+          status: 504,
+        },
+      );
+    }
+
     console.error("LOCATION AUTOCOMPLETE ERROR:", error);
 
     return NextResponse.json(

@@ -67,6 +67,11 @@ model Product {
   userActivities  UserActivity[]
 
   @@index([barcode, storeId])
+  @@index([storeId, isArchived, createdAt])
+  @@index([category, isArchived])
+  @@index([featured, isArchived, quantity])
+  @@index([totalSales])
+  @@index([averageRating])
 }
 
 model SearchSynonym {
@@ -166,6 +171,30 @@ model Order {
   user    User    @relation("BuyerRelation", fields: [userId], references: [id])
   store   Store   @relation(fields: [storeId], references: [id])
   address Address @relation(fields: [addressId], references: [id])
+
+  @@index([userId, createdAt])
+  @@index([storeId, createdAt])
+  @@index([driverId, status])
+  @@index([status, createdAt])
+  @@index([paymentMethod, isPaid])
+}
+
+model CheckoutRequest {
+  id String @id @default(cuid())
+
+  userId String
+
+  idempotencyKey String @unique
+
+  status String @default("PROCESSING")
+
+  orderIds Json @default("[]")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([idempotencyKey])
+  @@index([userId])
 }
 
 model EmailOtp {
@@ -237,6 +266,9 @@ model Rating {
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@unique([userId, productId, orderId])
+  @@index([productId])
+  @@index([userId])
+  @@index([productId, createdAt])
 }
 
 model Address {
@@ -490,6 +522,10 @@ model UserActivity {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   product Product? @relation(fields: [productId], references: [id])
+
+  @@index([userId, createdAt])
+  @@index([productId])
+  @@index([action, createdAt])
 }
 
 enum ActivityType {

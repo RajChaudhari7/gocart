@@ -11,7 +11,7 @@ import {
   TruckIcon,
   PackageIcon,
 } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -40,6 +40,7 @@ const OrderSummary = ({ totalPrice, items }) => {
   const [coupon, setCoupon] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [checkoutAnimating, setCheckoutAnimating] = useState(false);
+  const checkoutKeyRef = useRef(null);
 
   const { customerLocation, selectDeliveryLocation } = useCustomerLocation();
 
@@ -94,6 +95,17 @@ const OrderSummary = ({ totalPrice, items }) => {
       setSelectedAddress(defaultAddress);
     }
   }, [addressList, customerLocation?.addressId]);
+
+  const generateCheckoutKey = () => {
+    if (
+      typeof crypto !== "undefined" &&
+      typeof crypto.randomUUID === "function"
+    ) {
+      return crypto.randomUUID();
+    }
+
+    return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  };
 
   /* ---------------- COUPON ---------------- */
   const handleCouponCode = async (e) => {
@@ -178,6 +190,21 @@ const OrderSummary = ({ totalPrice, items }) => {
         return toast.error("Your cart is empty");
       }
 
+      /*
+       * Important:
+       *
+       * Generate the key only once for this checkout
+       * attempt.
+       *
+       * If the same request is accidentally sent again,
+       * the same key will reach the backend.
+       */
+      if (!checkoutKeyRef.current) {
+        checkoutKeyRef.current = generateCheckoutKey();
+      }
+
+      const checkoutKey = checkoutKeyRef.current;
+
       setIsProcessing(true);
       setCheckoutAnimating(true);
 
@@ -190,15 +217,12 @@ const OrderSummary = ({ totalPrice, items }) => {
         couponCode: coupon?.code,
       };
 
-      /*
-       * Run the order request and animation together.
-       * This guarantees that the animation stays visible
-       * for at least 3.4 seconds.
-       */
       const [response] = await Promise.all([
         axios.post("/api/orders", orderData, {
           headers: {
             Authorization: `Bearer ${token}`,
+
+            "Idempotency-Key": checkoutKey,
           },
         }),
 
@@ -207,14 +231,32 @@ const OrderSummary = ({ totalPrice, items }) => {
 
       const data = response.data;
 
-      // Stripe
+      // ==================================================
+      // STRIPE
+      // ==================================================
+
       if (paymentMethod === "STRIPE") {
         window.location.href = data.session.url;
-
         return;
       }
 
-      toast.success(data.message || "Order placed successfully! 🎉");
+      // ==================================================
+      // SUCCESS
+      // ==================================================
+
+      if (data?.duplicate) {
+        toast.success("Order was already placed successfully.");
+      } else {
+        toast.success(data.message || "Order placed successfully! 🎉");
+      }
+
+      /*
+       * Checkout completed successfully.
+       *
+       * We can now clear this key because this
+       * checkout attempt is finished.
+       */
+      checkoutKeyRef.current = null;
 
       await axios.delete("/api/cart", {
         headers: {
@@ -224,14 +266,56 @@ const OrderSummary = ({ totalPrice, items }) => {
 
       dispatch(clearCart());
 
-      /*
-       * Small pause after the truck leaves.
-       */
       await wait(300);
 
       router.push("/orders");
     } catch (err) {
-      console.error(err);
+      console.error("PLACE ORDER ERROR:", err?.response?.data || err);
+
+      const status = err?.response?.status;
+
+      const code = err?.response?.data?.code;
+
+      /*
+       * IMPORTANT:
+       *
+       * 409 PROCESSING means another request with
+       * this exact checkout key is already running.
+       *
+       * Do NOT create a new key yet.
+       */
+      if (status === 409 && code === "CHECKOUT_PROCESSING") {
+        toast.info(
+          "Your checkout is already being processed. Please wait a moment.",
+        );
+
+        setCheckoutAnimating(false);
+        setIsProcessing(false);
+
+        return;
+      }
+
+      /*
+       * If backend says the previous attempt failed,
+       * allow the next user click to become a NEW
+       * checkout attempt with a new key.
+       */
+      if (status === 409 && code === "CHECKOUT_FAILED") {
+        checkoutKeyRef.current = null;
+
+        toast.error("The previous checkout attempt failed. Please try again.");
+
+        setCheckoutAnimating(false);
+        setIsProcessing(false);
+
+        return;
+      }
+
+      /*
+       * For a normal validation/server failure,
+       * generate a fresh key on the next manual retry.
+       */
+      checkoutKeyRef.current = null;
 
       toast.error(
         err?.response?.data?.error || err.message || "Unable to place order",
@@ -322,7 +406,7 @@ const OrderSummary = ({ totalPrice, items }) => {
                 <p className="text-sm font-bold text-white mb-1">
                   {selectedAddress.name}
                 </p>
-                <p className="text-xs text-slate-400 leading-relaxed">
+                <div className="text-xs text-slate-400 leading-relaxed">
                   <div>
                     <div className="flex items-center gap-2 mb-1">
                       <p className="text-sm font-bold text-white">
@@ -360,7 +444,7 @@ const OrderSummary = ({ totalPrice, items }) => {
                       </p>
                     )}
                   </div>
-                </p>
+                </div>
               </div>
             </div>
             <button
