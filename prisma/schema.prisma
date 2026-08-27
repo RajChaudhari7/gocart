@@ -193,7 +193,6 @@ model CheckoutRequest {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([idempotencyKey])
   @@index([userId])
 }
 
