@@ -2,126 +2,396 @@
 
 import { motion } from "framer-motion";
 import {
-    ChevronLeft,
-    ChevronRight,
-    ChevronsLeft,
-    ChevronsRight,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
 } from "lucide-react";
 
-export default function Pagination({
-    currentPage,
-    totalPages,
-    onPageChange,
-}) {
-    if (totalPages <= 1) return null;
+export default function Pagination({ currentPage, totalPages, onPageChange }) {
+  // Make sure values are always numbers
+  const current = Number(currentPage);
+  const total = Number(totalPages);
 
-    const generatePages = () => {
-        const pages = [];
+  if (!Number.isFinite(total) || total <= 1) {
+    return null;
+  }
 
-        if (totalPages <= 7) {
-            for (let i = 1; i <= totalPages; i++) pages.push(i);
-        } else {
-            pages.push(1);
+  // ==================================================
+  // GENERATE PAGE NUMBERS
+  // ==================================================
 
-            if (currentPage > 3) pages.push("...");
+  const generatePages = () => {
+    // Small number of pages → show everything
+    if (total <= 7) {
+      return Array.from(
+        {
+          length: total,
+        },
+        (_, index) => ({
+          type: "page",
+          value: index + 1,
+          key: `page-${index + 1}`,
+        }),
+      );
+    }
 
-            const start = Math.max(2, currentPage - 1);
-            const end = Math.min(totalPages - 1, currentPage + 1);
+    const pages = [];
 
-            for (let i = start; i <= end; i++) {
-                pages.push(i);
-            }
+    // Always show first page
+    pages.push({
+      type: "page",
+      value: 1,
+      key: "page-1",
+    });
 
-            if (currentPage < totalPages - 2) pages.push("...");
+    // ==================================================
+    // NEAR START
+    // 1 2 3 4 ... 9
+    // ==================================================
 
-            pages.push(totalPages);
+    if (current <= 3) {
+      for (let page = 2; page <= 4; page++) {
+        pages.push({
+          type: "page",
+          value: page,
+          key: `page-${page}`,
+        });
+      }
+
+      pages.push({
+        type: "ellipsis",
+        key: "ellipsis-right",
+      });
+    }
+
+    // ==================================================
+    // NEAR END
+    // 1 ... 6 7 8 9
+    // ==================================================
+    else if (current >= total - 2) {
+      pages.push({
+        type: "ellipsis",
+        key: "ellipsis-left",
+      });
+
+      for (let page = total - 3; page < total; page++) {
+        pages.push({
+          type: "page",
+          value: page,
+          key: `page-${page}`,
+        });
+      }
+    }
+
+    // ==================================================
+    // MIDDLE
+    // 1 ... 4 5 6 ... 9
+    // ==================================================
+    else {
+      pages.push({
+        type: "ellipsis",
+        key: "ellipsis-left",
+      });
+
+      for (let page = current - 1; page <= current + 1; page++) {
+        pages.push({
+          type: "page",
+          value: page,
+          key: `page-${page}`,
+        });
+      }
+
+      pages.push({
+        type: "ellipsis",
+        key: "ellipsis-right",
+      });
+    }
+
+    // Always show last page
+    pages.push({
+      type: "page",
+      value: total,
+      key: `page-${total}`,
+    });
+
+    return pages;
+  };
+
+  const pages = generatePages();
+
+  // ==================================================
+  // SAFE PAGE CHANGE
+  // ==================================================
+
+  const changePage = (page) => {
+    const nextPage = Number(page);
+
+    if (
+      !Number.isFinite(nextPage) ||
+      nextPage < 1 ||
+      nextPage > total ||
+      nextPage === current
+    ) {
+      return;
+    }
+
+    onPageChange(nextPage);
+
+    // Optional:
+    // move user slightly upward when page changes
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  };
+
+  return (
+    <div className="mt-12 flex flex-wrap items-center justify-center gap-2">
+      {/* ======================================== */}
+      {/* FIRST PAGE */}
+      {/* ======================================== */}
+
+      <motion.button
+        type="button"
+        whileTap={
+          current === 1
+            ? undefined
+            : {
+                scale: 0.9,
+              }
+        }
+        whileHover={
+          current === 1
+            ? undefined
+            : {
+                scale: 1.05,
+              }
+        }
+        disabled={current === 1}
+        onClick={() => changePage(1)}
+        aria-label="First page"
+        className="
+          flex
+          h-10
+          w-10
+          items-center
+          justify-center
+          rounded-xl
+          border
+          border-slate-700
+          bg-slate-900
+          text-slate-300
+          transition
+          hover:bg-slate-800
+          disabled:cursor-not-allowed
+          disabled:opacity-30
+          disabled:hover:bg-slate-900
+        "
+      >
+        <ChevronsLeft size={18} />
+      </motion.button>
+
+      {/* ======================================== */}
+      {/* PREVIOUS */}
+      {/* ======================================== */}
+
+      <motion.button
+        type="button"
+        whileTap={
+          current === 1
+            ? undefined
+            : {
+                scale: 0.9,
+              }
+        }
+        whileHover={
+          current === 1
+            ? undefined
+            : {
+                scale: 1.05,
+              }
+        }
+        disabled={current === 1}
+        onClick={() => changePage(current - 1)}
+        aria-label="Previous page"
+        className="
+          flex
+          h-10
+          w-10
+          items-center
+          justify-center
+          rounded-xl
+          border
+          border-slate-700
+          bg-slate-900
+          text-slate-300
+          transition
+          hover:bg-slate-800
+          disabled:cursor-not-allowed
+          disabled:opacity-30
+          disabled:hover:bg-slate-900
+        "
+      >
+        <ChevronLeft size={18} />
+      </motion.button>
+
+      {/* ======================================== */}
+      {/* PAGE NUMBERS */}
+      {/* ======================================== */}
+
+      {pages.map((item) => {
+        if (item.type === "ellipsis") {
+          return (
+            <span
+              key={item.key}
+              className="flex h-10 min-w-7 items-center justify-center px-1 text-slate-500"
+            >
+              ...
+            </span>
+          );
         }
 
-        return pages;
-    };
+        const page = item.value;
 
-    return (
-        <div className="flex flex-wrap items-center justify-center gap-2 mt-12">
+        const active = current === page;
 
-            {/* First Page */}
-
-            <motion.button
-                whileTap={{ scale: 0.9 }}
-                whileHover={{ scale: 1.05 }}
-                disabled={currentPage === 1}
-                onClick={() => onPageChange(1)}
-                className="h-10 w-10 rounded-xl border border-slate-700 bg-slate-900 text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-800 transition"
-            >
-                <ChevronsLeft size={18} className="mx-auto" />
-            </motion.button>
-
-            {/* Previous */}
-
-            <motion.button
-                whileTap={{ scale: 0.9 }}
-                whileHover={{ scale: 1.05 }}
-                disabled={currentPage === 1}
-                onClick={() => onPageChange(currentPage - 1)}
-                className="h-10 w-10 rounded-xl border border-slate-700 bg-slate-900 text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-800 transition"
-            >
-                <ChevronLeft size={18} className="mx-auto" />
-            </motion.button>
-
-            {generatePages().map((page, index) =>
-                page === "..." ? (
-                    <span
-                        key={index}
-                        className="px-3 text-slate-500"
-                    >
-                        ...
-                    </span>
-                ) : (
-                    <motion.button
-                        key={page}
-                        whileTap={{ scale: 0.9 }}
-                        whileHover={{ scale: 1.08 }}
-                        onClick={() => onPageChange(page)}
-                        className={`
+        return (
+          <motion.button
+            key={item.key}
+            type="button"
+            whileTap={{
+              scale: 0.9,
+            }}
+            whileHover={{
+              scale: 1.08,
+            }}
+            onClick={() => changePage(page)}
+            aria-label={`Page ${page}`}
+            aria-current={active ? "page" : undefined}
+            className={`
+              flex
               h-10
-              w-10
+              min-w-10
+              items-center
+              justify-center
               rounded-xl
+              px-2
               font-semibold
               transition-all
-              ${currentPage === page
-                                ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/30"
-                                : "border border-slate-700 bg-slate-900 text-slate-300 hover:bg-slate-800"
-                            }
+
+              ${
+                active
+                  ? `
+                    bg-indigo-600
+                    text-white
+                    shadow-lg
+                    shadow-indigo-500/30
+                  `
+                  : `
+                    border
+                    border-slate-700
+                    bg-slate-900
+                    text-slate-300
+                    hover:border-slate-600
+                    hover:bg-slate-800
+                    hover:text-white
+                  `
+              }
             `}
-                    >
-                        {page}
-                    </motion.button>
-                )
-            )}
+          >
+            {page}
+          </motion.button>
+        );
+      })}
 
-            {/* Next */}
+      {/* ======================================== */}
+      {/* NEXT */}
+      {/* ======================================== */}
 
-            <motion.button
-                whileTap={{ scale: 0.9 }}
-                whileHover={{ scale: 1.05 }}
-                disabled={currentPage === totalPages}
-                onClick={() => onPageChange(currentPage + 1)}
-                className="h-10 w-10 rounded-xl border border-slate-700 bg-slate-900 text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-800 transition"
-            >
-                <ChevronRight size={18} className="mx-auto" />
-            </motion.button>
+      <motion.button
+        type="button"
+        whileTap={
+          current === total
+            ? undefined
+            : {
+                scale: 0.9,
+              }
+        }
+        whileHover={
+          current === total
+            ? undefined
+            : {
+                scale: 1.05,
+              }
+        }
+        disabled={current === total}
+        onClick={() => changePage(current + 1)}
+        aria-label="Next page"
+        className="
+          flex
+          h-10
+          w-10
+          items-center
+          justify-center
+          rounded-xl
+          border
+          border-slate-700
+          bg-slate-900
+          text-slate-300
+          transition
+          hover:bg-slate-800
+          disabled:cursor-not-allowed
+          disabled:opacity-30
+          disabled:hover:bg-slate-900
+        "
+      >
+        <ChevronRight size={18} />
+      </motion.button>
 
-            {/* Last */}
+      {/* ======================================== */}
+      {/* LAST PAGE */}
+      {/* ======================================== */}
 
-            <motion.button
-                whileTap={{ scale: 0.9 }}
-                whileHover={{ scale: 1.05 }}
-                disabled={currentPage === totalPages}
-                onClick={() => onPageChange(totalPages)}
-                className="h-10 w-10 rounded-xl border border-slate-700 bg-slate-900 text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-800 transition"
-            >
-                <ChevronsRight size={18} className="mx-auto" />
-            </motion.button>
-
-        </div>
-    );
+      <motion.button
+        type="button"
+        whileTap={
+          current === total
+            ? undefined
+            : {
+                scale: 0.9,
+              }
+        }
+        whileHover={
+          current === total
+            ? undefined
+            : {
+                scale: 1.05,
+              }
+        }
+        disabled={current === total}
+        onClick={() => changePage(total)}
+        aria-label="Last page"
+        className="
+          flex
+          h-10
+          w-10
+          items-center
+          justify-center
+          rounded-xl
+          border
+          border-slate-700
+          bg-slate-900
+          text-slate-300
+          transition
+          hover:bg-slate-800
+          disabled:cursor-not-allowed
+          disabled:opacity-30
+          disabled:hover:bg-slate-900
+        "
+      >
+        <ChevronsRight size={18} />
+      </motion.button>
+    </div>
+  );
 }
