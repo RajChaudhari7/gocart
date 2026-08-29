@@ -7,7 +7,6 @@ import SplashWrapper from "@/components/SplashWrapper";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import "./globals.css";
 import "leaflet/dist/leaflet.css";
-import AIChatButton from "@/components/AIChat/AIChatButton";
 import CompareBar from "@/components/CompareBar";
 import WishlistLoader from "@/components/WishlistLoader";
 import WishlistInitializer from "@/components/wishlist/WishlistInitializer";
@@ -137,7 +136,6 @@ export default function RootLayout({ children }) {
               <FollowStoreInitializer />
               <SplashWrapper>{children}</SplashWrapper>
               <Toaster richColors position="top-right" expand />
-              <AIChatButton />
               <CompareBar />
             </CustomerLocationProvider>
           </StoreProvider>

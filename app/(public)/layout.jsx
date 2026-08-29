@@ -8,6 +8,7 @@ import { useAuth, useUser } from "@clerk/nextjs";
 import { fetchCart, uploadCart } from "@/lib/features/cart/cartSlice";
 import { fetchAddress } from "@/lib/features/address/addressSlice";
 import { fetchUserRatings } from "@/lib/features/rating/ratingSlice";
+import AIChatButton from "@/components/AIChat/AIChatButton";
 
 
 export default function PublicLayout({ children }) {
@@ -47,6 +48,7 @@ export default function PublicLayout({ children }) {
         <>
             <Navbar />
             {children}
+            <AIChatButton />
             <Footer />
         </>
     );
