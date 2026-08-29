@@ -1,654 +1,1308 @@
-'use client'
+"use client";
 
-import Loading from "@/components/Loading"
-import DashboardCharts from "@/components/store/DashboardCharts"
-import { useAuth } from "@clerk/nextjs"
-import axios from "axios"
+import Loading from "@/components/Loading";
+import DashboardCharts from "@/components/store/DashboardCharts";
+
+import { useAuth } from "@clerk/nextjs";
+import axios from "axios";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+
+import { useEffect, useMemo, useState } from "react";
+
 import {
-  CircleDollarSignIcon,
-  ShoppingBasketIcon,
-  StarIcon,
-  TagsIcon,
-  XCircleIcon,
-  TrendingUpIcon
-} from "lucide-react"
-import Image from "next/image"
-import { useRouter } from "next/navigation"
-import { useEffect, useState, useMemo } from "react"
+  BarChart3,
+  CheckCircle2,
+  CircleDollarSign,
+  Download,
+  Moon,
+  Package,
+  ShoppingBag,
+  Star,
+  Store,
+  Sun,
+  TrendingDown,
+  TrendingUp,
+  XCircle,
+} from "lucide-react";
+
+import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { motion } from "framer-motion"
-import { Sun, Moon } from "lucide-react"
-import jsPDF from "jspdf"
-import html2canvas from "html2canvas"
+
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 
 export default function Dashboard() {
-  const { getToken } = useAuth()
-  const router = useRouter()
-  const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '₹'
+  const { getToken } = useAuth();
+  const router = useRouter();
 
+  const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || "₹";
 
-  const [loading, setLoading] = useState(true)
+  /* =====================================================
+     STATE
+  ===================================================== */
+
+  const [loading, setLoading] = useState(true);
+
   const [dashboardData, setDashboardData] = useState({
     totalProducts: 0,
     totalEarnings: 0,
     totalOrders: 0,
+
     ratings: [],
+
     earningsChart: [],
     ordersChart: [],
     canceledChart: [],
-    returnedChart: [],
+
     returnedProducts: 0,
     returnedAmount: 0,
+
     orders: [],
     topProducts: [],
+
     storeName: "",
     storeLogo: "",
+
     monthlyReport: {},
+
     settings: {
-      commissionPercent: 10
-    }
-  })
+      commissionPercent: 10,
+    },
 
-  const currentCommission = dashboardData.settings?.commissionPercent || 10;
+    storeIsActive: false,
+  });
 
+  const [storeActive, setStoreActive] = useState(false);
+  const [toggling, setToggling] = useState(false);
 
+  const [filterYear, setFilterYear] = useState(new Date().getFullYear());
 
-  /* ---------------- YEAR + MONTH FILTER ---------------- */
-  const currentYear = new Date().getFullYear()
-  const yearOptions = [currentYear, currentYear - 1, currentYear - 2]
+  const [filterMonth, setFilterMonth] = useState(new Date().getMonth());
 
-  const [filterYear, setFilterYear] = useState(currentYear)
-  const [filterMonth, setFilterMonth] = useState(new Date().getMonth())
-  const [storeActive, setStoreActive] = useState(false)
-  const [toggling, setToggling] = useState(false)
+  /* =====================================================
+     FILTER OPTIONS
+  ===================================================== */
+
+  const currentYear = new Date().getFullYear();
+
+  const yearOptions = [currentYear, currentYear - 1, currentYear - 2];
 
   const monthOptions = [
-    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-  ]
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
 
-  /* -------------------- FETCH -------------------- */
+  /* =====================================================
+     FETCH DASHBOARD
+  ===================================================== */
+
   const fetchDashboardData = async () => {
     try {
-      const token = await getToken()
+      setLoading(true);
+
+      const token = await getToken();
+
       const { data } = await axios.get(
         `/api/store/dashboard?year=${filterYear}&month=${filterMonth}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      )
-      setDashboardData(data.dashboardData)
-      setStoreActive(data.dashboardData.storeIsActive)
-    } catch (error) {
-      toast.error(error?.response?.data?.error || error.message)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-
-
-  useEffect(() => {
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const token = await getToken()
-        await axios.post(
-          "/api/store/location",
-          {
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
           },
-          {
-            headers: {
-              Authorization: `Bearer ${token}`
-            }
-          }
-        )
+        },
+      );
+
+      const result = data?.dashboardData;
+
+      if (!result) {
+        throw new Error("Dashboard data unavailable.");
       }
-    )
-  }, [getToken])
+
+      setDashboardData(result);
+      setStoreActive(Boolean(result.storeIsActive));
+    } catch (error) {
+      console.error("DASHBOARD ERROR:", error);
+
+      toast.error(
+        error?.response?.data?.error ||
+          error?.message ||
+          "Unable to load dashboard.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    fetchDashboardData()
-  }, [filterYear, filterMonth])
+    fetchDashboardData();
+  }, [filterYear, filterMonth]);
 
-  const handleDownloadPDF = async () => {
-    const element = document.getElementById("pdf-report")
-    if (!element) return
-
-    document.body.style.background = "#ffffff"
-    await new Promise((resolve) => setTimeout(resolve, 500))
-
-    const canvas = await html2canvas(element, {
-      scale: 2,
-      backgroundColor: "#ffffff",
-      useCORS: true
-    })
-
-    const imgData = canvas.toDataURL("image/png")
-    const pdf = new jsPDF("p", "mm", "a4")
-    const imgWidth = 210
-    const imgHeight = (canvas.height * imgWidth) / canvas.width
-
-    pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight)
-    pdf.save(`Report-${filterYear}-${filterMonth + 1}.pdf`)
-  }
+  /* =====================================================
+     STORE STATUS
+  ===================================================== */
 
   const toggleStore = async () => {
-    if (toggling) return
+    if (toggling) return;
+
     try {
-      setToggling(true)
-      const token = await getToken()
+      setToggling(true);
+
+      const token = await getToken();
 
       const { data } = await axios.patch(
         "/api/store/toggle",
         {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      )
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
 
-      setStoreActive(data.isActive)
+      const active = Boolean(data?.isActive);
+
+      setStoreActive(active);
+
       toast.success(
-        data.isActive ? "Shop is now OPEN 🌞" : "Shop is now CLOSED 🌙"
-      )
-    } catch (err) {
-      toast.error("Failed to update store status")
+        active ? "Your shop is now open" : "Your shop is now closed",
+      );
+    } catch (error) {
+      console.error("STORE TOGGLE ERROR:", error);
+
+      toast.error(
+        error?.response?.data?.error || "Unable to update shop status.",
+      );
     } finally {
-      setToggling(false)
+      setToggling(false);
     }
-  }
+  };
 
-  /* -------------------- FINANCIAL KPIs -------------------- */
-  const filteredOrders = dashboardData.orders || []
+  /* =====================================================
+     ORDERS
+  ===================================================== */
 
-  //  net earnings
+  const filteredOrders = dashboardData.orders || [];
+
+  const activeOrders = filteredOrders.filter(
+    (order) => order.status !== "CANCELLED" && order.status !== "RETURNED",
+  );
+
+  const cancelledOrders = filteredOrders.filter(
+    (order) => order.status === "CANCELLED",
+  );
+
+  const returnedOrders = filteredOrders.filter(
+    (order) => order.status === "RETURNED",
+  );
+
+  /* =====================================================
+     COMMISSION
+  ===================================================== */
+
+  const currentCommission = dashboardData.settings?.commissionPercent ?? 10;
+
+  /* =====================================================
+     NET EARNINGS
+  ===================================================== */
+
   const netEarnings = useMemo(() => {
-    return filteredOrders
-      .filter(
-        o =>
-          o.status !== "CANCELLED" &&
-          o.status !== "RETURNED"
-      )
-      .reduce((sum, order) => {
+    return activeOrders.reduce((total, order) => {
+      const productTotal = (order.orderItems || []).reduce(
+        (sum, item) =>
+          sum + Number(item.price || 0) * Number(item.quantity || 0),
+        0,
+      );
 
-        const productTotal = order.orderItems.reduce(
-          (acc, item) => acc + item.price * item.quantity,
-          0
-        );
+      const commission = order.commissionPercent ?? currentCommission;
 
-        const orderCommission =
-          order.commissionPercent ?? currentCommission;
+      const sellerAmount =
+        productTotal - (productTotal * Number(commission)) / 100;
 
-        const sellerAmount =
-          productTotal -
-          (productTotal * orderCommission) / 100;
+      return total + sellerAmount;
+    }, 0);
+  }, [activeOrders, currentCommission]);
 
-        return sum + sellerAmount;
+  /* =====================================================
+     CANCELLED LOSS
+  ===================================================== */
 
-      }, 0);
-
-  }, [filteredOrders, currentCommission]);
-
-  // Lost Revenue from Cancelled Orders (Product total only)
   const cancelledRevenueLoss = useMemo(() => {
-    return dashboardData.monthlyReport?.cancelledDetails?.reduce((a, c) => a + (c.price * c.quantity), 0) || 0
-  }, [dashboardData.monthlyReport])
+    return (
+      dashboardData.monthlyReport?.cancelledDetails?.reduce(
+        (total, item) =>
+          total + Number(item.price || 0) * Number(item.quantity || 0),
+        0,
+      ) || 0
+    );
+  }, [dashboardData.monthlyReport]);
 
-  // Lost Revenue from Returned Orders (Product total only)
+  /* =====================================================
+     RETURNED LOSS
+  ===================================================== */
+
   const returnedRevenueLoss = useMemo(() => {
-    return dashboardData.monthlyReport?.returnedDetails?.reduce((a, c) => a + (c.price * c.quantity), 0) || 0
-  }, [dashboardData.monthlyReport])
+    return (
+      dashboardData.monthlyReport?.returnedDetails?.reduce(
+        (total, item) =>
+          total + Number(item.price || 0) * Number(item.quantity || 0),
+        0,
+      ) || 0
+    );
+  }, [dashboardData.monthlyReport]);
 
-  const filteredCanceled = filteredOrders.filter(o => o.status === "CANCELLED").length
-  const totalCanceledOrders = filteredCanceled
+  /* =====================================================
+     RATING
+  ===================================================== */
 
-  const productsSoldPercent = filteredOrders.length
-    ? ((filteredOrders.length / (dashboardData.totalOrders || 1)) * 100).toFixed(1)
-    : 0
+  const avgRating = useMemo(() => {
+    if (!dashboardData.ratings?.length) return "0.0";
 
-  const canceledPercent = totalCanceledOrders
-    ? ((filteredCanceled / (totalCanceledOrders || 1)) * 100).toFixed(1)
-    : 0
+    const total = dashboardData.ratings.reduce(
+      (sum, item) => sum + Number(item.rating || 0),
+      0,
+    );
 
-  const avgRating = dashboardData.ratings.length
-    ? (
-      dashboardData.ratings.reduce((a, b) => a + b.rating, 0) /
-      dashboardData.ratings.length
-    ).toFixed(1)
-    : 0
+    return (total / dashboardData.ratings.length).toFixed(1);
+  }, [dashboardData.ratings]);
 
-  const stats = [
-    { title: "Products", value: dashboardData.totalProducts, icon: ShoppingBasketIcon },
-    {
-      title: "Net Earnings",
-      value: currency + netEarnings.toFixed(2),
-      icon: CircleDollarSignIcon
-    },
-    { title: "Orders", value: dashboardData.totalOrders + ` (${productsSoldPercent}%)`, icon: TagsIcon },
-    { title: "Avg Rating", value: avgRating + " ⭐", icon: StarIcon },
-    { title: "Canceled", value: totalCanceledOrders + ` (${canceledPercent}%)`, icon: XCircleIcon },
-  ]
-
-  /* -------------------- CHART DATA -------------------- */
+  /* =====================================================
+     CHART DATA
+  ===================================================== */
 
   const earningsData = useMemo(
     () =>
-      dashboardData.earningsChart.map(i => ({
-        name: i.name,
-        value: i.value || 0
+      (dashboardData.earningsChart || []).map((item) => ({
+        name: item.name,
+        value: Number(item.value || 0),
       })),
-    [dashboardData.earningsChart]
+    [dashboardData.earningsChart],
   );
 
   const ordersData = useMemo(
-    () => dashboardData.ordersChart.map(i => ({ name: i.name, value: i.value || 0 })),
-    [dashboardData.ordersChart]
-  )
+    () =>
+      (dashboardData.ordersChart || []).map((item) => ({
+        name: item.name,
+        value: Number(item.value || 0),
+      })),
+    [dashboardData.ordersChart],
+  );
 
   const canceledOrdersData = useMemo(
-    () => dashboardData.canceledChart.map(i => ({ name: i.name, value: i.value || 0 })),
-    [dashboardData.canceledChart]
-  )
+    () =>
+      (dashboardData.canceledChart || []).map((item) => ({
+        name: item.name,
+        value: Number(item.value || 0),
+      })),
+    [dashboardData.canceledChart],
+  );
 
-  if (loading) return <Loading />
+  /* =====================================================
+     DOWNLOAD PDF
+  ===================================================== */
+
+  const handleDownloadPDF = async () => {
+    const element = document.getElementById("pdf-report");
+
+    if (!element) {
+      toast.error("Report is not available.");
+      return;
+    }
+
+    try {
+      toast.loading("Preparing your report...", {
+        id: "pdf-report",
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 400));
+
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        backgroundColor: "#ffffff",
+        useCORS: true,
+      });
+
+      const imgData = canvas.toDataURL("image/png");
+
+      const pdf = new jsPDF("p", "mm", "a4");
+
+      const pageWidth = 210;
+      const pageHeight = 297;
+
+      const imgWidth = pageWidth;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+
+      heightLeft -= pageHeight;
+
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+
+        pdf.addPage();
+
+        pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+
+        heightLeft -= pageHeight;
+      }
+
+      pdf.save(`Seller-Report-${filterYear}-${filterMonth + 1}.pdf`);
+
+      toast.success("Report downloaded successfully.", {
+        id: "pdf-report",
+      });
+    } catch (error) {
+      console.error("PDF ERROR:", error);
+
+      toast.error("Unable to generate the report.", {
+        id: "pdf-report",
+      });
+    }
+  };
+
+  /* =====================================================
+     LOADING
+  ===================================================== */
+
+  if (loading) {
+    return <Loading />;
+  }
+
+  /* =====================================================
+     UI
+  ===================================================== */
 
   return (
-    <div className="max-w-7xl mx-auto pb-28 px-4 lg:px-6 space-y-10">
+    <div className="min-h-screen bg-slate-50 px-4 pb-28 pt-6 lg:px-8">
+      <div className="mx-auto max-w-7xl space-y-8">
+        {/* =================================================
+            TOP HEADER
+        ================================================= */}
 
-      <button
-        onClick={handleDownloadPDF}
-        className="px-4 py-2 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700 transition text-sm"
-      >
-        Download Premium Report
-      </button>
-
-      <motion.button
-        onClick={toggleStore}
-        whileTap={{ scale: 0.9 }}
-        className={`relative w-20 h-10 rounded-full flex items-center px-1 transition-colors
-      ${storeActive ? "bg-yellow-400" : "bg-slate-800"}
-      `}
-      >
         <motion.div
-          layout
-          transition={{ type: "spring", stiffness: 700, damping: 30 }}
-          className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md"
-          style={{ x: storeActive ? 40 : 0 }}
+          initial={{
+            opacity: 0,
+            y: -15,
+          }}
+          animate={{
+            opacity: 1,
+            y: 0,
+          }}
+          className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between"
         >
-          {storeActive ? (
-            <Sun className="w-5 h-5 text-yellow-500" />
-          ) : (
-            <Moon className="w-5 h-5 text-slate-700" />
-          )}
-        </motion.div>
-      </motion.button>
+          <div>
+            <div className="flex items-center gap-2">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600">
+                <Store size={21} />
+              </div>
 
-      <span className="text-sm font-medium">
-        {storeActive ? "Shop Open" : "Shop Closed"}
-      </span>
+              <div>
+                <h1 className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
+                  Seller Dashboard
+                </h1>
 
-      {/* Header + Year Selector */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <h1 className="text-3xl font-bold text-slate-900">Dashboard</h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Monitor your business performance with analytics and insights
-          </p>
-        </motion.div>
-
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-slate-500">Year:</span>
-            <select
-              value={filterYear}
-              onChange={(e) => setFilterYear(Number(e.target.value))}
-              className="border rounded-lg px-3 py-2 text-sm bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            >
-              {yearOptions.map(y => (
-                <option key={y} value={y}>{y}</option>
-              ))}
-            </select>
+                <p className="mt-1 text-sm text-slate-500">
+                  Manage your shop and track your performance.
+                </p>
+              </div>
+            </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-slate-500">Month:</span>
+          <button
+            onClick={handleDownloadPDF}
+            className="flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-slate-800 active:scale-[0.98]"
+          >
+            <Download size={17} />
+            Download Report
+          </button>
+        </motion.div>
+
+        {/* =================================================
+            SHOP STATUS
+        ================================================= */}
+
+        <motion.div
+          initial={{
+            opacity: 0,
+            y: 15,
+          }}
+          animate={{
+            opacity: 1,
+            y: 0,
+          }}
+          className={`relative overflow-hidden rounded-3xl border p-5 shadow-sm sm:p-6 ${
+            storeActive
+              ? "border-emerald-200 bg-emerald-50"
+              : "border-slate-200 bg-white"
+          }`}
+        >
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-4">
+              <div
+                className={`flex h-14 w-14 items-center justify-center rounded-2xl ${
+                  storeActive
+                    ? "bg-emerald-100 text-emerald-600"
+                    : "bg-slate-100 text-slate-500"
+                }`}
+              >
+                {storeActive ? <Sun size={26} /> : <Moon size={26} />}
+              </div>
+
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                  Shop status
+                </p>
+
+                <h2 className="mt-1 text-xl font-black text-slate-900">
+                  {storeActive ? "Your shop is open" : "Your shop is closed"}
+                </h2>
+
+                <p className="mt-1 text-sm text-slate-500">
+                  {storeActive
+                    ? "Customers can currently place orders."
+                    : "Customers cannot place new orders right now."}
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={toggleStore}
+              disabled={toggling}
+              className={`relative h-12 w-24 rounded-full p-1 transition ${
+                storeActive ? "bg-emerald-500" : "bg-slate-300"
+              } disabled:cursor-not-allowed disabled:opacity-60`}
+            >
+              <motion.div
+                animate={{
+                  x: storeActive ? 48 : 0,
+                }}
+                transition={{
+                  type: "spring",
+                  stiffness: 500,
+                  damping: 30,
+                }}
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-md"
+              >
+                {storeActive ? (
+                  <Sun size={19} className="text-emerald-500" />
+                ) : (
+                  <Moon size={19} className="text-slate-500" />
+                )}
+              </motion.div>
+            </button>
+          </div>
+        </motion.div>
+
+        {/* =================================================
+            FILTERS
+        ================================================= */}
+
+        <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-bold text-slate-900">
+              Performance overview
+            </p>
+
+            <p className="text-xs text-slate-400">
+              Select a period to view your business performance.
+            </p>
+          </div>
+
+          <div className="flex gap-3">
             <select
               value={filterMonth}
               onChange={(e) => setFilterMonth(Number(e.target.value))}
-              className="border rounded-lg px-3 py-2 text-sm bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-semibold text-slate-700 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
             >
-              {monthOptions.map((m, i) => (
-                <option key={i} value={i}>{m}</option>
+              {monthOptions.map((month, index) => (
+                <option key={month} value={index}>
+                  {month}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={filterYear}
+              onChange={(e) => setFilterYear(Number(e.target.value))}
+              className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-semibold text-slate-700 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+            >
+              {yearOptions.map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
               ))}
             </select>
           </div>
         </div>
-      </div>
 
-      {/* Stats */}
-      <motion.div
-        className="grid grid-cols-2 lg:grid-cols-5 gap-6"
-        initial="hidden"
-        animate="visible"
-        variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.1 } } }}
-      >
-        {stats.map((item, i) => (
-          <motion.div
-            key={i}
-            className="bg-white border rounded-2xl p-5 shadow-md hover:shadow-xl transition-shadow cursor-pointer"
-            variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
-            whileHover={{ scale: 1.03 }}
-          >
-            <div className="flex justify-between items-center">
-              <div>
-                <p className="text-xs text-slate-500">{item.title}</p>
-                <p className="text-xl font-semibold mt-1">{item.value}</p>
-              </div>
-              <item.icon className="w-6 h-6 text-indigo-500" />
-            </div>
-          </motion.div>
-        ))}
-      </motion.div>
+        {/* =================================================
+            KPI CARDS
+        ================================================= */}
 
-      {/* Charts */}
-      <DashboardCharts
-        earningsData={earningsData}
-        ordersData={ordersData}
-        canceledOrdersData={canceledOrdersData}
-        topProducts={dashboardData.topProducts}
-      />
-
-      {/* Insights */}
-      <motion.div
-        className="bg-white border rounded-2xl p-6 shadow-md hover:shadow-lg transition-shadow"
-        initial={{ opacity: 0, x: -30 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <div className="flex items-center gap-2 mb-2">
-          <TrendingUpIcon className="w-5 h-5 text-green-600" />
-          <h3 className="text-sm font-semibold">Insights</h3>
-        </div>
-        <ul className="text-sm text-slate-600 space-y-1">
-          <li>📈 Seller Earnings{currency}{netEarnings.toFixed(2)}</li>
-          <li>⭐ Average rating: {avgRating}</li>
-          <li>❌ {totalCanceledOrders} total canceled orders</li>
-        </ul>
-      </motion.div>
-
-      {/* Reviews */}
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold">Recent Reviews</h2>
-        <span className="text-sm text-slate-500">{dashboardData.ratings.length} total</span>
-      </div>
-
-      <motion.div
-        className="space-y-5 max-w-4xl"
-        initial="hidden"
-        animate="visible"
-        variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.1 } } }}
-      >
-        {dashboardData.ratings.map((review, index) => (
-          <motion.div
-            key={index}
-            className="bg-white border rounded-2xl p-5 shadow-md hover:shadow-lg transition-shadow"
-            variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
-          >
-            <div className="flex justify-between gap-6">
-              <div className="flex gap-4">
-                {review.user?.image ? (
-                  <Image
-                    src={review.user.image}
-                    alt={review.user.name}
-                    width={50}
-                    height={50}
-                    className="rounded-full object-cover ring-2 ring-indigo-500"
-                  />
-                ) : (
-                  <div className="w-12 h-12 rounded-full bg-indigo-500 text-white flex items-center justify-center font-bold text-lg ring-2 ring-indigo-500">
-                    {review.user?.name?.[0]}
-                  </div>
-                )}
-                <div>
-                  <p className="text-sm font-semibold">{review.user.name}</p>
-                  <p className="text-xs text-slate-400">
-                    {new Date(review.createdAt).toDateString()}
-                  </p>
-                  <p className="text-sm text-slate-600 mt-2">{review.review}</p>
-                  {review.reply && (
-                    <p className="text-xs text-green-600 mt-1">
-                      Reply: {review.reply}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              <div className="text-right">
-                <p className="text-xs text-slate-500">{review.product?.category}</p>
-                <p className="text-sm font-semibold">{review.product?.name}</p>
-                <div className="flex justify-end mt-1 space-x-1">
-                  {[1, 2, 3, 4, 5].map(i => (
-                    <StarIcon
-                      key={i}
-                      size={16}
-                      fill={review.rating >= i ? "#16A34A" : "#E5E7EB"}
-                      className="text-transparent"
-                    />
-                  ))}
-                </div>
-                <button
-                  onClick={() => router.push(`/product/${review.product.id}`)}
-                  className="mt-3 text-xs px-4 py-2 border rounded-md bg-indigo-50 hover:bg-indigo-100 text-indigo-600 font-medium transition"
-                >
-                  View product
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        ))}
-      </motion.div>
-
-      {/* ---------------- PDF REPORT UI (HIDDEN) ---------------- */}
-      <div
-        id="pdf-report"
-        style={{
-          position: "fixed",
-          left: "-9999px",
-          top: 0,
-          width: "800px",
-          background: "#ffffff",
-          color: "#1e293b",
-          padding: "40px",
-          fontFamily: "'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
-          boxSizing: "border-box"
-        }}
-      >
-        {/* 🏢 HEADER SECTION */}
-        <div style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          borderBottom: "2px solid #e2e8f0",
-          paddingBottom: "20px",
-          marginBottom: "30px"
-        }}>
-          <div style={{ display: "flex", alignItems: "center" }}>
-            {dashboardData.storeLogo && (
-              <img
-                src={dashboardData.storeLogo}
-                alt="Store Logo"
-                style={{
-                  width: "55px",
-                  height: "55px",
-                  borderRadius: "8px",
-                  marginRight: "16px",
-                  objectFit: "cover",
-                  border: "1px solid #e2e8f0"
-                }}
-              />
-            )}
-            <div>
-              <h1 style={{ margin: 0, fontSize: "24px", color: "#0f172a" }}>
-                {dashboardData.storeName}
-              </h1>
-              <p style={{ margin: "4px 0 0", color: "#64748b", fontSize: "14px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                Vendor Performance Report
-              </p>
-            </div>
-          </div>
-          <div style={{ textAlign: "right" }}>
-            <p style={{ margin: 0, fontSize: "14px", color: "#64748b", fontWeight: 500 }}>
-              Reporting Period
-            </p>
-            <p style={{ margin: "4px 0 0", fontSize: "16px", color: "#0f172a", fontWeight: "bold" }}>
-              {monthOptions[filterMonth]} {filterYear}
-            </p>
-          </div>
-        </div>
-
-        {/* 📊 EXECUTIVE SUMMARY (GRID) */}
-        <h2 style={{ fontSize: "18px", color: "#0f172a", borderBottom: "1px solid #f1f5f9", paddingBottom: "8px", marginBottom: "15px" }}>
-          Executive Summary
-        </h2>
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(4, 1fr)",
-          gap: "15px",
-          marginBottom: "30px"
-        }}>
+        <motion.div
+          initial="hidden"
+          animate="visible"
+          variants={{
+            hidden: {},
+            visible: {
+              transition: {
+                staggerChildren: 0.08,
+              },
+            },
+          }}
+          className="grid grid-cols-2 gap-4 xl:grid-cols-5"
+        >
           {[
-            { label: "Net Earnings", value: `${currency}${netEarnings.toFixed(2)}`, color: "#0ea5e9", bg: "#f0f9ff", border: "#bae6fd" },
-            { label: "Total Orders", value: dashboardData.totalOrders, color: "#10b981", bg: "#ecfdf5", border: "#a7f3d0" },
-            { label: "Cancelled", value: dashboardData.monthlyReport?.cancelledOrders || 0, color: "#ef4444", bg: "#fef2f2", border: "#fecaca" },
-            { label: "Returned", value: dashboardData.returnedProducts || 0, color: "#f59e0b", bg: "#fffbeb", border: "#fde68a" }
-          ].map((card, idx) => (
-            <div key={idx} style={{
-              backgroundColor: card.bg,
-              border: `1px solid ${card.border}`,
-              padding: "16px",
-              borderRadius: "8px",
-              textAlign: "center"
-            }}>
-              <p style={{ margin: 0, fontSize: "12px", color: "#475569", fontWeight: 600, textTransform: "uppercase" }}>
-                {card.label}
-              </p>
-              <p style={{ margin: "8px 0 0", fontSize: "20px", color: card.color, fontWeight: "bold" }}>
-                {card.value}
+            {
+              title: "Products",
+              value: dashboardData.totalProducts,
+              icon: Package,
+              description: "Products listed",
+              iconStyle: "bg-blue-50 text-blue-600",
+            },
+
+            {
+              title: "Net Earnings",
+              value: currency + netEarnings.toFixed(2),
+              icon: CircleDollarSign,
+              description: "After commission",
+              iconStyle: "bg-emerald-50 text-emerald-600",
+            },
+
+            {
+              title: "Orders",
+              value: dashboardData.totalOrders,
+              icon: ShoppingBag,
+              description: "Total orders",
+              iconStyle: "bg-indigo-50 text-indigo-600",
+            },
+
+            {
+              title: "Rating",
+              value: `${avgRating} / 5`,
+              icon: Star,
+              description: `${dashboardData.ratings?.length || 0} reviews`,
+              iconStyle: "bg-amber-50 text-amber-600",
+            },
+
+            {
+              title: "Cancelled",
+              value: cancelledOrders.length,
+              icon: XCircle,
+              description: "Cancelled orders",
+              iconStyle: "bg-red-50 text-red-600",
+            },
+          ].map((item) => {
+            const Icon = item.icon;
+
+            return (
+              <motion.div
+                key={item.title}
+                variants={{
+                  hidden: {
+                    opacity: 0,
+                    y: 15,
+                  },
+                  visible: {
+                    opacity: 1,
+                    y: 0,
+                  },
+                }}
+                whileHover={{
+                  y: -3,
+                }}
+                className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md"
+              >
+                <div className="flex items-start justify-between">
+                  <div
+                    className={`flex h-11 w-11 items-center justify-center rounded-xl ${item.iconStyle}`}
+                  >
+                    <Icon size={21} />
+                  </div>
+                </div>
+
+                <p className="mt-5 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                  {item.title}
+                </p>
+
+                <p className="mt-1 truncate text-xl font-black text-slate-900">
+                  {item.value}
+                </p>
+
+                <p className="mt-1 text-xs text-slate-400">
+                  {item.description}
+                </p>
+              </motion.div>
+            );
+          })}
+        </motion.div>
+
+        {/* =================================================
+            QUICK SUMMARY
+        ================================================= */}
+
+        <div className="grid gap-4 md:grid-cols-3">
+          <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-5">
+            <div className="flex items-center gap-3">
+              <TrendingUp size={20} className="text-emerald-600" />
+
+              <p className="text-sm font-bold text-emerald-800">
+                Your earnings
               </p>
             </div>
-          ))}
+
+            <p className="mt-3 text-2xl font-black text-emerald-700">
+              {currency}
+              {netEarnings.toFixed(2)}
+            </p>
+
+            <p className="mt-1 text-xs text-emerald-700/60">
+              Estimated seller earnings after commission
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-red-100 bg-red-50 p-5">
+            <div className="flex items-center gap-3">
+              <TrendingDown size={20} className="text-red-600" />
+
+              <p className="text-sm font-bold text-red-800">
+                Cancelled revenue
+              </p>
+            </div>
+
+            <p className="mt-3 text-2xl font-black text-red-700">
+              {currency}
+              {cancelledRevenueLoss.toFixed(2)}
+            </p>
+
+            <p className="mt-1 text-xs text-red-700/60">
+              Revenue lost from cancelled orders
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-amber-100 bg-amber-50 p-5">
+            <div className="flex items-center gap-3">
+              <Package size={20} className="text-amber-600" />
+
+              <p className="text-sm font-bold text-amber-800">
+                Returned revenue
+              </p>
+            </div>
+
+            <p className="mt-3 text-2xl font-black text-amber-700">
+              {currency}
+              {returnedRevenueLoss.toFixed(2)}
+            </p>
+
+            <p className="mt-1 text-xs text-amber-700/60">
+              Revenue affected by returned orders
+            </p>
+          </div>
         </div>
 
-        {/* 💰 FINANCIAL & TOP PRODUCTS (TWO COLUMNS) */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "30px" }}>
+        {/* =================================================
+            ANALYTICS
+        ================================================= */}
 
-          {/* Financial Breakdown */}
-          <div>
-            <h2 style={{ fontSize: "16px", color: "#0f172a", borderBottom: "1px solid #e2e8f0", paddingBottom: "8px", marginBottom: "12px" }}>
-              Financial Breakdown
-            </h2>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "14px" }}>
-              <tbody>
-                <tr style={{ borderBottom: "1px solid #f1f5f9" }}>
-                  <td style={{ padding: "10px 0", color: "#475569" }}>Net Earnings</td>
-                  <td style={{ padding: "10px 0", textAlign: "right", fontWeight: "bold", color: "#0f172a" }}>
-                    {currency}{netEarnings.toFixed(2)}
-                  </td>
-                </tr>
-                <tr style={{ borderBottom: "1px solid #f1f5f9" }}>
-                  <td style={{ padding: "10px 0", color: "#475569" }}>Cancelled Revenue Loss</td>
-                  <td style={{ padding: "10px 0", textAlign: "right", fontWeight: "bold", color: "#ef4444" }}>
-                    {currency}{cancelledRevenueLoss.toFixed(2)}
-                  </td>
-                </tr>
+        <div>
+          <div className="mb-5 flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+              <BarChart3 size={20} />
+            </div>
+
+            <div>
+              <h2 className="text-xl font-black text-slate-900">
+                Business analytics
+              </h2>
+
+              <p className="text-sm text-slate-400">
+                Understand how your shop is performing.
+              </p>
+            </div>
+          </div>
+
+          <DashboardCharts
+            earningsData={earningsData}
+            ordersData={ordersData}
+            canceledOrdersData={canceledOrdersData}
+            topProducts={dashboardData.topProducts}
+          />
+        </div>
+
+        {/* =================================================
+            INSIGHTS
+        ================================================= */}
+
+        <motion.div
+          initial={{
+            opacity: 0,
+            y: 15,
+          }}
+          whileInView={{
+            opacity: 1,
+            y: 0,
+          }}
+          viewport={{
+            once: true,
+          }}
+          className="rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-white p-6"
+        >
+          <div className="flex items-start gap-4">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600">
+              <TrendingUp size={21} />
+            </div>
+
+            <div>
+              <h3 className="font-black text-slate-900">Shop summary</h3>
+
+              <p className="mt-1 text-sm text-slate-500">
+                Here is a quick look at your current performance.
+              </p>
+
+              <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                <div className="rounded-xl bg-white p-3 shadow-sm">
+                  <p className="text-xs text-slate-400">Earnings</p>
+
+                  <p className="mt-1 font-black text-slate-900">
+                    {currency}
+                    {netEarnings.toFixed(2)}
+                  </p>
+                </div>
+
+                <div className="rounded-xl bg-white p-3 shadow-sm">
+                  <p className="text-xs text-slate-400">Average rating</p>
+
+                  <p className="mt-1 font-black text-slate-900">
+                    ⭐ {avgRating}
+                  </p>
+                </div>
+
+                <div className="rounded-xl bg-white p-3 shadow-sm">
+                  <p className="text-xs text-slate-400">Returned orders</p>
+
+                  <p className="mt-1 font-black text-slate-900">
+                    {returnedOrders.length}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* =================================================
+            REVIEWS
+        ================================================= */}
+
+        <div>
+          <div className="mb-5 flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-black text-slate-900">
+                Customer reviews
+              </h2>
+
+              <p className="mt-1 text-sm text-slate-400">
+                See what customers think about your products.
+              </p>
+            </div>
+
+            <div className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-500">
+              {dashboardData.ratings?.length || 0} reviews
+            </div>
+          </div>
+
+          {!dashboardData.ratings?.length ? (
+            <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center">
+              <Star size={32} className="mx-auto text-slate-300" />
+
+              <p className="mt-3 font-bold text-slate-600">No reviews yet</p>
+
+              <p className="mt-1 text-sm text-slate-400">
+                Customer reviews will appear here.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {dashboardData.ratings.map((review, index) => (
+                <motion.div
+                  key={review.id || `${review.createdAt}-${index}`}
+                  initial={{
+                    opacity: 0,
+                    y: 10,
+                  }}
+                  whileInView={{
+                    opacity: 1,
+                    y: 0,
+                  }}
+                  viewport={{
+                    once: true,
+                  }}
+                  className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md"
+                >
+                  <div className="flex flex-col gap-5 sm:flex-row sm:justify-between">
+                    {/* USER */}
+
+                    <div className="flex gap-4">
+                      {review.user?.image ? (
+                        <Image
+                          src={review.user.image}
+                          alt={review.user?.name || "Customer"}
+                          width={48}
+                          height={48}
+                          className="h-12 w-12 rounded-full object-cover ring-2 ring-slate-100"
+                        />
+                      ) : (
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-indigo-100 font-black text-indigo-600">
+                          {review.user?.name?.charAt(0)?.toUpperCase() || "C"}
+                        </div>
+                      )}
+
+                      <div>
+                        <p className="font-bold text-slate-900">
+                          {review.user?.name || "Customer"}
+                        </p>
+
+                        <p className="mt-0.5 text-xs text-slate-400">
+                          {review.createdAt
+                            ? new Date(review.createdAt).toLocaleDateString()
+                            : ""}
+                        </p>
+
+                        <div className="mt-2 flex gap-0.5">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Star
+                              key={star}
+                              size={15}
+                              fill={
+                                Number(review.rating) >= star
+                                  ? "#f59e0b"
+                                  : "transparent"
+                              }
+                              className={
+                                Number(review.rating) >= star
+                                  ? "text-amber-500"
+                                  : "text-slate-300"
+                              }
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* PRODUCT */}
+
+                    <div className="sm:text-right">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                        Product
+                      </p>
+
+                      <p className="mt-1 font-bold text-slate-800">
+                        {review.product?.name || "Product"}
+                      </p>
+
+                      {review.product?.category && (
+                        <p className="mt-1 text-xs text-slate-400">
+                          {review.product.category}
+                        </p>
+                      )}
+
+                      {review.product?.id && (
+                        <button
+                          onClick={() =>
+                            router.push(`/product/${review.product.id}`)
+                          }
+                          className="mt-3 rounded-lg bg-indigo-50 px-3 py-2 text-xs font-bold text-indigo-600 transition hover:bg-indigo-100"
+                        >
+                          View product
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* REVIEW */}
+
+                  <div className="mt-5 rounded-xl bg-slate-50 p-4">
+                    <p className="text-sm leading-relaxed text-slate-600">
+                      “{review.review || "No written review."}”
+                    </p>
+                  </div>
+
+                  {/* SELLER REPLY */}
+
+                  {review.reply && (
+                    <div className="mt-3 rounded-xl border border-emerald-100 bg-emerald-50 p-4">
+                      <p className="text-xs font-bold text-emerald-700">
+                        Your reply
+                      </p>
+
+                      <p className="mt-1 text-sm text-emerald-800">
+                        {review.reply}
+                      </p>
+                    </div>
+                  )}
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* =================================================
+            PDF REPORT
+        ================================================= */}
+
+        <div
+          id="pdf-report"
+          style={{
+            position: "fixed",
+            left: "-99999px",
+            top: 0,
+            width: "800px",
+            background: "#ffffff",
+            color: "#1e293b",
+            padding: "40px",
+            fontFamily: "Arial, Helvetica, sans-serif",
+            boxSizing: "border-box",
+          }}
+        >
+          {/* HEADER */}
+
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              borderBottom: "2px solid #e2e8f0",
+              paddingBottom: "20px",
+              marginBottom: "30px",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+              }}
+            >
+              {dashboardData.storeLogo && (
+                <img
+                  src={dashboardData.storeLogo}
+                  alt="Store Logo"
+                  style={{
+                    width: "55px",
+                    height: "55px",
+                    borderRadius: "8px",
+                    marginRight: "16px",
+                    objectFit: "cover",
+                  }}
+                />
+              )}
+
+              <div>
+                <h1
+                  style={{
+                    margin: 0,
+                    fontSize: "24px",
+                  }}
+                >
+                  {dashboardData.storeName || "Seller Store"}
+                </h1>
+
+                <p
+                  style={{
+                    margin: "5px 0 0",
+                    color: "#64748b",
+                    fontSize: "13px",
+                  }}
+                >
+                  Seller Performance Report
+                </p>
+              </div>
+            </div>
+
+            <div
+              style={{
+                textAlign: "right",
+              }}
+            >
+              <p
+                style={{
+                  margin: 0,
+                  color: "#64748b",
+                  fontSize: "12px",
+                }}
+              >
+                Reporting Period
+              </p>
+
+              <p
+                style={{
+                  margin: "4px 0 0",
+                  fontSize: "15px",
+                  fontWeight: "bold",
+                }}
+              >
+                {monthOptions[filterMonth]} {filterYear}
+              </p>
+            </div>
+          </div>
+
+          {/* SUMMARY */}
+
+          <h2
+            style={{
+              fontSize: "18px",
+              marginBottom: "15px",
+            }}
+          >
+            Executive Summary
+          </h2>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(4, 1fr)",
+              gap: "12px",
+              marginBottom: "30px",
+            }}
+          >
+            {[
+              {
+                label: "Net Earnings",
+                value: currency + netEarnings.toFixed(2),
+              },
+              {
+                label: "Orders",
+                value: dashboardData.totalOrders,
+              },
+              {
+                label: "Cancelled",
+                value: cancelledOrders.length,
+              },
+              {
+                label: "Returned",
+                value: returnedOrders.length,
+              },
+            ].map((item) => (
+              <div
+                key={item.label}
+                style={{
+                  padding: "16px",
+                  background: "#f8fafc",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: "8px",
+                  textAlign: "center",
+                }}
+              >
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: "11px",
+                    color: "#64748b",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  {item.label}
+                </p>
+
+                <p
+                  style={{
+                    margin: "8px 0 0",
+                    fontSize: "19px",
+                    fontWeight: "bold",
+                  }}
+                >
+                  {item.value}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          {/* FINANCIAL */}
+
+          <h2
+            style={{
+              fontSize: "17px",
+              marginBottom: "12px",
+            }}
+          >
+            Financial Summary
+          </h2>
+
+          <table
+            style={{
+              width: "100%",
+              borderCollapse: "collapse",
+              marginBottom: "30px",
+            }}
+          >
+            <tbody>
+              <tr>
+                <td
+                  style={{
+                    padding: "10px",
+                    borderBottom: "1px solid #e2e8f0",
+                  }}
+                >
+                  Net Earnings
+                </td>
+
+                <td
+                  style={{
+                    padding: "10px",
+                    textAlign: "right",
+                    fontWeight: "bold",
+                  }}
+                >
+                  {currency}
+                  {netEarnings.toFixed(2)}
+                </td>
+              </tr>
+
+              <tr>
+                <td
+                  style={{
+                    padding: "10px",
+                    borderBottom: "1px solid #e2e8f0",
+                  }}
+                >
+                  Cancelled Revenue Loss
+                </td>
+
+                <td
+                  style={{
+                    padding: "10px",
+                    textAlign: "right",
+                    fontWeight: "bold",
+                  }}
+                >
+                  {currency}
+                  {cancelledRevenueLoss.toFixed(2)}
+                </td>
+              </tr>
+
+              <tr>
+                <td
+                  style={{
+                    padding: "10px",
+                  }}
+                >
+                  Returned Revenue Loss
+                </td>
+
+                <td
+                  style={{
+                    padding: "10px",
+                    textAlign: "right",
+                    fontWeight: "bold",
+                  }}
+                >
+                  {currency}
+                  {returnedRevenueLoss.toFixed(2)}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          {/* TOP PRODUCTS */}
+
+          <h2
+            style={{
+              fontSize: "17px",
+              marginBottom: "12px",
+            }}
+          >
+            Top Products
+          </h2>
+
+          <table
+            style={{
+              width: "100%",
+              borderCollapse: "collapse",
+            }}
+          >
+            <tbody>
+              {dashboardData.monthlyReport?.topProducts?.length > 0 ? (
+                dashboardData.monthlyReport.topProducts.map(
+                  (product, index) => (
+                    <tr key={index}>
+                      <td
+                        style={{
+                          padding: "9px",
+                          borderBottom: "1px solid #e2e8f0",
+                        }}
+                      >
+                        {product.name}
+                      </td>
+
+                      <td
+                        style={{
+                          padding: "9px",
+                          textAlign: "right",
+                        }}
+                      >
+                        <strong>{product.sold}</strong> units sold
+                      </td>
+                    </tr>
+                  ),
+                )
+              ) : (
                 <tr>
-                  <td style={{ padding: "10px 0", color: "#475569" }}>Returned Revenue Loss</td>
-                  <td style={{ padding: "10px 0", textAlign: "right", fontWeight: "bold", color: "#f59e0b" }}>
-                    {currency}{returnedRevenueLoss.toFixed(2)}
+                  <td
+                    style={{
+                      padding: "9px",
+                      color: "#94a3b8",
+                    }}
+                  >
+                    No product data available.
                   </td>
                 </tr>
-              </tbody>
-            </table>
-          </div>
+              )}
+            </tbody>
+          </table>
 
-          {/* Top Products */}
-          <div>
-            <h2 style={{ fontSize: "16px", color: "#0f172a", borderBottom: "1px solid #e2e8f0", paddingBottom: "8px", marginBottom: "12px" }}>
-              Top Performing Products
-            </h2>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "14px" }}>
-              <tbody>
-                {dashboardData.monthlyReport?.topProducts?.length > 0 ? (
-                  dashboardData.monthlyReport.topProducts.map((p, i) => (
-                    <tr key={i} style={{ borderBottom: "1px solid #f1f5f9" }}>
-                      <td style={{ padding: "8px 0", color: "#0f172a", fontWeight: 500 }}>{p.name}</td>
-                      <td style={{ padding: "8px 0", textAlign: "right", color: "#475569" }}>
-                        <span style={{ fontWeight: "bold" }}>{p.sold}</span> units sold
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr><td style={{ padding: "8px 0", color: "#94a3b8" }}>No data available.</td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
+          {/* FOOTER */}
 
-        {/* ❌ CANCELLED & RETURNED ORDERS TABLES */}
-        {[
-          { title: "Cancelled Orders", data: dashboardData.monthlyReport?.cancelledDetails },
-          { title: "Returned Orders", data: dashboardData.monthlyReport?.returnedDetails }
-        ].map((section, idx) => (
-          <div key={idx} style={{ marginBottom: "30px" }}>
-            <h2 style={{ fontSize: "16px", color: "#0f172a", borderBottom: "2px solid #e2e8f0", paddingBottom: "8px", marginBottom: "12px" }}>
-              {section.title}
-            </h2>
-            {section.data && section.data.length > 0 ? (
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
-                <thead>
-                  <tr style={{ backgroundColor: "#f8fafc", color: "#475569", textAlign: "left" }}>
-                    <th style={{ padding: "10px", borderBottom: "1px solid #e2e8f0" }}>Product Name</th>
-                    <th style={{ padding: "10px", borderBottom: "1px solid #e2e8f0", textAlign: "center" }}>Quantity</th>
-                    <th style={{ padding: "10px", borderBottom: "1px solid #e2e8f0", textAlign: "right" }}>Unit Price</th>
-                    <th style={{ padding: "10px", borderBottom: "1px solid #e2e8f0", textAlign: "right" }}>Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {section.data.map((item, i) => (
-                    <tr key={i} style={{ borderBottom: "1px solid #f1f5f9" }}>
-                      <td style={{ padding: "10px", color: "#0f172a" }}>{item.productName}</td>
-                      <td style={{ padding: "10px", textAlign: "center", color: "#475569" }}>{item.quantity}</td>
-                      <td style={{ padding: "10px", textAlign: "right", color: "#475569" }}>{currency}{item.price}</td>
-                      <td style={{ padding: "10px", textAlign: "right", fontWeight: "bold", color: "#0f172a" }}>
-                        {currency}{item.price * item.quantity}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : (
-              <p style={{ fontSize: "13px", color: "#94a3b8", fontStyle: "italic" }}>No {section.title.toLowerCase()} recorded for this period.</p>
-            )}
-          </div>
-        ))}
+          <div
+            style={{
+              marginTop: "40px",
+              paddingTop: "20px",
+              borderTop: "1px solid #e2e8f0",
+              textAlign: "center",
+            }}
+          >
+            <p
+              style={{
+                margin: 0,
+                fontSize: "11px",
+                color: "#94a3b8",
+              }}
+            >
+              Generated by Seller Analytics
+            </p>
 
-        {/* 🏁 FOOTER */}
-        <div style={{
-          marginTop: "40px",
-          paddingTop: "20px",
-          borderTop: "1px solid #e2e8f0",
-          textAlign: "center",
-        }}>
-          <p style={{ margin: 0, fontSize: "12px", color: "#94a3b8", fontWeight: 500 }}>
-            CONFIDENTIAL & PROPRIETARY • GENERATED BY SMART ANALYTICS
-          </p>
-          <p style={{ margin: "4px 0 0", fontSize: "11px", color: "#cbd5e1" }}>
-            Report generated on {new Date().toLocaleDateString()}
-          </p>
+            <p
+              style={{
+                margin: "5px 0 0",
+                fontSize: "10px",
+                color: "#cbd5e1",
+              }}
+            >
+              {new Date().toLocaleDateString()}
+            </p>
+          </div>
         </div>
       </div>
     </div>
-  )
+  );
 }
