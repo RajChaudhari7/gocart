@@ -28,7 +28,7 @@ const Footer = () => {
 
   const socialLinks = [
     { icon: <Facebook size={18} />, href: "https://facebook.com", color: "hover:bg-blue-600" },
-    { icon: <Instagram size={18} />, href: "https://instagram.com", color: "hover:bg-pink-600" },
+    { icon: <Instagram size={18} />, href: "https://www.instagram.com/nandurbarbazarofficial", color: "hover:bg-pink-600" },
     { icon: <Twitter size={18} />, href: "https://twitter.com", color: "hover:bg-sky-500" },
     { icon: <Linkedin size={18} />, href: "https://linkedin.com", color: "hover:bg-blue-700" },
   ]
@@ -109,7 +109,7 @@ const Footer = () => {
                   </div>
                   <div>
                     <p className="text-[10px] uppercase text-white/30 font-bold">Email Us</p>
-                    <p className="text-sm text-white/80">hello@nandurbarbazar.com</p>
+                    <p className="text-sm text-white/80">nandurbarbazar@gmail.com</p>
                   </div>
                 </div>
 
