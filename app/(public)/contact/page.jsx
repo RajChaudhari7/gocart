@@ -100,7 +100,7 @@ export default function ContactPage() {
             className="lg:col-span-5 flex flex-col gap-6"
           >
             <ParallaxTilt tiltMaxAngleX={5} tiltMaxAngleY={5} glareEnable={true} glareMaxOpacity={0.05} transitionSpeed={2000}>
-              <InfoCard icon={<Mail size={22} />} title="Email Support" text="support@nandurbarbazar.com" />
+              <InfoCard icon={<Mail size={22} />} title="Email Support" text="nandurbarbazar@gmail.com" />
             </ParallaxTilt>
             <ParallaxTilt tiltMaxAngleX={5} tiltMaxAngleY={5} glareEnable={true} glareMaxOpacity={0.05} transitionSpeed={2000}>
               <InfoCard icon={<Phone size={22} />} title="Customer Care" text="+918600412566" />
