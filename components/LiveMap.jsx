@@ -2,11 +2,11 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-    MapContainer,
-    TileLayer,
-    Marker,
-    Polyline,
-    useMap,
+  MapContainer,
+  TileLayer,
+  Marker,
+  Polyline,
+  useMap,
 } from "react-leaflet";
 
 import L from "leaflet";
@@ -17,8 +17,8 @@ import "leaflet/dist/leaflet.css";
 // ----------------------------------------------------
 
 const customerIcon = L.divIcon({
-    className: "custom-customer-icon",
-    html: `
+  className: "custom-customer-icon",
+  html: `
         <div class="customer-marker-wrapper">
             <div class="customer-marker-pulse"></div>
 
@@ -42,8 +42,8 @@ const customerIcon = L.divIcon({
             <div class="customer-marker-tip"></div>
         </div>
     `,
-    iconSize: [48, 56],
-    iconAnchor: [24, 54],
+  iconSize: [48, 56],
+  iconAnchor: [24, 54],
 });
 
 // ----------------------------------------------------
@@ -51,10 +51,10 @@ const customerIcon = L.divIcon({
 // ----------------------------------------------------
 
 const createDriverIcon = (heading = 0) =>
-    L.divIcon({
-        className: "custom-driver-icon",
+  L.divIcon({
+    className: "custom-driver-icon",
 
-        html: `
+    html: `
             <div class="driver-marker-wrapper">
 
                 <div class="driver-marker-pulse"></div>
@@ -92,479 +92,375 @@ const createDriverIcon = (heading = 0) =>
             </div>
         `,
 
-        iconSize: [52, 52],
-        iconAnchor: [26, 26],
-    });
+    iconSize: [52, 52],
+    iconAnchor: [26, 26],
+  });
 
 // ----------------------------------------------------
 // CALCULATE DRIVER DIRECTION
 // ----------------------------------------------------
 
 const calculateBearing = (start, end) => {
-    if (!start || !end) return 0;
+  if (!start || !end) return 0;
 
-    const startLat = start[0] * (Math.PI / 180);
-    const startLng = start[1] * (Math.PI / 180);
+  const startLat = start[0] * (Math.PI / 180);
+  const startLng = start[1] * (Math.PI / 180);
 
-    const endLat = end[0] * (Math.PI / 180);
-    const endLng = end[1] * (Math.PI / 180);
+  const endLat = end[0] * (Math.PI / 180);
+  const endLng = end[1] * (Math.PI / 180);
 
-    const longitudeDifference = endLng - startLng;
+  const longitudeDifference = endLng - startLng;
 
-    const y =
-        Math.sin(longitudeDifference) *
-        Math.cos(endLat);
+  const y = Math.sin(longitudeDifference) * Math.cos(endLat);
 
-    const x =
-        Math.cos(startLat) * Math.sin(endLat) -
-        Math.sin(startLat) *
-        Math.cos(endLat) *
-        Math.cos(longitudeDifference);
+  const x =
+    Math.cos(startLat) * Math.sin(endLat) -
+    Math.sin(startLat) * Math.cos(endLat) * Math.cos(longitudeDifference);
 
-    const bearing =
-        Math.atan2(y, x) * (180 / Math.PI);
+  const bearing = Math.atan2(y, x) * (180 / Math.PI);
 
-    return (bearing + 360) % 360;
+  return (bearing + 360) % 360;
 };
 
 // ----------------------------------------------------
 // AUTO-ADJUST MAP BOUNDS
 // ----------------------------------------------------
 
-const MapBounds = ({
-    driverPos,
-    customerPos,
-    routeCoords,
-}) => {
-    const map = useMap();
+const MapBounds = ({ driverPos, customerPos, routeCoords }) => {
+  const map = useMap();
 
-    const hasInitiallyFitted = useRef(false);
+  const hasInitiallyFitted = useRef(false);
 
-    useEffect(() => {
-        if (!driverPos || !customerPos) return;
+  useEffect(() => {
+    if (!driverPos || !customerPos) return;
 
-        const positions =
-            routeCoords.length > 0
-                ? routeCoords
-                : [driverPos, customerPos];
+    const positions =
+      routeCoords.length > 0 ? routeCoords : [driverPos, customerPos];
 
-        const bounds = L.latLngBounds(positions);
+    const bounds = L.latLngBounds(positions);
 
-        if (!hasInitiallyFitted.current) {
-            map.fitBounds(bounds, {
-                padding: [50, 50],
-                maxZoom: 16,
-            });
+    if (!hasInitiallyFitted.current) {
+      map.fitBounds(bounds, {
+        padding: [50, 50],
+        maxZoom: 16,
+      });
 
-            hasInitiallyFitted.current = true;
-        }
-    }, [
-        driverPos,
-        customerPos,
-        routeCoords,
-        map,
-    ]);
+      hasInitiallyFitted.current = true;
+    }
+  }, [driverPos, customerPos, routeCoords, map]);
 
-    return null;
+  return null;
 };
 
 // ----------------------------------------------------
 // MAIN COMPONENT
 // ----------------------------------------------------
 
-export default function LiveMap({
-    driverLocation,
-    customerLocation,
-}) {
-    const [routeCoords, setRouteCoords] = useState([]);
+export default function LiveMap({ driverLocation, customerLocation }) {
+  const [routeCoords, setRouteCoords] = useState([]);
 
-    const [routeLoading, setRouteLoading] =
-        useState(false);
+  const [routeLoading, setRouteLoading] = useState(false);
 
-    const [routeError, setRouteError] =
-        useState(false);
+  const [routeError, setRouteError] = useState(false);
 
-    const [driverHeading, setDriverHeading] =
-        useState(0);
+  const [driverHeading, setDriverHeading] = useState(0);
 
-    const previousDriverPositionRef =
-        useRef(null);
+  const previousDriverPositionRef = useRef(null);
 
-    // ------------------------------------------------
-    // NORMALIZE DRIVER LOCATION
-    // ------------------------------------------------
+  // ------------------------------------------------
+  // NORMALIZE DRIVER LOCATION
+  // ------------------------------------------------
 
-    const routeDriverLocation = useMemo(() => {
-        if (
-            driverLocation?.lat == null ||
-            driverLocation?.lng == null
-        ) {
-            return null;
-        }
-
-        const lat = Number(driverLocation.lat);
-        const lng = Number(driverLocation.lng);
-
-        if (
-            !Number.isFinite(lat) ||
-            !Number.isFinite(lng)
-        ) {
-            return null;
-        }
-
-        return {
-            lat,
-            lng,
-
-            // Rounded location used only for OSRM requests
-            routeLat: Number(lat.toFixed(4)),
-            routeLng: Number(lng.toFixed(4)),
-        };
-    }, [
-        driverLocation?.lat,
-        driverLocation?.lng,
-    ]);
-
-    // ------------------------------------------------
-    // NORMALIZE CUSTOMER LOCATION
-    // ------------------------------------------------
-
-    const normalizedCustomerLocation = useMemo(() => {
-        if (
-            customerLocation?.lat == null ||
-            customerLocation?.lng == null
-        ) {
-            return null;
-        }
-
-        const lat = Number(customerLocation.lat);
-        const lng = Number(customerLocation.lng);
-
-        if (
-            !Number.isFinite(lat) ||
-            !Number.isFinite(lng)
-        ) {
-            return null;
-        }
-
-        return {
-            lat,
-            lng,
-        };
-    }, [
-        customerLocation?.lat,
-        customerLocation?.lng,
-    ]);
-
-    const driverPos = routeDriverLocation
-        ? [
-            routeDriverLocation.lat,
-            routeDriverLocation.lng,
-        ]
-        : null;
-
-    const customerPos = normalizedCustomerLocation
-        ? [
-            normalizedCustomerLocation.lat,
-            normalizedCustomerLocation.lng,
-        ]
-        : null;
-
-    // ------------------------------------------------
-    // CALCULATE DRIVER HEADING
-    // ------------------------------------------------
-
-    useEffect(() => {
-        if (!driverPos) return;
-
-        const previousPosition =
-            previousDriverPositionRef.current;
-
-        if (previousPosition) {
-            const latitudeDifference =
-                Math.abs(
-                    driverPos[0] -
-                    previousPosition[0]
-                );
-
-            const longitudeDifference =
-                Math.abs(
-                    driverPos[1] -
-                    previousPosition[1]
-                );
-
-            /*
-             * Ignore extremely tiny position changes.
-             * This prevents the icon from rotating randomly
-             * because of GPS noise.
-             */
-            const hasMeaningfulMovement =
-                latitudeDifference > 0.000001 ||
-                longitudeDifference > 0.000001;
-
-            if (hasMeaningfulMovement) {
-                const newHeading =
-                    calculateBearing(
-                        previousPosition,
-                        driverPos
-                    );
-
-                setDriverHeading(newHeading);
-            }
-        }
-
-        previousDriverPositionRef.current =
-            driverPos;
-    }, [
-        driverPos?.[0],
-        driverPos?.[1],
-    ]);
-
-    // Generate a new icon only when heading changes
-    const rotatingDriverIcon = useMemo(
-        () => createDriverIcon(driverHeading),
-        [driverHeading]
-    );
-
-    // ------------------------------------------------
-    // FETCH ACTUAL ROAD ROUTE FROM OSRM
-    // ------------------------------------------------
-
-    useEffect(() => {
-        if (
-            !routeDriverLocation ||
-            !normalizedCustomerLocation
-        ) {
-            setRouteCoords([]);
-            return;
-        }
-
-        const controller =
-            new AbortController();
-
-        const fetchRoute = async () => {
-            try {
-                setRouteLoading(true);
-                setRouteError(false);
-
-                const driverLng =
-                    routeDriverLocation.routeLng;
-
-                const driverLat =
-                    routeDriverLocation.routeLat;
-
-                const customerLng =
-                    normalizedCustomerLocation.lng;
-
-                const customerLat =
-                    normalizedCustomerLocation.lat;
-
-                const url =
-                    "https://router.project-osrm.org/" +
-                    "route/v1/driving/" +
-                    `${driverLng},${driverLat};` +
-                    `${customerLng},${customerLat}` +
-                    "?overview=full" +
-                    "&geometries=geojson" +
-                    "&steps=false";
-
-                const response = await fetch(url, {
-                    signal: controller.signal,
-                });
-
-                if (!response.ok) {
-                    throw new Error(
-                        `Route request failed: ${response.status}`
-                    );
-                }
-
-                const data =
-                    await response.json();
-
-                if (
-                    data.code !== "Ok" ||
-                    !data.routes?.length ||
-                    !data.routes[0]?.geometry
-                        ?.coordinates
-                ) {
-                    throw new Error(
-                        "No road route found"
-                    );
-                }
-
-                /*
-                 * OSRM:
-                 * [longitude, latitude]
-                 *
-                 * Leaflet:
-                 * [latitude, longitude]
-                 */
-                const coordinates =
-                    data.routes[0].geometry.coordinates.map(
-                        ([lng, lat]) => [
-                            lat,
-                            lng,
-                        ]
-                    );
-
-                setRouteCoords(coordinates);
-            } catch (error) {
-                if (
-                    error.name === "AbortError"
-                ) {
-                    return;
-                }
-
-                console.error(
-                    "Error fetching road route:",
-                    error
-                );
-
-                setRouteError(true);
-
-                // Straight-line fallback
-                setRouteCoords([
-                    [
-                        routeDriverLocation.lat,
-                        routeDriverLocation.lng,
-                    ],
-                    [
-                        normalizedCustomerLocation.lat,
-                        normalizedCustomerLocation.lng,
-                    ],
-                ]);
-            } finally {
-                if (!controller.signal.aborted) {
-                    setRouteLoading(false);
-                }
-            }
-        };
-
-        const timeout =
-            setTimeout(fetchRoute, 400);
-
-        return () => {
-            clearTimeout(timeout);
-            controller.abort();
-        };
-    }, [
-        routeDriverLocation?.routeLat,
-        routeDriverLocation?.routeLng,
-        normalizedCustomerLocation?.lat,
-        normalizedCustomerLocation?.lng,
-    ]);
-
-    if (!driverPos) {
-        return null;
+  const routeDriverLocation = useMemo(() => {
+    if (driverLocation?.lat == null || driverLocation?.lng == null) {
+      return null;
     }
 
-    return (
-        <div className="relative h-full w-full overflow-hidden rounded-2xl">
+    const lat = Number(driverLocation.lat);
+    const lng = Number(driverLocation.lng);
 
-            <MapContainer
-                center={driverPos}
-                zoom={14}
-                style={{
-                    height: "100%",
-                    width: "100%",
-                    background: "#020617",
-                }}
-                zoomControl={false}
-            >
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+      return null;
+    }
 
-                {/* Dark map tiles */}
-                <TileLayer
-                    url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-                    attribution="&copy; OpenStreetMap contributors &copy; CARTO"
-                />
+    return {
+      lat,
+      lng,
 
-                {driverPos && customerPos && (
-                    <MapBounds
-                        driverPos={driverPos}
-                        customerPos={customerPos}
-                        routeCoords={routeCoords}
-                    />
-                )}
+      // Rounded location used only for OSRM requests
+      routeLat: Number(lat.toFixed(4)),
+      routeLng: Number(lng.toFixed(4)),
+    };
+  }, [driverLocation?.lat, driverLocation?.lng]);
 
-                {/* Route outer shadow */}
-                {routeCoords.length > 0 && (
-                    <Polyline
-                        positions={routeCoords}
-                        pathOptions={{
-                            color: "#020617",
-                            weight: 11,
-                            opacity: 0.75,
-                            lineCap: "round",
-                            lineJoin: "round",
-                        }}
-                    />
-                )}
+  // ------------------------------------------------
+  // NORMALIZE CUSTOMER LOCATION
+  // ------------------------------------------------
 
-                {/* Main road route */}
-                {routeCoords.length > 0 && (
-                    <Polyline
-                        positions={routeCoords}
-                        pathOptions={{
-                            color: routeError
-                                ? "#64748b"
-                                : "#10b981",
+  const normalizedCustomerLocation = useMemo(() => {
+    if (customerLocation?.lat == null || customerLocation?.lng == null) {
+      return null;
+    }
 
-                            weight: 6,
-                            opacity: 0.95,
-                            lineCap: "round",
-                            lineJoin: "round",
-                        }}
-                    />
-                )}
+    const lat = Number(customerLocation.lat);
+    const lng = Number(customerLocation.lng);
 
-                {/* Inner route highlight */}
-                {routeCoords.length > 0 &&
-                    !routeError && (
-                        <Polyline
-                            positions={routeCoords}
-                            pathOptions={{
-                                color: "#6ee7b7",
-                                weight: 2,
-                                opacity: 0.7,
-                                lineCap: "round",
-                                lineJoin: "round",
-                            }}
-                        />
-                    )}
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+      return null;
+    }
 
-                {/* Rotating driver marker */}
-                <Marker
-                    position={driverPos}
-                    icon={rotatingDriverIcon}
-                    zIndexOffset={1000}
-                />
+    return {
+      lat,
+      lng,
+    };
+  }, [customerLocation?.lat, customerLocation?.lng]);
 
-                {/* Customer destination */}
-                {customerPos && (
-                    <Marker
-                        position={customerPos}
-                        icon={customerIcon}
-                        zIndexOffset={900}
-                    />
-                )}
+  const driverPos = routeDriverLocation
+    ? [routeDriverLocation.lat, routeDriverLocation.lng]
+    : null;
 
-            </MapContainer>
+  const customerPos = normalizedCustomerLocation
+    ? [normalizedCustomerLocation.lat, normalizedCustomerLocation.lng]
+    : null;
 
-            {/* Route loading indicator */}
-            {routeLoading && (
-                <div className="pointer-events-none absolute bottom-4 left-1/2 z-[1000] -translate-x-1/2 whitespace-nowrap rounded-full border border-white/10 bg-black/75 px-4 py-2 text-xs font-medium text-white/70 shadow-lg backdrop-blur-md">
-                    Updating road route...
-                </div>
-            )}
+  // ------------------------------------------------
+  // CALCULATE DRIVER HEADING
+  // ------------------------------------------------
 
-            {/* Route fallback warning */}
-            {routeError &&
-                !routeLoading && (
-                    <div className="pointer-events-none absolute bottom-4 left-1/2 z-[1000] -translate-x-1/2 whitespace-nowrap rounded-full border border-amber-500/20 bg-black/75 px-4 py-2 text-xs font-medium text-amber-300 shadow-lg backdrop-blur-md">
-                        Road route unavailable. Showing approximate path.
-                    </div>
-                )}
+  useEffect(() => {
+    if (!driverPos) return;
 
+    const previousPosition = previousDriverPositionRef.current;
+
+    if (previousPosition) {
+      const latitudeDifference = Math.abs(driverPos[0] - previousPosition[0]);
+
+      const longitudeDifference = Math.abs(driverPos[1] - previousPosition[1]);
+
+      /*
+       * Ignore extremely tiny position changes.
+       * This prevents the icon from rotating randomly
+       * because of GPS noise.
+       */
+      const hasMeaningfulMovement =
+        latitudeDifference > 0.000001 || longitudeDifference > 0.000001;
+
+      if (hasMeaningfulMovement) {
+        const newHeading = calculateBearing(previousPosition, driverPos);
+
+        setDriverHeading(newHeading);
+      }
+    }
+
+    previousDriverPositionRef.current = driverPos;
+  }, [driverPos?.[0], driverPos?.[1]]);
+
+  // Generate a new icon only when heading changes
+  const rotatingDriverIcon = useMemo(
+    () => createDriverIcon(driverHeading),
+    [driverHeading],
+  );
+
+  // ------------------------------------------------
+  // FETCH ACTUAL ROAD ROUTE FROM OSRM
+  // ------------------------------------------------
+
+  useEffect(() => {
+    if (!routeDriverLocation || !normalizedCustomerLocation) {
+      setRouteCoords([]);
+      return;
+    }
+
+    const controller = new AbortController();
+
+    const fetchRoute = async () => {
+      try {
+        setRouteLoading(true);
+        setRouteError(false);
+
+        const driverLng = routeDriverLocation.routeLng;
+
+        const driverLat = routeDriverLocation.routeLat;
+
+        const customerLng = normalizedCustomerLocation.lng;
+
+        const customerLat = normalizedCustomerLocation.lat;
+
+        const url =
+          "https://router.project-osrm.org/" +
+          "route/v1/driving/" +
+          `${driverLng},${driverLat};` +
+          `${customerLng},${customerLat}` +
+          "?overview=full" +
+          "&geometries=geojson" +
+          "&steps=false";
+
+        const response = await fetch(url, {
+          signal: controller.signal,
+        });
+
+        if (!response.ok) {
+          throw new Error(`Route request failed: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (
+          data.code !== "Ok" ||
+          !data.routes?.length ||
+          !data.routes[0]?.geometry?.coordinates
+        ) {
+          throw new Error("No road route found");
+        }
+
+        /*
+         * OSRM:
+         * [longitude, latitude]
+         *
+         * Leaflet:
+         * [latitude, longitude]
+         */
+        const coordinates = data.routes[0].geometry.coordinates.map(
+          ([lng, lat]) => [lat, lng],
+        );
+
+        setRouteCoords(coordinates);
+      } catch (error) {
+        if (error.name === "AbortError") {
+          return;
+        }
+
+        console.error("Error fetching road route:", error);
+
+        setRouteError(true);
+
+        // Straight-line fallback
+        setRouteCoords([
+          [routeDriverLocation.lat, routeDriverLocation.lng],
+          [normalizedCustomerLocation.lat, normalizedCustomerLocation.lng],
+        ]);
+      } finally {
+        if (!controller.signal.aborted) {
+          setRouteLoading(false);
+        }
+      }
+    };
+
+    const timeout = setTimeout(fetchRoute, 400);
+
+    return () => {
+      clearTimeout(timeout);
+      controller.abort();
+    };
+  }, [
+    routeDriverLocation?.routeLat,
+    routeDriverLocation?.routeLng,
+    normalizedCustomerLocation?.lat,
+    normalizedCustomerLocation?.lng,
+  ]);
+
+  if (!driverPos) {
+    return null;
+  }
+
+  return (
+    <div className="relative h-full w-full overflow-hidden rounded-2xl">
+      <MapContainer
+        center={driverPos}
+        zoom={14}
+        style={{
+          height: "100%",
+          width: "100%",
+          background: "#020617",
+        }}
+        zoomControl={false}
+      >
+        {/* OpenStreetMap tiles */}
+        <TileLayer
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution="&copy; OpenStreetMap contributors"
+        />
+
+        {driverPos && customerPos && (
+          <MapBounds
+            driverPos={driverPos}
+            customerPos={customerPos}
+            routeCoords={routeCoords}
+          />
+        )}
+
+        {/* Route outer shadow */}
+        {routeCoords.length > 0 && (
+          <Polyline
+            positions={routeCoords}
+            pathOptions={{
+              color: "#020617",
+              weight: 11,
+              opacity: 0.75,
+              lineCap: "round",
+              lineJoin: "round",
+            }}
+          />
+        )}
+
+        {/* Main road route */}
+        {routeCoords.length > 0 && (
+          <Polyline
+            positions={routeCoords}
+            pathOptions={{
+              color: routeError ? "#64748b" : "#10b981",
+              weight: 6,
+              opacity: 0.95,
+              lineCap: "round",
+              lineJoin: "round",
+            }}
+          />
+        )}
+
+        {/* Inner route highlight */}
+        {routeCoords.length > 0 && !routeError && (
+          <Polyline
+            positions={routeCoords}
+            pathOptions={{
+              color: "#6ee7b7",
+              weight: 2,
+              opacity: 0.7,
+              lineCap: "round",
+              lineJoin: "round",
+            }}
+          />
+        )}
+
+        {/* Driver */}
+        <Marker
+          position={driverPos}
+          icon={rotatingDriverIcon}
+          zIndexOffset={1000}
+        />
+
+        {/* Customer */}
+        {customerPos && (
+          <Marker
+            position={customerPos}
+            icon={customerIcon}
+            zIndexOffset={900}
+          />
+        )}
+      </MapContainer>
+
+      {/* Route loading indicator */}
+      {routeLoading && (
+        <div className="pointer-events-none absolute bottom-4 left-1/2 z-[1000] -translate-x-1/2 whitespace-nowrap rounded-full border border-white/10 bg-black/75 px-4 py-2 text-xs font-medium text-white/70 shadow-lg backdrop-blur-md">
+          Updating road route...
         </div>
-    );
+      )}
+
+      {/* Route fallback warning */}
+      {routeError && !routeLoading && (
+        <div className="pointer-events-none absolute bottom-4 left-1/2 z-[1000] -translate-x-1/2 whitespace-nowrap rounded-full border border-amber-500/20 bg-black/75 px-4 py-2 text-xs font-medium text-amber-300 shadow-lg backdrop-blur-md">
+          Road route unavailable. Showing approximate path.
+        </div>
+      )}
+    </div>
+  );
 }
