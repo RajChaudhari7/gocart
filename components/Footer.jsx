@@ -1,65 +1,170 @@
-'use client'
+"use client";
 
-import Link from "next/link"
-import { motion } from "framer-motion"
-import { Mail, Phone, MapPin, Facebook, Instagram, Twitter, Linkedin, ArrowUpRight } from "lucide-react"
+import Link from "next/link";
+import { motion } from "framer-motion";
+import {
+  ArrowUpRight,
+  Facebook,
+  Instagram,
+  Linkedin,
+  Mail,
+  MapPin,
+  Phone,
+  ShoppingBag,
+  Twitter,
+} from "lucide-react";
 
 const Footer = () => {
-  const currentYear = new Date().getFullYear()
+  const currentYear = new Date().getFullYear();
 
-  const linkSections = [
+  const footerLinks = [
     {
-      title: "For Local Shops",
+      title: "For Sellers",
       links: [
         { text: "Register Your Shop", path: "/create-store" },
-        { text: "Seller Dashboard", path: "/store" },       
+        { text: "Seller Dashboard", path: "/store" },
         { text: "Seller Guidelines", path: "/guidelines" },
       ],
     },
     {
-      title: "Support & Legal",
+      title: "Company",
       links: [
+        { text: "About Us", path: "/about" },
         { text: "Contact Support", path: "/contact" },
         { text: "Terms of Service", path: "/terms" },
         { text: "Privacy Policy", path: "/privacy" },
       ],
     },
-  ]
+  ];
 
   const socialLinks = [
-    { icon: <Facebook size={18} />, href: "https://facebook.com", color: "hover:bg-blue-600" },
-    { icon: <Instagram size={18} />, href: "https://www.instagram.com/nandurbarbazarofficial", color: "hover:bg-pink-600" },
-    { icon: <Twitter size={18} />, href: "https://twitter.com", color: "hover:bg-sky-500" },
-    { icon: <Linkedin size={18} />, href: "https://linkedin.com", color: "hover:bg-blue-700" },
-  ]
+    {
+      icon: <Instagram size={17} />,
+      href: "https://www.instagram.com/nandurbarbazarofficial",
+      label: "Instagram",
+    },
+    {
+      icon: <Facebook size={17} />,
+      href: "https://facebook.com",
+      label: "Facebook",
+    },
+    {
+      icon: <Twitter size={17} />,
+      href: "https://twitter.com",
+      label: "Twitter",
+    },
+    {
+      icon: <Linkedin size={17} />,
+      href: "https://linkedin.com",
+      label: "LinkedIn",
+    },
+  ];
 
   return (
-    <footer className="relative bg-[#020617] text-white overflow-hidden">
-      {/* Top Gradient Line */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[1px] bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent" />
+    <footer className="relative overflow-hidden bg-[#030712] text-white">
+      {/* Ambient background */}
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute -top-40 left-1/4 h-96 w-96 rounded-full bg-cyan-500/[0.06] blur-[120px]" />
+        <div className="absolute bottom-0 right-0 h-96 w-96 rounded-full bg-emerald-500/[0.05] blur-[120px]" />
 
-      <div className="max-w-7xl mx-auto px-6 py-20">
+        <div
+          className="absolute inset-0 opacity-[0.025]"
+          style={{
+            backgroundImage:
+              "linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)",
+            backgroundSize: "50px 50px",
+          }}
+        />
+      </div>
 
-        {/* MAIN FOOTER CONTENT */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-12">
+      {/* Top accent */}
+      <div className="relative h-px w-full bg-gradient-to-r from-transparent via-cyan-400/70 to-transparent" />
 
+      <div className="relative mx-auto max-w-7xl px-6">
+        {/* CTA Banner */}
+        <div className="border-b border-white/[0.07] py-12 md:py-16">
+          <div className="flex flex-col gap-8 md:flex-row md:items-center md:justify-between">
+            <div className="max-w-2xl">
+              <div className="mb-4 flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.8)]" />
+                <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-emerald-400">
+                  Built for Nandurbar
+                </span>
+              </div>
+
+              <h2 className="text-3xl font-black tracking-tight md:text-5xl">
+                Shop local.
+                <br />
+                <span className="bg-gradient-to-r from-cyan-400 to-emerald-400 bg-clip-text text-transparent">
+                  Support local.
+                </span>
+              </h2>
+
+              <p className="mt-4 max-w-lg text-sm leading-7 text-white/40">
+                Discover trusted local shops, everyday essentials and businesses
+                from right here in Nandurbar.
+              </p>
+            </div>
+
+            <Link href="/create-store">
+              <motion.div
+                whileHover={{ y: -3 }}
+                whileTap={{ scale: 0.98 }}
+                className="group flex w-fit items-center gap-4 rounded-2xl border border-cyan-400/20 bg-cyan-400/[0.07] px-5 py-4 transition-all hover:border-cyan-400/40 hover:bg-cyan-400/10"
+              >
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-cyan-400 text-black">
+                  <ShoppingBag size={19} />
+                </div>
+
+                <div>
+                  <p className="text-sm font-bold text-white">List your shop</p>
+                  <p className="mt-0.5 text-xs text-white/35">
+                    Grow your local business
+                  </p>
+                </div>
+
+                <ArrowUpRight
+                  size={18}
+                  className="ml-2 text-white/30 transition-transform group-hover:-translate-y-1 group-hover:translate-x-1 group-hover:text-cyan-400"
+                />
+              </motion.div>
+            </Link>
+          </div>
+        </div>
+
+        {/* Main footer */}
+        <div className="grid gap-14 py-16 md:grid-cols-2 lg:grid-cols-12 lg:gap-10">
           {/* Brand */}
-          <div className="lg:col-span-4 space-y-6">
-            <Link href="/" className="text-3xl font-black tracking-tighter group">
-              Nandurbar<span className="text-cyan-400 group-hover:text-emerald-400 transition-colors">Bazar</span>
-              <span className="text-emerald-400">.</span>
+          <div className="lg:col-span-4">
+            <Link href="/" className="group inline-block">
+              <div className="text-3xl font-black tracking-[-0.06em]">
+                Nandurbar
+                <span className="text-cyan-400 transition-colors group-hover:text-emerald-400">
+                  Bazar
+                </span>
+                <span className="text-emerald-400">.</span>
+              </div>
             </Link>
 
-            <p className="text-white/40 text-sm leading-relaxed max-w-xs">
-              Your trusted local marketplace. Connecting the community with the best local shops and everyday essentials right here in Nandurbar.
+            <p className="mt-5 max-w-sm text-sm leading-7 text-white/35">
+              A digital marketplace connecting Nandurbar&apos;s community with
+              local shops, trusted sellers and the products people need every
+              day.
             </p>
 
-            <div className="flex gap-3">
-              {socialLinks.map((social, idx) => (
-                <Link key={idx} href={social.href} target="_blank">
+            {/* Socials */}
+            <div className="mt-7 flex items-center gap-2">
+              {socialLinks.map((social) => (
+                <Link
+                  key={social.label}
+                  href={social.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={social.label}
+                >
                   <motion.div
-                    whileHover={{ y: -4 }}
-                    className={`w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center transition-colors ${social.color}`}
+                    whileHover={{ y: -3 }}
+                    className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.03] text-white/40 transition-all hover:border-cyan-400/30 hover:bg-cyan-400/10 hover:text-cyan-400"
                   >
                     {social.icon}
                   </motion.div>
@@ -68,24 +173,26 @@ const Footer = () => {
             </div>
           </div>
 
-          {/* Links */}
-          <div className="lg:col-span-5 grid grid-cols-2 gap-8">
-            {linkSections.map((section) => (
+          {/* Navigation */}
+          <div className="grid grid-cols-2 gap-10 lg:col-span-5">
+            {footerLinks.map((section) => (
               <div key={section.title}>
-                <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-white/30 mb-6">
+                <h3 className="mb-6 text-[10px] font-bold uppercase tracking-[0.25em] text-white/25">
                   {section.title}
                 </h3>
+
                 <ul className="space-y-4">
                   {section.links.map((link) => (
                     <li key={link.text}>
                       <Link
                         href={link.path}
-                        className="text-sm text-white/60 hover:text-white flex items-center group"
+                        className="group flex w-fit items-center text-sm text-white/55 transition-colors hover:text-white"
                       >
-                        {link.text}
+                        <span>{link.text}</span>
+
                         <ArrowUpRight
                           size={12}
-                          className="ml-1 opacity-0 group-hover:opacity-100 transition-all -translate-y-1 group-hover:translate-y-0"
+                          className="ml-1.5 -translate-y-0.5 opacity-0 transition-all group-hover:translate-x-0.5 group-hover:translate-y-[-2px] group-hover:opacity-100"
                         />
                       </Link>
                     </li>
@@ -97,66 +204,106 @@ const Footer = () => {
 
           {/* Contact */}
           <div className="lg:col-span-3">
-            <div className="p-6 rounded-3xl bg-gradient-to-br from-white/[0.03] to-transparent border border-white/5">
-              <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-white/30 mb-6">
-                Contact
-              </h3>
+            <h3 className="mb-6 text-[10px] font-bold uppercase tracking-[0.25em] text-white/25">
+              Get in touch
+            </h3>
 
-              <div className="space-y-5">
-                <div className="flex items-start gap-4 group">
-                  <div className="p-2 rounded-lg bg-cyan-400/10 text-cyan-400 group-hover:bg-cyan-400 group-hover:text-black transition-colors">
-                    <Mail size={16} />
-                  </div>
-                  <div>
-                    <p className="text-[10px] uppercase text-white/30 font-bold">Email Us</p>
-                    <p className="text-sm text-white/80">nandurbarbazar@gmail.com</p>
-                  </div>
+            <div className="space-y-4">
+              {/* Email */}
+              <a
+                href="mailto:nandurbarbazar@gmail.com"
+                className="group flex items-center gap-4"
+              >
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/[0.07] bg-white/[0.03] text-cyan-400 transition-all group-hover:border-cyan-400/30 group-hover:bg-cyan-400/10">
+                  <Mail size={16} />
                 </div>
 
-                <div className="flex items-start gap-4 group">
-                  <div className="p-2 rounded-lg bg-emerald-400/10 text-emerald-400 group-hover:bg-emerald-400 group-hover:text-black transition-colors">
-                    <Phone size={16} />
-                  </div>
-                  <div>
-                    <p className="text-[10px] uppercase text-white/30 font-bold">Call Us</p>
-                    <p className="text-sm text-white/80">+91 8600412566</p>
-                  </div>
+                <div className="min-w-0">
+                  <p className="text-[9px] font-bold uppercase tracking-widest text-white/20">
+                    Email
+                  </p>
+                  <p className="mt-1 truncate text-sm text-white/65 transition-colors group-hover:text-white">
+                    nandurbarbazar@gmail.com
+                  </p>
+                </div>
+              </a>
+
+              {/* Phone */}
+              <a
+                href="tel:+918600412566"
+                className="group flex items-center gap-4"
+              >
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/[0.07] bg-white/[0.03] text-emerald-400 transition-all group-hover:border-emerald-400/30 group-hover:bg-emerald-400/10">
+                  <Phone size={16} />
                 </div>
 
-                <div className="flex items-start gap-4 group">
-                  <div className="p-2 rounded-lg bg-purple-400/10 text-purple-400 group-hover:bg-purple-400 group-hover:text-black transition-colors">
-                    <MapPin size={16} />
-                  </div>
-                  <div>
-                    <p className="text-[10px] uppercase text-white/30 font-bold">Location</p>
-                    <p className="text-sm text-white/80">Nandurbar, Maharashtra</p>
-                  </div>
+                <div>
+                  <p className="text-[9px] font-bold uppercase tracking-widest text-white/20">
+                    Phone
+                  </p>
+                  <p className="mt-1 text-sm text-white/65 transition-colors group-hover:text-white">
+                    +91 86004 12566
+                  </p>
+                </div>
+              </a>
+
+              {/* Location */}
+              <div className="flex items-center gap-4">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/[0.07] bg-white/[0.03] text-purple-400">
+                  <MapPin size={16} />
+                </div>
+
+                <div>
+                  <p className="text-[9px] font-bold uppercase tracking-widest text-white/20">
+                    Based in
+                  </p>
+                  <p className="mt-1 text-sm text-white/65">
+                    Nandurbar, Maharashtra
+                  </p>
                 </div>
               </div>
             </div>
           </div>
-
         </div>
 
-        {/* BOTTOM BAR */}
-        <div className="mt-16 pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-xs text-white/30 font-mono">
-            &copy; {currentYear} Nandurbar Bazar. ALL RIGHTS RESERVED.
-          </p>
+        {/* Bottom */}
+        <div className="flex flex-col gap-5 border-t border-white/[0.07] py-7 md:flex-row md:items-center md:justify-between">
+          <div className="flex flex-col gap-1">
+            <p className="text-[10px] font-medium uppercase tracking-[0.15em] text-white/25">
+              © {currentYear} Nandurbar Bazar
+            </p>
 
-          <div className="flex gap-6">
-            <Link href="/privacy" className="text-[10px] uppercase tracking-widest text-white/30 hover:text-white transition">
-              Privacy Policy
+            <p className="text-[10px] text-white/15">
+              Made for the local community.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-6">
+            <Link
+              href="/privacy"
+              className="text-[10px] font-medium uppercase tracking-widest text-white/25 transition-colors hover:text-white"
+            >
+              Privacy
             </Link>
-            <Link href="/cookie" className="text-[10px] uppercase tracking-widest text-white/30 hover:text-white transition">
-              Cookie Settings
+
+            <Link
+              href="/terms"
+              className="text-[10px] font-medium uppercase tracking-widest text-white/25 transition-colors hover:text-white"
+            >
+              Terms
+            </Link>
+
+            <Link
+              href="/cookie"
+              className="text-[10px] font-medium uppercase tracking-widest text-white/25 transition-colors hover:text-white"
+            >
+              Cookies
             </Link>
           </div>
         </div>
-
       </div>
     </footer>
-  )
-}
+  );
+};
 
-export default Footer
+export default Footer;
