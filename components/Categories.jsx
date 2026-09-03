@@ -6,262 +6,275 @@ import { useMemo } from "react";
 import Image from "next/image";
 import { useCustomerLocation } from "@/context/CustomerLocationContext";
 
-/* DEFAULT CATEGORY IMAGE MAP */
+/* CATEGORY IMAGES */
 const IMAGE_MAP = {
-  Electronics:
-    "https://images.unsplash.com/photo-1498049794561-7780e7231661?auto=format&fit=crop&q=80&w=800",
+"Vegetables & Fruits":
+"https://images.unsplash.com/photo-1610832958506-aa56368176cf?auto=format&fit=crop&q=80&w=500",
 
-  Clothing:
-    "https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?auto=format&fit=crop&q=80&w=800",
+"Atta, Rice & Dal":
+"https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&q=80&w=500",
 
-  Fashion:
-    "https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&q=80&w=800",
+"Oil, Ghee & Masala":
+"https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&q=80&w=500",
 
-  Watches:
-    "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&q=80&w=800",
+"Dairy, Bread & Eggs":
+"https://images.unsplash.com/photo-1628088062854-d1870b4553da?auto=format&fit=crop&q=80&w=500",
 
-  Mobiles:
-    "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&q=80&w=800",
+"Bakery & Biscuits":
+"https://images.unsplash.com/photo-1558961363-fa8fdf82db35?auto=format&fit=crop&q=80&w=500",
 
-  "Home & Kitchen":
-    "https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&q=80&w=800",
+"Dry Fruits & Cereals":
+"https://images.unsplash.com/photo-1517686469429-8bdb88b9f907?auto=format&fit=crop&q=80&w=500",
 
-  "Books & Media":
-    "https://images.unsplash.com/photo-1495446815901-a7297e633e8d?auto=format&fit=crop&q=80&w=800",
+"Chicken, Meat & Fish":
+"https://images.unsplash.com/photo-1604503468506-a8da13d82791?auto=format&fit=crop&q=80&w=500",
 
-  "Sports & Outdoors":
-    "https://images.unsplash.com/photo-1517649763962-0c623066013b?auto=format&fit=crop&q=80&w=800",
+"Kitchenware & Appliances":
+"https://images.unsplash.com/photo-1556911220-bff31c812dba?auto=format&fit=crop&q=80&w=500",
 
-  "Beauty & Health":
-    "https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&q=80&w=800",
+"Chips & Namkeen":
+"https://images.unsplash.com/photo-1621939514649-280e2aa2f6c8?auto=format&fit=crop&q=80&w=500",
 
-  Default:
-    "https://images.unsplash.com/photo-1472851294608-062f824d29cc?auto=format&fit=crop&q=80&w=800",
+"Sweets & Chocolates":
+"https://images.unsplash.com/photo-1575377427642-087cf684f04d?auto=format&fit=crop&q=80&w=500",
+
+"Drinks & Juices":
+"https://images.unsplash.com/photo-1544145945-f90425340c7e?auto=format&fit=crop&q=80&w=500",
+
+"Tea, Coffee & Milk Drinks":
+"https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&q=80&w=500",
+
+"Instant Food":
+"https://images.unsplash.com/photo-1601050690117-94f5f6fa8bd7?auto=format&fit=crop&q=80&w=500",
+
+"Sauces & Spreads":
+"https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&q=80&w=500",
+
+"Paan Corner":
+"https://images.unsplash.com/photo-1603905179139-db12ab5356b5?auto=format&fit=crop&q=80&w=500",
+
+"Ice Creams & More":
+"https://images.unsplash.com/photo-1563805042-7684c019e1cb?auto=format&fit=crop&q=80&w=500",
+
+Default:
+"https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=500",
 };
 
+/*
+
+* DISPLAY GROUPS
+*
+* These names control the visual grouping.
+* Your actual database categories are still used
+* for filtering/products.
+  */
+  const CATEGORY_GROUPS = [
+  {
+  title: "Grocery & Kitchen",
+  categories: [
+  "Vegetables & Fruits",
+  "Atta, Rice & Dal",
+  "Oil, Ghee & Masala",
+  "Dairy, Bread & Eggs",
+  "Bakery & Biscuits",
+  "Dry Fruits & Cereals",
+  "Chicken, Meat & Fish",
+  "Kitchenware & Appliances",
+  ],
+  },
+  {
+  title: "Snacks & Drinks",
+  categories: [
+  "Chips & Namkeen",
+  "Sweets & Chocolates",
+  "Drinks & Juices",
+  "Tea, Coffee & Milk Drinks",
+  "Instant Food",
+  "Sauces & Spreads",
+  "Paan Corner",
+  "Ice Creams & More",
+  ],
+  },
+  ];
+
 export default function Categories() {
-  const router = useRouter();
+const router = useRouter();
 
-  const allProducts = useSelector((state) => state.product.list || []);
+const allProducts = useSelector(
+(state) => state.product.list || []
+);
 
-  const { filterNearbyProducts, locationLoading, serviceable } =
-    useCustomerLocation();
+const {
+filterNearbyProducts,
+locationLoading,
+serviceable,
+} = useCustomerLocation();
 
-  /*
-   * Only products from stores that can serve
-   * the customer's current location.
-   */
+/*
+
+* Keep your nearby-store filtering.
+  */
   const products = useMemo(() => {
-    return filterNearbyProducts(allProducts);
+  return filterNearbyProducts(allProducts);
   }, [allProducts, filterNearbyProducts]);
 
-  /*
-   * Build categories ONLY from nearby products.
-   *
-   * This prevents categories belonging only
-   * to distant stores from appearing.
-   */
-  const categories = useMemo(() => {
-    const productCategories = products
-      .map((product) => product.category?.trim())
-      .filter(Boolean);
+/*
 
-    return Array.from(new Set(productCategories));
+* Get the categories that are actually available
+* from nearby stores.
+  */
+  const availableCategories = useMemo(() => {
+  return new Set(
+  products
+  .map((product) => product.category?.trim())
+  .filter(Boolean)
+  );
   }, [products]);
 
-  /*
-   * Count nearby products per category.
-   */
-  const categoryCount = useMemo(() => {
-    const map = {};
+/*
 
-    products.forEach((product) => {
-      const category = product.category?.trim();
-
-      if (!category) return;
-
-      map[category] = (map[category] || 0) + 1;
-    });
-
-    return map;
-  }, [products]);
-
-  const handleClick = (category) => {
-    router.push(`/product?category=${encodeURIComponent(category)}`);
-  };
-
-  /*
-   * Home already handles location/serviceability.
-   * This is an additional safeguard.
-   */
+* Location is still handled by Home / context.
+  */
   if (locationLoading || !serviceable) {
-    return null;
+  return null;
   }
 
-  /*
-   * If nearby stores exist but currently have
-   * no categorized products, don't render an
-   * empty category section.
-   */
-  if (categories.length === 0) {
-    return null;
+/*
+
+* If there are no nearby products,
+* don't display categories.
+  */
+  if (availableCategories.size === 0) {
+  return null;
   }
 
-  return (
-    <section className="bg-slate-950 py-16 text-white sm:py-20">
-      <div className="mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8">
-        {/* HEADER */}
-        <div className="mb-8 flex flex-col gap-4 sm:mb-10 md:flex-row md:items-end md:justify-between">
-          <div>
-            <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.25em] text-indigo-400 sm:text-xs">
-              Available for Delivery
-            </p>
+const handleClick = (category) => {
+router.push(
+`/product?category=${encodeURIComponent(category)}`
+);
+};
 
-            <h2 className="text-2xl font-black tracking-tight text-white sm:text-3xl md:text-4xl">
-              Shop by Category
-            </h2>
+return ( <section className="bg-white py-6 sm:py-8"> <div className="mx-auto max-w-[1400px] px-2 sm:px-4 lg:px-6">
 
-            <p className="mt-2 max-w-xl text-xs leading-relaxed text-slate-400 sm:text-sm">
-              Explore categories available from stores that can deliver to your
-              selected location.
-            </p>
-          </div>
+```
+    {CATEGORY_GROUPS.map((group) => {
+      /*
+       * Only show categories that actually exist
+       * in nearby stores.
+       */
+      const visibleCategories = group.categories.filter(
+        (category) => availableCategories.has(category)
+      );
 
-          <button
-            type="button"
-            onClick={() => router.push("/product")}
-            className="hidden text-sm font-semibold text-indigo-400 transition-colors hover:text-indigo-300 md:block"
-          >
-            Browse All Products →
-          </button>
-        </div>
+      if (visibleCategories.length === 0) {
+        return null;
+      }
 
-        {/* CATEGORY GRID */}
+      return (
         <div
-          className="
+          key={group.title}
+          className="mb-10 last:mb-0 sm:mb-12"
+        >
+          {/* SECTION TITLE */}
+          <h2 className="
+            mb-4
+            px-1
+            text-xl
+            font-extrabold
+            tracking-tight
+            text-slate-900
+            sm:text-2xl
+          ">
+            {group.title}
+          </h2>
+
+          {/* CATEGORY GRID */}
+          <div className="
             grid
             grid-cols-2
-            gap-3
+            gap-x-2
+            gap-y-5
             sm:grid-cols-3
-            sm:gap-4
+            sm:gap-x-3
             md:grid-cols-4
-            lg:grid-cols-5
-            xl:grid-cols-6
-          "
-        >
-          {categories.map((category) => {
-            const imageSrc = IMAGE_MAP[category] || IMAGE_MAP.Default;
+            md:gap-x-4
+            md:gap-y-6
+          ">
+            {visibleCategories.map((category) => {
+              const imageSrc =
+                IMAGE_MAP[category] || IMAGE_MAP.Default;
 
-            const count = categoryCount[category] || 0;
-
-            return (
-              <button
-                type="button"
-                key={category}
-                onClick={() => handleClick(category)}
-                className="
-                  group
-                  relative
-                  aspect-square
-                  overflow-hidden
-                  rounded-2xl
-                  border
-                  border-slate-800
-                  bg-slate-900
-                  text-left
-                  shadow-lg
-                  transition-all
-                  duration-300
-                  hover:-translate-y-1
-                  hover:border-indigo-500/40
-                  hover:shadow-xl
-                  hover:shadow-indigo-500/5
-                "
-              >
-                {/* IMAGE */}
-                <Image
-                  src={imageSrc}
-                  alt={category}
-                  fill
+              return (
+                <button
+                  key={category}
+                  type="button"
+                  onClick={() => handleClick(category)}
                   className="
-                    object-cover
-                    transition-transform
-                    duration-700
-                    ease-out
-                    group-hover:scale-110
+                    group
+                    min-w-0
+                    text-center
+                    outline-none
                   "
-                  sizes="
-                    (max-width: 640px) 50vw,
-                    (max-width: 1024px) 33vw,
-                    16vw
-                  "
-                />
+                >
+                  {/* IMAGE BOX */}
+                  <div className="
+                    relative
+                    h-[112px]
+                    w-full
+                    overflow-hidden
+                    rounded-2xl
+                    bg-[#e9f5f6]
+                    transition-all
+                    duration-200
+                    group-hover:-translate-y-0.5
+                    group-hover:shadow-sm
+                    sm:h-[125px]
+                    md:h-[140px]
+                  ">
+                    <Image
+                      src={imageSrc}
+                      alt={category}
+                      fill
+                      className="
+                        object-contain
+                        p-4
+                        transition-transform
+                        duration-300
+                        group-hover:scale-105
+                        sm:p-5
+                      "
+                      sizes="
+                        (max-width: 640px) 50vw,
+                        (max-width: 768px) 33vw,
+                        25vw
+                      "
+                    />
+                  </div>
 
-                {/* OVERLAY */}
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/35 to-transparent opacity-90" />
-
-                {/* INNER BORDER */}
-                <div className="absolute inset-2.5 z-10 rounded-xl border border-white/0 transition-colors duration-300 group-hover:border-white/20 sm:inset-3" />
-
-                {/* PRODUCT COUNT */}
-                <div className="absolute right-3 top-3 z-20">
-                  <span
-                    className="
-                      rounded-full
-                      border
-                      border-white/10
-                      bg-black/50
-                      px-2.5
-                      py-1
-                      text-[9px]
-                      font-bold
-                      text-white
-                      backdrop-blur-md
-                      sm:text-[10px]
-                    "
-                  >
-                    {count} {count === 1 ? "item" : "items"}
-                  </span>
-                </div>
-
-                {/* TEXT */}
-                <div className="absolute inset-x-0 bottom-0 z-20 p-3 sm:p-4 md:p-5">
-                  <h3 className="line-clamp-2 text-sm font-bold leading-tight text-white drop-shadow-md sm:text-base md:text-lg">
+                  {/* CATEGORY NAME */}
+                  <h3 className="
+                    mt-2
+                    px-1
+                    text-sm
+                    font-semibold
+                    leading-tight
+                    text-slate-800
+                    transition-colors
+                    group-hover:text-slate-950
+                    sm:text-base
+                  ">
                     {category}
                   </h3>
-
-                  <div className="mt-2 flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-indigo-300 opacity-80 sm:text-xs">
-                    Explore
-                    <span>→</span>
-                  </div>
-                </div>
-              </button>
-            );
-          })}
+                </button>
+              );
+            })}
+          </div>
         </div>
+      );
+    })}
+  </div>
+</section>
+```
 
-        {/* MOBILE BROWSE ALL */}
-        <button
-          type="button"
-          onClick={() => router.push("/product")}
-          className="
-            mt-8
-            w-full
-            rounded-xl
-            border
-            border-slate-800
-            py-3.5
-            text-sm
-            font-semibold
-            text-slate-300
-            transition-colors
-            hover:bg-slate-900
-            md:hidden
-          "
-        >
-          Browse All Products
-        </button>
-      </div>
-    </section>
-  );
+);
 }
