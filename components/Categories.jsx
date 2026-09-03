@@ -156,7 +156,6 @@ router.push(
 
 return ( <section className="bg-white py-6 sm:py-8"> <div className="mx-auto max-w-[1400px] px-2 sm:px-4 lg:px-6">
 
-```
     {CATEGORY_GROUPS.map((group) => {
       /*
        * Only show categories that actually exist
