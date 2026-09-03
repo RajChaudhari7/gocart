@@ -274,7 +274,6 @@ return ( <section className="bg-white py-6 sm:py-8"> <div className="mx-auto max
     })}
   </div>
 </section>
-```
 
 );
 }
