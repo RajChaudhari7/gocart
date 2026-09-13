@@ -19,53 +19,35 @@ export async function POST(request) {
         const contact = formData.get("contact")
         const address = formData.get("address")
         const image = formData.get("image")
-        const gst = formData.get("gst")
+        const gst = formData.get("gst")?.toString().trim().toUpperCase() || null;
         const latitude = parseFloat(formData.get("latitude"))
         const longitude = parseFloat(formData.get("longitude"))
 
-        // const verifiedOtp = await prisma.whatsappOtp.findFirst({
-        //     where: {
-        //         phone: contact,
-        //         verified: true
-        //     },
-        //     orderBy: { createdAt: "desc" }
-        // })
-
-        // if (!verifiedOtp) {
-        //     return NextResponse.json(
-        //         { error: "WhatsApp not verified" },
-        //         { status: 400 }
-        //     )
-        // }
-
-
-        if (!name || !description || !username || !email || !contact || !address || !image || !gst || !latitude ||
+        if (!name || !description || !username || !email || !contact || !address || !image || !latitude ||
             !longitude) {
             return NextResponse.json({ error: "Missing Store info" }, { status: 400 })
         }
 
-        if (!gst) {
-            return NextResponse.json({ error: "GST is required" }, { status: 400 })
-        }
+        if (gst) {
+            const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
 
-        const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
+            if (!gstRegex.test(gst)) {
+                return NextResponse.json(
+                    { error: "Invalid GST number" },
+                    { status: 400 }
+                );
+            }
 
-        if (!gstRegex.test(gst)) {
-            return NextResponse.json(
-                { error: "Invalid GST number" },
-                { status: 400 }
-            )
-        }
+            const existingGST = await prisma.store.findFirst({
+                where: { gst }
+            });
 
-        const existingGST = await prisma.store.findFirst({
-            where: { gst }
-        })
-
-        if (existingGST) {
-            return NextResponse.json(
-                { error: "GST already registered" },
-                { status: 400 }
-            )
+            if (existingGST) {
+                return NextResponse.json(
+                    { error: "GST already registered" },
+                    { status: 400 }
+                );
+            }
         }
 
         const existingContact = await prisma.store.findFirst({

@@ -14,16 +14,13 @@ export default function CreateStore() {
     const { user } = useUser()
     const router = useRouter()
     const { getToken } = useAuth()
-
     const [alreadySubmitted, setAlreadySubmitted] = useState(false)
     const [status, setStatus] = useState("")
     const [loading, setLoading] = useState(true)
     const [message, setMessage] = useState("")
     const [countdown, setCountdown] = useState(5)
-    const [gstValid, setGstValid] = useState(false)
+    const [gstValid, setGstValid] = useState(true)
     const [gstError, setGstError] = useState("")
-
-
     const [storeInfo, setStoreInfo] = useState({
         name: "",
         username: "",
@@ -39,21 +36,22 @@ export default function CreateStore() {
         longitude: ""
     })
 
-
-
-
     const validateGST = (gst) => {
-        const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
+        // GST is optional
         if (!gst) {
-            setGstError("GST is required")
-            setGstValid(false)
+            setGstError("")
+            setGstValid(true)
             return
         }
+
+        const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/
+
         if (!gstRegex.test(gst)) {
             setGstError("Invalid GST format")
             setGstValid(false)
             return
         }
+
         setGstError("")
         setGstValid(true)
     }
@@ -71,7 +69,18 @@ export default function CreateStore() {
 
         if (name === "gst") {
             const val = value.toUpperCase()
-            setStoreInfo({ ...storeInfo, gst: val })
+
+            setStoreInfo({
+                ...storeInfo,
+                gst: val
+            })
+
+            // GST is optional
+            if (!val) {
+                setGstValid(true)
+                setGstError("")
+                return
+            }
 
             if (val.length === 15) {
                 validateGST(val)
@@ -79,6 +88,7 @@ export default function CreateStore() {
                 setGstValid(false)
                 setGstError("GST must be exactly 15 characters")
             }
+
             return
         }
 
@@ -349,7 +359,12 @@ export default function CreateStore() {
 
                                 <div className="mt-6 grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-6">
                                     <div className="sm:col-span-full">
-                                        <label className={labelClass}>Registered GST Number</label>
+                                        <label className={labelClass}>
+                                            Registered GST Number
+                                            <span className="ml-2 text-xs font-normal text-gray-400">
+                                                (Optional)
+                                            </span>
+                                        </label>
                                         <input name="gst" onChange={onChangeHandler} value={storeInfo.gst} type="text" placeholder="15-character GSTIN" maxLength={15} className={inputClass} />
                                         {storeInfo.gst.length > 0 && (
                                             <p className={`mt-2 text-sm font-medium flex items-center gap-1.5 ${gstValid ? "text-emerald-600 dark:text-emerald-400" : "text-rose-500"}`}>
