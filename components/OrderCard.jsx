@@ -10,7 +10,6 @@ import {
     Star,
     Truck,
     XCircle,
-    Eye,
     Store,
 } from "lucide-react";
 
@@ -23,67 +22,53 @@ const currency =
 
 const STATUS_COLOR = {
     ORDER_PLACED:
-        "bg-blue-500/20 text-blue-400 border-blue-500/40",
+        "bg-blue-50 text-blue-700 border-blue-200",
 
     ORDER_CONFIRMED:
-        "bg-indigo-500/20 text-indigo-400 border-indigo-500/40",
+        "bg-indigo-50 text-indigo-700 border-indigo-200",
 
     ORDER_PACKING:
-        "bg-yellow-500/20 text-yellow-400 border-yellow-500/40",
+        "bg-amber-50 text-amber-700 border-amber-200",
 
     ORDER_PACKED:
-        "bg-orange-500/20 text-orange-400 border-orange-500/40",
+        "bg-orange-50 text-orange-700 border-orange-200",
 
     DRIVER_ASSIGNED:
-        "bg-cyan-500/20 text-cyan-400 border-cyan-500/40",
+        "bg-cyan-50 text-cyan-700 border-cyan-200",
 
     REACHED_SHOP:
-        "bg-purple-500/20 text-purple-400 border-purple-500/40",
+        "bg-purple-50 text-purple-700 border-purple-200",
 
     PICKED_UP:
-        "bg-sky-500/20 text-sky-400 border-sky-500/40",
+        "bg-sky-50 text-sky-700 border-sky-200",
 
     OUT_FOR_DELIVERY:
-        "bg-pink-500/20 text-pink-400 border-pink-500/40",
+        "bg-pink-50 text-pink-700 border-pink-200",
 
     DELIVERY_INITIATED:
-        "bg-emerald-500/20 text-emerald-400 border-emerald-500/40",
+        "bg-emerald-50 text-emerald-700 border-emerald-200",
 
     DELIVERED:
-        "bg-green-500/20 text-green-400 border-green-500/40",
+        "bg-green-50 text-green-700 border-green-200",
 
     CANCELLED:
-        "bg-red-500/20 text-red-400 border-red-500/40",
+        "bg-red-50 text-red-700 border-red-200",
 };
 
 export default function OrderCard({
-
     order,
-
     onTrack,
-
     onRate,
-
     onRefresh,
-
 }) {
-
     const { getToken } = useAuth();
 
     const cancelOrder = async () => {
+        if (order.status === "DELIVERED") return;
 
-        if (order.status === "DELIVERED")
-            return;
-
-        if (
-            !confirm(
-                "Cancel this order?"
-            )
-        )
-            return;
+        if (!confirm("Cancel this order?")) return;
 
         try {
-
             const token = await getToken();
 
             await axios.post(
@@ -98,388 +83,322 @@ export default function OrderCard({
                 }
             );
 
-            toast.success(
-                "Order Cancelled"
-            );
+            toast.success("Order Cancelled");
 
             onRefresh();
-
         } catch (err) {
-
             toast.error(
                 err.response?.data?.error ||
                 err.message
             );
-
         }
-
     };
 
+    const statusLabel = order.status
+        .replaceAll("_", " ")
+        .toLowerCase()
+        .replace(/\b\w/g, (char) =>
+            char.toUpperCase()
+        );
+
     return (
-
         <motion.div
-
             initial={{
                 opacity: 0,
-                y: 30,
+                y: 20,
             }}
-
             animate={{
                 opacity: 1,
                 y: 0,
             }}
-
             transition={{
-                duration: 0.35,
+                duration: 0.3,
             }}
-
-            className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden hover:border-indigo-500/40 transition-all"
-
+            className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md"
         >
+            {/* ================= HEADER ================= */}
 
-            {/* HEADER */}
+            <div className="border-b border-slate-100 p-4 sm:p-6">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
 
-            <div className="flex flex-col lg:flex-row justify-between gap-5 p-6 border-b border-slate-800">
+                    <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+                                <Package size={17} />
+                            </div>
 
-                <div>
+                            <div>
+                                <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                                    Order
+                                </p>
 
-                    <h2 className="font-bold text-lg">
+                                <h2 className="truncate text-sm sm:text-base font-bold text-slate-900">
+                                    #{order.id}
+                                </h2>
+                            </div>
+                        </div>
 
-                        Order #
+                        <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs sm:text-sm text-slate-500">
 
-                        <span className="text-indigo-400 ml-2">
+                            <span className="flex items-center gap-1.5">
+                                <Calendar
+                                    size={14}
+                                    className="text-slate-400"
+                                />
 
-                            {order.id}
-
-                        </span>
-
-                    </h2>
-
-                    <div className="flex flex-wrap gap-4 mt-3 text-sm text-white/50">
-
-                        <span className="flex items-center gap-2">
-
-                            <Calendar size={15} />
-
-                            {new Date(
-                                order.createdAt
-                            ).toLocaleDateString(
-                                "en-IN",
-                                {
+                                {new Date(
+                                    order.createdAt
+                                ).toLocaleDateString("en-IN", {
                                     day: "numeric",
                                     month: "short",
                                     year: "numeric",
-                                }
-                            )}
+                                })}
+                            </span>
 
-                        </span>
+                            <span className="flex items-center gap-1.5">
+                                <CreditCard
+                                    size={14}
+                                    className="text-slate-400"
+                                />
 
-                        <span className="flex items-center gap-2">
+                                {order.paymentMethod}
+                            </span>
 
-                            <CreditCard size={15} />
-
-                            {order.paymentMethod}
-
-                        </span>
-
+                        </div>
                     </div>
 
+                    <span
+                        className={`w-fit rounded-full border px-3.5 py-1.5 text-xs sm:text-sm font-bold ${STATUS_COLOR[order.status] || "bg-slate-100 text-slate-600 border-slate-200"}`}
+                    >
+                        {statusLabel}
+                    </span>
+
                 </div>
-
-                <span
-
-                    className={`px-4 py-2 rounded-full border text-sm font-semibold h-fit ${STATUS_COLOR[order.status]}`}
-
-                >
-
-                    {order.status.replaceAll(
-                        "_",
-                        " "
-                    )}
-
-                </span>
-
             </div>
 
-            {/* PRODUCTS */}
+            {/* ================= PRODUCTS ================= */}
 
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
 
-                <div className="space-y-4">
+                <div className="mb-4 flex items-center justify-between">
+                    <div>
+                        <h3 className="text-sm font-bold text-slate-900">
+                            Items in your order
+                        </h3>
 
-                    {order.orderItems.map(
-                        (item) => (
+                        <p className="mt-0.5 text-xs text-slate-400">
+                            {order.orderItems?.length || 0}{" "}
+                            {order.orderItems?.length === 1
+                                ? "item"
+                                : "items"}
+                        </p>
+                    </div>
 
-                            <div
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-50 text-slate-400">
+                        <Package size={15} />
+                    </div>
+                </div>
 
-                                key={item.id}
+                <div className="divide-y divide-slate-100 rounded-2xl border border-slate-100 bg-slate-50/50">
 
-                                className="flex gap-4"
+                    {order.orderItems.map((item) => (
+                        <div
+                            key={item.id}
+                            className="flex gap-3 sm:gap-4 p-3 sm:p-4"
+                        >
+                            {/* Product Image */}
 
-                            >
+                            <div className="relative h-20 w-20 sm:h-24 sm:w-24 shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-white">
+                                <Image
+                                    src={
+                                        item.product.images[0]
+                                    }
+                                    width={96}
+                                    height={96}
+                                    alt={item.product.name}
+                                    className="h-full w-full object-cover"
+                                />
+                            </div>
 
-                                <div className="w-20 h-20 rounded-xl overflow-hidden bg-slate-800 shrink-0">
+                            {/* Product Details */}
 
-                                    <Image
+                            <div className="min-w-0 flex-1 py-0.5">
 
-                                        src={
-                                            item.product
-                                                .images[0]
-                                        }
+                                <h3 className="line-clamp-2 text-sm sm:text-base font-bold text-slate-900">
+                                    {item.product.name}
+                                </h3>
 
-                                        width={80}
+                                <div className="mt-2 flex flex-wrap items-center gap-2">
+                                    <span className="rounded-md bg-white border border-slate-200 px-2 py-1 text-[11px] font-semibold text-slate-500">
+                                        Qty: {item.quantity}
+                                    </span>
 
-                                        height={80}
+                                    <span className="text-xs text-slate-400">
+                                        ×
+                                    </span>
 
-                                        alt=""
-
-                                        className="w-full h-full object-cover"
-
-                                    />
-
-                                </div>
-
-                                <div className="flex-1">
-
-                                    <h3 className="font-semibold">
-
-                                        {
-                                            item.product
-                                                .name
-                                        }
-
-                                    </h3>
-
-                                    <p className="text-sm text-white/50 mt-1">
-
-                                        Qty :
-                                        {
-                                            item.quantity
-                                        }
-
-                                    </p>
-
-                                    <p className="text-emerald-400 font-bold mt-2">
-
+                                    <span className="text-xs text-slate-500">
                                         {currency}
-
-                                        {item.price}
-
-                                    </p>
-
+                                        {Number(item.price).toFixed(2)}
+                                    </span>
                                 </div>
 
-                            </div>
-
-                        )
-                    )}
-
-                </div>
-
-                {/* ADDRESS */}
-
-                <div className="mt-8 grid lg:grid-cols-2 gap-6">
-
-                    <div>
-
-                        <p className="text-white/40 text-sm mb-2">
-
-                            Delivery Address
-
-                        </p>
-
-                        <div className="flex gap-3">
-
-                            <MapPin
-                                size={18}
-                                className="text-indigo-400 mt-1"
-                            />
-
-                            <div>
-
-                                <p className="font-medium">
-
-                                    {
-                                        order
-                                            .address
-                                            ?.name
-                                    }
-
-                                </p>
-
-                                <p className="text-white/50 text-sm">
-
-                                    {
-                                        order
-                                            .address
-                                            ?.city
-                                    }
-
-                                    ,
-
-                                    {
-                                        order
-                                            .address
-                                            ?.state
-                                    }
-
-                                </p>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                    <div>
-
-                        <p className="text-white/40 text-sm mb-2">
-
-                            Order Summary
-
-                        </p>
-
-                        <div className="space-y-2">
-
-                            <div className="flex justify-between">
-
-                                <span className="text-white/50">
-
-                                    Products
-
-                                </span>
-
-                                <span>
-
+                                <p className="mt-2 text-sm font-black text-emerald-600">
                                     {currency}
-
                                     {(
-                                        order.total -
-                                        order.deliveryFee
-                                    ).toFixed(
-                                        2
-                                    )}
-
-                                </span>
+                                        Number(item.price) *
+                                        Number(item.quantity)
+                                    ).toFixed(2)}
+                                </p>
 
                             </div>
+                        </div>
+                    ))}
 
-                            <div className="flex justify-between">
+                </div>
 
-                                <span className="text-white/50">
+                {/* ================= DETAILS ================= */}
 
+                <div className="mt-6 grid gap-4 lg:grid-cols-2">
+
+                    {/* DELIVERY ADDRESS */}
+
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                        <div className="flex items-center gap-2 mb-3">
+
+                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+                                <MapPin size={15} />
+                            </div>
+
+                            <p className="text-sm font-bold text-slate-900">
+                                Delivery Address
+                            </p>
+
+                        </div>
+
+                        <div className="pl-10">
+                            <p className="text-sm font-semibold text-slate-800">
+                                {order.address?.name}
+                            </p>
+
+                            <p className="mt-1 text-xs sm:text-sm leading-relaxed text-slate-500">
+                                {order.address?.city}
+                                {order.address?.city &&
+                                    order.address?.state
+                                    ? ", "
+                                    : ""}
+                                {order.address?.state}
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* ORDER SUMMARY */}
+
+                    <div className="rounded-2xl border border-slate-200 bg-white p-4">
+
+                        <div className="flex items-center gap-2 mb-4">
+
+                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+                                <CreditCard size={15} />
+                            </div>
+
+                            <p className="text-sm font-bold text-slate-900">
+                                Order Summary
+                            </p>
+
+                        </div>
+
+                        <div className="space-y-2.5">
+
+                            <div className="flex justify-between text-sm">
+                                <span className="text-slate-500">
+                                    Products
+                                </span>
+
+                                <span className="font-medium text-slate-700">
+                                    {currency}
+                                    {(
+                                        Number(order.total) -
+                                        Number(order.deliveryFee)
+                                    ).toFixed(2)}
+                                </span>
+                            </div>
+
+                            <div className="flex justify-between text-sm">
+                                <span className="text-slate-500">
                                     Delivery
-
                                 </span>
 
-                                <span>
-
+                                <span className="font-medium text-slate-700">
                                     {currency}
-
-                                    {
+                                    {Number(
                                         order.deliveryFee
-                                    }
-
+                                    ).toFixed(2)}
                                 </span>
-
                             </div>
 
-                            <div className="border-t border-slate-700 pt-2 flex justify-between font-bold text-lg">
+                            <div className="border-t border-slate-100 pt-3 flex justify-between items-center">
 
-                                <span>
-
+                                <span className="text-sm font-bold text-slate-900">
                                     Total
-
                                 </span>
 
-                                <span className="text-emerald-400">
-
+                                <span className="text-lg font-black text-emerald-600">
                                     {currency}
-
-                                    {order.total.toFixed(
-                                        2
-                                    )}
-
+                                    {Number(
+                                        order.total
+                                    ).toFixed(2)}
                                 </span>
 
                             </div>
 
                         </div>
-
                     </div>
 
                 </div>
 
-                {/* ACTIONS */}
+                {/* ================= ACTIONS ================= */}
 
-                <div className="mt-8 flex flex-wrap gap-3">
+                <div className="mt-6 flex flex-col sm:flex-row gap-2.5">
+
+                    {/* Track */}
 
                     <button
-
                         onClick={onTrack}
-
-                        className="flex items-center gap-2 px-5 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 transition"
-
+                        className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white shadow-sm transition-all hover:bg-emerald-700 hover:shadow-md active:scale-[0.98]"
                     >
-
-                        <Truck size={18} />
-
-                        Track
-
+                        <Truck size={17} />
+                        Track Order
                     </button>
 
-                    {order.status !==
-                        "DELIVERED" &&
-                        order.status !==
-                        "CANCELLED" && (
+                    {/* Cancel */}
 
+                    {order.status !== "DELIVERED" &&
+                        order.status !== "CANCELLED" && (
                             <button
-
-                                onClick={
-                                    cancelOrder
-                                }
-
-                                className="flex items-center gap-2 px-5 py-3 rounded-xl bg-red-600 hover:bg-red-500 transition"
-
+                                onClick={cancelOrder}
+                                className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-5 py-3 text-sm font-bold text-red-600 transition-all hover:bg-red-100 active:scale-[0.98]"
                             >
-
-                                <XCircle
-                                    size={18}
-                                />
-
+                                <XCircle size={17} />
                                 Cancel
-
                             </button>
-
                         )}
 
-                    {order.status ===
-                        "DELIVERED" && (
+                    {/* Rate */}
 
-                            <button
-
-                                onClick={onRate}
-
-                                className="flex items-center gap-2 px-5 py-3 rounded-xl bg-yellow-500 text-black hover:bg-yellow-400 transition"
-
-                            >
-
-                                <Star
-                                    size={18}
-                                />
-
-                                Rate
-
-                            </button>
-
-                        )}
+                    {order.status === "DELIVERED" && (
+                        <button
+                            onClick={onRate}
+                            className="inline-flex items-center justify-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-5 py-3 text-sm font-bold text-amber-700 transition-all hover:bg-amber-100 active:scale-[0.98]"
+                        >
+                            <Star size={17} />
+                            Rate Order
+                        </button>
+                    )}
 
                 </div>
 
             </div>
-
         </motion.div>
-
     );
-
 }
