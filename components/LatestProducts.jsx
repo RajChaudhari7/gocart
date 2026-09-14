@@ -34,22 +34,24 @@ const LatestProducts = () => {
   }
 
   return (
-    <section className="relative bg-gradient-to-b from-black to-[#020617]">
-      <div className="px-4 sm:px-6 py-16 sm:py-20 md:py-24 max-w-7xl mx-auto">
+    <section className="relative bg-slate-50">
+      <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-16 md:py-20">
         <Title
           title="Latest Products"
-          description={`Showing ${
-            nearbyProducts.length < displayQuantity
+          description={`Showing ${nearbyProducts.length < displayQuantity
               ? nearbyProducts.length
               : displayQuantity
-          } of ${nearbyProducts.length} products available for delivery`}
+            } of ${nearbyProducts.length} products available for delivery`}
           href="/product"
-          theme="dark"
+          theme="light"
         />
 
-        <div className="mt-8 sm:mt-10 grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+        <div className="mt-8 grid grid-cols-2 gap-4 sm:mt-10 lg:grid-cols-4 md:gap-6">
           {latestProducts.map((product) => (
-            <div key={product.id} className="rounded-2xl overflow-hidden">
+            <div
+              key={product.id}
+              className="overflow-hidden rounded-2xl transition duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-slate-200/70"
+            >
               <ProductCard
                 product={product}
                 storeIsActive={product.store?.isActive === true}
