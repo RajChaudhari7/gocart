@@ -12,6 +12,9 @@ import {
   Store,
   RefreshCw,
   Navigation,
+  Sparkles,
+  ShoppingBag,
+  ArrowRight,
 } from "lucide-react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
@@ -20,7 +23,8 @@ import axios from "axios";
 import SearchDropdown from "@/components/SearchDropdown";
 import { useCustomerLocation } from "@/context/CustomerLocationContext";
 
-/* ✅ PRICE RANGES */
+/* ================= PRICE RANGES ================= */
+
 const PRICE_RANGES = [
   { label: "All Prices", value: "ALL" },
   { label: "Less than ₹500", value: "UNDER_500" },
@@ -33,7 +37,9 @@ function ShopContent() {
   const searchParams = useSearchParams();
   const categoryFromURL = searchParams.get("category");
   const searchFromURL = searchParams.get("search");
+
   const router = useRouter();
+
   const [dropdownData, setDropdownData] = useState({
     products: [],
     categories: [],
@@ -42,7 +48,6 @@ function ShopContent() {
   });
 
   const [showDropdown, setShowDropdown] = useState(false);
-
   const [loadingSearch, setLoadingSearch] = useState(false);
 
   const allProducts = useSelector((state) => state.product.list || []);
@@ -65,6 +70,8 @@ function ShopContent() {
   const [searchInput, setSearchInput] = useState("");
   const [smartProducts, setSmartProducts] = useState([]);
 
+  /* ================= NEARBY PRODUCTS ================= */
+
   const products = useMemo(() => {
     if (locationLoading || locationError || !serviceable) {
       return [];
@@ -79,6 +86,8 @@ function ShopContent() {
     serviceable,
   ]);
 
+  /* ================= SEARCH ================= */
+
   const searchProducts = (text) => {
     const cleanText = text.trim();
 
@@ -92,9 +101,7 @@ function ShopContent() {
 
   const filterCategory = (cat) => {
     setShowDropdown(false);
-
     setSearchInput("");
-
     setSmartProducts([]);
 
     handleCategoryChange(cat);
@@ -104,26 +111,24 @@ function ShopContent() {
 
   const openStore = (username) => {
     setShowDropdown(false);
-
     router.push(`/shop/${username}`);
   };
 
-  // Sync category from URL
+  /* ================= URL SYNC ================= */
+
   useEffect(() => {
     if (categoryFromURL) {
       setCategory(categoryFromURL);
-
       setSubCategory("all");
-
       setSearchInput("");
-
       setSmartProducts([]);
     } else {
       setCategory("all");
     }
   }, [categoryFromURL]);
 
-  // Debounced Search
+  /* ================= DEBOUNCED SEARCH ================= */
+
   useEffect(() => {
     const delay = setTimeout(async () => {
       if (
@@ -188,7 +193,6 @@ function ShopContent() {
         setShowDropdown(true);
       } catch (error) {
         console.error("Search suggestions failed:", error);
-
         setShowDropdown(false);
       } finally {
         setLoadingSearch(false);
@@ -203,6 +207,8 @@ function ShopContent() {
     locationLoading,
     locationError,
   ]);
+
+  /* ================= SMART SEARCH ================= */
 
   useEffect(() => {
     if (!searchFromURL) {
@@ -236,7 +242,6 @@ function ShopContent() {
         setSmartProducts(nearbySearchProducts);
       } catch (error) {
         console.error("Smart search failed:", error);
-
         setSmartProducts([]);
       }
     };
@@ -250,32 +255,37 @@ function ShopContent() {
     serviceable,
   ]);
 
-  /* ✅ DYNAMIC CATEGORIES */
+  /* ================= CATEGORIES ================= */
+
   const allCategories = useMemo(() => {
     const productCategories = products
       .map((p) => p.category?.trim())
       .filter(Boolean);
 
     const uniqueCategories = Array.from(new Set(productCategories));
+
     return ["all", ...uniqueCategories];
   }, [products]);
 
-  /* ✅ DYNAMIC SUB-CATEGORIES (Contextual & Robust) */
+  /* ================= SUB CATEGORIES ================= */
+
   const availableSubCategories = useMemo(() => {
     if (category === "all") return [];
 
     const subCats = products
-      // Make sure spaces and casing don't break the match
       .filter(
         (p) =>
           p.category?.trim().toLowerCase() === category.trim().toLowerCase(),
       )
       .map((p) => p.subCategory?.trim())
-      .filter(Boolean); // This removes null, undefined, or empty strings
+      .filter(Boolean);
 
     const uniqueSubCats = Array.from(new Set(subCats));
+
     return uniqueSubCats.length > 0 ? ["all", ...uniqueSubCats] : [];
   }, [products, category]);
+
+  /* ================= AI SCORE ================= */
 
   const getAIScore = (product) => {
     return (
@@ -285,7 +295,7 @@ function ShopContent() {
     );
   };
 
-  /* 🔥 FILTER + SORT */
+  /* ================= FILTER + SORT ================= */
 
   const sourceProducts = searchFromURL ? smartProducts : products;
 
@@ -300,112 +310,162 @@ function ShopContent() {
         subCategory === "all"
           ? true
           : p.subCategory?.trim().toLowerCase() ===
-            subCategory.trim().toLowerCase(),
+          subCategory.trim().toLowerCase(),
       )
       .filter((p) => {
         const price = Number(p.price) || 0;
+
         switch (priceRange) {
           case "UNDER_500":
             return price < 500;
+
           case "500_5K":
             return price >= 500 && price <= 5000;
+
           case "5K_10K":
             return price > 5000 && price <= 10000;
+
           case "ABOVE_10K":
             return price > 10000;
+
           default:
             return true;
         }
       })
       .sort((a, b) => {
-        // Featured products first
         if (a.featured && !b.featured) return -1;
         if (!a.featured && b.featured) return 1;
 
-        // Price sorting still works if selected
         if (sort === "low-high") return a.price - b.price;
 
         if (sort === "high-low") return b.price - a.price;
 
-        // Default AI Ranking
         return getAIScore(b) - getAIScore(a);
       });
   }, [sourceProducts, category, subCategory, priceRange, sort]);
 
-  // Custom handler for Category selection
+  /* ================= CATEGORY HANDLER ================= */
+
   const handleCategoryChange = (newCat) => {
     setCategory(newCat);
-
     setSubCategory("all");
-
     setSearchInput("");
-
     setSmartProducts([]);
   };
+
+  /* =========================================================
+     UI
+  ========================================================= */
+
   return (
-    <section className="min-h-screen bg-slate-950 text-slate-200">
-      {/* ================= HEADER ================= */}
-      <div className="relative pt-32 pb-16 flex flex-col items-center justify-center border-b border-slate-800/60 bg-slate-900/20">
-        <div className="relative z-10 text-center px-4">
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tight mb-4 text-white"
-          >
-            THE{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">
-              COLLECTION
-            </span>
-          </motion.h1>
-          <p className="text-slate-400 text-xs md:text-sm font-semibold tracking-[0.3em] uppercase">
-            Discover Premium Products
-          </p>
+    <section className="min-h-screen bg-slate-50 text-slate-900">
+      {/* =====================================================
+          HERO
+      ===================================================== */}
+
+      <div className="relative overflow-hidden border-b border-slate-200 bg-white">
+        {/* Decorative shapes */}
+
+        <div className="pointer-events-none absolute -right-32 -top-32 h-80 w-80 rounded-full bg-emerald-100/70 blur-3xl" />
+
+        <div className="pointer-events-none absolute -left-32 bottom-0 h-72 w-72 rounded-full bg-orange-100/60 blur-3xl" />
+
+        <div className="relative mx-auto max-w-7xl px-4 pb-10 pt-28 sm:px-6 sm:pb-14 lg:px-8 lg:pt-36">
+          <div className="flex flex-col items-center text-center">
+            {/* Small badge */}
+
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-4 inline-flex items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50 px-4 py-2 text-xs font-bold text-emerald-700"
+            >
+              <ShoppingBag size={14} />
+              Shop local. Shop smart.
+            </motion.div>
+
+            {/* Heading */}
+
+            <motion.h1
+              initial={{ opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="max-w-3xl text-4xl font-black tracking-tight text-slate-950 sm:text-5xl lg:text-6xl"
+            >
+              Find what you need,
+              <span className="block text-emerald-600">
+                right around you.
+              </span>
+            </motion.h1>
+
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.15 }}
+              className="mt-4 max-w-xl text-sm leading-6 text-slate-500 sm:text-base"
+            >
+              Discover products from nearby stores and get the best picks
+              available for your delivery location.
+            </motion.p>
+
+            {/* Location indicator */}
+
+            <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-600 shadow-sm">
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-50">
+                <MapPin size={13} className="text-emerald-600" />
+              </span>
+
+              Products available within {serviceRadius} km
+            </div>
+          </div>
         </div>
       </div>
 
+      {/* =====================================================
+          LOCATION LOADING
+      ===================================================== */}
+
       {locationLoading && (
-        <div className="flex min-h-[55vh] flex-col items-center justify-center px-5 text-center">
-          <div className="relative flex h-40 w-40 items-center justify-center">
+        <div className="flex min-h-[55vh] flex-col items-center justify-center bg-slate-50 px-5 text-center">
+          <div className="relative flex h-36 w-36 items-center justify-center">
             <motion.div
               animate={{
-                scale: [1, 1.5, 1],
-                opacity: [0.5, 0, 0.5],
+                scale: [1, 1.35, 1],
+                opacity: [0.4, 0, 0.4],
               }}
               transition={{
                 duration: 2,
                 repeat: Infinity,
               }}
-              className="absolute h-28 w-28 rounded-full border border-indigo-400/30"
+              className="absolute h-28 w-28 rounded-full border-2 border-emerald-200"
             />
 
             <motion.div
               animate={{
-                scale: [1, 1.3, 1],
-                opacity: [0.4, 0.1, 0.4],
+                scale: [1, 1.2, 1],
+                opacity: [0.5, 0.1, 0.5],
               }}
               transition={{
                 duration: 2.5,
                 repeat: Infinity,
               }}
-              className="absolute h-20 w-20 rounded-full border border-cyan-400/30"
+              className="absolute h-20 w-20 rounded-full border border-emerald-300"
             />
 
             <motion.div
               animate={{
-                y: [0, -7, 0],
+                y: [0, -6, 0],
               }}
               transition={{
                 duration: 1.5,
                 repeat: Infinity,
               }}
-              className="relative flex h-16 w-16 items-center justify-center rounded-2xl border border-white/10 bg-indigo-500/10"
+              className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-600 shadow-lg shadow-emerald-200"
             >
-              <LocateFixed size={29} className="text-indigo-400" />
+              <LocateFixed size={25} className="text-white" />
             </motion.div>
           </div>
 
-          <h2 className="mt-2 text-xl font-black text-white">
+          <h2 className="mt-2 text-xl font-black text-slate-900">
             Finding products near you
           </h2>
 
@@ -415,6 +475,10 @@ function ShopContent() {
           </p>
         </div>
       )}
+
+      {/* =====================================================
+          LOCATION ERROR
+      ===================================================== */}
 
       {!locationLoading && locationError && (
         <motion.div
@@ -428,23 +492,23 @@ function ShopContent() {
           }}
           className="mx-auto flex min-h-[55vh] max-w-lg items-center px-4 py-10"
         >
-          <div className="w-full rounded-[2rem] border border-slate-800 bg-slate-900/70 p-6 text-center shadow-2xl sm:p-8">
-            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-[1.5rem] border border-amber-500/20 bg-amber-500/10">
-              <MapPin size={34} className="text-amber-400" />
+          <div className="w-full rounded-3xl border border-slate-200 bg-white p-6 text-center shadow-sm sm:p-8">
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-amber-50">
+              <MapPin size={34} className="text-amber-600" />
             </div>
 
-            <h2 className="mt-6 text-2xl font-black text-white">
+            <h2 className="mt-6 text-2xl font-black text-slate-900">
               Location access needed
             </h2>
 
-            <p className="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-slate-400">
+            <p className="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-slate-500">
               {locationError}
             </p>
 
             <button
               type="button"
               onClick={loadNearbyStores}
-              className="mt-7 flex w-full items-center justify-center gap-2 rounded-2xl bg-indigo-500 px-5 py-3.5 text-sm font-black text-white transition hover:bg-indigo-400 active:scale-[0.98]"
+              className="mt-7 flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 py-3.5 text-sm font-black text-white shadow-sm transition hover:bg-emerald-700 active:scale-[0.98]"
             >
               <LocateFixed size={18} />
               Try Again
@@ -452,6 +516,10 @@ function ShopContent() {
           </div>
         </motion.div>
       )}
+
+      {/* =====================================================
+          NOT SERVICEABLE
+      ===================================================== */}
 
       {!locationLoading && !locationError && !serviceable && (
         <motion.div
@@ -465,53 +533,56 @@ function ShopContent() {
           }}
           className="mx-auto flex min-h-[60vh] max-w-xl items-center px-3 py-10 sm:px-5"
         >
-          <div className="relative w-full overflow-hidden rounded-[2.2rem] border border-slate-800 bg-slate-900/60 px-5 py-9 text-center shadow-2xl sm:px-8 sm:py-12">
-            <div className="pointer-events-none absolute -left-20 -top-24 h-64 w-64 rounded-full bg-indigo-500/10 blur-3xl" />
+          <div className="relative w-full overflow-hidden rounded-3xl border border-slate-200 bg-white px-5 py-10 text-center shadow-sm sm:px-8 sm:py-12">
+            <div className="pointer-events-none absolute -left-20 -top-20 h-56 w-56 rounded-full bg-emerald-100/60 blur-3xl" />
 
-            <div className="pointer-events-none absolute -bottom-24 -right-20 h-64 w-64 rounded-full bg-cyan-500/10 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-20 -right-20 h-56 w-56 rounded-full bg-orange-100/50 blur-3xl" />
 
-            <div className="relative mx-auto flex h-48 w-48 items-center justify-center">
+            <div className="relative mx-auto flex h-44 w-44 items-center justify-center">
               <motion.div
                 animate={{
-                  scale: [1, 1.45, 1],
-                  opacity: [0.25, 0, 0.25],
+                  scale: [1, 1.3, 1],
+                  opacity: [0.3, 0, 0.3],
                 }}
                 transition={{
                   duration: 2.5,
                   repeat: Infinity,
                 }}
-                className="absolute h-44 w-44 rounded-full border border-indigo-400/20"
+                className="absolute h-40 w-40 rounded-full border-2 border-emerald-200"
               />
 
               <motion.div
                 animate={{
-                  scale: [1, 1.3, 1],
+                  y: [0, -5, 0],
                 }}
                 transition={{
                   duration: 2,
                   repeat: Infinity,
                 }}
-                className="relative z-10 flex h-20 w-20 items-center justify-center rounded-[1.6rem] border border-white/10 bg-indigo-500/10"
+                className="relative z-10 flex h-20 w-20 items-center justify-center rounded-3xl bg-emerald-50"
               >
-                <Store size={34} className="text-indigo-400" />
+                <Store size={34} className="text-emerald-600" />
               </motion.div>
             </div>
 
-            <h2 className="relative z-10 mt-2 text-2xl font-black text-white sm:text-3xl">
-              Products aren&apos;t available here yet
+            <h2 className="relative z-10 mt-2 text-2xl font-black text-slate-900 sm:text-3xl">
+              We&apos;re not here yet
             </h2>
 
-            <p className="relative z-10 mx-auto mt-3 max-w-md text-sm leading-relaxed text-slate-400">
-              We currently don&apos;t have any partner stores within{" "}
-              {serviceRadius} km that can deliver products to your location.
+            <p className="relative z-10 mx-auto mt-3 max-w-md text-sm leading-relaxed text-slate-500">
+              We currently don&apos;t have partner stores within{" "}
+              <span className="font-bold text-slate-700">
+                {serviceRadius} km
+              </span>{" "}
+              that can deliver to your location.
             </p>
 
-            <p className="relative z-10 mt-2 text-xs text-slate-500">
+            <p className="relative z-10 mt-2 text-xs text-slate-400">
               We&apos;re expanding our delivery network and hope to reach you
               soon.
             </p>
 
-            <div className="relative z-10 mt-6 inline-flex items-center gap-2 rounded-full border border-indigo-500/20 bg-indigo-500/10 px-4 py-2 text-xs font-bold text-indigo-300">
+            <div className="relative z-10 mt-6 inline-flex items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50 px-4 py-2 text-xs font-bold text-emerald-700">
               <Navigation size={14} />
               Delivery radius: {serviceRadius} km
             </div>
@@ -519,7 +590,7 @@ function ShopContent() {
             <button
               type="button"
               onClick={loadNearbyStores}
-              className="relative z-10 mt-7 flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-700 bg-slate-800 px-5 py-3.5 text-sm font-bold text-white transition hover:bg-slate-700"
+              className="relative z-10 mt-7 flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-5 py-3.5 text-sm font-bold text-slate-700 transition hover:bg-slate-100"
             >
               <RefreshCw size={17} />
               Check Again
@@ -528,15 +599,20 @@ function ShopContent() {
         </motion.div>
       )}
 
-      {/* ================= SEARCH BAR (STICKY) ================= */}
+      {/* =====================================================
+          MAIN SHOP
+      ===================================================== */}
+
       {!locationLoading && !locationError && serviceable && (
         <>
-          <div className="sticky top-[70px] md:top-[80px] z-40 bg-slate-950/80 backdrop-blur-xl border-b border-slate-800/80">
-            <div className="max-w-4xl mx-auto px-4 py-4">
+          {/* ================= SEARCH ================= */}
+
+          <div className="sticky top-[70px] md:top-[80px] z-40 border-b border-slate-200 bg-white/95 backdrop-blur-xl">
+            <div className="mx-auto max-w-5xl px-4 py-3 sm:py-4">
               <div className="relative">
                 <Search
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"
-                  size={18}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                  size={19}
                 />
 
                 <input
@@ -544,7 +620,9 @@ function ShopContent() {
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
                   onFocus={() => {
-                    if (dropdownData.products.length) setShowDropdown(true);
+                    if (dropdownData.products.length) {
+                      setShowDropdown(true);
+                    }
                   }}
                   onKeyDown={(e) => {
                     if (e.key !== "Enter") return;
@@ -561,21 +639,28 @@ function ShopContent() {
                       `/product?search=${encodeURIComponent(cleanSearch)}`,
                     );
                   }}
+                  placeholder="Search products, categories or stores..."
                   className="
-            w-full
-            pl-11
-            pr-5
-            py-3.5
-            rounded-full
-            bg-slate-900
-            border
-            border-slate-800
-            text-white
-            placeholder:text-slate-500
-            outline-none
-            focus:border-indigo-500
-            transition
-            "
+                    w-full
+                    rounded-2xl
+                    border
+                    border-slate-200
+                    bg-slate-50
+                    py-3.5
+                    pl-11
+                    pr-5
+                    text-sm
+                    font-medium
+                    text-slate-900
+                    placeholder:text-slate-400
+                    outline-none
+                    transition
+                    focus:border-emerald-400
+                    focus:bg-white
+                    focus:ring-4
+                    focus:ring-emerald-50
+                    sm:rounded-full
+                  "
                 />
 
                 {showDropdown && (
@@ -592,138 +677,234 @@ function ShopContent() {
             </div>
           </div>
 
-          {/* ================= MAIN CONTENT ================= */}
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-            <div className="flex flex-col lg:flex-row gap-10">
+          {/* ================= CONTENT ================= */}
+
+          <div className="mx-auto max-w-7xl px-4 py-7 sm:px-6 sm:py-10 lg:px-8">
+            <div className="flex flex-col gap-8 lg:flex-row lg:gap-10">
               {/* ================= DESKTOP SIDEBAR ================= */}
-              <aside className="hidden lg:block w-64 shrink-0 space-y-10 sticky top-40 h-fit">
-                {/* CATEGORIES */}
-                <div>
-                  <h3 className="text-xs font-bold tracking-widest text-slate-500 uppercase mb-5">
-                    Categories
-                  </h3>
-                  <div className="flex flex-col gap-1.5 border-l border-slate-800 pl-4">
-                    {allCategories.map((cat) => (
-                      <button
-                        key={cat}
-                        onClick={() => handleCategoryChange(cat)}
-                        className={`text-left text-sm py-1.5 transition-all duration-200 capitalize ${
-                          category === cat
-                            ? "text-indigo-400 font-bold -translate-x-1"
-                            : "text-slate-400 hover:text-white"
-                        }`}
-                      >
-                        {cat}
-                      </button>
-                    ))}
-                  </div>
-                </div>
 
-                {/* SUB-CATEGORIES (Contextual) */}
-                <AnimatePresence>
-                  {availableSubCategories.length > 0 && (
-                    <motion.div
-                      key="subcategories-desktop" // ✅ CRITICAL: Required for Framer Motion to work
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="overflow-hidden"
-                    >
-                      <h3 className="text-xs font-bold tracking-widest text-slate-500 uppercase mb-5">
-                        Subcategories
+              <aside className="hidden w-60 shrink-0 lg:block">
+                <div className="sticky top-36 space-y-8">
+                  {/* CATEGORY */}
+
+                  <div>
+                    <div className="mb-4 flex items-center justify-between">
+                      <h3 className="text-sm font-black text-slate-900">
+                        Categories
                       </h3>
-                      <div className="flex flex-col gap-1.5 border-l border-indigo-500/30 pl-4 ml-2">
-                        {availableSubCategories.map((subCat) => (
-                          <button
-                            key={subCat}
-                            onClick={() => setSubCategory(subCat)}
-                            className={`text-left text-sm py-1 transition-all duration-200 capitalize flex items-center gap-2 ${
-                              subCategory === subCat
-                                ? "text-indigo-400 font-bold -translate-x-1"
-                                : "text-slate-400 hover:text-white"
-                            }`}
-                          >
-                            {subCategory === subCat && (
-                              <ChevronRight
-                                size={14}
-                                className="text-indigo-400"
-                              />
-                            )}
-                            {subCat === "all" ? `All ${category}` : subCat}
-                          </button>
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
 
-                {/* PRICE RANGE */}
-                <div>
-                  <h3 className="text-xs font-bold tracking-widest text-slate-500 uppercase mb-5">
-                    Price Range
-                  </h3>
-                  <div className="flex flex-col gap-1.5 border-l border-slate-800 pl-4">
-                    {PRICE_RANGES.map((range) => (
-                      <button
-                        key={range.value}
-                        onClick={() => setPriceRange(range.value)}
-                        className={`text-left text-sm py-1.5 transition-all duration-200 ${
-                          priceRange === range.value
-                            ? "text-indigo-400 font-bold -translate-x-1"
-                            : "text-slate-400 hover:text-white"
-                        }`}
+                      <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-bold text-slate-500">
+                        {allCategories.length - 1}
+                      </span>
+                    </div>
+
+                    <div className="space-y-1">
+                      {allCategories.map((cat) => (
+                        <button
+                          key={cat}
+                          onClick={() => handleCategoryChange(cat)}
+                          className={`group flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm capitalize transition ${category === cat
+                              ? "bg-emerald-50 font-bold text-emerald-700"
+                              : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                            }`}
+                        >
+                          <span>{cat === "all" ? "All Products" : cat}</span>
+
+                          {category === cat && (
+                            <ChevronRight
+                              size={15}
+                              className="text-emerald-600"
+                            />
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* SUB CATEGORIES */}
+
+                  <AnimatePresence>
+                    {availableSubCategories.length > 0 && (
+                      <motion.div
+                        key="subcategories-desktop"
+                        initial={{
+                          opacity: 0,
+                          height: 0,
+                        }}
+                        animate={{
+                          opacity: 1,
+                          height: "auto",
+                        }}
+                        exit={{
+                          opacity: 0,
+                          height: 0,
+                        }}
+                        className="overflow-hidden"
                       >
-                        {range.label}
-                      </button>
-                    ))}
+                        <div className="border-t border-slate-200 pt-7">
+                          <h3 className="mb-4 text-sm font-black text-slate-900">
+                            {category} options
+                          </h3>
+
+                          <div className="space-y-1">
+                            {availableSubCategories.map((subCat) => (
+                              <button
+                                key={subCat}
+                                onClick={() => setSubCategory(subCat)}
+                                className={`flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-xs capitalize transition ${subCategory === subCat
+                                    ? "bg-indigo-50 font-bold text-indigo-600"
+                                    : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                                  }`}
+                              >
+                                {subCategory === subCat && (
+                                  <span className="h-1.5 w-1.5 rounded-full bg-indigo-500" />
+                                )}
+
+                                {subCat === "all"
+                                  ? `All ${category}`
+                                  : subCat}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* PRICE */}
+
+                  <div className="border-t border-slate-200 pt-7">
+                    <h3 className="mb-4 text-sm font-black text-slate-900">
+                      Price Range
+                    </h3>
+
+                    <div className="space-y-1">
+                      {PRICE_RANGES.map((range) => (
+                        <button
+                          key={range.value}
+                          onClick={() => setPriceRange(range.value)}
+                          className={`w-full rounded-xl px-3 py-2.5 text-left text-xs font-semibold transition ${priceRange === range.value
+                              ? "bg-orange-50 text-orange-700"
+                              : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                            }`}
+                        >
+                          {range.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </aside>
 
-              {/* ================= PRODUCT GRID ================= */}
-              <div className="flex-1">
-                {/* Toolbar */}
-                <div className="flex flex-wrap justify-between items-center gap-4 mb-6 pb-4 border-b border-slate-800/80">
-                  <p className="text-sm font-medium text-slate-400">
-                    Showing{" "}
-                    <span className="text-white font-bold">
-                      {filteredProducts.length}
-                    </span>{" "}
-                    Products
-                  </p>
+              {/* ================= PRODUCTS ================= */}
 
-                  <div className="flex items-center gap-4">
+              <div className="min-w-0 flex-1">
+                {/* TOOLBAR */}
+
+                <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4">
+                  <div>
+                    <p className="text-sm font-bold text-slate-900">
+                      {searchFromURL
+                        ? `Results for "${searchFromURL}"`
+                        : category === "all"
+                          ? "Explore Products"
+                          : category}
+                    </p>
+
+                    <p className="mt-0.5 text-xs text-slate-400">
+                      Showing{" "}
+                      <span className="font-bold text-slate-600">
+                        {filteredProducts.length}
+                      </span>{" "}
+                      products near you
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    {/* SORT */}
+
                     <div className="relative">
                       <select
                         value={sort}
                         onChange={(e) => setSort(e.target.value)}
-                        className="appearance-none bg-slate-900 border border-slate-800 text-sm font-semibold text-white px-4 py-2 pr-8 rounded-lg outline-none focus:border-indigo-500 cursor-pointer transition-colors"
+                        className="
+                          appearance-none
+                          rounded-xl
+                          border
+                          border-slate-200
+                          bg-white
+                          px-3
+                          py-2.5
+                          pr-8
+                          text-xs
+                          font-bold
+                          text-slate-700
+                          outline-none
+                          transition
+                          hover:border-slate-300
+                          focus:border-emerald-400
+                          focus:ring-4
+                          focus:ring-emerald-50
+                        "
                       >
-                        <option value="">Sort By: Default</option>
-                        <option value="low-high">Price: Low to High</option>
-                        <option value="high-low">Price: High to Low</option>
+                        <option value="">Recommended</option>
+                        <option value="low-high">
+                          Price: Low to High
+                        </option>
+                        <option value="high-low">
+                          Price: High to Low
+                        </option>
                       </select>
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-xs">
+
+                      <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[9px] text-slate-400">
                         ▼
                       </div>
                     </div>
 
+                    {/* MOBILE FILTER */}
+
                     <button
                       onClick={() => setShowMobileFilter(true)}
-                      className="lg:hidden flex items-center gap-2 px-4 py-2 bg-slate-900 border border-slate-800 rounded-lg text-sm font-semibold hover:bg-slate-800 transition-colors"
+                      className="
+                        flex
+                        items-center
+                        gap-2
+                        rounded-xl
+                        border
+                        border-slate-200
+                        bg-white
+                        px-3
+                        py-2.5
+                        text-xs
+                        font-bold
+                        text-slate-700
+                        transition
+                        hover:bg-slate-50
+                        lg:hidden
+                      "
                     >
-                      <SlidersHorizontal size={16} />
+                      <SlidersHorizontal size={15} />
                       Filters
                     </button>
                   </div>
                 </div>
 
-                {/* Grid */}
+                {/* PRODUCT GRID */}
+
                 {filteredProducts.length > 0 ? (
                   <AnimatePresence mode="popLayout">
                     <motion.div
                       layout
-                      className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6"
+                      className="
+                        grid
+                        grid-cols-2
+                        gap-3
+                        sm:grid-cols-2
+                        sm:gap-4
+                        md:grid-cols-3
+                        lg:grid-cols-3
+                        xl:grid-cols-4
+                      "
                     >
                       {filteredProducts.map((product) => (
                         <ProductCard
@@ -735,14 +916,20 @@ function ShopContent() {
                     </motion.div>
                   </AnimatePresence>
                 ) : (
-                  <div className="flex flex-col items-center justify-center py-20 text-center">
-                    <Search size={48} className="text-slate-700 mb-4" />
-                    <h3 className="text-xl font-bold text-white mb-2">
+                  <div className="flex min-h-[400px] flex-col items-center justify-center rounded-3xl border border-dashed border-slate-200 bg-white px-5 py-20 text-center">
+                    <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100">
+                      <Search size={28} className="text-slate-400" />
+                    </div>
+
+                    <h3 className="mt-5 text-xl font-black text-slate-900">
                       No products found
                     </h3>
-                    <p className="text-slate-400">
-                      Try adjusting your filters or search query.
+
+                    <p className="mt-2 max-w-sm text-sm text-slate-500">
+                      Try adjusting your filters or search for something
+                      different.
                     </p>
+
                     <button
                       onClick={() => {
                         router.push("/product");
@@ -755,9 +942,10 @@ function ShopContent() {
 
                         setSmartProducts([]);
                       }}
-                      className="mt-6 text-indigo-400 font-semibold hover:text-indigo-300 transition-colors"
+                      className="mt-6 inline-flex items-center gap-2 rounded-full bg-emerald-50 px-5 py-2.5 text-sm font-bold text-emerald-700 transition hover:bg-emerald-100"
                     >
                       Clear all filters
+                      <ArrowRight size={15} />
                     </button>
                   </div>
                 )}
@@ -765,33 +953,67 @@ function ShopContent() {
             </div>
           </div>
 
-          {/* ================= MOBILE FILTER MODAL ================= */}
+          {/* =================================================
+              MOBILE FILTER
+          ================================================= */}
+
           <AnimatePresence>
             {showMobileFilter && (
               <>
+                {/* BACKDROP */}
+
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   onClick={() => setShowMobileFilter(false)}
-                  className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[100] lg:hidden"
+                  className="fixed inset-0 z-[100] bg-slate-900/30 backdrop-blur-sm lg:hidden"
                 />
+
+                {/* SHEET */}
 
                 <motion.div
                   initial={{ y: "100%" }}
                   animate={{ y: 0 }}
                   exit={{ y: "100%" }}
-                  transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                  className="fixed bottom-0 inset-x-0 bg-slate-900 border-t border-slate-800 z-[101] rounded-t-3xl p-6 pb-10 max-h-[85vh] overflow-y-auto lg:hidden shadow-2xl"
+                  transition={{
+                    type: "spring",
+                    damping: 25,
+                    stiffness: 300,
+                  }}
+                  className="
+                    fixed
+                    inset-x-0
+                    bottom-0
+                    z-[101]
+                    max-h-[85vh]
+                    overflow-y-auto
+                    rounded-t-[2rem]
+                    border-t
+                    border-slate-200
+                    bg-white
+                    p-5
+                    pb-10
+                    shadow-2xl
+                    lg:hidden
+                  "
                 >
                   {/* HEADER */}
-                  <div className="flex items-center justify-between mb-8 pb-4 border-b border-slate-800">
-                    <h2 className="text-lg font-bold text-white">
-                      Filters & Sorting
-                    </h2>
+
+                  <div className="mb-7 flex items-center justify-between border-b border-slate-200 pb-4">
+                    <div>
+                      <h2 className="text-lg font-black text-slate-900">
+                        Filters & Sorting
+                      </h2>
+
+                      <p className="mt-0.5 text-xs text-slate-400">
+                        Refine your product search
+                      </p>
+                    </div>
+
                     <button
                       onClick={() => setShowMobileFilter(false)}
-                      className="p-2 bg-slate-800 hover:bg-slate-700 rounded-full transition-colors text-slate-300"
+                      className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:bg-slate-200"
                     >
                       <X size={18} />
                     </button>
@@ -799,68 +1021,85 @@ function ShopContent() {
 
                   <div className="space-y-8">
                     {/* CATEGORIES */}
+
                     <div>
-                      <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">
+                      <h3 className="mb-4 text-xs font-black uppercase tracking-widest text-slate-400">
                         Categories
                       </h3>
-                      <div className="flex flex-wrap gap-2.5">
+
+                      <div className="flex flex-wrap gap-2">
                         {allCategories.map((cat) => (
                           <button
                             key={cat}
                             onClick={() => handleCategoryChange(cat)}
-                            className={`px-4 py-2 rounded-full text-xs font-semibold capitalize transition border ${
-                              category === cat
-                                ? "bg-indigo-500/20 border-indigo-500 text-indigo-300"
-                                : "bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-600"
-                            }`}
+                            className={`rounded-full border px-4 py-2.5 text-xs font-bold capitalize transition ${category === cat
+                                ? "border-emerald-600 bg-emerald-600 text-white shadow-sm"
+                                : "border-slate-200 bg-white text-slate-600 hover:border-emerald-200 hover:bg-emerald-50"
+                              }`}
                           >
-                            {cat}
+                            {cat === "all" ? "All Products" : cat}
                           </button>
                         ))}
                       </div>
                     </div>
 
-                    {/* SUBCATEGORIES (Mobile Contextual) */}
+                    {/* SUBCATEGORIES */}
+
                     <AnimatePresence>
                       {availableSubCategories.length > 0 && (
                         <motion.div
-                          key="subcategories-mobile" // ✅ CRITICAL: Required for Framer Motion to work
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: "auto" }}
-                          exit={{ opacity: 0, height: 0 }}
+                          key="subcategories-mobile"
+                          initial={{
+                            opacity: 0,
+                            height: 0,
+                          }}
+                          animate={{
+                            opacity: 1,
+                            height: "auto",
+                          }}
+                          exit={{
+                            opacity: 0,
+                            height: 0,
+                          }}
                           className="overflow-hidden"
                         >
-                          <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-2 mb-4">
+                          <h3 className="mb-4 text-xs font-black uppercase tracking-widest text-slate-400">
                             Subcategories
                           </h3>
-                          <div className="flex flex-wrap gap-2.5 bg-slate-950 p-4 rounded-2xl border border-indigo-500/20">
-                            {availableSubCategories.map((subCat) => (
-                              <button
-                                key={subCat}
-                                onClick={() => {
-                                  setSubCategory(subCat);
-                                  setShowMobileFilter(false);
-                                }}
-                                className={`px-4 py-2 rounded-full text-xs font-semibold capitalize transition border ${
-                                  subCategory === subCat
-                                    ? "bg-indigo-500 text-white border-indigo-400"
-                                    : "bg-slate-900 border-slate-700 text-slate-300 hover:border-slate-500"
-                                }`}
-                              >
-                                {subCat === "all" ? `All ${category}` : subCat}
-                              </button>
-                            ))}
+
+                          <div className="rounded-2xl border border-indigo-100 bg-indigo-50/40 p-3">
+                            <div className="flex flex-wrap gap-2">
+                              {availableSubCategories.map((subCat) => (
+                                <button
+                                  key={subCat}
+                                  onClick={() => {
+                                    setSubCategory(subCat);
+                                    setShowMobileFilter(false);
+                                  }}
+                                  className={`rounded-full border px-4 py-2 text-xs font-bold capitalize transition ${subCategory === subCat
+                                      ? "border-indigo-600 bg-indigo-600 text-white"
+                                      : "border-indigo-100 bg-white text-indigo-600"
+                                    }`}
+                                >
+                                  {subCat === "all"
+                                    ? `All ${category}`
+                                    : subCat}
+                                </button>
+                              ))}
+                            </div>
                           </div>
                         </motion.div>
                       )}
                     </AnimatePresence>
 
-                    {/* PRICE RANGE */}
+                    {/* PRICE */}
+
                     <div>
-                      <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">
+                      <h3 className="mb-4 text-xs font-black uppercase tracking-widest text-slate-400">
                         Price Range
                       </h3>
-                      <div className="flex flex-wrap gap-2.5">
+
+                      <div className="flex flex-wrap gap-2">
                         {PRICE_RANGES.map((range) => (
                           <button
                             key={range.value}
@@ -868,11 +1107,10 @@ function ShopContent() {
                               setPriceRange(range.value);
                               setShowMobileFilter(false);
                             }}
-                            className={`px-4 py-2 rounded-full text-xs font-semibold transition border ${
-                              priceRange === range.value
-                                ? "bg-indigo-500/20 border-indigo-500 text-indigo-300"
-                                : "bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-600"
-                            }`}
+                            className={`rounded-full border px-4 py-2.5 text-xs font-bold transition ${priceRange === range.value
+                                ? "border-orange-500 bg-orange-500 text-white"
+                                : "border-slate-200 bg-white text-slate-600 hover:border-orange-200 hover:bg-orange-50"
+                              }`}
                           >
                             {range.label}
                           </button>
@@ -894,8 +1132,8 @@ export default function Shop() {
   return (
     <Suspense
       fallback={
-        <div className="h-screen flex items-center justify-center bg-slate-950 text-indigo-400 font-semibold tracking-widest uppercase text-sm">
-          Loading Collection...
+        <div className="flex h-screen items-center justify-center bg-slate-50 text-sm font-bold uppercase tracking-widest text-emerald-600">
+          Loading Products...
         </div>
       }
     >
