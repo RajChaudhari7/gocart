@@ -18,6 +18,7 @@ import {
 import axios from "axios";
 import { toast } from "sonner";
 import { useAuth } from "@clerk/nextjs";
+import { useState } from "react";
 
 const currency =
     process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || "₹";
