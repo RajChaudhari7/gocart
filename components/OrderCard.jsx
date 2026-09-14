@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import {
     Calendar,
@@ -62,11 +62,13 @@ export default function OrderCard({
     onRefresh,
 }) {
     const { getToken } = useAuth();
+    const [showCancelModal, setShowCancelModal] = useState(false);
+    const [isCancelling, setIsCancelling] = useState(false);
 
     const cancelOrder = async () => {
         if (order.status === "DELIVERED") return;
 
-        if (!confirm("Cancel this order?")) return;
+        setIsCancelling(true);
 
         try {
             const token = await getToken();
@@ -83,14 +85,19 @@ export default function OrderCard({
                 }
             );
 
-            toast.success("Order Cancelled");
+            setShowCancelModal(false);
+
+            toast.success("Order cancelled successfully");
 
             onRefresh();
         } catch (err) {
             toast.error(
                 err.response?.data?.error ||
-                err.message
+                err.message ||
+                "Unable to cancel order"
             );
+        } finally {
+            setIsCancelling(false);
         }
     };
 
@@ -376,7 +383,7 @@ export default function OrderCard({
                     {order.status !== "DELIVERED" &&
                         order.status !== "CANCELLED" && (
                             <button
-                                onClick={cancelOrder}
+                                onClick={() => setShowCancelModal(true)}
                                 className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-5 py-3 text-sm font-bold text-red-600 transition-all hover:bg-red-100 active:scale-[0.98]"
                             >
                                 <XCircle size={17} />
@@ -399,6 +406,204 @@ export default function OrderCard({
                 </div>
 
             </div>
+
+            {/* ================= CANCEL MODAL ================= */}
+
+            <AnimatePresence>
+                {showCancelModal && (
+                    <>
+                        {/* BACKDROP */}
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => {
+                                if (!isCancelling) {
+                                    setShowCancelModal(false);
+                                }
+                            }}
+                            className="fixed inset-0 z-[100] bg-slate-950/40 backdrop-blur-sm"
+                        />
+
+                        {/* MODAL WRAPPER */}
+                        <div className="fixed inset-0 z-[101] flex items-center justify-center p-4">
+                            <motion.div
+                                initial={{
+                                    opacity: 0,
+                                    scale: 0.9,
+                                    y: 20,
+                                }}
+                                animate={{
+                                    opacity: 1,
+                                    scale: 1,
+                                    y: 0,
+                                }}
+                                exit={{
+                                    opacity: 0,
+                                    scale: 0.9,
+                                    y: 20,
+                                }}
+                                transition={{
+                                    type: "spring",
+                                    stiffness: 300,
+                                    damping: 25,
+                                }}
+                                onClick={(e) => e.stopPropagation()}
+                                className="relative w-full max-w-md overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-2xl"
+                            >
+                                {/* TOP DECORATION */}
+                                <div className="absolute -right-16 -top-16 h-40 w-40 rounded-full bg-red-100 blur-3xl" />
+
+                                <div className="absolute -bottom-20 -left-16 h-40 w-40 rounded-full bg-amber-100 blur-3xl" />
+
+                                {/* CLOSE BUTTON */}
+                                <button
+                                    type="button"
+                                    disabled={isCancelling}
+                                    onClick={() => setShowCancelModal(false)}
+                                    className="absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-400 transition hover:bg-slate-50 hover:text-slate-700 disabled:opacity-50"
+                                >
+                                    <X size={17} />
+                                </button>
+
+                                <div className="relative p-6 sm:p-7">
+
+                                    {/* ICON */}
+                                    <motion.div
+                                        initial={{ scale: 0.7, rotate: -10 }}
+                                        animate={{ scale: 1, rotate: 0 }}
+                                        transition={{
+                                            type: "spring",
+                                            stiffness: 300,
+                                            damping: 15,
+                                            delay: 0.05,
+                                        }}
+                                        className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-red-200 bg-red-50 text-red-500 shadow-sm"
+                                    >
+                                        <AlertTriangle
+                                            size={30}
+                                            strokeWidth={2}
+                                        />
+                                    </motion.div>
+
+                                    {/* TITLE */}
+                                    <div className="mt-5 text-center">
+                                        <span className="inline-flex items-center rounded-full border border-red-200 bg-red-50 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-red-600">
+                                            Cancel Order
+                                        </span>
+
+                                        <h2 className="mt-3 text-xl font-black text-slate-900 sm:text-2xl">
+                                            Are you sure?
+                                        </h2>
+
+                                        <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-500">
+                                            Do you really want to cancel this order?
+                                            Once cancelled, you may not be able to
+                                            restore it.
+                                        </p>
+                                    </div>
+
+                                    {/* ORDER INFO */}
+                                    <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                                        <div className="flex items-center gap-3">
+
+                                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-500">
+                                                <Package size={18} />
+                                            </div>
+
+                                            <div className="min-w-0">
+                                                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                                    Order
+                                                </p>
+
+                                                <p className="truncate text-sm font-bold text-slate-900">
+                                                    #{order.id}
+                                                </p>
+                                            </div>
+
+                                            <div className="ml-auto text-right">
+                                                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                                    Total
+                                                </p>
+
+                                                <p className="text-sm font-black text-slate-900">
+                                                    {currency}
+                                                    {Number(
+                                                        order.total
+                                                    ).toFixed(2)}
+                                                </p>
+                                            </div>
+
+                                        </div>
+                                    </div>
+
+                                    {/* WARNING */}
+                                    <div className="mt-4 flex gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3">
+                                        <AlertTriangle
+                                            size={17}
+                                            className="mt-0.5 shrink-0 text-amber-600"
+                                        />
+
+                                        <p className="text-xs leading-5 text-amber-800">
+                                            If this order has already been prepared
+                                            or dispatched, cancellation may not be
+                                            possible.
+                                        </p>
+                                    </div>
+
+                                    {/* ACTIONS */}
+                                    <div className="mt-6 grid grid-cols-2 gap-3">
+
+                                        {/* KEEP ORDER */}
+                                        <button
+                                            type="button"
+                                            disabled={isCancelling}
+                                            onClick={() =>
+                                                setShowCancelModal(false)
+                                            }
+                                            className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 transition-all hover:bg-slate-50 active:scale-[0.98] disabled:opacity-50"
+                                        >
+                                            Keep Order
+                                        </button>
+
+                                        {/* CONFIRM CANCEL */}
+                                        <button
+                                            type="button"
+                                            disabled={isCancelling}
+                                            onClick={cancelOrder}
+                                            className="relative overflow-hidden rounded-xl bg-red-600 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-red-200 transition-all hover:bg-red-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
+                                        >
+                                            {isCancelling ? (
+                                                <span className="flex items-center justify-center gap-2">
+                                                    <motion.span
+                                                        animate={{
+                                                            rotate: 360,
+                                                        }}
+                                                        transition={{
+                                                            duration: 0.8,
+                                                            repeat: Infinity,
+                                                            ease: "linear",
+                                                        }}
+                                                        className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white"
+                                                    />
+
+                                                    Cancelling...
+                                                </span>
+                                            ) : (
+                                                <span className="flex items-center justify-center gap-2">
+                                                    <XCircle size={16} />
+                                                    Yes, Cancel
+                                                </span>
+                                            )}
+                                        </button>
+
+                                    </div>
+                                </div>
+                            </motion.div>
+                        </div>
+                    </>
+                )}
+            </AnimatePresence>
         </motion.div>
     );
 }
