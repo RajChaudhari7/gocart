@@ -11,6 +11,8 @@ import {
     Truck,
     XCircle,
     Store,
+    AlertTriangle,
+    X,
 } from "lucide-react";
 
 import axios from "axios";
