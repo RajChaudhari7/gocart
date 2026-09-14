@@ -35,6 +35,8 @@ export default function TrendingProducts() {
     return filterNearbyProducts(allTrendingProducts);
   }, [allTrendingProducts, filterNearbyProducts]);
 
+  /* ---------------- LOADING ---------------- */
+
   if (loading || locationLoading) {
     return (
       <section className="mt-10 md:mt-16">
@@ -44,48 +46,72 @@ export default function TrendingProducts() {
             overflow-hidden
             rounded-3xl
             border
-            border-orange-500/20
-            bg-gradient-to-br
-            from-slate-950
-            via-slate-950
-            to-orange-950/30
+            border-slate-200
+            bg-white
             p-4
+            shadow-sm
             md:p-8
-            shadow-2xl
-            shadow-orange-950/20
           "
         >
-          <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-orange-500/10 blur-3xl" />
+          {/* Soft decorative background */}
+          <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-orange-50 blur-3xl" />
 
           <div className="relative z-10 mb-8 flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-orange-500/20 bg-orange-500/10">
-              <Flame size={23} className="text-orange-400" />
+            <div
+              className="
+                flex
+                h-12
+                w-12
+                shrink-0
+                items-center
+                justify-center
+                rounded-2xl
+                bg-orange-50
+                text-orange-500
+              "
+            >
+              <Flame size={23} />
             </div>
 
-            <div>
-              <h2 className="text-2xl font-black text-white md:text-3xl">
-                Trending Products
-              </h2>
+            <div className="flex-1">
+              <div className="h-7 w-64 max-w-full animate-pulse rounded-lg bg-slate-100" />
 
-              <p className="mt-1 text-sm text-slate-400">
-                Finding trending products available for your delivery location
-              </p>
+              <div className="mt-2 h-4 w-96 max-w-full animate-pulse rounded-lg bg-slate-100" />
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 md:gap-6 xl:grid-cols-5">
+          <div
+            className="
+              grid
+              grid-cols-2
+              gap-3
+              sm:gap-4
+              md:grid-cols-3
+              md:gap-6
+              xl:grid-cols-5
+            "
+          >
             {Array.from({ length: 5 }).map((_, index) => (
               <div
                 key={index}
-                className="overflow-hidden rounded-3xl border border-slate-800 bg-slate-900"
+                className="
+                  overflow-hidden
+                  rounded-3xl
+                  border
+                  border-slate-100
+                  bg-slate-50
+                "
               >
-                <div className="aspect-square animate-pulse bg-slate-800" />
+                <div className="aspect-square animate-pulse bg-slate-100" />
 
                 <div className="space-y-3 p-4">
-                  <div className="h-3 w-20 animate-pulse rounded bg-slate-800" />
-                  <div className="h-4 w-full animate-pulse rounded bg-slate-800" />
-                  <div className="h-4 w-2/3 animate-pulse rounded bg-slate-800" />
-                  <div className="h-6 w-24 animate-pulse rounded bg-slate-800" />
+                  <div className="h-3 w-20 animate-pulse rounded bg-slate-200" />
+
+                  <div className="h-4 w-full animate-pulse rounded bg-slate-200" />
+
+                  <div className="h-4 w-2/3 animate-pulse rounded bg-slate-200" />
+
+                  <div className="h-6 w-24 animate-pulse rounded bg-slate-200" />
                 </div>
               </div>
             ))}
@@ -113,22 +139,62 @@ export default function TrendingProducts() {
           overflow-hidden
           rounded-3xl
           border
-          border-orange-500/20
-          bg-gradient-to-br
-          from-slate-950
-          via-slate-950
-          to-orange-950/30
+          border-slate-200
+          bg-white
           p-4
+          shadow-sm
           md:p-8
-          shadow-2xl
-          shadow-orange-950/20
         "
       >
-        <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-orange-500/10 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-28 -left-28 h-72 w-72 rounded-full bg-red-500/5 blur-3xl" />
+        {/* SOFT BACKGROUND ACCENTS */}
 
-        <div className="relative z-10 mb-7 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between md:mb-8">
+        <div
+          className="
+            pointer-events-none
+            absolute
+            -right-24
+            -top-24
+            h-72
+            w-72
+            rounded-full
+            bg-orange-50
+            blur-3xl
+          "
+        />
+
+        <div
+          className="
+            pointer-events-none
+            absolute
+            -bottom-28
+            -left-28
+            h-72
+            w-72
+            rounded-full
+            bg-amber-50
+            blur-3xl
+          "
+        />
+
+        {/* HEADER */}
+
+        <div
+          className="
+            relative
+            z-10
+            mb-7
+            flex
+            flex-col
+            gap-4
+            sm:flex-row
+            sm:items-center
+            sm:justify-between
+            md:mb-8
+          "
+        >
           <div className="flex items-center gap-3">
+            {/* TRENDING ICON */}
+
             <motion.div
               animate={{
                 scale: [1, 1.08, 1],
@@ -147,44 +213,121 @@ export default function TrendingProducts() {
                 items-center
                 justify-center
                 rounded-2xl
-                border
-                border-orange-500/20
-                bg-gradient-to-br
-                from-orange-500/20
-                to-red-500/10
-                shadow-lg
-                shadow-orange-500/10
+                bg-orange-50
+                text-orange-500
+                ring-8
+                ring-orange-50/60
               "
             >
-              <Flame size={24} className="fill-orange-400 text-orange-400" />
+              <Flame
+                size={24}
+                className="fill-orange-400 text-orange-500"
+              />
             </motion.div>
 
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <h2 className="text-2xl font-black text-white md:text-3xl">
+                <h2
+                  className="
+                    text-2xl
+                    font-black
+                    tracking-tight
+                    text-slate-900
+                    md:text-3xl
+                  "
+                >
                   Trending Products
                 </h2>
 
-                <span className="inline-flex items-center gap-1 rounded-full border border-orange-500/20 bg-orange-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-orange-300">
+                {/* LIVE BADGE */}
+
+                <span
+                  className="
+                    inline-flex
+                    items-center
+                    gap-1
+                    rounded-full
+                    border
+                    border-orange-200
+                    bg-orange-50
+                    px-2.5
+                    py-1
+                    text-[10px]
+                    font-bold
+                    uppercase
+                    tracking-wider
+                    text-orange-700
+                  "
+                >
                   <TrendingUp size={12} />
                   Live
                 </span>
               </div>
 
-              <p className="mt-1 text-xs text-slate-400 sm:text-sm">
-                Popular products available for your selected delivery location
+              <p
+                className="
+                  mt-1
+                  text-xs
+                  text-slate-500
+                  sm:text-sm
+                "
+              >
+                Popular products people are shopping for near you
               </p>
             </div>
           </div>
 
-          <div className="hidden items-center gap-2 rounded-full border border-slate-800 bg-slate-900/70 px-4 py-2 text-xs font-medium text-slate-400 sm:flex">
+          {/* UPDATE STATUS */}
+
+          <div
+            className="
+              hidden
+              items-center
+              gap-2
+              rounded-full
+              border
+              border-slate-200
+              bg-slate-50
+              px-4
+              py-2
+              text-xs
+              font-medium
+              text-slate-500
+              sm:flex
+            "
+          >
             <span className="h-2 w-2 animate-pulse rounded-full bg-orange-400" />
+
             Updated automatically
           </div>
         </div>
 
-        {/* Desktop */}
-        <div className="relative z-10 hidden grid-cols-3 gap-6 md:grid xl:grid-cols-5">
+        {/* PRODUCT COUNT */}
+
+        <div className="relative z-10 mb-6">
+          <p className="text-sm text-slate-500">
+            <span className="font-bold text-slate-900">
+              {products.length}
+            </span>{" "}
+            trending{" "}
+            {products.length === 1 ? "product" : "products"} available near
+            you
+          </p>
+        </div>
+
+        {/* DESKTOP */}
+
+        <div
+          className="
+            relative
+            z-10
+            hidden
+            grid-cols-3
+            gap-6
+            md:grid
+            xl:grid-cols-5
+          "
+        >
           {products.map((product, index) => (
             <div
               key={product.id}
@@ -194,8 +337,8 @@ export default function TrendingProducts() {
                 transition
                 duration-300
                 hover:-translate-y-1
-                hover:shadow-2xl
-                hover:shadow-orange-500/10
+                hover:shadow-xl
+                hover:shadow-orange-100
               "
             >
               <ProductCard
@@ -208,7 +351,8 @@ export default function TrendingProducts() {
           ))}
         </div>
 
-        {/* Mobile */}
+        {/* MOBILE */}
+
         <div className="relative z-10 md:hidden">
           <div
             className="
@@ -239,6 +383,14 @@ export default function TrendingProducts() {
                 />
               </div>
             ))}
+          </div>
+
+          {/* MOBILE HINT */}
+
+          <div className="mt-3 flex justify-center">
+            <span className="text-[11px] font-medium text-slate-400">
+              Swipe to explore more
+            </span>
           </div>
         </div>
       </div>
