@@ -1,63 +1,300 @@
 "use client";
+
 import Title from "./Title";
 import Link from "next/link";
-import { Store, Package } from "lucide-react";
+import { Store, Package, ArrowRight, MapPin } from "lucide-react";
 import { useCustomerLocation } from "@/context/CustomerLocationContext";
 
 const BestSelling = () => {
   const { nearbyStores, serviceRadius } = useCustomerLocation();
 
   return (
-    <section className="relative bg-gradient-to-b from-[#020617] via-[#020617] to-black">
-      <div className="px-6 py-24 max-w-7xl mx-auto">
-        <Title
-          title="Start Shopping"
-          description="Choose how you want to explore products"
-          href="/product"
-          theme="dark"
-        />
+    <section className="bg-slate-50 py-14 sm:py-16">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 
-        <div className="mt-16 grid grid-cols-1 md:grid-cols-2 gap-10">
-          {/* Shop by Shop */}
-          <Link href="/shop">
-            <div className="group cursor-pointer relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-white/5 to-white/0 backdrop-blur-xl p-8 sm:p-10 md:p-12 transition-all duration-500 hover:scale-[1.03] hover:border-blue-500/40 hover:shadow-[0_0_40px_rgba(59,130,246,0.25)]">
-              <div className="flex flex-col items-center text-center">
-                <div className="mb-6 p-4 rounded-2xl bg-blue-500/10 group-hover:bg-blue-500/20 transition">
-                  <Store className="w-10 h-10 text-blue-400" />
+        {/* HEADER */}
+        <div className="mb-8 sm:mb-10">
+          <Title
+            title="Start Shopping"
+            description="Pick how you want to discover your next favourite product"
+            href="/product"
+            theme="light"
+          />
+        </div>
+
+        {/* SHOPPING OPTIONS */}
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+
+          {/* SHOP BY SHOP */}
+          <Link href="/shop" className="group block">
+            <div
+              className="
+                relative
+                h-full
+                overflow-hidden
+                rounded-3xl
+                border
+                border-slate-200
+                bg-white
+                p-6
+                shadow-sm
+                transition-all
+                duration-300
+                hover:-translate-y-1
+                hover:border-emerald-200
+                hover:shadow-lg
+                sm:p-8
+                md:p-10
+              "
+            >
+              {/* SOFT BACKGROUND SHAPE */}
+              <div
+                className="
+                  pointer-events-none
+                  absolute
+                  -right-16
+                  -top-16
+                  h-40
+                  w-40
+                  rounded-full
+                  bg-emerald-50
+                  transition-transform
+                  duration-500
+                  group-hover:scale-125
+                "
+              />
+
+              <div className="relative flex flex-col items-center text-center">
+
+                {/* ICON */}
+                <div
+                  className="
+                    mb-5
+                    flex
+                    h-16
+                    w-16
+                    items-center
+                    justify-center
+                    rounded-full
+                    bg-emerald-50
+                    text-emerald-600
+                    ring-8
+                    ring-emerald-50/60
+                    transition-all
+                    duration-300
+                    group-hover:scale-105
+                    group-hover:bg-emerald-100
+                  "
+                >
+                  <Store className="h-7 w-7" strokeWidth={2} />
                 </div>
 
-                <h2 className="text-2xl font-semibold text-white mb-3">
+                {/* TITLE */}
+                <h2
+                  className="
+                    mb-2
+                    text-xl
+                    font-extrabold
+                    tracking-tight
+                    text-slate-900
+                    sm:text-2xl
+                  "
+                >
                   Shop by Shop
                 </h2>
 
-                <p className="text-gray-400 max-w-xs leading-relaxed">
-                  Browse {nearbyStores.length} nearby{" "}
-                  {nearbyStores.length === 1 ? "store" : "stores"} available
-                  within {serviceRadius} km of your location.
+                {/* DESCRIPTION */}
+                <p
+                  className="
+                    max-w-sm
+                    text-sm
+                    leading-relaxed
+                    text-slate-500
+                    sm:text-[15px]
+                  "
+                >
+                  Discover local stores around you and shop directly from the
+                  sellers you love.
                 </p>
+
+                {/* STORE INFO */}
+                <div
+                  className="
+                    mt-6
+                    flex
+                    items-center
+                    gap-2
+                    rounded-full
+                    bg-emerald-50
+                    px-4
+                    py-2
+                    text-xs
+                    font-semibold
+                    text-emerald-700
+                  "
+                >
+                  <MapPin className="h-3.5 w-3.5" />
+
+                  <span>
+                    {nearbyStores.length}{" "}
+                    {nearbyStores.length === 1 ? "store" : "stores"} nearby
+                  </span>
+
+                  <span className="text-emerald-300">•</span>
+
+                  <span>{serviceRadius} km</span>
+                </div>
+
+                {/* ACTION */}
+                <div
+                  className="
+                    mt-6
+                    flex
+                    items-center
+                    gap-1.5
+                    text-sm
+                    font-bold
+                    text-emerald-600
+                    transition-all
+                    group-hover:gap-2.5
+                  "
+                >
+                  Explore stores
+                  <ArrowRight className="h-4 w-4" />
+                </div>
               </div>
             </div>
           </Link>
 
-          {/* Shop by Product */}
-          <Link href="/product">
-            <div className="group cursor-pointer relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-white/5 to-white/0 backdrop-blur-xl p-8 sm:p-10 md:p-12 transition-all duration-500 hover:scale-[1.03] hover:border-purple-500/40 hover:shadow-[0_0_40px_rgba(168,85,247,0.25)]">
-              <div className="flex flex-col items-center text-center">
-                <div className="mb-6 p-4 rounded-2xl bg-purple-500/10 group-hover:bg-purple-500/20 transition">
-                  <Package className="w-10 h-10 text-purple-400" />
+          {/* SHOP BY PRODUCT */}
+          <Link href="/product" className="group block">
+            <div
+              className="
+                relative
+                h-full
+                overflow-hidden
+                rounded-3xl
+                border
+                border-slate-200
+                bg-white
+                p-6
+                shadow-sm
+                transition-all
+                duration-300
+                hover:-translate-y-1
+                hover:border-violet-200
+                hover:shadow-lg
+                sm:p-8
+                md:p-10
+              "
+            >
+              {/* SOFT BACKGROUND SHAPE */}
+              <div
+                className="
+                  pointer-events-none
+                  absolute
+                  -right-16
+                  -top-16
+                  h-40
+                  w-40
+                  rounded-full
+                  bg-violet-50
+                  transition-transform
+                  duration-500
+                  group-hover:scale-125
+                "
+              />
+
+              <div className="relative flex flex-col items-center text-center">
+
+                {/* ICON */}
+                <div
+                  className="
+                    mb-5
+                    flex
+                    h-16
+                    w-16
+                    items-center
+                    justify-center
+                    rounded-full
+                    bg-violet-50
+                    text-violet-600
+                    ring-8
+                    ring-violet-50/60
+                    transition-all
+                    duration-300
+                    group-hover:scale-105
+                    group-hover:bg-violet-100
+                  "
+                >
+                  <Package className="h-7 w-7" strokeWidth={2} />
                 </div>
 
-                <h2 className="text-2xl font-semibold text-white mb-3">
+                {/* TITLE */}
+                <h2
+                  className="
+                    mb-2
+                    text-xl
+                    font-extrabold
+                    tracking-tight
+                    text-slate-900
+                    sm:text-2xl
+                  "
+                >
                   Shop by Product
                 </h2>
 
-                <p className="text-gray-400 max-w-xs leading-relaxed">
-                  Explore products available from nearby shops that can deliver
-                  to your current location.
+                {/* DESCRIPTION */}
+                <p
+                  className="
+                    max-w-sm
+                    text-sm
+                    leading-relaxed
+                    text-slate-500
+                    sm:text-[15px]
+                  "
+                >
+                  Search for exactly what you need and discover products from
+                  nearby stores that deliver to you.
                 </p>
+
+                {/* PRODUCT INFO */}
+                <div
+                  className="
+                    mt-6
+                    rounded-full
+                    bg-violet-50
+                    px-4
+                    py-2
+                    text-xs
+                    font-semibold
+                    text-violet-700
+                  "
+                >
+                  Browse products near you
+                </div>
+
+                {/* ACTION */}
+                <div
+                  className="
+                    mt-6
+                    flex
+                    items-center
+                    gap-1.5
+                    text-sm
+                    font-bold
+                    text-violet-600
+                    transition-all
+                    group-hover:gap-2.5
+                  "
+                >
+                  Explore products
+                  <ArrowRight className="h-4 w-4" />
+                </div>
               </div>
             </div>
           </Link>
+
         </div>
       </div>
     </section>
