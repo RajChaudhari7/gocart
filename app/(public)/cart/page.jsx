@@ -21,9 +21,7 @@ export default function Cart() {
   const currency =
     process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || "₹";
 
-  const { cartItems } = useSelector(
-    (state) => state.cart
-  );
+  const { cartItems } = useSelector((state) => state.cart);
 
   const products = useSelector(
     (state) => state.product.list
@@ -51,7 +49,7 @@ export default function Cart() {
           quantity: value,
         });
 
-        total += product.price * value;
+        total += Number(product.price) * value;
       }
     }
 
@@ -74,11 +72,9 @@ export default function Cart() {
   if (!cartArray.length) {
     return (
       <section className="relative min-h-[85vh] overflow-hidden bg-slate-50 px-4 py-24 sm:px-6">
-
         {/* Background decoration */}
 
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
-
           <motion.div
             animate={{
               x: [0, 25, 0],
@@ -104,11 +100,9 @@ export default function Cart() {
             }}
             className="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-indigo-100/60 blur-3xl"
           />
-
         </div>
 
         <div className="relative mx-auto flex min-h-[65vh] max-w-2xl flex-col items-center justify-center text-center">
-
           {/* Animated icon */}
 
           <motion.div
@@ -122,7 +116,6 @@ export default function Cart() {
             }}
             className="relative mb-7"
           >
-
             <motion.div
               animate={{
                 rotate: 360,
@@ -136,7 +129,6 @@ export default function Cart() {
             />
 
             <div className="flex h-24 w-24 items-center justify-center rounded-full border border-emerald-100 bg-emerald-50 text-emerald-600 shadow-sm">
-
               <motion.div
                 animate={{
                   y: [0, -5, 0],
@@ -152,7 +144,6 @@ export default function Cart() {
                   strokeWidth={1.7}
                 />
               </motion.div>
-
             </div>
 
             <motion.div
@@ -168,7 +159,6 @@ export default function Cart() {
             >
               <Sparkles size={14} />
             </motion.div>
-
           </motion.div>
 
           {/* Badge */}
@@ -261,14 +251,11 @@ export default function Cart() {
             </Link>
           </motion.div>
 
-          {/* Small benefits */}
+          {/* Benefits */}
 
           <div className="mt-10 grid w-full max-w-lg grid-cols-3 gap-2 sm:gap-3">
-
             <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
-              <div className="text-lg">
-                🚚
-              </div>
+              <div className="text-lg">🚚</div>
 
               <p className="mt-1 text-[11px] font-semibold text-slate-600 sm:text-xs">
                 Fast Delivery
@@ -276,9 +263,7 @@ export default function Cart() {
             </div>
 
             <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
-              <div className="text-lg">
-                🏪
-              </div>
+              <div className="text-lg">🏪</div>
 
               <p className="mt-1 text-[11px] font-semibold text-slate-600 sm:text-xs">
                 Local Stores
@@ -286,17 +271,13 @@ export default function Cart() {
             </div>
 
             <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
-              <div className="text-lg">
-                💳
-              </div>
+              <div className="text-lg">💳</div>
 
               <p className="mt-1 text-[11px] font-semibold text-slate-600 sm:text-xs">
                 Easy Payment
               </p>
             </div>
-
           </div>
-
         </div>
       </section>
     );
@@ -306,13 +287,11 @@ export default function Cart() {
 
   return (
     <section className="min-h-screen bg-slate-50 px-4 pb-16 pt-24 text-slate-900 sm:px-6 lg:px-8">
-
       <div className="mx-auto max-w-7xl">
 
         {/* ================= HEADER ================= */}
 
         <div className="mb-7 sm:mb-9">
-
           <PageTitle
             heading="Shopping Cart"
             text={`${cartArray.length} ${cartArray.length === 1
@@ -323,7 +302,6 @@ export default function Cart() {
             linkHref="/product"
             textColor="text-slate-500"
           />
-
         </div>
 
         {/* ================= CART LAYOUT ================= */}
@@ -334,10 +312,7 @@ export default function Cart() {
 
           <div className="space-y-3 lg:col-span-8">
 
-            {/* Section heading */}
-
             <div className="mb-2 flex items-center justify-between px-1">
-
               <div>
                 <h2 className="text-base font-black text-slate-900 sm:text-lg">
                   Your Items
@@ -354,13 +329,10 @@ export default function Cart() {
                   ? "item"
                   : "items"}
               </span>
-
             </div>
 
             <AnimatePresence mode="popLayout">
-
               {cartArray.map((item) => (
-
                 <motion.div
                   layout
                   initial={{
@@ -382,30 +354,26 @@ export default function Cart() {
                   key={item.id}
                   className="group rounded-2xl border border-slate-200 bg-white p-3 shadow-sm transition-all duration-300 hover:border-emerald-200 hover:shadow-md sm:p-4"
                 >
-
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
 
                     {/* PRODUCT */}
 
                     <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
 
-                      {/* Image */}
+                      {/* IMAGE */}
 
                       <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-50 sm:h-24 sm:w-24">
-
                         <Image
                           src={item.images[0]}
                           alt={item.name}
                           fill
                           className="object-contain p-2 transition-transform duration-300 group-hover:scale-105"
                         />
-
                       </div>
 
-                      {/* Details */}
+                      {/* DETAILS */}
 
                       <div className="min-w-0 flex-1">
-
                         <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-emerald-600 sm:text-xs">
                           {item.category}
                         </p>
@@ -415,7 +383,6 @@ export default function Cart() {
                         </h3>
 
                         <div className="mt-2 flex items-center gap-2">
-
                           <span className="text-sm font-black text-slate-900">
                             {currency}
                             {Number(
@@ -426,24 +393,29 @@ export default function Cart() {
                           <span className="text-xs text-slate-400">
                             / item
                           </span>
-
                         </div>
-
                       </div>
-
                     </div>
 
                     {/* ACTIONS */}
 
                     <div className="flex items-center justify-between border-t border-slate-100 pt-3 sm:border-0 sm:pt-0">
 
-                      <Counter
-                        productId={item.id}
-                      />
+                      {/* QUANTITY */}
+
+                      <div className="flex items-center rounded-xl border border-slate-200 bg-slate-50 p-1 shadow-sm">
+
+                        <Counter
+                          productId={item.id}
+                        />
+
+                      </div>
+
+                      {/* RIGHT SIDE */}
 
                       <div className="flex items-center gap-3 sm:gap-5">
 
-                        {/* Item total */}
+                        {/* TOTAL */}
 
                         <div className="text-right">
                           <p className="text-[10px] font-medium uppercase tracking-wide text-slate-400">
@@ -453,13 +425,13 @@ export default function Cart() {
                           <p className="text-sm font-black text-slate-900 sm:text-base">
                             {currency}
                             {(
-                              item.price *
+                              Number(item.price) *
                               item.quantity
                             ).toLocaleString()}
                           </p>
                         </div>
 
-                        {/* Delete */}
+                        {/* DELETE */}
 
                         <button
                           onClick={() =>
@@ -473,33 +445,22 @@ export default function Cart() {
                         >
                           <Trash2Icon size={16} />
                         </button>
-
                       </div>
-
                     </div>
-
                   </div>
-
                 </motion.div>
-
               ))}
-
             </AnimatePresence>
-
           </div>
 
           {/* ================= SUMMARY ================= */}
 
           <div className="lg:col-span-4">
-
             <div className="lg:sticky lg:top-24">
-
-              {/* Summary wrapper */}
 
               <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
 
                 <div className="border-b border-slate-100 bg-gradient-to-r from-emerald-50 to-white px-5 py-4">
-
                   <div className="flex items-center gap-3">
 
                     <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
@@ -517,7 +478,6 @@ export default function Cart() {
                     </div>
 
                   </div>
-
                 </div>
 
                 <div className="p-3 sm:p-4">
@@ -526,17 +486,13 @@ export default function Cart() {
                     items={cartArray}
                   />
                 </div>
-
               </div>
 
-              {/* ================= TRUST ================= */}
+              {/* TRUST */}
 
               <div className="mt-4 grid grid-cols-3 gap-2">
-
                 <div className="rounded-xl border border-slate-200 bg-white p-3 text-center shadow-sm">
-                  <div className="text-base">
-                    🔐
-                  </div>
+                  <div className="text-base">🔐</div>
 
                   <p className="mt-1 text-[10px] font-bold text-slate-500">
                     Secure
@@ -544,9 +500,7 @@ export default function Cart() {
                 </div>
 
                 <div className="rounded-xl border border-slate-200 bg-white p-3 text-center shadow-sm">
-                  <div className="text-base">
-                    💳
-                  </div>
+                  <div className="text-base">💳</div>
 
                   <p className="mt-1 text-[10px] font-bold text-slate-500">
                     Payments
@@ -554,23 +508,17 @@ export default function Cart() {
                 </div>
 
                 <div className="rounded-xl border border-slate-200 bg-white p-3 text-center shadow-sm">
-                  <div className="text-base">
-                    🛡️
-                  </div>
+                  <div className="text-base">🛡️</div>
 
                   <p className="mt-1 text-[10px] font-bold text-slate-500">
                     Verified
                   </p>
                 </div>
-
               </div>
-
             </div>
-
           </div>
 
         </div>
-
       </div>
     </section>
   );
