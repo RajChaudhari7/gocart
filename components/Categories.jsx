@@ -56,10 +56,7 @@ export default function Categories() {
   }, [allProducts, filterNearbyProducts]);
 
   /*
-   * Build categories ONLY from nearby products.
-   *
-   * This prevents categories belonging only
-   * to distant stores from appearing.
+   * Build categories only from nearby products.
    */
   const categories = useMemo(() => {
     const productCategories = products
@@ -92,47 +89,62 @@ export default function Categories() {
 
   /*
    * Home already handles location/serviceability.
-   * This is an additional safeguard.
    */
   if (locationLoading || !serviceable) {
     return null;
   }
 
   /*
-   * If nearby stores exist but currently have
-   * no categorized products, don't render an
-   * empty category section.
+   * Don't show an empty category section.
    */
   if (categories.length === 0) {
     return null;
   }
 
   return (
-    <section className="bg-slate-950 py-16 text-white sm:py-20">
+    <section className="bg-white py-12 sm:py-16">
       <div className="mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8">
+
         {/* HEADER */}
-        <div className="mb-8 flex flex-col gap-4 sm:mb-10 md:flex-row md:items-end md:justify-between">
+        <div className="mb-8 flex items-end justify-between sm:mb-10">
           <div>
-            <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.25em] text-indigo-400 sm:text-xs">
-              Available for Delivery
+            <p className="mb-1.5 text-xs font-bold uppercase tracking-[0.18em] text-emerald-600">
+              Shop nearby
             </p>
 
-            <h2 className="text-2xl font-black tracking-tight text-white sm:text-3xl md:text-4xl">
+            <h2 className="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">
               Shop by Category
             </h2>
 
-            <p className="mt-2 max-w-xl text-xs leading-relaxed text-slate-400 sm:text-sm">
-              Explore categories available from stores that can deliver to your
-              selected location.
+            <p className="mt-1.5 max-w-xl text-sm text-slate-500">
+              Find everything you need from stores delivering to your location.
             </p>
           </div>
 
+          {/* DESKTOP BROWSE BUTTON */}
           <button
             type="button"
             onClick={() => router.push("/product")}
-            className="hidden text-sm font-semibold text-indigo-400 transition-colors hover:text-indigo-300 md:block"
+            className="
+              hidden
+              rounded-full
+              border
+              border-slate-200
+              bg-white
+              px-5
+              py-2.5
+              text-sm
+              font-semibold
+              text-slate-700
+              shadow-sm
+              transition-all
+              hover:border-emerald-200
+              hover:bg-emerald-50
+              hover:text-emerald-700
+              md:block
+            "
           >
-            Browse All Products →
+            View all
           </button>
         </div>
 
@@ -140,18 +152,19 @@ export default function Categories() {
         <div
           className="
             grid
-            grid-cols-2
-            gap-3
-            sm:grid-cols-3
-            sm:gap-4
-            md:grid-cols-4
-            lg:grid-cols-5
-            xl:grid-cols-6
+            grid-cols-4
+            gap-x-3
+            gap-y-7
+            sm:grid-cols-5
+            sm:gap-x-5
+            sm:gap-y-8
+            md:grid-cols-6
+            lg:grid-cols-8
+            xl:grid-cols-10
           "
         >
-          {categories.map((category) => {
+          {categories.map((category, index) => {
             const imageSrc = IMAGE_MAP[category] || IMAGE_MAP.Default;
-
             const count = categoryCount[category] || 0;
 
             return (
@@ -159,107 +172,147 @@ export default function Categories() {
                 type="button"
                 key={category}
                 onClick={() => handleClick(category)}
+                aria-label={`Explore ${category}`}
                 className="
                   group
-                  relative
-                  aspect-square
-                  overflow-hidden
-                  rounded-2xl
-                  border
-                  border-slate-800
-                  bg-slate-900
-                  text-left
-                  shadow-lg
-                  transition-all
-                  duration-300
-                  hover:-translate-y-1
-                  hover:border-indigo-500/40
-                  hover:shadow-xl
-                  hover:shadow-indigo-500/5
+                  flex
+                  min-w-0
+                  flex-col
+                  items-center
+                  text-center
+                  outline-none
                 "
               >
-                {/* IMAGE */}
-                <Image
-                  src={imageSrc}
-                  alt={category}
-                  fill
+                {/* IMAGE CIRCLE */}
+                <div
                   className="
-                    object-cover
-                    transition-transform
-                    duration-700
-                    ease-out
-                    group-hover:scale-110
+                    relative
+                    aspect-square
+                    w-full
+                    max-w-[105px]
+                    overflow-hidden
+                    rounded-full
+                    border
+                    border-slate-100
+                    bg-slate-50
+                    shadow-sm
+                    transition-all
+                    duration-300
+                    group-hover:-translate-y-1
+                    group-hover:border-emerald-200
+                    group-hover:shadow-md
+                    group-focus-visible:ring-2
+                    group-focus-visible:ring-emerald-500
+                    group-focus-visible:ring-offset-2
+                    sm:max-w-[115px]
+                    md:max-w-[125px]
                   "
-                  sizes="
-                    (max-width: 640px) 50vw,
-                    (max-width: 1024px) 33vw,
-                    16vw
-                  "
-                />
+                >
+                  <Image
+                    src={imageSrc}
+                    alt={category}
+                    fill
+                    className="
+                      object-cover
+                      transition-transform
+                      duration-500
+                      ease-out
+                      group-hover:scale-105
+                    "
+                    sizes="
+                      (max-width: 640px) 25vw,
+                      (max-width: 768px) 20vw,
+                      (max-width: 1024px) 16vw,
+                      12vw
+                    "
+                  />
 
-                {/* OVERLAY */}
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/35 to-transparent opacity-90" />
-
-                {/* INNER BORDER */}
-                <div className="absolute inset-2.5 z-10 rounded-xl border border-white/0 transition-colors duration-300 group-hover:border-white/20 sm:inset-3" />
-
-                {/* PRODUCT COUNT */}
-                <div className="absolute right-3 top-3 z-20">
+                  {/* PRODUCT COUNT */}
                   <span
                     className="
+                      absolute
+                      right-1
+                      top-1
                       rounded-full
                       border
-                      border-white/10
-                      bg-black/50
-                      px-2.5
-                      py-1
-                      text-[9px]
+                      border-white
+                      bg-white
+                      px-1.5
+                      py-0.5
+                      text-[8px]
                       font-bold
-                      text-white
-                      backdrop-blur-md
-                      sm:text-[10px]
+                      text-slate-600
+                      shadow-sm
+                      sm:right-1.5
+                      sm:top-1.5
+                      sm:px-2
+                      sm:text-[9px]
                     "
                   >
-                    {count} {count === 1 ? "item" : "items"}
+                    {count}
                   </span>
                 </div>
 
-                {/* TEXT */}
-                <div className="absolute inset-x-0 bottom-0 z-20 p-3 sm:p-4 md:p-5">
-                  <h3 className="line-clamp-2 text-sm font-bold leading-tight text-white drop-shadow-md sm:text-base md:text-lg">
-                    {category}
-                  </h3>
+                {/* CATEGORY NAME */}
+                <h3
+                  className="
+                    mt-3
+                    line-clamp-2
+                    max-w-[115px]
+                    text-xs
+                    font-semibold
+                    leading-snug
+                    text-slate-700
+                    transition-colors
+                    group-hover:text-emerald-700
+                    sm:text-sm
+                  "
+                >
+                  {category}
+                </h3>
 
-                  <div className="mt-2 flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-indigo-300 opacity-80 sm:text-xs">
-                    Explore
-                    <span>→</span>
-                  </div>
-                </div>
+                {/* SMALL SUBTEXT */}
+                <span
+                  className="
+                    mt-0.5
+                    text-[10px]
+                    font-medium
+                    text-slate-400
+                    transition-colors
+                    group-hover:text-emerald-600
+                  "
+                >
+                  {count} {count === 1 ? "item" : "items"}
+                </span>
               </button>
             );
           })}
         </div>
 
-        {/* MOBILE BROWSE ALL */}
+        {/* MOBILE VIEW ALL */}
         <button
           type="button"
           onClick={() => router.push("/product")}
           className="
-            mt-8
+            mt-9
             w-full
-            rounded-xl
+            rounded-full
             border
-            border-slate-800
-            py-3.5
+            border-slate-200
+            bg-white
+            py-3
             text-sm
             font-semibold
-            text-slate-300
-            transition-colors
-            hover:bg-slate-900
+            text-slate-700
+            shadow-sm
+            transition-all
+            hover:border-emerald-200
+            hover:bg-emerald-50
+            hover:text-emerald-700
             md:hidden
           "
         >
-          Browse All Products
+          View all categories
         </button>
       </div>
     </section>
