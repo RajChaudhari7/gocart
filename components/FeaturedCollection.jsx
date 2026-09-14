@@ -36,6 +36,8 @@ export default function FeaturedCollection() {
     return filterNearbyProducts(allFeaturedProducts);
   }, [allFeaturedProducts, filterNearbyProducts]);
 
+  /* ---------------- LOADING ---------------- */
+
   if (loading || locationLoading) {
     return (
       <section className="mt-10 md:mt-16">
@@ -45,19 +47,16 @@ export default function FeaturedCollection() {
             overflow-hidden
             rounded-3xl
             border
-            border-yellow-500/20
-            bg-gradient-to-br
-            from-[#0f172a]
-            via-[#111827]
-            to-[#020617]
+            border-slate-200
+            bg-white
             p-4
-            shadow-2xl
-            shadow-yellow-950/20
+            shadow-sm
             md:p-8
           "
         >
-          <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-yellow-500/10 blur-3xl" />
-          <div className="pointer-events-none absolute -bottom-32 left-1/3 h-72 w-72 rounded-full bg-orange-500/10 blur-3xl" />
+          {/* Soft decorative shapes */}
+          <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-amber-50 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-32 left-1/3 h-72 w-72 rounded-full bg-orange-50 blur-3xl" />
 
           <div className="relative mb-8 flex items-center gap-4">
             <div
@@ -70,23 +69,16 @@ export default function FeaturedCollection() {
                 items-center
                 justify-center
                 rounded-2xl
-                border
-                border-yellow-500/20
-                bg-yellow-500/10
+                bg-amber-50
               "
             >
-              <Sparkles className="text-yellow-400" size={24} />
+              <Sparkles className="text-amber-500" size={24} />
             </div>
 
             <div className="flex-1">
-              <div className="h-8 w-64 max-w-full animate-pulse rounded-lg bg-white/10" />
-              <div className="mt-3 h-4 w-96 max-w-full animate-pulse rounded-lg bg-white/5" />
+              <div className="h-8 w-64 max-w-full animate-pulse rounded-lg bg-slate-100" />
+              <div className="mt-3 h-4 w-96 max-w-full animate-pulse rounded-lg bg-slate-100" />
             </div>
-          </div>
-
-          <div className="relative mb-6 flex items-center justify-between">
-            <div className="h-4 w-32 animate-pulse rounded bg-white/5" />
-            <div className="hidden h-4 w-48 animate-pulse rounded bg-white/5 lg:block" />
           </div>
 
           <div
@@ -110,8 +102,8 @@ export default function FeaturedCollection() {
                   animate-pulse
                   rounded-3xl
                   border
-                  border-white/5
-                  bg-slate-800/80
+                  border-slate-100
+                  bg-slate-50
                 "
               />
             ))}
@@ -139,19 +131,44 @@ export default function FeaturedCollection() {
           overflow-hidden
           rounded-3xl
           border
-          border-yellow-500/20
-          bg-gradient-to-br
-          from-[#0f172a]
-          via-[#111827]
-          to-[#020617]
+          border-slate-200
+          bg-white
           p-4
-          shadow-2xl
-          shadow-yellow-950/20
+          shadow-sm
           md:p-8
         "
       >
-        <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-yellow-500/10 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-36 left-1/3 h-72 w-72 rounded-full bg-orange-500/10 blur-3xl" />
+        {/* BACKGROUND DECORATION */}
+
+        <div
+          className="
+            pointer-events-none
+            absolute
+            -right-24
+            -top-24
+            h-72
+            w-72
+            rounded-full
+            bg-amber-50
+            blur-3xl
+          "
+        />
+
+        <div
+          className="
+            pointer-events-none
+            absolute
+            -bottom-36
+            left-1/3
+            h-72
+            w-72
+            rounded-full
+            bg-orange-50
+            blur-3xl
+          "
+        />
+
+        {/* HEADER */}
 
         <div
           className="
@@ -166,6 +183,8 @@ export default function FeaturedCollection() {
           "
         >
           <div className="flex items-start gap-4">
+            {/* ICON */}
+
             <motion.div
               whileHover={{ rotate: 8, scale: 1.05 }}
               transition={{
@@ -181,21 +200,30 @@ export default function FeaturedCollection() {
                 items-center
                 justify-center
                 rounded-2xl
-                bg-gradient-to-br
-                from-yellow-400
-                to-orange-500
-                shadow-lg
-                shadow-yellow-500/20
+                bg-amber-50
+                text-amber-500
+                ring-8
+                ring-amber-50/60
               "
             >
-              <Sparkles size={25} className="text-black" />
+              <Sparkles size={25} />
             </motion.div>
 
             <div>
               <div className="flex flex-wrap items-center gap-3">
-                <h2 className="text-2xl font-black tracking-tight text-white md:text-3xl">
+                <h2
+                  className="
+                    text-2xl
+                    font-black
+                    tracking-tight
+                    text-slate-900
+                    md:text-3xl
+                  "
+                >
                   Featured Collection
                 </h2>
+
+                {/* PREMIUM BADGE */}
 
                 <span
                   className="
@@ -204,27 +232,42 @@ export default function FeaturedCollection() {
                     gap-1.5
                     rounded-full
                     border
-                    border-yellow-500/30
-                    bg-yellow-500/10
+                    border-amber-200
+                    bg-amber-50
                     px-3
                     py-1
                     text-xs
                     font-semibold
-                    text-yellow-300
+                    text-amber-700
                     sm:flex
                   "
                 >
-                  <Star size={13} className="fill-yellow-300" />
+                  <Star
+                    size={13}
+                    className="fill-amber-400 text-amber-400"
+                  />
+
                   Premium Picks
                 </span>
               </div>
 
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300 md:text-base">
-                Handpicked premium products available for delivery to your
-                selected location.
+              <p
+                className="
+                  mt-2
+                  max-w-2xl
+                  text-sm
+                  leading-6
+                  text-slate-500
+                  md:text-base
+                "
+              >
+                Handpicked products from nearby stores, selected especially
+                for you.
               </p>
             </div>
           </div>
+
+          {/* DESKTOP VIEW ALL */}
 
           <Link
             href="/featured"
@@ -233,46 +276,77 @@ export default function FeaturedCollection() {
               shrink-0
               items-center
               gap-2
-              rounded-xl
+              rounded-full
               border
-              border-yellow-500/30
-              bg-yellow-500/10
+              border-amber-200
+              bg-amber-50
               px-5
-              py-3
+              py-2.5
+              text-sm
               font-semibold
-              text-yellow-300
+              text-amber-700
               transition-all
               duration-300
               hover:-translate-y-0.5
-              hover:border-yellow-400/50
-              hover:bg-yellow-500/20
-              hover:text-yellow-200
+              hover:border-amber-300
+              hover:bg-amber-100
               md:flex
             "
           >
             View All
-            <ArrowRight size={18} />
+            <ArrowRight size={17} />
           </Link>
         </div>
 
-        <div className="relative mb-6 flex flex-wrap items-center justify-between gap-3">
-          <p className="text-sm text-slate-300">
-            <span className="font-semibold text-white">{products.length}</span>{" "}
-            featured {products.length === 1 ? "product" : "products"} available
+        {/* INFO ROW */}
+
+        <div
+          className="
+            relative
+            mb-6
+            flex
+            flex-wrap
+            items-center
+            justify-between
+            gap-3
+          "
+        >
+          <p className="text-sm text-slate-500">
+            <span className="font-bold text-slate-900">
+              {products.length}
+            </span>{" "}
+            featured{" "}
+            {products.length === 1 ? "product" : "products"} available near
+            you
           </p>
 
-          <div className="hidden items-center gap-2 text-sm font-medium text-yellow-300 lg:flex">
-            <Star size={15} className="fill-yellow-300" />
+          <div
+            className="
+              hidden
+              items-center
+              gap-2
+              text-sm
+              font-medium
+              text-amber-600
+              lg:flex
+            "
+          >
+            <Star
+              size={15}
+              className="fill-amber-400 text-amber-400"
+            />
+
             Curated by Nandurbar Bazar
           </div>
         </div>
 
-        {/* Desktop */}
+        {/* DESKTOP PRODUCTS */}
+
         <div
           className="
             relative
             hidden
-            gap-6
+            gap-5
             md:grid
             md:grid-cols-2
             lg:grid-cols-3
@@ -299,7 +373,8 @@ export default function FeaturedCollection() {
           ))}
         </div>
 
-        {/* Mobile */}
+        {/* MOBILE PRODUCTS */}
+
         <div className="relative md:hidden">
           <div
             className="
@@ -337,6 +412,8 @@ export default function FeaturedCollection() {
             ))}
           </div>
 
+          {/* MOBILE VIEW ALL */}
+
           <div className="mt-5 flex justify-center">
             <Link
               href="/featured"
@@ -344,17 +421,17 @@ export default function FeaturedCollection() {
                 flex
                 items-center
                 gap-2
-                rounded-xl
+                rounded-full
                 border
-                border-yellow-500/30
-                bg-yellow-500/10
+                border-amber-200
+                bg-amber-50
                 px-5
                 py-2.5
                 text-sm
                 font-semibold
-                text-yellow-300
+                text-amber-700
                 transition
-                hover:bg-yellow-500/20
+                hover:bg-amber-100
               "
             >
               View All
