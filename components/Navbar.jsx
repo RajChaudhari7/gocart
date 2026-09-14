@@ -335,11 +335,6 @@ const Navbar = () => {
       icon: Store,
     },
     {
-      name: "Contact",
-      href: "/contact",
-      icon: PackageIcon,
-    },
-    {
       name: "Orders",
       href: "/orders",
       icon: PackageIcon,
