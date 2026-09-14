@@ -273,7 +273,7 @@ export default function EmptyOrders() {
                         whileTap={{
                             scale: 0.97,
                         }}
-                        onClick={() => router.push("/")}
+                        onClick={() => router.push("/product")}
                         className="group relative mt-8 inline-flex items-center gap-3 overflow-hidden rounded-2xl bg-emerald-600 px-7 py-3.5 text-sm font-bold text-white shadow-lg shadow-emerald-200 transition-all hover:bg-emerald-700 hover:shadow-xl hover:shadow-emerald-200/70 sm:px-8 sm:py-4"
                     >
                         {/* Button shine */}
