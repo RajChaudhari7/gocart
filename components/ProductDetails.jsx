@@ -93,6 +93,7 @@ const ProductDetails = ({ product }) => {
 
   /* -------------------------------------------------------
      IMAGE MOTION
+     Only really useful on desktop.
   ------------------------------------------------------- */
 
   const x = useMotionValue(0);
@@ -167,7 +168,9 @@ const ProductDetails = ({ product }) => {
 
   const handleAddToCart = () => {
     if (!isSignedIn) {
-      toast.error("Please login to add this product to your cart.");
+      toast.error(
+        "Please login to add this product to your cart."
+      );
       return;
     }
 
@@ -231,13 +234,13 @@ const ProductDetails = ({ product }) => {
 
   const handleSwipe = (_, info) => {
     if (
-      info.offset.x < -80 &&
+      info.offset.x < -60 &&
       activeIndex < product.images.length - 1
     ) {
       setActiveIndex((index) => index + 1);
     }
 
-    if (info.offset.x > 80 && activeIndex > 0) {
+    if (info.offset.x > 60 && activeIndex > 0) {
       setActiveIndex((index) => index - 1);
     }
   };
@@ -254,40 +257,77 @@ const ProductDetails = ({ product }) => {
       : 0;
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-      {/* ---------------------------------------------------
+    <div className="mx-auto w-full max-w-7xl px-3 py-4 sm:px-5 sm:py-6 lg:px-8 lg:py-8">
+      {/* =====================================================
           MAIN PRODUCT CARD
-      --------------------------------------------------- */}
+      ===================================================== */}
 
-      <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_12px_50px_rgba(15,23,42,0.07)]">
+      <div className="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-[0_10px_40px_rgba(15,23,42,0.06)] sm:rounded-[2rem]">
         <div className="grid lg:grid-cols-[1.05fr_0.95fr]">
+
           {/* =================================================
-              LEFT — IMAGE GALLERY
+              IMAGE SECTION
           ================================================= */}
 
-          <div className="border-b border-slate-100 p-4 sm:p-6 lg:border-b-0 lg:border-r lg:p-8">
-            <div className="flex flex-col gap-4 lg:flex-row">
+          <div className="border-b border-slate-100 p-3 sm:p-5 lg:border-b-0 lg:border-r lg:p-8">
+
+            <div className="flex flex-col gap-3 sm:gap-4 lg:flex-row">
+
               {/* ---------------------------------------------
                   THUMBNAILS
               --------------------------------------------- */}
 
-              <div className="order-2 flex w-full gap-3 overflow-x-auto pb-1 lg:order-1 lg:w-[82px] lg:flex-col lg:overflow-y-auto lg:overflow-x-hidden">
+              <div
+                className="
+                  order-2
+                  flex
+                  w-full
+                  gap-2
+                  overflow-x-auto
+                  pb-1
+                  scrollbar-hide
+
+                  lg:order-1
+                  lg:w-[78px]
+                  lg:flex-col
+                  lg:overflow-x-hidden
+                  lg:overflow-y-auto
+                "
+              >
                 {product.images?.map((img, index) => (
                   <button
                     key={index}
                     type="button"
                     onClick={() => setActiveIndex(index)}
-                    className={`relative h-[72px] w-[72px] shrink-0 overflow-hidden rounded-xl border bg-white transition-all duration-200 lg:h-[76px] lg:w-[76px] ${activeIndex === index
+                    className={`
+                      relative
+                      h-[58px]
+                      w-[58px]
+                      shrink-0
+                      overflow-hidden
+                      rounded-lg
+                      border
+                      bg-white
+                      transition-all
+
+                      sm:h-[68px]
+                      sm:w-[68px]
+
+                      lg:h-[76px]
+                      lg:w-[76px]
+
+                      ${activeIndex === index
                         ? "border-orange-500 ring-2 ring-orange-100"
                         : "border-slate-200 hover:border-slate-300"
-                      }`}
+                      }
+                    `}
                   >
                     <Image
                       src={img}
                       alt={`${product.name} thumbnail ${index + 1}`}
                       fill
                       sizes="76px"
-                      className="object-contain p-2"
+                      className="object-contain p-1.5 sm:p-2"
                     />
                   </button>
                 ))}
@@ -303,6 +343,8 @@ const ProductDetails = ({ product }) => {
                   rotateY,
                 }}
                 onMouseMove={(event) => {
+                  if (window.innerWidth < 1024) return;
+
                   const rect =
                     event.currentTarget.getBoundingClientRect();
 
@@ -322,15 +364,38 @@ const ProductDetails = ({ product }) => {
                   x.set(0);
                   y.set(0);
                 }}
-                className="order-1 relative flex aspect-square min-h-[320px] flex-1 items-center justify-center overflow-hidden rounded-2xl border border-slate-100 bg-[#fffaf5] lg:order-2 lg:min-h-[500px]"
+                className="
+                  order-1
+                  relative
+                  flex
+                  h-[290px]
+                  w-full
+                  items-center
+                  justify-center
+                  overflow-hidden
+                  rounded-xl
+                  border
+                  border-slate-100
+                  bg-[#fffaf5]
+
+                  sm:h-[380px]
+                  sm:rounded-2xl
+
+                  md:h-[430px]
+
+                  lg:order-2
+                  lg:h-auto
+                  lg:min-h-[500px]
+                  lg:flex-1
+                "
               >
-                {/* Soft decorative shapes */}
+                {/* Decorative background */}
 
-                <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-orange-100/60 blur-3xl" />
+                <div className="pointer-events-none absolute -right-20 -top-20 h-44 w-44 rounded-full bg-orange-100/60 blur-3xl sm:h-60 sm:w-60" />
 
-                <div className="pointer-events-none absolute -bottom-24 -left-24 h-64 w-64 rounded-full bg-emerald-100/50 blur-3xl" />
+                <div className="pointer-events-none absolute -bottom-20 -left-20 h-44 w-44 rounded-full bg-emerald-100/50 blur-3xl sm:h-60 sm:w-60" />
 
-                {/* Image */}
+                {/* Main image */}
 
                 <motion.div
                   drag="x"
@@ -338,15 +403,33 @@ const ProductDetails = ({ product }) => {
                     left: 0,
                     right: 0,
                   }}
+                  dragElastic={0.15}
                   onDragEnd={handleSwipe}
-                  className="relative z-10 flex h-full w-full cursor-grab items-center justify-center p-8 active:cursor-grabbing sm:p-12 lg:p-14"
+                  className="
+                    relative
+                    z-10
+                    flex
+                    h-full
+                    w-full
+                    touch-pan-y
+                    items-center
+                    justify-center
+                    cursor-grab
+                    active:cursor-grabbing
+
+                    p-5
+                    sm:p-8
+                    md:p-10
+                    lg:p-12
+                    xl:p-14
+                  "
                 >
                   <AnimatePresence mode="wait">
                     <motion.div
                       key={activeIndex}
                       initial={{
                         opacity: 0,
-                        scale: 0.96,
+                        scale: 0.95,
                       }}
                       animate={{
                         opacity: 1,
@@ -369,61 +452,74 @@ const ProductDetails = ({ product }) => {
                         alt={product.name}
                         fill
                         priority={activeIndex === 0}
-                        sizes="(max-width: 768px) 100vw, 550px"
+                        sizes="
+                          (max-width: 640px) 100vw,
+                          (max-width: 1024px) 65vw,
+                          550px
+                        "
                         placeholder="blur"
                         blurDataURL={`data:image/svg+xml;base64,${toBase64(
                           shimmer(500, 500)
                         )}`}
-                        className="pointer-events-none object-contain drop-shadow-[0_18px_30px_rgba(15,23,42,0.12)]"
+                        className="
+                          pointer-events-none
+                          select-none
+                          object-contain
+                          drop-shadow-[0_14px_25px_rgba(15,23,42,0.10)]
+                          sm:drop-shadow-[0_18px_30px_rgba(15,23,42,0.12)]
+                        "
                       />
                     </motion.div>
                   </AnimatePresence>
                 </motion.div>
 
-                {/* Discount Badge */}
+                {/* Discount */}
 
                 {discount > 0 && (
-                  <div className="absolute left-4 top-4 z-20 rounded-full bg-orange-500 px-3 py-1.5 text-xs font-black text-white shadow-sm">
+                  <div className="absolute left-3 top-3 z-20 rounded-full bg-orange-500 px-2.5 py-1 text-[10px] font-black text-white shadow-sm sm:left-4 sm:top-4 sm:px-3 sm:py-1.5 sm:text-xs">
                     {discount}% OFF
                   </div>
                 )}
 
-                {/* Image Counter */}
+                {/* Image counter */}
 
                 {product.images?.length > 1 && (
-                  <div className="absolute bottom-4 right-4 z-20 rounded-full border border-slate-200 bg-white/90 px-3 py-1.5 text-xs font-bold text-slate-600 shadow-sm backdrop-blur">
+                  <div className="absolute bottom-3 right-3 z-20 rounded-full border border-slate-200 bg-white/90 px-2.5 py-1 text-[10px] font-bold text-slate-600 shadow-sm backdrop-blur sm:bottom-4 sm:right-4 sm:px-3 sm:py-1.5 sm:text-xs">
                     {activeIndex + 1} / {product.images.length}
                   </div>
                 )}
               </motion.div>
             </div>
 
-            {/* Mobile swipe hint */}
+            {/* Swipe hint */}
 
             {product.images?.length > 1 && (
-              <p className="mt-3 text-center text-xs font-medium text-slate-400 lg:hidden">
-                Swipe the product image to browse
+              <p className="mt-2 text-center text-[10px] font-medium text-slate-400 sm:text-xs lg:hidden">
+                Swipe image to browse
               </p>
             )}
           </div>
 
           {/* =================================================
-              RIGHT — PRODUCT INFORMATION
+              PRODUCT INFORMATION
           ================================================= */}
 
-          <div className="flex flex-col p-5 sm:p-7 lg:p-10">
+          <div className="flex min-w-0 flex-col p-4 sm:p-6 md:p-7 lg:p-10">
+
             {/* Category */}
 
-            <div className="mb-3 flex items-center gap-2">
-              <span className="rounded-full bg-orange-50 px-3 py-1 text-xs font-bold uppercase tracking-wide text-orange-600">
+            <div className="mb-2.5 flex min-w-0 items-center gap-2 sm:mb-3">
+              <span className="max-w-[180px] truncate rounded-full bg-orange-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-orange-600 sm:max-w-none sm:px-3 sm:text-xs">
                 {product.category || "Product"}
               </span>
 
               {product.store?.name && (
                 <>
-                  <span className="text-slate-300">•</span>
+                  <span className="shrink-0 text-slate-300">
+                    •
+                  </span>
 
-                  <span className="text-xs font-medium text-slate-400">
+                  <span className="min-w-0 truncate text-[11px] font-medium text-slate-400 sm:text-xs">
                     {product.store.name}
                   </span>
                 </>
@@ -432,37 +528,48 @@ const ProductDetails = ({ product }) => {
 
             {/* Product name */}
 
-            <h1 className="max-w-2xl text-3xl font-black leading-tight tracking-tight text-slate-900 sm:text-4xl lg:text-[2.7rem]">
+            <h1 className="
+              max-w-2xl
+              break-words
+              text-[1.7rem]
+              font-black
+              leading-[1.15]
+              tracking-tight
+              text-slate-900
+
+              sm:text-3xl
+              md:text-4xl
+              lg:text-[2.7rem]
+            ">
               {product.name}
             </h1>
 
             {/* Rating */}
 
-            <div className="mt-4 flex flex-wrap items-center gap-3">
-              <div className="flex items-center gap-1 rounded-lg bg-orange-50 px-2.5 py-1.5">
-                <span className="text-sm font-black text-slate-900">
+            <div className="mt-3 flex flex-wrap items-center gap-2.5 sm:mt-4 sm:gap-3">
+              <div className="flex items-center gap-1 rounded-lg bg-orange-50 px-2 py-1 sm:px-2.5 sm:py-1.5">
+                <span className="text-xs font-black text-slate-900 sm:text-sm">
                   {averageRating
                     ? averageRating.toFixed(1)
                     : "0.0"}
                 </span>
 
                 <StarIcon
-                  size={14}
-                  className="fill-orange-400 text-orange-400"
+                  size={13}
+                  className="fill-orange-400 text-orange-400 sm:h-[14px] sm:w-[14px]"
                 />
               </div>
 
               <button
                 type="button"
                 onClick={() => {
-                  const reviews =
-                    document.getElementById("product-reviews");
-
-                  reviews?.scrollIntoView({
-                    behavior: "smooth",
-                  });
+                  document
+                    .getElementById("product-reviews")
+                    ?.scrollIntoView({
+                      behavior: "smooth",
+                    });
                 }}
-                className="text-sm font-semibold text-slate-500 transition hover:text-orange-600"
+                className="text-xs font-semibold text-slate-500 transition hover:text-orange-600 sm:text-sm"
               >
                 {product.rating?.length || 0}{" "}
                 {product.rating?.length === 1
@@ -473,24 +580,24 @@ const ProductDetails = ({ product }) => {
 
             {/* Divider */}
 
-            <div className="my-6 h-px bg-slate-100" />
+            <div className="my-5 h-px bg-slate-100 sm:my-6" />
 
             {/* Price */}
 
-            <div className="flex flex-wrap items-end gap-3">
-              <span className="text-4xl font-black tracking-tight text-slate-900 sm:text-5xl">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+              <span className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
                 {currency}
                 {product.price}
               </span>
 
               {product.mrp > product.price && (
                 <>
-                  <span className="mb-1 text-lg font-medium text-slate-400 line-through">
+                  <span className="text-base font-medium text-slate-400 line-through sm:text-lg">
                     {currency}
                     {product.mrp}
                   </span>
 
-                  <span className="mb-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-black text-emerald-600">
+                  <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-black text-emerald-600 sm:text-xs">
                     Save {currency}
                     {product.mrp - product.price}
                   </span>
@@ -499,27 +606,27 @@ const ProductDetails = ({ product }) => {
             </div>
 
             {discount > 0 && (
-              <p className="mt-2 text-sm font-medium text-emerald-600">
+              <p className="mt-1.5 text-xs font-semibold text-emerald-600 sm:text-sm">
                 You save {discount}% on this product
               </p>
             )}
 
             {/* Stock */}
 
-            <div className="mt-6">
+            <div className="mt-5 sm:mt-6">
               {isOutOfStock ? (
-                <div className="flex w-fit items-center gap-2 rounded-xl border border-red-100 bg-red-50 px-4 py-2.5 text-sm font-bold text-red-600">
-                  <AlertCircleIcon size={17} />
+                <div className="flex w-fit max-w-full items-center gap-2 rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-xs font-bold text-red-600 sm:px-4 sm:py-2.5 sm:text-sm">
+                  <AlertCircleIcon size={16} />
                   Currently out of stock
                 </div>
               ) : maxQty <= 5 ? (
-                <div className="flex w-fit items-center gap-2 rounded-xl border border-amber-100 bg-amber-50 px-4 py-2.5 text-sm font-bold text-amber-700">
-                  <AlertCircleIcon size={17} />
+                <div className="flex w-fit max-w-full items-center gap-2 rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-700 sm:px-4 sm:py-2.5 sm:text-sm">
+                  <AlertCircleIcon size={16} />
                   Only {maxQty} left in stock
                 </div>
               ) : (
-                <div className="flex items-center gap-2 text-sm font-semibold text-emerald-600">
-                  <CheckIcon size={17} strokeWidth={2.5} />
+                <div className="flex items-center gap-2 text-xs font-semibold text-emerald-600 sm:text-sm">
+                  <CheckIcon size={16} strokeWidth={2.5} />
                   In stock
                 </div>
               )}
@@ -530,38 +637,39 @@ const ProductDetails = ({ product }) => {
             {(product.size ||
               product.weight ||
               product.warranty) && (
-                <div className="mt-7 grid grid-cols-2 gap-3">
+                <div className="mt-6 grid grid-cols-2 gap-2.5 sm:mt-7 sm:gap-3">
+
                   {product.size && (
-                    <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-4">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    <div className="min-w-0 rounded-xl border border-slate-100 bg-slate-50/70 p-3 sm:p-4">
+                      <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 sm:text-[10px]">
                         Size
                       </p>
 
-                      <p className="mt-1 text-sm font-bold text-slate-800">
+                      <p className="mt-1 truncate text-xs font-bold text-slate-800 sm:text-sm">
                         {product.size}
                       </p>
                     </div>
                   )}
 
                   {product.weight && (
-                    <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-4">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    <div className="min-w-0 rounded-xl border border-slate-100 bg-slate-50/70 p-3 sm:p-4">
+                      <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 sm:text-[10px]">
                         Weight
                       </p>
 
-                      <p className="mt-1 text-sm font-bold text-slate-800">
+                      <p className="mt-1 truncate text-xs font-bold text-slate-800 sm:text-sm">
                         {product.weight}
                       </p>
                     </div>
                   )}
 
                   {product.warranty && (
-                    <div className="col-span-2 rounded-xl border border-slate-100 bg-slate-50/70 p-4">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    <div className="col-span-2 min-w-0 rounded-xl border border-slate-100 bg-slate-50/70 p-3 sm:p-4">
+                      <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 sm:text-[10px]">
                         Warranty
                       </p>
 
-                      <p className="mt-1 text-sm font-bold text-slate-800">
+                      <p className="mt-1 break-words text-xs font-bold text-slate-800 sm:text-sm">
                         {product.warranty}
                       </p>
                     </div>
@@ -570,17 +678,20 @@ const ProductDetails = ({ product }) => {
               )}
 
             {/* =================================================
-                CART AREA
+                CART
             ================================================= */}
 
-            <div className="mt-8 border-t border-slate-100 pt-7">
+            <div className="mt-6 border-t border-slate-100 pt-6 sm:mt-8 sm:pt-7">
+
               {inCart ? (
-                <div className="flex flex-col gap-3 sm:flex-row">
+                <div className="flex w-full flex-col gap-2.5 sm:flex-row sm:gap-3">
+
                   {/* Quantity */}
 
-                  <div className="flex h-14 items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-2 sm:w-40">
+                  <div className="flex h-12 w-full items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-1.5 sm:h-14 sm:w-40 sm:px-2">
                     <button
                       type="button"
+                      aria-label="Decrease quantity"
                       onClick={() => {
                         if (!isSignedIn) {
                           toast.error(
@@ -591,17 +702,18 @@ const ProductDetails = ({ product }) => {
 
                         handleQuantityChange(quantity - 1);
                       }}
-                      className="flex h-10 w-10 items-center justify-center rounded-lg text-slate-500 transition hover:bg-white hover:text-slate-900"
+                      className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition hover:bg-white hover:text-slate-900 sm:h-10 sm:w-10"
                     >
-                      <MinusIcon size={18} />
+                      <MinusIcon size={17} />
                     </button>
 
-                    <span className="text-base font-black text-slate-900">
+                    <span className="text-sm font-black text-slate-900 sm:text-base">
                       {quantity}
                     </span>
 
                     <button
                       type="button"
+                      aria-label="Increase quantity"
                       disabled={isAtMaxStock}
                       onClick={() => {
                         if (!isSignedIn) {
@@ -613,12 +725,12 @@ const ProductDetails = ({ product }) => {
 
                         handleQuantityChange(quantity + 1);
                       }}
-                      className={`flex h-10 w-10 items-center justify-center rounded-lg transition ${isAtMaxStock
+                      className={`flex h-9 w-9 items-center justify-center rounded-lg transition sm:h-10 sm:w-10 ${isAtMaxStock
                           ? "cursor-not-allowed text-slate-300"
                           : "text-slate-500 hover:bg-white hover:text-slate-900"
                         }`}
                     >
-                      <PlusIcon size={18} />
+                      <PlusIcon size={17} />
                     </button>
                   </div>
 
@@ -629,9 +741,10 @@ const ProductDetails = ({ product }) => {
                     whileHover={{ y: -1 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={() => router.push("/cart")}
-                    className="flex h-14 flex-1 items-center justify-center gap-2 rounded-xl bg-slate-900 px-7 text-sm font-black text-white shadow-lg shadow-slate-900/10 transition hover:bg-orange-500"
+                    className="flex h-12 w-full flex-1 items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 text-sm font-black text-white shadow-lg shadow-slate-900/10 transition hover:bg-orange-500 sm:h-14 sm:px-7"
                   >
-                    <ShoppingCartIcon size={19} />
+                    <ShoppingCartIcon size={18} />
+
                     View Cart
                   </motion.button>
                 </div>
@@ -646,13 +759,30 @@ const ProductDetails = ({ product }) => {
                   }
                   onClick={handleAddToCart}
                   disabled={isOutOfStock}
-                  className={`flex h-14 w-full items-center justify-center gap-2 rounded-xl px-8 text-sm font-black transition-all ${isOutOfStock
+                  className={`
+                    flex
+                    h-12
+                    w-full
+                    items-center
+                    justify-center
+                    gap-2
+                    rounded-xl
+                    px-6
+                    text-sm
+                    font-black
+                    transition-all
+
+                    sm:h-14
+                    sm:px-8
+
+                    ${isOutOfStock
                       ? "cursor-not-allowed border border-slate-200 bg-slate-100 text-slate-400"
                       : "bg-orange-500 text-white shadow-lg shadow-orange-500/20 hover:bg-orange-600"
-                    }`}
+                    }
+                  `}
                 >
                   {!isOutOfStock && (
-                    <ShoppingCartIcon size={20} />
+                    <ShoppingCartIcon size={19} />
                   )}
 
                   {isOutOfStock
@@ -663,79 +793,95 @@ const ProductDetails = ({ product }) => {
             </div>
 
             {/* =================================================
-                LOCAL MARKETPLACE BENEFITS
+                BENEFITS
             ================================================= */}
 
-            <div className="mt-7 grid grid-cols-3 gap-3 border-t border-slate-100 pt-7">
-              <div className="flex flex-col items-center text-center sm:items-start sm:text-left">
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-50">
-                  <TruckIcon
-                    size={18}
-                    className="text-orange-500"
-                  />
+            <div className="mt-6 grid grid-cols-3 gap-2 border-t border-slate-100 pt-6 sm:mt-7 sm:gap-3 sm:pt-7">
+
+              {/* Local delivery */}
+
+              <div className="min-w-0">
+                <div className="flex justify-center sm:justify-start">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-50 sm:h-9 sm:w-9">
+                    <TruckIcon
+                      size={16}
+                      className="text-orange-500 sm:h-[18px] sm:w-[18px]"
+                    />
+                  </div>
                 </div>
 
-                <p className="mt-2 text-xs font-bold text-slate-800">
+                <p className="mt-1.5 truncate text-center text-[10px] font-bold text-slate-800 sm:text-left sm:text-xs">
                   Local delivery
                 </p>
 
-                <p className="mt-0.5 text-[11px] text-slate-400">
+                <p className="mt-0.5 hidden text-[11px] text-slate-400 sm:block">
                   From nearby stores
                 </p>
               </div>
 
-              <div className="flex flex-col items-center text-center sm:items-start sm:text-left">
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50">
-                  <ShieldCheckIcon
-                    size={18}
-                    className="text-emerald-500"
-                  />
+              {/* Secure checkout */}
+
+              <div className="min-w-0">
+                <div className="flex justify-center sm:justify-start">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 sm:h-9 sm:w-9">
+                    <ShieldCheckIcon
+                      size={16}
+                      className="text-emerald-500 sm:h-[18px] sm:w-[18px]"
+                    />
+                  </div>
                 </div>
 
-                <p className="mt-2 text-xs font-bold text-slate-800">
+                <p className="mt-1.5 truncate text-center text-[10px] font-bold text-slate-800 sm:text-left sm:text-xs">
                   Secure checkout
                 </p>
 
-                <p className="mt-0.5 text-[11px] text-slate-400">
+                <p className="mt-0.5 hidden text-[11px] text-slate-400 sm:block">
                   Safe & protected
                 </p>
               </div>
 
-              <div className="flex flex-col items-center text-center sm:items-start sm:text-left">
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-purple-50">
-                  <MapPinIcon
-                    size={18}
-                    className="text-purple-500"
-                  />
+              {/* Nearby shops */}
+
+              <div className="min-w-0">
+                <div className="flex justify-center sm:justify-start">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-50 sm:h-9 sm:w-9">
+                    <MapPinIcon
+                      size={16}
+                      className="text-purple-500 sm:h-[18px] sm:w-[18px]"
+                    />
+                  </div>
                 </div>
 
-                <p className="mt-2 text-xs font-bold text-slate-800">
+                <p className="mt-1.5 truncate text-center text-[10px] font-bold text-slate-800 sm:text-left sm:text-xs">
                   Nearby shops
                 </p>
 
-                <p className="mt-0.5 text-[11px] text-slate-400">
+                <p className="mt-0.5 hidden text-[11px] text-slate-400 sm:block">
                   Shop local
                 </p>
               </div>
             </div>
 
-            {/* Store mini-link */}
+            {/* =================================================
+                STORE
+            ================================================= */}
 
             {product.store?.name && (
-              <div className="mt-7 flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/60 p-3.5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white shadow-sm">
+              <div className="mt-6 flex min-w-0 items-center gap-2.5 rounded-xl border border-slate-100 bg-slate-50/60 p-3 sm:mt-7 sm:gap-3 sm:p-3.5">
+
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white shadow-sm sm:h-10 sm:w-10">
                   <StoreIcon
-                    size={17}
-                    className="text-orange-500"
+                    size={16}
+                    className="text-orange-500 sm:h-[17px] sm:w-[17px]"
                   />
                 </div>
 
                 <div className="min-w-0 flex-1">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                  <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 sm:text-[10px]">
                     Sold by
                   </p>
 
-                  <p className="truncate text-sm font-bold text-slate-800">
+                  <p className="truncate text-xs font-bold text-slate-800 sm:text-sm">
                     {product.store.name}
                   </p>
                 </div>
@@ -748,7 +894,7 @@ const ProductDetails = ({ product }) => {
                         `/shop/${product.store.username}`
                       )
                     }
-                    className="text-xs font-black text-orange-600 hover:text-orange-700"
+                    className="shrink-0 text-[10px] font-black text-orange-600 transition hover:text-orange-700 sm:text-xs"
                   >
                     Visit →
                   </button>
