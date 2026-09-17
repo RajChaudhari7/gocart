@@ -52,7 +52,63 @@ const ProductDescription = ({ product }) => {
 
   const handleShare = async () => {
     try {
-      if (navigator.share) {
+      const productImage = product?.images?.[0];
+
+      if (!productImage) {
+        // No product image — fall back to normal link sharing
+        if (navigator.share) {
+          await navigator.share({
+            title: product.name,
+            text: `Check out ${product.name}`,
+            url: window.location.href,
+          });
+        } else {
+          await navigator.clipboard.writeText(window.location.href);
+          toast.success("Product link copied!");
+        }
+
+        return;
+      }
+
+      // Fetch the actual product image
+      const response = await fetch(productImage);
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch product image");
+      }
+
+      const blob = await response.blob();
+
+      // Determine a suitable extension
+      const extension =
+        blob.type === "image/png"
+          ? "png"
+          : blob.type === "image/webp"
+            ? "webp"
+            : "jpg";
+
+      const file = new File(
+        [blob],
+        `${product.name.replace(/[^a-z0-9]/gi, "-").toLowerCase()}.${extension}`,
+        {
+          type: blob.type || "image/jpeg",
+        }
+      );
+
+      // Share image + product information
+      if (
+        navigator.share &&
+        navigator.canShare &&
+        navigator.canShare({ files: [file] })
+      ) {
+        await navigator.share({
+          title: product.name,
+          text: `🛍️ Check out ${product.name}\n\n💰 Price: ₹${product.price}\n\nShop it on Nandurbar Bazar:`,
+          url: window.location.href,
+          files: [file],
+        });
+      } else if (navigator.share) {
+        // Browser supports sharing but not files
         await navigator.share({
           title: product.name,
           text: `Check out ${product.name}`,
@@ -63,12 +119,13 @@ const ProductDescription = ({ product }) => {
         toast.success("Product link copied!");
       }
     } catch (error) {
+      // User cancelled the share dialog
       if (error?.name !== "AbortError") {
-        console.error(error);
+        console.error("Share failed:", error);
+        toast.error("Unable to share product");
       }
     }
   };
-
   return (
     <section className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6 sm:py-14">
       {/* -------------------------------------------------
@@ -88,8 +145,8 @@ const ProductDescription = ({ product }) => {
                 }
               }}
               className={`relative pb-4 text-sm font-bold transition-colors sm:text-base ${selectedTab === tab
-                  ? "text-slate-900"
-                  : "text-slate-400 hover:text-slate-700"
+                ? "text-slate-900"
+                : "text-slate-400 hover:text-slate-700"
                 }`}
             >
               {tab}
@@ -212,15 +269,15 @@ const ProductDescription = ({ product }) => {
                           setFilterStar(isSelected ? null : star)
                         }
                         className={`group flex w-full items-center gap-3 rounded-lg px-2 py-1.5 text-left transition ${isSelected
-                            ? "bg-orange-50"
-                            : "hover:bg-slate-50"
+                          ? "bg-orange-50"
+                          : "hover:bg-slate-50"
                           }`}
                       >
                         <div className="flex w-10 items-center gap-1">
                           <span
                             className={`text-xs font-bold ${isSelected
-                                ? "text-orange-600"
-                                : "text-slate-600"
+                              ? "text-orange-600"
+                              : "text-slate-600"
                               }`}
                           >
                             {star}
