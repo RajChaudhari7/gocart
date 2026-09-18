@@ -53,8 +53,6 @@ const SWIPE_STYLES = {
   orange: "border-orange-200 bg-orange-50 text-orange-700",
   green: "border-green-200 bg-green-50 text-green-700",
 };
-
-jsx
 function SwipeAction({
   label,
   releaseLabel,
