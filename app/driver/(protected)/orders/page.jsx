@@ -49,14 +49,12 @@ const NEXT_STATUS = {
 
 const SWIPE_STYLES = {
   indigo: "border-indigo-200 bg-indigo-50 text-indigo-700",
-
   emerald: "border-emerald-200 bg-emerald-50 text-emerald-700",
-
   orange: "border-orange-200 bg-orange-50 text-orange-700",
-
   green: "border-green-200 bg-green-50 text-green-700",
 };
 
+jsx
 function SwipeAction({
   label,
   releaseLabel,
@@ -67,7 +65,26 @@ function SwipeAction({
 }) {
   const x = useMotionValue(0);
 
-  const progressOpacity = useTransform(x, [0, SWIPE_THRESHOLD], [0, 1]);
+  const progress = useTransform(
+    x,
+    [0, SWIPE_THRESHOLD],
+    [0, 1]
+  );
+
+  const handleScale = useTransform(
+    x,
+    [0, SWIPE_THRESHOLD],
+    [1, 1.08]
+  );
+
+  const handleShadow = useTransform(
+    x,
+    [0, SWIPE_THRESHOLD],
+    [
+      "0 4px 12px rgba(0,0,0,0.12)",
+      "0 8px 24px rgba(16,185,129,0.35)",
+    ]
+  );
 
   const handleDragEnd = async (_, info) => {
     if (disabled || loading) {
@@ -85,32 +102,216 @@ function SwipeAction({
       return;
     }
 
+    // Smoothly return to start
     x.set(0);
   };
 
+  const toneStyles = {
+    indigo: {
+      container:
+        "border-indigo-200 bg-gradient-to-r from-indigo-50 via-white to-indigo-50",
+      text: "text-indigo-700",
+      handle: "text-indigo-600",
+      glow: "bg-indigo-400",
+    },
+
+    emerald: {
+      container:
+        "border-emerald-200 bg-gradient-to-r from-emerald-50 via-white to-emerald-50",
+      text: "text-emerald-700",
+      handle: "text-emerald-600",
+      glow: "bg-emerald-400",
+    },
+
+    orange: {
+      container:
+        "border-orange-200 bg-gradient-to-r from-orange-50 via-white to-orange-50",
+      text: "text-orange-700",
+      handle: "text-orange-600",
+      glow: "bg-orange-400",
+    },
+
+    green: {
+      container:
+        "border-green-200 bg-gradient-to-r from-green-50 via-white to-green-50",
+      text: "text-green-700",
+      handle: "text-green-600",
+      glow: "bg-green-400",
+    },
+  };
+
+  const colors = toneStyles[tone] || toneStyles.indigo;
+
+  const backgroundOpacity = useTransform(
+    progress,
+    [0, 1],
+    [0, 0.16]
+  );
+
+  const textOpacity = useTransform(
+    progress,
+    [0, 0.55, 1],
+    [1, 0.45, 0]
+  );
+
+  const releaseOpacity = useTransform(
+    progress,
+    [0, 0.65, 1],
+    [0, 0, 1]
+  );
+
+  const arrowOpacity = useTransform(
+    progress,
+    [0, 0.7, 1],
+    [1, 0.4, 0]
+  );
+
   return (
     <div
-      className={`relative h-16 overflow-hidden rounded-2xl border ${
-        disabled
-          ? "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400 opacity-70"
-          : SWIPE_STYLES[tone] || SWIPE_STYLES.indigo
-      }`}
+      className={`
+        relative h-16 overflow-hidden rounded-2xl border
+        transition-all duration-300
+        ${disabled
+          ? "cursor-not-allowed border-slate-200 bg-slate-100 opacity-70"
+          : colors.container
+        }
+      `}
     >
-      <div className="pointer-events-none absolute inset-0 flex items-center justify-center gap-1 px-16 text-center text-sm font-semibold">
-        <span>{loading ? "Updating status..." : label}</span>
-
-        {!loading && <ChevronRight size={17} />}
-      </div>
-
+      {/* Progress background */}
       <motion.div
         style={{
-          opacity: progressOpacity,
+          width: useTransform(
+            progress,
+            [0, 1],
+            ["0%", "100%"]
+          ),
+          opacity: backgroundOpacity,
         }}
-        className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-xs font-bold text-emerald-700"
+        className={`absolute inset-y-0 left-0 ${colors.glow}`}
+      />
+
+      {/* Moving shimmer */}
+      {!disabled && !loading && (
+        <motion.div
+          animate={{
+            x: ["-120%", "220%"],
+          }}
+          transition={{
+            duration: 2.2,
+            repeat: Infinity,
+            ease: "linear",
+          }}
+          className="pointer-events-none absolute inset-y-0 w-20 skew-x-[-20deg] bg-white/40 blur-sm"
+        />
+      )}
+
+      {/* Normal instruction */}
+      <motion.div
+        style={{
+          opacity: textOpacity,
+        }}
+        className="pointer-events-none absolute inset-0 flex items-center justify-center pl-14 pr-5"
       >
-        {releaseLabel}
+        <div className="flex items-center gap-2">
+          <span
+            className={`text-sm font-bold ${disabled ? "text-slate-400" : colors.text
+              }`}
+          >
+            {loading ? "Updating status..." : label}
+          </span>
+
+          {!loading && !disabled && (
+            <motion.div
+              animate={{
+                x: [0, 5, 0],
+              }}
+              transition={{
+                duration: 1,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+            >
+              <ArrowRight
+                size={17}
+                strokeWidth={2.5}
+                className={colors.handle}
+              />
+            </motion.div>
+          )}
+        </div>
       </motion.div>
 
+      {/* Release text */}
+      {!disabled && !loading && (
+        <motion.div
+          style={{
+            opacity: releaseOpacity,
+          }}
+          className="pointer-events-none absolute inset-0 flex items-center justify-center"
+        >
+          <div className="flex items-center gap-2">
+            <motion.span
+              animate={{
+                scale: [1, 1.04, 1],
+              }}
+              transition={{
+                duration: 0.8,
+                repeat: Infinity,
+              }}
+              className={`text-sm font-black ${colors.text}`}
+            >
+              {releaseLabel}
+            </motion.span>
+
+            <motion.div
+              animate={{
+                x: [0, 4, 0],
+              }}
+              transition={{
+                duration: 0.7,
+                repeat: Infinity,
+              }}
+            >
+              <ShieldCheck
+                size={17}
+                className="text-emerald-600"
+              />
+            </motion.div>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Animated arrow trail */}
+      {!disabled && !loading && (
+        <motion.div
+          style={{
+            opacity: arrowOpacity,
+          }}
+          className="pointer-events-none absolute right-4 top-1/2 flex -translate-y-1/2 items-center gap-0.5"
+        >
+          {[0, 1, 2].map((item) => (
+            <motion.div
+              key={item}
+              animate={{
+                x: [0, 5, 0],
+                opacity: [0.25, 0.8, 0.25],
+              }}
+              transition={{
+                duration: 1.2,
+                repeat: Infinity,
+                delay: item * 0.15,
+              }}
+            >
+              <ChevronRight
+                size={16}
+                className={colors.handle}
+              />
+            </motion.div>
+          ))}
+        </motion.div>
+      )}
+
+      {/* Drag handle */}
       <motion.button
         type="button"
         drag={disabled || loading ? false : "x"}
@@ -118,17 +319,64 @@ function SwipeAction({
           left: 0,
           right: 220,
         }}
-        dragElastic={0.05}
-        style={{ x }}
+        dragElastic={0.04}
+        dragMomentum={false}
+        style={{
+          x,
+          scale: handleScale,
+          boxShadow: handleShadow,
+        }}
         onDragEnd={handleDragEnd}
         disabled={disabled || loading}
-        className="absolute left-1.5 top-1.5 flex h-[52px] w-[52px] items-center justify-center rounded-xl bg-white text-emerald-600 shadow-lg disabled:cursor-not-allowed"
+        className={`
+          absolute left-1.5 top-1.5
+          flex h-[52px] w-[52px]
+          items-center justify-center
+          rounded-xl bg-white
+          transition-colors duration-200
+          ${disabled
+            ? "cursor-not-allowed text-slate-400"
+            : `${colors.handle} cursor-grab active:cursor-grabbing`
+          }
+        `}
       >
-        <ArrowRight size={22} />
+        {loading ? (
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{
+              duration: 0.8,
+              repeat: Infinity,
+              ease: "linear",
+            }}
+            className="h-5 w-5 rounded-full border-2 border-slate-200 border-t-emerald-500"
+          />
+        ) : (
+          <motion.div
+            animate={
+              disabled
+                ? {}
+                : {
+                  x: [0, 3, 0],
+                }
+            }
+            transition={{
+              duration: 0.9,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+          >
+            <ArrowRight
+              size={23}
+              strokeWidth={2.7}
+            />
+          </motion.div>
+        )}
       </motion.button>
     </div>
   );
 }
+
+
 
 export default function DriverOrders() {
   const [orders, setOrders] = useState([]);
@@ -435,9 +683,8 @@ export default function DriverOrders() {
       const distance = Number(order.distanceToStore);
 
       new Notification("New Delivery Request", {
-        body: `${order.store?.name || "Nearby store"}${
-          Number.isFinite(distance) ? ` • ${distance.toFixed(1)} km away` : ""
-        }`,
+        body: `${order.store?.name || "Nearby store"}${Number.isFinite(distance) ? ` • ${distance.toFixed(1)} km away` : ""
+          }`,
         icon: "/driver.png",
         tag: order.id,
       });
@@ -458,7 +705,7 @@ export default function DriverOrders() {
     }
 
     if (Notification.permission === "default") {
-      Notification.requestPermission().catch(() => {});
+      Notification.requestPermission().catch(() => { });
     }
   }, []);
 
@@ -632,7 +879,7 @@ export default function DriverOrders() {
                   <span className="text-gray-500">Distance to Store</span>
                   <span className="font-semibold text-blue-600">
                     {incomingOrder.distanceToStore &&
-                    !isNaN(parseFloat(incomingOrder.distanceToStore))
+                      !isNaN(parseFloat(incomingOrder.distanceToStore))
                       ? `${parseFloat(incomingOrder.distanceToStore).toFixed(2)} km`
                       : "Calculating..."}
                   </span>
@@ -642,7 +889,7 @@ export default function DriverOrders() {
                   <span className="text-gray-500">Store to Customer</span>
                   <span className="font-semibold text-blue-600">
                     {incomingOrder.distanceToCustomer &&
-                    !isNaN(parseFloat(incomingOrder.distanceToCustomer))
+                      !isNaN(parseFloat(incomingOrder.distanceToCustomer))
                       ? `${parseFloat(incomingOrder.distanceToCustomer).toFixed(2)} km`
                       : "Calculating..."}
                   </span>
@@ -728,11 +975,10 @@ export default function DriverOrders() {
                     </div>
 
                     <div
-                      className={`flex shrink-0 items-center gap-2 rounded-full border px-3 py-2 text-xs font-bold ${
-                        isOnline
-                          ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                          : "border-red-200 bg-red-50 text-red-700"
-                      }`}
+                      className={`flex shrink-0 items-center gap-2 rounded-full border px-3 py-2 text-xs font-bold ${isOnline
+                        ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                        : "border-red-200 bg-red-50 text-red-700"
+                        }`}
                     >
                       <span className="relative flex h-2 w-2">
                         {isOnline && (
@@ -740,9 +986,8 @@ export default function DriverOrders() {
                         )}
 
                         <span
-                          className={`relative inline-flex h-2 w-2 rounded-full ${
-                            isOnline ? "bg-emerald-500" : "bg-red-500"
-                          }`}
+                          className={`relative inline-flex h-2 w-2 rounded-full ${isOnline ? "bg-emerald-500" : "bg-red-500"
+                            }`}
                         />
                       </span>
 
@@ -980,9 +1225,9 @@ export default function DriverOrders() {
                           )
                             ? [order.store?.latitude, order.store?.longitude]
                             : [
-                                order.address?.latitude,
-                                order.address?.longitude,
-                              ]
+                              order.address?.latitude,
+                              order.address?.longitude,
+                            ]
                         }
                         // Logic to switch icon color
                         isGoingToShop={[
@@ -1176,15 +1421,15 @@ export default function DriverOrders() {
                       {["DRIVER_ASSIGNED", "REACHED_SHOP"].includes(
                         order.status,
                       ) && (
-                        <a
-                          href={`https://maps.google.com/?q=${order.store?.latitude},${order.store?.longitude}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex w-full items-center justify-center rounded-2xl border border-purple-200 bg-purple-50 px-4 py-3 font-semibold text-purple-700 transition hover:bg-purple-100"
-                        >
-                          Navigate to Store
-                        </a>
-                      )}
+                          <a
+                            href={`https://maps.google.com/?q=${order.store?.latitude},${order.store?.longitude}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex w-full items-center justify-center rounded-2xl border border-purple-200 bg-purple-50 px-4 py-3 font-semibold text-purple-700 transition hover:bg-purple-100"
+                          >
+                            Navigate to Store
+                          </a>
+                        )}
 
                       {/* Navigation to customer */}
                       {[
@@ -1192,15 +1437,15 @@ export default function DriverOrders() {
                         "OUT_FOR_DELIVERY",
                         "DELIVERY_INITIATED",
                       ].includes(order.status) && (
-                        <a
-                          href={`https://maps.google.com/?q=${order.address?.latitude},${order.address?.longitude}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex w-full items-center justify-center rounded-2xl border border-purple-200 bg-purple-50 px-4 py-3 font-semibold text-purple-700 transition hover:bg-purple-100"
-                        >
-                          Navigate to Customer
-                        </a>
-                      )}
+                          <a
+                            href={`https://maps.google.com/?q=${order.address?.latitude},${order.address?.longitude}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex w-full items-center justify-center rounded-2xl border border-purple-200 bg-purple-50 px-4 py-3 font-semibold text-purple-700 transition hover:bg-purple-100"
+                          >
+                            Navigate to Customer
+                          </a>
+                        )}
 
                       {/* Swipe to next delivery state */}
                       {statusAction && (
@@ -1251,7 +1496,7 @@ export default function DriverOrders() {
                               } catch (error) {
                                 toast.error(
                                   error?.response?.data?.error ||
-                                    "Failed to resend OTP",
+                                  "Failed to resend OTP",
                                 );
                               }
                             }}
@@ -1389,13 +1634,12 @@ export default function DriverOrders() {
           transition-all
           sm:h-16 sm:w-12
 
-          ${
-            value
-              ? "border-emerald-400 shadow-md shadow-emerald-500/10"
-              : isActive
-                ? "border-emerald-500"
-                : "border-slate-700"
-          }
+          ${value
+                              ? "border-emerald-400 shadow-md shadow-emerald-500/10"
+                              : isActive
+                                ? "border-emerald-500"
+                                : "border-slate-700"
+                            }
         `}
                         >
                           {value ? value : ""}
@@ -1460,11 +1704,10 @@ export default function DriverOrders() {
                       disabled={otp.length !== 6}
                       whileTap={otp.length === 6 ? { scale: 0.97 } : {}}
                       className={`relative overflow-hidden rounded-2xl px-4 py-3.5 text-sm font-black transition
-              ${
-                otp.length === 6
-                  ? "bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/20 hover:bg-emerald-400"
-                  : "cursor-not-allowed bg-slate-800 text-slate-600"
-              }`}
+              ${otp.length === 6
+                          ? "bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/20 hover:bg-emerald-400"
+                          : "cursor-not-allowed bg-slate-800 text-slate-600"
+                        }`}
                     >
                       {otp.length === 6 ? (
                         <span className="flex items-center justify-center gap-2">
