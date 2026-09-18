@@ -2,14 +2,13 @@ import { imagekit } from "@/configs/imageKit";
 import prisma from "@/lib/prisma";
 import { authSeller } from "@/middlewares/authSeller";
 import { getAuth } from "@clerk/nextjs/server";
-import { current } from "@reduxjs/toolkit";
 import { NextResponse } from "next/server";
 
 // Get Store Profile
-export async function GET() {
+export async function GET(request) {
     try {
 
-        const { userId } = getAuth();
+        const { userId } = getAuth(request);
 
         if (!userId) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -64,7 +63,7 @@ export async function GET() {
 export async function PUT(request) {
     try {
 
-        const { userId } = getAuth();
+        const { userId } = getAuth(request);
 
         if (!userId) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
