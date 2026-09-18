@@ -13,6 +13,7 @@ import {
   ShoppingBag,
   Twitter,
 } from "lucide-react";
+
 const Footer = () => {
   const currentYear = new Date().getFullYear();
 
