@@ -9,62 +9,100 @@ import { useCustomerLocation } from "@/context/CustomerLocationContext";
 
 /* =========================================================
    CATEGORY CONFIGURATION
+   These values MUST match StoreAddProduct exactly.
 ========================================================= */
 
 const CATEGORY_GROUPS = [
   {
-    title: "Grocery & Kitchen",
-    description: "Everyday essentials for your home",
+    title: "Food & Daily Essentials",
+    description: "Everyday groceries, snacks and drinks",
     categories: [
       {
-        name: "Vegetables & Fruits",
+        name: "Food & Drink",
         image:
-          "https://images.unsplash.com/photo-1610832958506-aa56368176cf?auto=format&fit=crop&q=80&w=600",
+          "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=800",
         subCategories: [
-          "Fresh Vegetables",
-          "Fresh Fruits",
-          "Leafy Vegetables",
-          "Seasonal Fruits",
+          "Snacks",
+          "Beverages",
+          "Groceries",
+          "Fresh Produce",
+          "Packaged Food",
         ],
       },
+    ],
+  },
+
+  {
+    title: "Fashion & Personal Style",
+    description: "Clothing, footwear and everyday fashion",
+    categories: [
       {
-        name: "Atta, Rice & Dal",
+        name: "Clothing",
         image:
-          "https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&q=80&w=600",
-        subCategories: ["Atta", "Rice", "Dal", "Flours"],
-      },
-      {
-        name: "Dairy & Eggs",
-        image:
-          "https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&q=80&w=600",
-        subCategories: ["Milk", "Curd", "Paneer", "Butter", "Eggs"],
-      },
-      {
-        name: "Oil, Ghee & Masala",
-        image:
-          "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&q=80&w=600",
+          "https://images.unsplash.com/photo-1445205170230-053b83016050?auto=format&fit=crop&q=80&w=800",
         subCategories: [
-          "Cooking Oil",
-          "Ghee",
-          "Spices",
-          "Salt",
-          "Sugar",
+          "Men's Wear",
+          "Women's Wear",
+          "Kid's Wear",
+          "Shoes",
+          "Accessories",
         ],
       },
+    ],
+  },
+
+  {
+    title: "Home & Kitchen",
+    description: "Things that make your home better",
+    categories: [
       {
-        name: "Bakery & Biscuits",
+        name: "Home & Kitchen",
         image:
-          "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&q=80&w=600",
-        subCategories: ["Bread", "Biscuits", "Cakes", "Rusks"],
-      },
-      {
-        name: "Kitchen Essentials",
-        image:
-          "https://images.unsplash.com/photo-1556911220-bff31c812dba?auto=format&fit=crop&q=80&w=600",
+          "https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&q=80&w=800",
         subCategories: [
+          "Furniture",
+          "Decor",
           "Kitchenware",
-          "Storage",
-          "Cleaning",
+          "Bedding",
+          "Lighting",
+        ],
+      },
+    ],
+  },
+
+  {
+    title: "Beauty & Wellness",
+    description: "Personal care and wellness essentials",
+    categories: [
+      {
+        name: "Beauty & Health",
+        image:
+          "https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&q=80&w=800",
+        subCategories: [
+          "Skincare",
+          "Makeup",
+          "Haircare",
+          "Fragrances",
+          "Supplements",
+        ],
+      },
+    ],
+  },
+
+  {
+    title: "Electronics",
+    description: "Devices, gadgets and accessories",
+    categories: [
+      {
+        name: "Electronics",
+        image:
+          "https://images.unsplash.com/photo-1498049794561-7780e7231661?auto=format&fit=crop&q=80&w=800",
+        subCategories: [
+          "Mobiles",
+          "Laptops",
+          "Audio",
+          "Wearables",
+          "Accessories",
           "Appliances",
         ],
       },
@@ -72,172 +110,316 @@ const CATEGORY_GROUPS = [
   },
 
   {
-    title: "Snacks & Drinks",
-    description: "Treats, beverages and quick bites",
+    title: "Entertainment & Hobbies",
+    description: "Games, books and things you love",
     categories: [
       {
-        name: "Chips & Namkeen",
+        name: "Toys & Games",
         image:
-          "https://images.unsplash.com/photo-1621939514649-280e2aa9f9b3?auto=format&fit=crop&q=80&w=600",
+          "https://images.unsplash.com/photo-1594736797933-d0501ba2fe65?auto=format&fit=crop&q=80&w=800",
         subCategories: [
-          "Chips",
-          "Namkeen",
-          "Popcorn",
-          "Snacks",
+          "Action Figures",
+          "Board Games",
+          "Puzzles",
+          "Video Games",
+          "Soft Toys",
         ],
       },
       {
-        name: "Sweets & Chocolates",
+        name: "Books & Media",
         image:
-          "https://images.unsplash.com/photo-1575377427642-087cf684f04d?auto=format&fit=crop&q=80&w=600",
+          "https://images.unsplash.com/photo-1495446815901-a7297e633e8d?auto=format&fit=crop&q=80&w=800",
         subCategories: [
-          "Chocolates",
-          "Indian Sweets",
-          "Candies",
-          "Gifting",
+          "Fiction",
+          "Non-Fiction",
+          "Educational",
+          "Comics",
+          "Music & Movies",
         ],
       },
       {
-        name: "Drinks & Juices",
+        name: "Hobbies & Crafts",
         image:
-          "https://images.unsplash.com/photo-1544145945-f90425340c7e?auto=format&fit=crop&q=80&w=600",
+          "https://images.unsplash.com/photo-1452860606245-08befc0ff44b?auto=format&fit=crop&q=80&w=800",
         subCategories: [
-          "Soft Drinks",
-          "Juices",
-          "Energy Drinks",
-          "Water",
-        ],
-      },
-      {
-        name: "Tea & Coffee",
-        image:
-          "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&q=80&w=600",
-        subCategories: [
-          "Tea",
-          "Coffee",
-          "Green Tea",
-          "Milk Drinks",
-        ],
-      },
-      {
-        name: "Instant Food",
-        image:
-          "https://images.unsplash.com/photo-1612929633738-8fe44f7ec841?auto=format&fit=crop&q=80&w=600",
-        subCategories: [
-          "Noodles",
-          "Pasta",
-          "Ready to Eat",
-          "Soups",
+          "Art Supplies",
+          "DIY Kits",
+          "Collectibles",
+          "Musical Instruments",
         ],
       },
     ],
   },
 
   {
-    title: "Beauty & Personal Care",
-    description: "Personal care and daily essentials",
+    title: "Sports & Outdoors",
+    description: "Fitness, sports and outdoor essentials",
     categories: [
       {
-        name: "Bath & Body",
+        name: "Sports & Outdoors",
         image:
-          "https://images.unsplash.com/photo-1556228578-8c89e6adf883?auto=format&fit=crop&q=80&w=600",
+          "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&q=80&w=800",
         subCategories: [
-          "Bath & Shower",
-          "Soaps",
-          "Body Care",
-          "Deodorants",
-        ],
-      },
-      {
-        name: "Hair Care",
-        image:
-          "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&q=80&w=600",
-        subCategories: [
-          "Shampoo",
-          "Conditioner",
-          "Hair Oil",
-          "Hair Styling",
-        ],
-      },
-      {
-        name: "Skin Care",
-        image:
-          "https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&q=80&w=600",
-        subCategories: [
-          "Face Care",
-          "Moisturizers",
-          "Sunscreen",
-          "Lip Care",
-        ],
-      },
-      {
-        name: "Health & Wellness",
-        image:
-          "https://images.unsplash.com/photo-1607619056574-7b8d3ee536b2?auto=format&fit=crop&q=80&w=600",
-        subCategories: [
-          "Vitamins",
-          "Personal Care",
-          "Wellness",
-          "First Aid",
+          "Fitness Equipment",
+          "Outdoor Gear",
+          "Team Sports",
+          "Sportswear",
         ],
       },
     ],
   },
 
   {
-    title: "Home & Lifestyle",
-    description: "Everything to make your home better",
+    title: "Other",
+    description: "More products from local shops",
     categories: [
       {
-        name: "Cleaning Essentials",
+        name: "Others",
         image:
-          "https://images.unsplash.com/photo-1583947215259-38e31be8751f?auto=format&fit=crop&q=80&w=600",
-        subCategories: [
-          "Laundry",
-          "Dishwashing",
-          "Floor Cleaning",
-          "Surface Cleaners",
-        ],
-      },
-      {
-        name: "Home Decor",
-        image:
-          "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&q=80&w=600",
-        subCategories: [
-          "Decor",
-          "Lighting",
-          "Storage",
-          "Home Accessories",
-        ],
-      },
-      {
-        name: "Stationery & Books",
-        image:
-          "https://images.unsplash.com/photo-1495446815901-a7297e633e8d?auto=format&fit=crop&q=80&w=600",
-        subCategories: [
-          "Books",
-          "Notebooks",
-          "Pens",
-          "School Supplies",
-        ],
-      },
-      {
-        name: "Pet Supplies",
-        image:
-          "https://images.unsplash.com/photo-1589924691995-400dc9ecc119?auto=format&fit=crop&q=80&w=600",
-        subCategories: [
-          "Pet Food",
-          "Treats",
-          "Pet Care",
-          "Accessories",
-        ],
+          "https://images.unsplash.com/photo-1472851294608-062f824d29cc?auto=format&fit=crop&q=80&w=800",
+        subCategories: [],
       },
     ],
   },
 ];
 
 /* =========================================================
-   COMPONENT
+   CATEGORY CARD
+========================================================= */
+
+function CategoryCard({
+  category,
+  availableSubCategories,
+  subCategoryCounts,
+  count,
+  onCategoryClick,
+  onSubCategoryClick,
+}) {
+  return (
+    <div
+      className="
+        group
+        overflow-hidden
+        rounded-[1.35rem]
+        border
+        border-slate-200
+        bg-white
+        shadow-sm
+        transition-all
+        duration-300
+        hover:-translate-y-1
+        hover:border-orange-200
+        hover:shadow-md
+      "
+    >
+      {/* -----------------------------------------------------
+          IMAGE
+      ----------------------------------------------------- */}
+
+      <button
+        type="button"
+        onClick={onCategoryClick}
+        className="block w-full text-left"
+        aria-label={`View ${category.name}`}
+      >
+        <div className="relative h-32 overflow-hidden bg-orange-50 sm:h-36">
+          <Image
+            src={category.image}
+            alt={category.name}
+            fill
+            className="
+              object-cover
+              transition-transform
+              duration-500
+              ease-out
+              group-hover:scale-105
+            "
+            sizes="
+              (max-width: 640px) 50vw,
+              (max-width: 1024px) 33vw,
+              20vw
+            "
+          />
+
+          {/* IMAGE OVERLAY */}
+
+          <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent" />
+
+          {/* COUNT */}
+
+          <span
+            className="
+              absolute
+              right-2.5
+              top-2.5
+              rounded-full
+              border
+              border-white/80
+              bg-white/90
+              px-2
+              py-1
+              text-[9px]
+              font-bold
+              text-slate-600
+              shadow-sm
+              backdrop-blur-sm
+            "
+          >
+            {count} {count === 1 ? "item" : "items"}
+          </span>
+        </div>
+
+        {/* CATEGORY TITLE */}
+
+        <div className="px-3.5 pb-3 pt-3">
+          <div className="flex items-center justify-between gap-2">
+            <h4
+              className="
+                text-sm
+                font-extrabold
+                leading-tight
+                text-slate-800
+                transition-colors
+                group-hover:text-orange-500
+                sm:text-base
+              "
+            >
+              {category.name}
+            </h4>
+
+            <ArrowRight
+              size={15}
+              className="
+                shrink-0
+                text-slate-300
+                transition-all
+                duration-300
+                group-hover:translate-x-0.5
+                group-hover:text-orange-500
+              "
+            />
+          </div>
+        </div>
+      </button>
+
+      {/* -----------------------------------------------------
+          SUB CATEGORIES
+      ----------------------------------------------------- */}
+
+      {availableSubCategories.length > 0 && (
+        <div className="border-t border-slate-100 px-3.5 py-3">
+          <div className="space-y-1">
+            {availableSubCategories.slice(0, 5).map((subCategory) => {
+              const subCount =
+                subCategoryCounts[subCategory] || 0;
+
+              return (
+                <button
+                  key={subCategory}
+                  type="button"
+                  onClick={() => onSubCategoryClick(subCategory)}
+                  className="
+                    group/sub
+                    flex
+                    w-full
+                    items-center
+                    justify-between
+                    gap-2
+                    rounded-lg
+                    px-2
+                    py-1.5
+                    text-left
+                    transition-colors
+                    hover:bg-orange-50
+                  "
+                >
+                  <span
+                    className="
+                      min-w-0
+                      truncate
+                      text-[11px]
+                      font-medium
+                      text-slate-500
+                      transition-colors
+                      group-hover/sub:text-orange-600
+                      sm:text-xs
+                    "
+                  >
+                    {subCategory}
+                  </span>
+
+                  <span
+                    className="
+                      shrink-0
+                      text-[9px]
+                      font-bold
+                      text-slate-300
+                      transition-colors
+                      group-hover/sub:text-orange-400
+                    "
+                  >
+                    {subCount}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* VIEW ALL */}
+
+          {availableSubCategories.length > 5 && (
+            <button
+              type="button"
+              onClick={onCategoryClick}
+              className="
+                mt-2
+                flex
+                items-center
+                gap-1
+                px-2
+                text-[10px]
+                font-extrabold
+                text-orange-500
+                transition-colors
+                hover:text-orange-600
+              "
+            >
+              View all
+              <ArrowRight size={11} />
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* NO SUBCATEGORY */}
+
+      {availableSubCategories.length === 0 && (
+        <div className="border-t border-slate-100 px-3.5 py-3">
+          <button
+            type="button"
+            onClick={onCategoryClick}
+            className="
+              flex
+              items-center
+              gap-1
+              text-[10px]
+              font-extrabold
+              text-orange-500
+              transition-colors
+              hover:text-orange-600
+            "
+          >
+            Explore products
+            <ArrowRight size={11} />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* =========================================================
+   MAIN COMPONENT
 ========================================================= */
 
 export default function Categories() {
@@ -254,76 +436,83 @@ export default function Categories() {
   } = useCustomerLocation();
 
   /* ---------------------------------------------------------
-     ONLY PRODUCTS AVAILABLE NEAR CUSTOMER
+     NEARBY PRODUCTS
   --------------------------------------------------------- */
 
   const nearbyProducts = useMemo(() => {
-    if (!Array.isArray(allProducts)) return [];
+    if (!Array.isArray(allProducts)) {
+      return [];
+    }
 
     return filterNearbyProducts(allProducts);
   }, [allProducts, filterNearbyProducts]);
 
   /* ---------------------------------------------------------
-     CREATE LOOKUP OF AVAILABLE CATEGORIES / SUBCATEGORIES
+     BUILD PRODUCT LOOKUP
   --------------------------------------------------------- */
 
   const availableCategories = useMemo(() => {
-    const categoryMap = {};
+    const map = {};
 
     nearbyProducts.forEach((product) => {
       const category = product?.category?.trim();
 
       if (!category) return;
 
-      const subCategory = product?.subCategory?.trim();
-
-      if (!categoryMap[category]) {
-        categoryMap[category] = {
+      if (!map[category]) {
+        map[category] = {
           count: 0,
           subCategories: {},
         };
       }
 
-      categoryMap[category].count += 1;
+      map[category].count += 1;
+
+      const subCategory = product?.subCategory?.trim();
 
       if (subCategory) {
-        categoryMap[category].subCategories[subCategory] =
-          (categoryMap[category].subCategories[subCategory] || 0) + 1;
+        map[category].subCategories[subCategory] =
+          (map[category].subCategories[subCategory] || 0) + 1;
       }
     });
 
-    return categoryMap;
+    return map;
   }, [nearbyProducts]);
 
   /* ---------------------------------------------------------
-     ONLY SHOW CONFIGURED CATEGORIES THAT HAVE PRODUCTS
+     PREPARE VISIBLE GROUPS
   --------------------------------------------------------- */
 
   const visibleGroups = useMemo(() => {
     return CATEGORY_GROUPS.map((group) => {
       const visibleCategories = group.categories
         .map((category) => {
-          const data = availableCategories[category.name];
+          const categoryData =
+            availableCategories[category.name];
 
-          if (!data || data.count === 0) {
+          /*
+           * Category doesn't have nearby products.
+           */
+          if (!categoryData || categoryData.count === 0) {
             return null;
           }
 
           /*
-           * Only show subcategories that actually have products
-           * nearby.
+           * Only display configured subcategories that
+           * actually exist in nearby products.
            */
           const availableSubCategories =
             category.subCategories.filter(
               (subCategory) =>
-                data.subCategories[subCategory] > 0
+                categoryData.subCategories[subCategory] > 0
             );
 
           return {
             ...category,
-            count: data.count,
+            count: categoryData.count,
             availableSubCategories,
-            subCategoryCounts: data.subCategories,
+            subCategoryCounts:
+              categoryData.subCategories,
           };
         })
         .filter(Boolean);
@@ -357,12 +546,8 @@ export default function Categories() {
     );
   };
 
-  const openAllProducts = () => {
-    router.push("/product");
-  };
-
   /* ---------------------------------------------------------
-     LOCATION LOADING / EMPTY
+     LOCATION / EMPTY STATES
   --------------------------------------------------------- */
 
   if (locationLoading || !serviceable) {
@@ -373,12 +558,16 @@ export default function Categories() {
     return null;
   }
 
+  /* ---------------------------------------------------------
+     UI
+  --------------------------------------------------------- */
+
   return (
     <section className="bg-[#fffaf5] py-10 sm:py-14 lg:py-16">
       <div className="mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8">
 
         {/* =====================================================
-            SECTION HEADER
+            HEADER
         ===================================================== */}
 
         <div className="mb-9 flex items-end justify-between gap-4 sm:mb-11">
@@ -392,16 +581,37 @@ export default function Categories() {
             </h2>
 
             <p className="mt-2 max-w-xl text-sm leading-6 text-slate-500 sm:text-base">
-              Explore everyday essentials and discover what&apos;s
-              available from nearby stores.
+              Explore products from local stores delivering to
+              your location.
             </p>
           </div>
 
           {/* DESKTOP VIEW ALL */}
+
           <button
             type="button"
-            onClick={openAllProducts}
-            className="hidden shrink-0 items-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-600 shadow-sm transition-all hover:border-orange-200 hover:bg-orange-50 hover:text-orange-600 md:flex"
+            onClick={() => router.push("/product")}
+            className="
+              hidden
+              shrink-0
+              items-center
+              gap-1.5
+              rounded-full
+              border
+              border-slate-200
+              bg-white
+              px-4
+              py-2.5
+              text-sm
+              font-bold
+              text-slate-600
+              shadow-sm
+              transition-all
+              hover:border-orange-200
+              hover:bg-orange-50
+              hover:text-orange-600
+              md:flex
+            "
           >
             View all
             <ArrowRight size={15} />
@@ -409,29 +619,26 @@ export default function Categories() {
         </div>
 
         {/* =====================================================
-            CATEGORY GROUPS
+            GROUPS
         ===================================================== */}
 
         <div className="space-y-12 sm:space-y-16">
           {visibleGroups.map((group) => (
             <div key={group.title}>
 
-              {/* GROUP TITLE */}
-              <div className="mb-5 flex items-end justify-between gap-4">
-                <div>
-                  <h3 className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl">
-                    {group.title}
-                  </h3>
+              {/* GROUP HEADING */}
 
-                  <p className="mt-1 text-xs font-medium text-slate-400 sm:text-sm">
-                    {group.description}
-                  </p>
-                </div>
+              <div className="mb-5">
+                <h3 className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl">
+                  {group.title}
+                </h3>
+
+                <p className="mt-1 text-xs font-medium text-slate-400 sm:text-sm">
+                  {group.description}
+                </p>
               </div>
 
-              {/* =================================================
-                  CATEGORY CARDS
-              ================================================= */}
+              {/* CATEGORY CARDS */}
 
               <div
                 className="
@@ -445,158 +652,26 @@ export default function Categories() {
                 "
               >
                 {group.categories.map((category) => (
-                  <motion.div
+                  <CategoryCard
                     key={category.name}
-                    whileHover={{ y: -3 }}
-                    transition={{
-                      type: "spring",
-                      stiffness: 350,
-                      damping: 25,
-                    }}
-                    className="
-                      overflow-hidden
-                      rounded-[1.35rem]
-                      border
-                      border-slate-200
-                      bg-white
-                      shadow-sm
-                      transition-shadow
-                      hover:shadow-md
-                    "
-                  >
-                    {/* CATEGORY IMAGE */}
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        openCategory(category.name)
-                      }
-                      className="group relative block w-full text-left"
-                    >
-                      <div className="relative h-32 overflow-hidden bg-orange-50 sm:h-36">
-                        <Image
-                          src={category.image}
-                          alt={category.name}
-                          fill
-                          className="object-cover transition-transform duration-500 group-hover:scale-105"
-                          sizes="
-                            (max-width: 640px) 50vw,
-                            (max-width: 1024px) 33vw,
-                            20vw
-                          "
-                        />
-
-                        {/* soft image overlay */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
-
-                        {/* PRODUCT COUNT */}
-
-                        <span className="absolute right-2.5 top-2.5 rounded-full border border-white/70 bg-white/90 px-2 py-1 text-[9px] font-bold text-slate-600 shadow-sm backdrop-blur-sm">
-                          {category.count}{" "}
-                          {category.count === 1
-                            ? "item"
-                            : "items"}
-                        </span>
-                      </div>
-
-                      {/* CATEGORY NAME */}
-
-                      <div className="px-3.5 pb-2.5 pt-3">
-                        <h4 className="text-sm font-extrabold leading-tight text-slate-800 transition-colors group-hover:text-orange-500 sm:text-base">
-                          {category.name}
-                        </h4>
-                      </div>
-                    </button>
-
-                    {/* =================================================
-                        SUBCATEGORY LIST
-                    ================================================= */}
-
-                    {category.availableSubCategories.length >
-                      0 && (
-                        <div className="border-t border-slate-100 px-3.5 py-3">
-                          <div className="space-y-1">
-                            {category.availableSubCategories
-                              .slice(0, 4)
-                              .map((subCategory) => {
-                                const count =
-                                  category.subCategoryCounts[
-                                  subCategory
-                                  ] || 0;
-
-                                return (
-                                  <button
-                                    key={subCategory}
-                                    type="button"
-                                    onClick={() =>
-                                      openSubCategory(
-                                        category.name,
-                                        subCategory
-                                      )
-                                    }
-                                    className="
-                                    group/sub
-                                    flex
-                                    w-full
-                                    items-center
-                                    justify-between
-                                    gap-2
-                                    rounded-lg
-                                    px-2
-                                    py-1.5
-                                    text-left
-                                    transition-colors
-                                    hover:bg-orange-50
-                                  "
-                                  >
-                                    <span className="min-w-0 truncate text-[11px] font-medium text-slate-500 transition-colors group-hover/sub:text-orange-600 sm:text-xs">
-                                      {subCategory}
-                                    </span>
-
-                                    <span className="shrink-0 text-[9px] font-bold text-slate-300 transition-colors group-hover/sub:text-orange-400">
-                                      {count}
-                                    </span>
-                                  </button>
-                                );
-                              })}
-                          </div>
-
-                          {/* VIEW ALL SUBCATEGORIES */}
-
-                          {category.availableSubCategories.length >
-                            4 && (
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  openCategory(category.name)
-                                }
-                                className="mt-2 flex items-center gap-1 px-2 text-[10px] font-extrabold text-orange-500 transition-colors hover:text-orange-600"
-                              >
-                                View all
-                                <ArrowRight size={11} />
-                              </button>
-                            )}
-                        </div>
-                      )}
-
-                    {/* NO SUBCATEGORY FALLBACK */}
-
-                    {category.availableSubCategories.length ===
-                      0 && (
-                        <div className="border-t border-slate-100 px-3.5 py-3">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              openCategory(category.name)
-                            }
-                            className="flex items-center gap-1 text-[10px] font-extrabold text-orange-500 hover:text-orange-600"
-                          >
-                            Explore products
-                            <ArrowRight size={11} />
-                          </button>
-                        </div>
-                      )}
-                  </motion.div>
+                    category={category}
+                    count={category.count}
+                    availableSubCategories={
+                      category.availableSubCategories
+                    }
+                    subCategoryCounts={
+                      category.subCategoryCounts
+                    }
+                    onCategoryClick={() =>
+                      openCategory(category.name)
+                    }
+                    onSubCategoryClick={(subCategory) =>
+                      openSubCategory(
+                        category.name,
+                        subCategory
+                      )
+                    }
+                  />
                 ))}
               </div>
             </div>
@@ -609,7 +684,7 @@ export default function Categories() {
 
         <button
           type="button"
-          onClick={openAllProducts}
+          onClick={() => router.push("/product")}
           className="
             mt-10
             flex
