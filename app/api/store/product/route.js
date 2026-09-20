@@ -11,7 +11,10 @@ const LOW_STOCK_LIMIT = 10;
 const normalizeTaxonomy = (value) => {
   if (!value) return null;
 
-  const cleaned = value.toString().trim().replace(/\s+/g, " ");
+  const cleaned = value
+    .toString()
+    .trim()
+    .replace(/\s+/g, " ");
 
   return cleaned || null;
 };

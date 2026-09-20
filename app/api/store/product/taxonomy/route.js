@@ -6,12 +6,15 @@ import { NextResponse } from "next/server";
 const normalizeTaxonomy = (value) => {
     if (!value) return "";
 
-    return value.toString().trim().replace(/\s+/g, " ");
+    return value
+        .toString()
+        .trim()
+        .replace(/\s+/g, " ");
 };
 
 export async function GET(request) {
     try {
-
+        // ================= AUTHENTICATION =================
         const { userId } = getAuth(request);
 
         const storeId = await authSeller(userId);
@@ -23,7 +26,9 @@ export async function GET(request) {
             );
         }
 
-        // get exisitng taxonomy
+        // ================= GET EXISTING TAXONOMY =================
+        // We read all active products so custom categories/subcategories
+        // created by sellers can be reused across the platform.
         const products = await prisma.product.findMany({
             where: {
                 isArchived: false,
@@ -34,7 +39,7 @@ export async function GET(request) {
             },
         });
 
-        // build unique taxonomy
+        // ================= BUILD UNIQUE TAXONOMY =================
         const categoryMap = new Map();
 
         products.forEach(({ category, subCategory }) => {
@@ -44,7 +49,7 @@ export async function GET(request) {
 
             const categoryKey = cleanCategory.toLowerCase();
 
-            if (!categoryKey.has(categoryKey)) {
+            if (!categoryMap.has(categoryKey)) {
                 categoryMap.set(categoryKey, {
                     name: cleanCategory,
                     subCategories: new Map(),
@@ -53,15 +58,19 @@ export async function GET(request) {
 
             const categoryData = categoryMap.get(categoryKey);
 
-            const cleanSubCategory = normalizeTaxonomy(subCategory);
+            const cleanSubCategory =
+                normalizeTaxonomy(subCategory);
 
             if (!cleanSubCategory) return;
 
-            const subCategoryKey = cleanSubCategory.toLowerCase();
+            const subCategoryKey =
+                cleanSubCategory.toLowerCase();
 
-            if (!categoryData.subCategories.has(
-                subCategoryKey
-            )) {
+            if (
+                !categoryData.subCategories.has(
+                    subCategoryKey
+                )
+            ) {
                 categoryData.subCategories.set(
                     subCategoryKey,
                     cleanSubCategory
@@ -69,18 +78,28 @@ export async function GET(request) {
             }
         });
 
-        // Format Response
+        // ================= FORMAT RESPONSE =================
         const categories = Array.from(
             categoryMap.values()
         )
-
-            .filter((category) => category.name.toLowerCase() !== "others").map((category) => ({
+            // "Others" is only a UI option for adding custom taxonomy.
+            // It should never become an actual taxonomy value.
+            .filter(
+                (category) =>
+                    category.name.toLowerCase() !== "others"
+            )
+            .map((category) => ({
                 name: category.name,
 
                 subCategories: Array.from(
                     category.subCategories.values()
-                ).sort((a, b) => a.name.localCompare(b)),
-            })).sort((a, b) => a.name.localCompare(b.name));
+                ).sort((a, b) =>
+                    a.localeCompare(b)
+                ),
+            }))
+            .sort((a, b) =>
+                a.name.localeCompare(b.name)
+            );
 
         return NextResponse.json({
             success: true,
@@ -88,15 +107,17 @@ export async function GET(request) {
         });
 
     } catch (error) {
-        console.error("Taxonomy api error", error);
+        console.error(
+            "TAXONOMY API ERROR:",
+            error
+        );
 
         return NextResponse.json(
             {
                 success: false,
-                error: "Failed to load memory",
+                error: "Failed to load taxonomy",
             },
             { status: 500 }
         );
-
     }
 }

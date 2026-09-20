@@ -100,11 +100,15 @@ export default function StoreAddProduct() {
                     )
                 }
             } catch (error) {
-                console.error("Taxonomy Fetch Error:", error);
+                console.error(
+                    "TAXONOMY FETCH ERROR:",
+                    error
+                )
             } finally {
                 setTaxonomyLoading(false)
             }
         }
+
         fetchTaxonomy()
     }, [getToken])
 
@@ -117,11 +121,17 @@ export default function StoreAddProduct() {
 
         const uniqueSubCategories = new Map()
 
-        // Predefined subcategories
-        const predefined = subCategoriesMap[category] || []
+        // -----------------------------------------
+        // 1. Predefined subcategories
+        // -----------------------------------------
+
+        const predefined =
+            subCategoriesMap[category] || []
 
         predefined.forEach((subCategory) => {
-            const clean = subCategory.trim().replace(/\s+/g, " ")
+            const clean = subCategory
+                .trim()
+                .replace(/\s+/g, " ")
 
             if (!clean) return
 
@@ -129,35 +139,54 @@ export default function StoreAddProduct() {
 
             if (!uniqueSubCategories.has(key)) {
                 uniqueSubCategories.set(
-                    key, clean
+                    key,
+                    clean
                 )
             }
         })
 
-        // Existing database subcategories
-        const databaseCategory = existingTaxonomy.find(
-            (item) => item?.name?.trim().toLowerCase() === category.trim().toLowerCase()
+        // -----------------------------------------
+        // 2. Existing database subcategories
+        // -----------------------------------------
+
+        const databaseCategory =
+            existingTaxonomy.find(
+                (item) =>
+                    item?.name
+                        ?.trim()
+                        .toLowerCase() ===
+                    category
+                        .trim()
+                        .toLowerCase()
+            )
+
+        const databaseSubCategories =
+            databaseCategory?.subCategories || []
+
+        databaseSubCategories.forEach(
+            (subCategory) => {
+                const clean = subCategory
+                    .trim()
+                    .replace(/\s+/g, " ")
+
+                if (!clean) return
+
+                const key = clean.toLowerCase()
+
+                if (!uniqueSubCategories.has(key)) {
+                    uniqueSubCategories.set(
+                        key,
+                        clean
+                    )
+                }
+            }
         )
-
-        const databaseSubCategories = databaseCategory?.subCategories || []
-
-        databaseSubCategories.forEach((subCategory) => {
-            const clean = subCategory.trim().replace(/\s+/g, " ")
-
-            if (!clean) return
-
-            const key = clean.toLowerCase()
-
-            if (!uniqueSubCategories.has(key)) {
-                uniqueSubCategories.set(
-                    key, clean
-                )
-            }
-        })
 
         return Array.from(
             uniqueSubCategories.values()
-        ).sort((a, b) => a.localeCompare(b))
+        ).sort((a, b) =>
+            a.localeCompare(b)
+        )
     }, [
         productInfo.category,
         existingTaxonomy,
