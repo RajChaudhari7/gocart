@@ -123,18 +123,24 @@ function SubCategoryCard({
       onClick={onClick}
       className="
         group
+        flex
         min-w-0
-        text-left
+        flex-col
+        items-center
+        text-center
         outline-none
       "
       aria-label={`Browse ${subCategory} in ${category}`}
     >
+      {/* SMALL CIRCULAR IMAGE */}
+
       <div
         className="
           relative
-          aspect-square
+          h-20
+          w-20
           overflow-hidden
-          rounded-2xl
+          rounded-full
           border
           border-slate-100
           bg-white
@@ -143,82 +149,45 @@ function SubCategoryCard({
           duration-300
           group-hover:-translate-y-1
           group-hover:border-orange-200
-          group-hover:shadow-lg
+          group-hover:shadow-md
           group-focus-visible:ring-2
           group-focus-visible:ring-orange-400
           group-focus-visible:ring-offset-2
+          sm:h-24
+          sm:w-24
+          md:h-28
+          md:w-28
         "
       >
-        {/* IMAGE */}
-
         <CategoryImage
           product={product}
           alt={`${subCategory} products`}
           sizes="
-            (max-width: 640px) 42vw,
-            (max-width: 768px) 28vw,
-            (max-width: 1024px) 21vw,
-            16vw
+            80px
+            sm:96px
+            md:112px
           "
         />
-
-        {/* GRADIENT */}
-
-        <div
-          className="
-            absolute
-            inset-0
-            bg-gradient-to-t
-            from-black/65
-            via-black/5
-            to-transparent
-          "
-        />
-
-        {/* PRODUCT COUNT */}
-
-        {count > 0 && (
-          <span
-            className="
-              absolute
-              right-2
-              top-2
-              rounded-full
-              border
-              border-white/80
-              bg-white/90
-              px-2
-              py-1
-              text-[9px]
-              font-extrabold
-              text-slate-700
-              shadow-sm
-              backdrop-blur-md
-            "
-          >
-            {count}
-          </span>
-        )}
-
-        {/* NAME */}
-
-        <div className="absolute inset-x-2 bottom-2.5">
-          <p
-            className="
-              line-clamp-2
-              text-center
-              text-[11px]
-              font-extrabold
-              leading-tight
-              text-white
-              drop-shadow-md
-              sm:text-xs
-            "
-          >
-            {subCategory}
-          </p>
-        </div>
       </div>
+
+      {/* SUBCATEGORY NAME */}
+
+      <p
+        className="
+          mt-2.5
+          line-clamp-2
+          max-w-[110px]
+          text-[11px]
+          font-bold
+          leading-tight
+          text-slate-700
+          transition-colors
+          group-hover:text-orange-500
+          sm:text-xs
+        "
+      >
+        {subCategory}
+      </p>
     </button>
   );
 }
