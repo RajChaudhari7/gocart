@@ -88,7 +88,7 @@ export default function StoreAddProduct() {
                 const { data } = await axios.get(
                     "/api/store/product/taxonomy",
                     {
-                        header: {
+                        headers: {
                             Authorization: `Bearer ${token}`,
                         },
                     }
