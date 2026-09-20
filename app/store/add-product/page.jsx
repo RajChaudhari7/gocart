@@ -4,7 +4,7 @@ import { assets } from "@/assets/assets"
 import { useAuth } from "@clerk/nextjs"
 import axios from "axios"
 import Image from "next/image"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { toast } from "sonner";
 import {
     BrowserMultiFormatReader,
@@ -56,6 +56,8 @@ export default function StoreAddProduct() {
     const [barcodeExists, setBarcodeExists] = useState(false)
     const [scanning, setScanning] = useState(false)
     const [storeCategory, setStoreCategory] = useState("")
+    const [existingTaxonomy, setExistingTaxonomy] = useState([])
+    const [taxonomyLoading, setTaxonomyLoading] = useState(false)
     const [extraFields, setExtraFields] = useState({
         size: "",
         weight: "",
@@ -75,6 +77,91 @@ export default function StoreAddProduct() {
 
         fetchStore()
     }, [])
+
+    useEffect(() => {
+        const fetchTaxonomy = async () => {
+            try {
+                setTaxonomyLoading(true)
+
+                const token = await getToken()
+
+                const { data } = await axios.get(
+                    "/api/store/product/taxonomy",
+                    {
+                        header: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                    }
+                )
+
+                if (data?.success) {
+                    setExistingTaxonomy(
+                        data.categories || []
+                    )
+                }
+            } catch (error) {
+                console.error("Taxonomy Fetch Error:", error);
+            } finally {
+                setTaxonomyLoading(false)
+            }
+        }
+        fetchTaxonomy()
+    }, [getToken])
+
+    const availableSubCategories = useMemo(() => {
+        const category = productInfo.category
+
+        if (!category || category === "Others") {
+            return []
+        }
+
+        const uniqueSubCategories = new Map()
+
+        // Predefined subcategories
+        const predefined = subCategoriesMap[category] || []
+
+        predefined.forEach((subCategory) => {
+            const clean = subCategory.trim().replace(/\s+/g, " ")
+
+            if (!clean) return
+
+            const key = clean.toLowerCase()
+
+            if (!uniqueSubCategories.has(key)) {
+                uniqueSubCategories.set(
+                    key, clean
+                )
+            }
+        })
+
+        // Existing database subcategories
+        const databaseCategory = existingTaxonomy.find(
+            (item) => item?.name?.trim().toLowerCase() === category.trim().toLowerCase()
+        )
+
+        const databaseSubCategories = databaseCategory?.subCategories || []
+
+        databaseSubCategories.forEach((subCategory) => {
+            const clean = subCategory.trim().replace(/\s+/g, " ")
+
+            if (!clean) return
+
+            const key = clean.toLowerCase()
+
+            if (!uniqueSubCategories.has(key)) {
+                uniqueSubCategories.set(
+                    key, clean
+                )
+            }
+        })
+
+        return Array.from(
+            uniqueSubCategories.values()
+        ).sort((a, b) => a.localeCompare(b))
+    }, [
+        productInfo.category,
+        existingTaxonomy,
+    ])
 
     const onChangeHandler = (e) => {
         const { name, value } = e.target
@@ -608,31 +695,54 @@ export default function StoreAddProduct() {
                             Sub Category
                         </label>
                         <select
-                            className="w-full mt-1 p-3 border rounded-lg disabled:bg-gray-100 disabled:cursor-not-allowed focus:ring-2 focus:ring-slate-900 outline-none"
-                            value={productInfo.category === "Others" ? "" : productInfo.subCategory}
-                            onChange={e => {
-                                setProductInfo({ ...productInfo, subCategory: e.target.value })
+                            className="w-full mt-1 p-3 border rounded-lg focus:ring-2 focus:ring-slate-900 outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                            value={
+                                productInfo.category === "Others"
+                                    ? ""
+                                    : productInfo.subCategory
+                            }
+                            onChange={(e) => {
+                                setProductInfo((prev) => ({
+                                    ...prev,
+                                    subCategory: e.target.value,
+                                }))
+
                                 setCustomSubCategory("")
                             }}
-                            required={productInfo.category !== "Others"}
-                            disabled={!productInfo.category || productInfo.category === "Others"}
+                            required={
+                                productInfo.category !== "Others"
+                            }
+                            disabled={
+                                !productInfo.category ||
+                                productInfo.category === "Others"
+                            }
                         >
-                            <option value="">Select sub-category</option>
+                            <option value="">
+                                {taxonomyLoading
+                                    ? "Loading subcategories..."
+                                    : "Select sub-category"}
+                            </option>
 
-                            {/* Standard Sub Categories */}
-                            {productInfo.category && productInfo.category !== "Others" && subCategoriesMap[productInfo.category]?.map(subCat => (
-                                <option key={subCat} value={subCat}>{subCat}</option>
-                            ))}
-
-                            {/* Fallback for standard categories with no map */}
-                            {!subCategoriesMap[productInfo.category] && productInfo.category && productInfo.category !== "Others" && (
-                                <option value="General">General</option>
+                            {availableSubCategories.map(
+                                (subCategory) => (
+                                    <option
+                                        key={subCategory.toLowerCase()}
+                                        value={subCategory}
+                                    >
+                                        {subCategory}
+                                    </option>
+                                )
                             )}
 
-                            {/* Custom Addition Option */}
-                            {productInfo.category && productInfo.category !== "Others" && (
-                                <option value="Others" className="font-semibold text-slate-700">+ Add Custom Subcategory</option>
-                            )}
+                            {productInfo.category &&
+                                productInfo.category !== "Others" && (
+                                    <option
+                                        value="Others"
+                                        className="font-semibold text-slate-700"
+                                    >
+                                        + Add Custom Subcategory
+                                    </option>
+                                )}
                         </select>
                     </div>
                 </div>

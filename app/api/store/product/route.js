@@ -7,6 +7,15 @@ import { sendEmail } from "@/lib/sendEmail"
 
 const LOW_STOCK_LIMIT = 10;
 
+// Taxonomy Helpers
+const normalizeTaxonomy = (value) => {
+  if (!value) return null;
+
+  const cleaned = value.toString().trim().replace(/\s+/g, " ");
+
+  return cleaned || null;
+};
+
 // ================= ADD PRODUCT =================
 export async function POST(request) {
   try {
@@ -24,8 +33,8 @@ export async function POST(request) {
     const mrp = Number(formData.get("mrp"))
     const price = Number(formData.get("price"))
     const quantity = Math.max(0, Number(formData.get("quantity")) || 0)
-    const category = formData.get("category")
-    const subCategory = formData.get("subCategory") || null // ✅ Added subCategory
+    const category = normalizeTaxonomy(formData.get("category"));
+    const subCategory = normalizeTaxonomy(formData.get("subCategory"));
 
     const barcode = formData.get("barcode")?.trim() || null
     const images = formData.getAll("images")
@@ -146,7 +155,7 @@ export async function GET(request) {
     }
 
     const products = await prisma.product.findMany({
-      where: { 
+      where: {
         storeId,
         isArchived: false // ✅ Filter out soft-deleted products
       },
@@ -289,7 +298,7 @@ export async function DELETE(request) {
     // ✅ Soft delete to prevent breaking historical orders
     await prisma.product.update({
       where: { id: productId },
-      data: { 
+      data: {
         isArchived: true,
         quantity: 0 // Prevents accidental purchases if something bypasses the filter
       }
