@@ -4,186 +4,106 @@ import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import Image from "next/image";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ImageOff } from "lucide-react";
 import { useCustomerLocation } from "@/context/CustomerLocationContext";
 
 /* =========================================================
-   CATEGORY IMAGE MAP
-
-   These are only visual fallbacks.
-   CATEGORY/SUBCATEGORY DATA comes from actual products.
+   HELPERS
 ========================================================= */
-
-const CATEGORY_IMAGES = {
-  Electronics:
-    "https://images.unsplash.com/photo-1498049794561-7780e7231661?auto=format&fit=crop&q=80&w=800",
-
-  Clothing:
-    "https://images.unsplash.com/photo-1445205170230-053b83016050?auto=format&fit=crop&q=80&w=800",
-
-  "Home & Kitchen":
-    "https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&q=80&w=800",
-
-  "Beauty & Health":
-    "https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&q=80&w=800",
-
-  "Toys & Games":
-    "https://images.unsplash.com/photo-1594736797933-d0501ba2fe65?auto=format&fit=crop&q=80&w=800",
-
-  "Sports & Outdoors":
-    "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&q=80&w=800",
-
-  "Books & Media":
-    "https://images.unsplash.com/photo-1495446815901-a7297e633e8d?auto=format&fit=crop&q=80&w=800",
-
-  "Food & Drink":
-    "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=800",
-
-  "Hobbies & Crafts":
-    "https://images.unsplash.com/photo-1452860606245-08befc0ff44b?auto=format&fit=crop&q=80&w=800",
-};
-
-const SUBCATEGORY_IMAGES = {
-  Mobiles:
-    "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&q=80&w=600",
-
-  Laptops:
-    "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&q=80&w=600",
-
-  Audio:
-    "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&q=80&w=600",
-
-  Wearables:
-    "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&q=80&w=600",
-
-  Appliances:
-    "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&q=80&w=600",
-
-  "Men's Wear":
-    "https://images.unsplash.com/photo-1617137968427-85924c800a22?auto=format&fit=crop&q=80&w=600",
-
-  "Women's Wear":
-    "https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&q=80&w=600",
-
-  "Kid's Wear":
-    "https://images.unsplash.com/photo-1519238263530-99bdd11df2ea?auto=format&fit=crop&q=80&w=600",
-
-  Shoes:
-    "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&q=80&w=600",
-
-  Furniture:
-    "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&q=80&w=600",
-
-  Decor:
-    "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&q=80&w=600",
-
-  Kitchenware:
-    "https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&q=80&w=600",
-
-  Bedding:
-    "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&q=80&w=600",
-
-  Lighting:
-    "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?auto=format&fit=crop&q=80&w=600",
-
-  Skincare:
-    "https://images.unsplash.com/photo-1556229010-6c3f2c9ca5f8?auto=format&fit=crop&q=80&w=600",
-
-  Makeup:
-    "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&q=80&w=600",
-
-  Haircare:
-    "https://images.unsplash.com/photo-1527799820374-dcf8a6d9f5a5?auto=format&fit=crop&q=80&w=600",
-
-  Fragrances:
-    "https://images.unsplash.com/photo-1541643600914-78b084683601?auto=format&fit=crop&q=80&w=600",
-
-  Supplements:
-    "https://images.unsplash.com/photo-1607619056574-7b8d3ee536b2?auto=format&fit=crop&q=80&w=600",
-
-  "Action Figures":
-    "https://images.unsplash.com/photo-1608889825103-eb5ed706fc64?auto=format&fit=crop&q=80&w=600",
-
-  "Board Games":
-    "https://images.unsplash.com/photo-1606503153255-59d8b8b8e1a5?auto=format&fit=crop&q=80&w=600",
-
-  Puzzles:
-    "https://images.unsplash.com/photo-1606503151374-d6b5c6c1c1f4?auto=format&fit=crop&q=80&w=600",
-
-  "Video Games":
-    "https://images.unsplash.com/photo-1606144042614-b2417e99c4e3?auto=format&fit=crop&q=80&w=600",
-
-  "Soft Toys":
-    "https://images.unsplash.com/photo-1559454403-b8fb88521f11?auto=format&fit=crop&q=80&w=600",
-
-  "Fitness Equipment":
-    "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&q=80&w=600",
-
-  "Outdoor Gear":
-    "https://images.unsplash.com/photo-1551632811-561732d1e306?auto=format&fit=crop&q=80&w=600",
-
-  "Team Sports":
-    "https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&fit=crop&q=80&w=600",
-
-  Sportswear:
-    "https://images.unsplash.com/photo-1517838277536-f5f99be50109?auto=format&fit=crop&q=80&w=600",
-
-  Fiction:
-    "https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&q=80&w=600",
-
-  "Non-Fiction":
-    "https://images.unsplash.com/photo-1495446815901-a7297e633e8d?auto=format&fit=crop&q=80&w=600",
-
-  Educational:
-    "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&q=80&w=600",
-
-  Comics:
-    "https://images.unsplash.com/photo-1608889825205-eebdb9fc5806?auto=format&fit=crop&q=80&w=600",
-
-  "Music & Movies":
-    "https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&q=80&w=600",
-
-  Snacks:
-    "https://images.unsplash.com/photo-1621939514649-280e2aa5d7f1?auto=format&fit=crop&q=80&w=600",
-
-  Beverages:
-    "https://images.unsplash.com/photo-1544145945-f90425340c7e?auto=format&fit=crop&q=80&w=600",
-
-  Groceries:
-    "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=600",
-
-  "Fresh Produce":
-    "https://images.unsplash.com/photo-1610832958506-aa56368176cf?auto=format&fit=crop&q=80&w=600",
-
-  "Packaged Food":
-    "https://images.unsplash.com/photo-1587049352846-4a222e784d38?auto=format&fit=crop&q=80&w=600",
-
-  "Art Supplies":
-    "https://images.unsplash.com/photo-1513364776144-60967b0f800f?auto=format&fit=crop&q=80&w=600",
-
-  "DIY Kits":
-    "https://images.unsplash.com/photo-1452860606245-08befc0ff44b?auto=format&fit=crop&q=80&w=600",
-
-  Collectibles:
-    "https://images.unsplash.com/photo-1560961911-ba7ef651a56c?auto=format&fit=crop&q=80&w=600",
-
-  "Musical Instruments":
-    "https://images.unsplash.com/photo-1524368535928-5b5e00ddc76b?auto=format&fit=crop&q=80&w=600",
-};
 
 const DEFAULT_IMAGE =
-  "https://images.unsplash.com/photo-1472851294608-062f824d29cc?auto=format&fit=crop&q=80&w=800";
+  "/categories/default-category.webp";
 
-/* =========================================================
-   GET IMAGE
-========================================================= */
+/**
+ * Returns the first usable image from a product.
+ */
+function getProductImage(product) {
+  if (!product || !Array.isArray(product.images)) {
+    return null;
+  }
 
-function getSubCategoryImage(subCategory) {
-  return SUBCATEGORY_IMAGES[subCategory] || DEFAULT_IMAGE;
+  return (
+    product.images.find(
+      (image) =>
+        typeof image === "string" &&
+        image.trim().length > 0
+    ) || null
+  );
 }
 
-function getCategoryImage(category) {
-  return CATEGORY_IMAGES[category] || DEFAULT_IMAGE;
+function getRepresentativeProduct(products = []) {
+  const productsWithImages = products.filter(
+    (product) => getProductImage(product)
+  );
+
+  if (!productsWithImages.length) {
+    return null;
+  }
+
+  return [...productsWithImages].sort((a, b) => {
+    const salesA = Number(a?.totalSales || 0);
+    const salesB = Number(b?.totalSales || 0);
+
+    if (salesB !== salesA) {
+      return salesB - salesA;
+    }
+
+    const viewsA = Number(a?.views || 0);
+    const viewsB = Number(b?.views || 0);
+
+    if (viewsB !== viewsA) {
+      return viewsB - viewsA;
+    }
+
+    const dateA = new Date(
+      a?.createdAt || 0
+    ).getTime();
+
+    const dateB = new Date(
+      b?.createdAt || 0
+    ).getTime();
+
+    return dateB - dateA;
+  })[0];
+}
+
+/* =========================================================
+   IMAGE COMPONENT
+
+   Uses the real product image when available.
+   Otherwise shows a clean fallback instead of a random
+   unrelated image.
+========================================================= */
+
+function CategoryImage({
+  product,
+  alt,
+  sizes = "160px",
+  className = "",
+}) {
+  const image = getProductImage(product);
+
+  if (!image) {
+    return (
+      <div
+        className={`flex h-full w-full items-center justify-center bg-gradient-to-br from-orange-50 via-white to-emerald-50 ${className}`}
+      >
+        <div className="flex flex-col items-center gap-1 text-slate-300">
+          <ImageOff size={22} />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <Image
+      src={image}
+      alt={alt}
+      fill
+      sizes={sizes}
+      className={`object-cover transition-transform duration-500 ease-out group-hover:scale-105 ${className}`}
+    />
+  );
 }
 
 /* =========================================================
@@ -194,6 +114,7 @@ function SubCategoryCard({
   category,
   subCategory,
   count,
+  product,
   onClick,
 }) {
   return (
@@ -202,12 +123,11 @@ function SubCategoryCard({
       onClick={onClick}
       className="
         group
-        min-w-[125px]
-        shrink-0
+        min-w-0
         text-left
-        sm:min-w-[140px]
-        md:min-w-0
+        outline-none
       "
+      aria-label={`Browse ${subCategory} in ${category}`}
     >
       <div
         className="
@@ -217,34 +137,45 @@ function SubCategoryCard({
           rounded-2xl
           border
           border-slate-100
-          bg-slate-50
+          bg-white
           shadow-sm
           transition-all
           duration-300
           group-hover:-translate-y-1
           group-hover:border-orange-200
-          group-hover:shadow-md
+          group-hover:shadow-lg
+          group-focus-visible:ring-2
+          group-focus-visible:ring-orange-400
+          group-focus-visible:ring-offset-2
         "
       >
-        <Image
-          src={getSubCategoryImage(subCategory)}
-          alt={`${subCategory} - ${category}`}
-          fill
-          className="
-            object-cover
-            transition-transform
-            duration-500
-            ease-out
-            group-hover:scale-105
-          "
+        {/* IMAGE */}
+
+        <CategoryImage
+          product={product}
+          alt={`${subCategory} products`}
           sizes="
-            (max-width: 640px) 125px,
-            (max-width: 768px) 140px,
+            (max-width: 640px) 42vw,
+            (max-width: 768px) 28vw,
+            (max-width: 1024px) 21vw,
             16vw
           "
         />
 
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+        {/* GRADIENT */}
+
+        <div
+          className="
+            absolute
+            inset-0
+            bg-gradient-to-t
+            from-black/65
+            via-black/5
+            to-transparent
+          "
+        />
+
+        {/* PRODUCT COUNT */}
 
         {count > 0 && (
           <span
@@ -256,21 +187,34 @@ function SubCategoryCard({
               border
               border-white/80
               bg-white/90
-              px-1.5
-              py-0.5
-              text-[8px]
-              font-bold
-              text-slate-600
+              px-2
+              py-1
+              text-[9px]
+              font-extrabold
+              text-slate-700
               shadow-sm
-              backdrop-blur-sm
+              backdrop-blur-md
             "
           >
             {count}
           </span>
         )}
 
-        <div className="absolute inset-x-2 bottom-2">
-          <p className="text-center text-[11px] font-bold leading-tight text-white drop-shadow sm:text-xs">
+        {/* NAME */}
+
+        <div className="absolute inset-x-2 bottom-2.5">
+          <p
+            className="
+              line-clamp-2
+              text-center
+              text-[11px]
+              font-extrabold
+              leading-tight
+              text-white
+              drop-shadow-md
+              sm:text-xs
+            "
+          >
             {subCategory}
           </p>
         </div>
@@ -288,70 +232,105 @@ function CategorySection({
   count,
   subCategories,
   subCategoryCounts,
+  categoryProduct,
+  subCategoryProducts,
   onCategoryClick,
   onSubCategoryClick,
 }) {
   return (
     <section>
+      {/* =====================================================
+          CATEGORY HEADER
+      ===================================================== */}
+
       <div className="mb-5 flex items-end justify-between gap-4">
         <button
           type="button"
           onClick={onCategoryClick}
-          className="group text-left"
+          className="
+            group
+            flex
+            min-w-0
+            items-center
+            gap-3
+            text-left
+            outline-none
+            focus-visible:ring-2
+            focus-visible:ring-orange-400
+            focus-visible:ring-offset-2
+            rounded-xl
+          "
+          aria-label={`Browse ${category}`}
         >
-          <div className="flex items-center gap-3">
-            <div className="relative h-11 w-11 overflow-hidden rounded-xl bg-orange-50">
-              <Image
-                src={getCategoryImage(category)}
-                alt={category}
-                fill
-                className="object-cover"
-                sizes="44px"
+          {/* CATEGORY IMAGE */}
+
+          <div
+            className="
+              relative
+              h-12
+              w-12
+              shrink-0
+              overflow-hidden
+              rounded-xl
+              border
+              border-slate-100
+              bg-white
+              shadow-sm
+            "
+          >
+            <CategoryImage
+              product={categoryProduct}
+              alt={`${category} products`}
+              sizes="48px"
+            />
+          </div>
+
+          {/* CATEGORY TEXT */}
+
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5">
+              <h3
+                className="
+                  truncate
+                  text-xl
+                  font-black
+                  tracking-tight
+                  text-slate-900
+                  transition-colors
+                  group-hover:text-orange-500
+                  sm:text-2xl
+                "
+              >
+                {category}
+              </h3>
+
+              <ArrowRight
+                size={17}
+                className="
+                  shrink-0
+                  text-slate-300
+                  transition-all
+                  group-hover:translate-x-1
+                  group-hover:text-orange-500
+                "
               />
             </div>
 
-            <div>
-              <div className="flex items-center gap-1.5">
-                <h3
-                  className="
-                    text-xl
-                    font-black
-                    tracking-tight
-                    text-slate-900
-                    transition-colors
-                    group-hover:text-orange-500
-                    sm:text-2xl
-                  "
-                >
-                  {category}
-                </h3>
-
-                <ArrowRight
-                  size={17}
-                  className="
-                    text-slate-300
-                    transition-all
-                    group-hover:translate-x-1
-                    group-hover:text-orange-500
-                  "
-                />
-              </div>
-
-              <p className="mt-0.5 text-[11px] font-medium text-slate-400 sm:text-xs">
-                {count > 0
-                  ? `${count} ${count === 1 ? "product" : "products"
-                  } nearby`
-                  : "Explore products"}
-              </p>
-            </div>
+            <p className="mt-0.5 text-[11px] font-medium text-slate-400 sm:text-xs">
+              {count}{" "}
+              {count === 1 ? "product" : "products"} nearby
+            </p>
           </div>
         </button>
+
+        {/* DESKTOP VIEW ALL */}
 
         <button
           type="button"
           onClick={onCategoryClick}
           className="
             hidden
+            shrink-0
             items-center
             gap-1
             text-xs
@@ -367,7 +346,9 @@ function CategorySection({
         </button>
       </div>
 
-      {/* SUBCATEGORY GRID */}
+      {/* =====================================================
+          SUBCATEGORIES
+      ===================================================== */}
 
       {subCategories.length > 0 ? (
         <div
@@ -386,7 +367,12 @@ function CategorySection({
               key={subCategory}
               category={category}
               subCategory={subCategory}
-              count={subCategoryCounts[subCategory] || 0}
+              count={
+                subCategoryCounts[subCategory] || 0
+              }
+              product={
+                subCategoryProducts[subCategory] || null
+              }
               onClick={() =>
                 onSubCategoryClick(subCategory)
               }
@@ -394,31 +380,56 @@ function CategorySection({
           ))}
         </div>
       ) : (
+        /* ===================================================
+           CATEGORY WITHOUT SUBCATEGORIES
+        =================================================== */
+
         <button
           type="button"
           onClick={onCategoryClick}
           className="
+            flex
+            w-full
+            items-center
+            justify-between
             rounded-2xl
             border
-            border-dashed
             border-slate-200
             bg-white
             px-5
-            py-8
-            text-sm
-            font-bold
-            text-slate-500
+            py-5
+            text-left
+            shadow-sm
             transition-all
             hover:border-orange-200
             hover:bg-orange-50
-            hover:text-orange-600
+            hover:shadow-md
           "
         >
-          Explore {category}
-          <ArrowRight
-            size={15}
-            className="ml-1 inline"
-          />
+          <div>
+            <p className="text-sm font-bold text-slate-800">
+              Explore {category}
+            </p>
+
+            <p className="mt-1 text-xs text-slate-400">
+              Browse all nearby products
+            </p>
+          </div>
+
+          <div
+            className="
+              flex
+              h-9
+              w-9
+              items-center
+              justify-center
+              rounded-full
+              bg-orange-50
+              text-orange-500
+            "
+          >
+            <ArrowRight size={16} />
+          </div>
         </button>
       )}
     </section>
@@ -442,9 +453,9 @@ export default function Categories() {
     serviceable,
   } = useCustomerLocation();
 
-  /* ---------------------------------------------------------
-     ONLY PRODUCTS AVAILABLE TO THIS CUSTOMER
-  --------------------------------------------------------- */
+  /* =======================================================
+     NEARBY PRODUCTS
+  ======================================================= */
 
   const nearbyProducts = useMemo(() => {
     if (!Array.isArray(allProducts)) {
@@ -454,107 +465,252 @@ export default function Categories() {
     return filterNearbyProducts(allProducts);
   }, [allProducts, filterNearbyProducts]);
 
-  /* ---------------------------------------------------------
-     BUILD DYNAMIC TAXONOMY
+  /* =======================================================
+     BUILD DYNAMIC CATEGORY STRUCTURE
 
      Example:
 
      Electronics
-       ├─ Mobiles
-       ├─ Laptops
-       ├─ Buds        <-- automatically appears
-       └─ Smart Watch <-- automatically appears
+       ├── Mobiles
+       ├── Laptops
+       └── Buds
+
+     Beauty & Health
+       ├── Makeup
+       └── Foundation
 
      Pet Supplies
-       └─ Dog Food    <-- custom category automatically appears
-  --------------------------------------------------------- */
+       └── Dog Food
+
+     Nothing is hardcoded here.
+  ======================================================= */
 
   const categories = useMemo(() => {
-    const map = {};
+    const categoryMap = {};
 
     nearbyProducts.forEach((product) => {
-      const category = product?.category?.trim();
+      const category =
+        product?.category?.trim();
 
-      if (!category) return;
+      if (!category) {
+        return;
+      }
 
-      if (!map[category]) {
-        map[category] = {
-          count: 0,
+      if (!categoryMap[category]) {
+        categoryMap[category] = {
+          products: [],
           subCategories: {},
         };
       }
 
-      map[category].count += 1;
+      categoryMap[category].products.push(product);
 
       const subCategory =
         product?.subCategory?.trim();
 
-      if (subCategory) {
-        map[category].subCategories[subCategory] =
-          (map[category].subCategories[subCategory] || 0) + 1;
+      if (!subCategory) {
+        return;
       }
+
+      if (
+        !categoryMap[category].subCategories[
+        subCategory
+        ]
+      ) {
+        categoryMap[category].subCategories[
+          subCategory
+        ] = [];
+      }
+
+      categoryMap[category].subCategories[
+        subCategory
+      ].push(product);
     });
 
-    return Object.entries(map)
-      .map(([category, data]) => ({
-        category,
-        count: data.count,
-        subCategories: Object.keys(
-          data.subCategories
-        ).sort((a, b) =>
-          a.localeCompare(b)
-        ),
-        subCategoryCounts: data.subCategories,
-      }))
+    return Object.entries(categoryMap)
+      .map(([category, data]) => {
+        const subCategoryEntries =
+          Object.entries(
+            data.subCategories
+          );
+
+        const subCategoryCounts = {};
+
+        const subCategoryProducts = {};
+
+        subCategoryEntries.forEach(
+          ([subCategory, products]) => {
+            subCategoryCounts[subCategory] =
+              products.length;
+
+            subCategoryProducts[subCategory] =
+              getRepresentativeProduct(products);
+          }
+        );
+
+        return {
+          category,
+
+          count: data.products.length,
+
+          /* Representative image for main category */
+
+          categoryProduct:
+            getRepresentativeProduct(
+              data.products
+            ),
+
+          /* Available subcategories only */
+
+          subCategories: subCategoryEntries
+            .map(([subCategory]) => subCategory)
+            .sort((a, b) =>
+              a.localeCompare(b)
+            ),
+
+          subCategoryCounts,
+
+          subCategoryProducts,
+        };
+      })
       .sort((a, b) =>
-        a.category.localeCompare(b.category)
+        a.category.localeCompare(
+          b.category
+        )
       );
   }, [nearbyProducts]);
 
-  /* ---------------------------------------------------------
+  /* =======================================================
      LOCATION STATES
-  --------------------------------------------------------- */
+  ======================================================= */
 
-  if (locationLoading || !serviceable) {
+  if (locationLoading) {
     return null;
   }
 
-  /* ---------------------------------------------------------
-     NO PRODUCTS
-  --------------------------------------------------------- */
-
-  if (categories.length === 0) {
+  if (!serviceable) {
     return null;
   }
 
-  /* ---------------------------------------------------------
+  /* =======================================================
+     NOTHING AVAILABLE
+  ======================================================= */
+
+  if (!categories.length) {
+    return null;
+  }
+
+  /* =======================================================
+     ROUTING
+  ======================================================= */
+
+  const handleCategoryClick = (category) => {
+    router.push(
+      `/product?category=${encodeURIComponent(
+        category
+      )}`
+    );
+  };
+
+  const handleSubCategoryClick = (
+    category,
+    subCategory
+  ) => {
+    router.push(
+      `/product?category=${encodeURIComponent(
+        category
+      )}&subCategory=${encodeURIComponent(
+        subCategory
+      )}`
+    );
+  };
+
+  /* =======================================================
      UI
-  --------------------------------------------------------- */
+  ======================================================= */
 
   return (
-    <section className="bg-[#fffaf5] py-10 sm:py-14 lg:py-16">
-      <div className="mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8">
+    <section
+      className="
+        bg-[#fffaf5]
+        py-10
+        sm:py-14
+        lg:py-16
+      "
+    >
+      <div
+        className="
+          mx-auto
+          max-w-[1400px]
+          px-4
+          sm:px-6
+          lg:px-8
+        "
+      >
+        {/* =================================================
+            SECTION HEADER
+        ================================================= */}
 
-        {/* HEADER */}
-
-        <div className="mb-9 flex items-end justify-between gap-4 sm:mb-11">
+        <div
+          className="
+            mb-9
+            flex
+            items-end
+            justify-between
+            gap-4
+            sm:mb-11
+          "
+        >
           <div>
-            <p className="mb-1.5 text-[10px] font-extrabold uppercase tracking-[0.2em] text-orange-500 sm:text-xs">
+            <p
+              className="
+                mb-1.5
+                text-[10px]
+                font-extrabold
+                uppercase
+                tracking-[0.2em]
+                text-orange-500
+                sm:text-xs
+              "
+            >
               Explore nearby
             </p>
 
-            <h2 className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl lg:text-4xl">
+            <h2
+              className="
+                text-2xl
+                font-black
+                tracking-tight
+                text-slate-900
+                sm:text-3xl
+                lg:text-4xl
+              "
+            >
               Shop by Category
             </h2>
 
-            <p className="mt-2 max-w-xl text-sm leading-6 text-slate-500 sm:text-base">
-              Browse products from local shops near you.
+            <p
+              className="
+                mt-2
+                max-w-xl
+                text-sm
+                leading-6
+                text-slate-500
+                sm:text-base
+              "
+            >
+              Discover products from local
+              shops near you.
             </p>
           </div>
 
+          {/* DESKTOP */}
+
           <button
             type="button"
-            onClick={() => router.push("/product")}
+            onClick={() =>
+              router.push("/product")
+            }
             className="
               hidden
               items-center
@@ -581,38 +737,47 @@ export default function Categories() {
           </button>
         </div>
 
-        {/* =====================================================
-            DYNAMIC CATEGORIES
-        ===================================================== */}
+        {/* =================================================
+            CATEGORY SECTIONS
+        ================================================= */}
 
         <div className="space-y-12 sm:space-y-16">
           {categories.map(
             ({
               category,
               count,
+              categoryProduct,
               subCategories,
               subCategoryCounts,
+              subCategoryProducts,
             }) => (
               <CategorySection
                 key={category}
                 category={category}
                 count={count}
-                subCategories={subCategories}
-                subCategoryCounts={subCategoryCounts}
+                categoryProduct={
+                  categoryProduct
+                }
+                subCategories={
+                  subCategories
+                }
+                subCategoryCounts={
+                  subCategoryCounts
+                }
+                subCategoryProducts={
+                  subCategoryProducts
+                }
                 onCategoryClick={() =>
-                  router.push(
-                    `/product?category=${encodeURIComponent(
-                      category
-                    )}`
+                  handleCategoryClick(
+                    category
                   )
                 }
-                onSubCategoryClick={(subCategory) =>
-                  router.push(
-                    `/product?category=${encodeURIComponent(
-                      category
-                    )}&subCategory=${encodeURIComponent(
-                      subCategory
-                    )}`
+                onSubCategoryClick={(
+                  subCategory
+                ) =>
+                  handleSubCategoryClick(
+                    category,
+                    subCategory
                   )
                 }
               />
@@ -620,11 +785,15 @@ export default function Categories() {
           )}
         </div>
 
-        {/* MOBILE VIEW ALL */}
+        {/* =================================================
+            MOBILE VIEW ALL
+        ================================================= */}
 
         <button
           type="button"
-          onClick={() => router.push("/product")}
+          onClick={() =>
+            router.push("/product")
+          }
           className="
             mt-10
             flex
