@@ -6,6 +6,8 @@ import { useAuth } from "@clerk/nextjs"
 import axios from "axios"
 import { toast } from "sonner";
 import { useOrderStore } from "@/hooks/use-order-store"
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 
 const SELLER_STATUSES = [
     "ORDER_PLACED",
