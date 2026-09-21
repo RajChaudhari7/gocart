@@ -277,126 +277,814 @@ export default function StoreOrders() {
         document.body.removeChild(reportDiv)
     }
 
-    const downloadInvoicePDF = async (order) => {
+    const escapeHTML = (value) => {
+        if (value === null || value === undefined) {
+            return "";
+        }
 
-        const shippingFee = order.shippingFee || 50;
-        const productTotal = order.total - shippingFee;
-        // Helper to get image as base64 to avoid CORS issues in PDF
+        return String(value)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    };
+
+    const storeNameSafe = (value) => {
+        return escapeHTML(value || "Store");
+    };
+
+    const downloadInvoicePDF = async (order) => {
+        if (!order) {
+            toast.error("Order information is unavailable.");
+            return;
+        }
+
         const getBase64Image = async (url) => {
             if (!url) return null;
+
             try {
-                const response = await fetch(url);
+                const response = await fetch(url, {
+                    mode: "cors",
+                });
+
+                if (!response.ok) return null;
+
                 const blob = await response.blob();
-                return new Promise((resolve) => {
+
+                return await new Promise((resolve) => {
                     const reader = new FileReader();
+
                     reader.onloadend = () => resolve(reader.result);
+                    reader.onerror = () => resolve(null);
+
                     reader.readAsDataURL(blob);
                 });
-            } catch (e) { return null; }
+            } catch (error) {
+                console.error("Invoice image error:", error);
+                return null;
+            }
         };
 
-        const logoBase64 = await getBase64Image(order.store?.logo);
-
-        const invoiceDiv = document.createElement('div');
-        invoiceDiv.style.position = 'fixed';
-        invoiceDiv.style.left = '-9999px';
-        invoiceDiv.style.width = '800px';
-        invoiceDiv.style.background = '#ffffff';
-        invoiceDiv.style.padding = '50px';
-        invoiceDiv.style.color = '#1f2937';
-        invoiceDiv.style.fontFamily = 'Helvetica, Arial, sans-serif';
-
-        invoiceDiv.innerHTML = `
-        <div style="border: 2px solid #0f172a; padding: 30px;">
-            <!-- Header with Store Logo -->
-            <div style="display: flex; justify-content: space-between; align-items: start; border-bottom: 2px solid #0f172a; padding-bottom: 20px;">
-                <div style="display: flex; align-items: center; gap: 15px;">
-                    ${logoBase64 ? `<img src="${logoBase64}" style="width: 60px; height: 60px; border-radius: 50%; border: 1px solid #ddd;" />` : ''}
-                    <div>
-                        <h1 style="color: #0f172a; margin: 0; font-size: 24px;">${order.store?.name || 'Nandurbar Bazar'}</h1>
-                        <p style="margin: 5px 0 0; color: #64748b; font-size: 14px;">Invoice ID: #${order.id.slice(-8).toUpperCase()}</p>
-                    </div>
-                </div>
-                <div style="text-align: right;">
-                    <h2 style="color: #0891b2; margin: 0;">OFFICIAL RECEIPT</h2>
-                </div>
-            </div>
-
-            <!-- Details -->
-            <div style="display: flex; justify-content: space-between; margin-top: 30px; font-size: 14px;">
-                <div>
-                    <h3 style="margin: 0; color: #64748b; text-transform: uppercase; font-size: 12px;">Customer Details</h3>
-                    <p style="margin: 5px 0; font-weight: bold; font-size: 16px;">${order.user?.name}</p>
-                    <p style="margin: 0;">${order.address?.street || ''}, ${order.address?.city || ''}</p>
-                    <p style="margin: 0;">Ph: ${order.address?.phone || order.user?.phone || 'N/A'}</p>
-                </div>
-                <div style="text-align: right;">
-                    <h3 style="margin: 0; color: #64748b; text-transform: uppercase; font-size: 12px;">Payment Mode</h3>
-                    <p style="margin: 5px 0; font-weight: bold;">${order.paymentMethod || 'N/A'}</p>
-                    <h3 style="margin: 15px 0 0; color: #64748b; text-transform: uppercase; font-size: 12px;">Order Date</h3>
-                    <p style="margin: 5px 0; font-weight: bold;">${new Date(order.createdAt).toLocaleDateString()}</p>
-                </div>
-            </div>
-
-            <!-- Table -->
-            <table style="width: 100%; border-collapse: collapse; margin-top: 30px;">
-                <thead>
-                    <tr style="background: #0f172a; color: #ffffff;">
-                        <th style="padding: 12px; text-align: left;">Item Description</th>
-                        <th style="padding: 12px; text-align: center;">Qty</th>
-                        <th style="padding: 12px; text-align: right;">Price</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${order.orderItems.map(item => `
-                        <tr style="border-bottom: 1px solid #e2e8f0;">
-                            <td style="padding: 12px;">${item.product?.name}</td>
-                            <td style="padding: 12px; text-align: center;">${item.quantity}</td>
-                            <td style="padding: 12px; text-align: right;">₹${(item.price * item.quantity).toFixed(2)}</td>
-                        </tr>
-                    `).join('')}
-                </tbody>
-            </table>
-
-            <!-- Summary -->
-            <div style="margin-top: 20px; float: right; width: 280px;">
-    <div style="display: flex; justify-content: space-between; padding: 5px 0; color: #64748b;">
-        <span>Product Total:</span> 
-        <span>₹${productTotal.toFixed(2)}</span>
-    </div>
-    <div style="display: flex; justify-content: space-between; padding: 5px 0; color: #64748b;">
-        <span>Delivery Fee:</span> 
-        <span>₹${shippingFee.toFixed(2)}</span>
-    </div>
-    <div style="display: flex; justify-content: space-between; padding: 10px 0; border-top: 2px solid #0f172a; font-weight: bold; font-size: 18px; color: #000000;">
-        <span>Total Paid:</span> 
-        <span>₹${order.total.toFixed(2)}</span>
-    </div>
-</div>
-            <div style="clear: both;"></div>
-
-            <!-- Footer -->
-            <div style="margin-top: 50px; text-align: center; border-top: 1px solid #e2e8f0; padding-top: 20px;">
-                <p style="font-weight: bold; color: #0f172a;">Thank you for using Nandurbar Bazar!</p>
-            </div>
-        </div>
-    `;
-
-        document.body.appendChild(invoiceDiv);
-
         try {
-            const canvas = await html2canvas(invoiceDiv, { scale: 2, allowTaint: true, useCORS: true });
-            const imgData = canvas.toDataURL('image/png');
-            const pdf = new jsPDF('p', 'pt', 'a4');
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-            pdf.addImage(imgData, 'PNG', 20, 20, pdfWidth - 40, pdfHeight);
-            pdf.save(`Invoice_${order.id.slice(-6)}.pdf`);
-            toast.success("Invoice downloaded!");
-        } catch (err) {
-            toast.error("Failed to generate invoice");
-        } finally {
-            document.body.removeChild(invoiceDiv);
+            toast.loading("Preparing invoice...", {
+                id: "invoice-pdf",
+            });
+
+            const logoBase64 = await getBase64Image(order.store?.logo);
+
+            /*
+             * Use the actual order delivery fee.
+             * Fallback only if the order does not contain it.
+             */
+            const deliveryFee = Number(
+                order.deliveryFee ??
+                order.shippingFee ??
+                settings?.deliveryFee ??
+                0
+            );
+
+            /*
+             * Calculate product subtotal from order items.
+             */
+            const productSubtotal = (order.orderItems || []).reduce(
+                (sum, item) =>
+                    sum +
+                    Number(item.price || 0) *
+                    Number(item.quantity || 0),
+                0
+            );
+
+            /*
+             * Use the actual order total as the final customer-paid amount.
+             * This is important if coupons/discounts are applied.
+             */
+            const totalPaid = Number(order.total || 0);
+
+            const invoiceNumber =
+                order.id?.slice(-8)?.toUpperCase() || "N/A";
+
+            const orderDate = order.createdAt
+                ? new Date(order.createdAt).toLocaleDateString("en-IN", {
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric",
+                })
+                : "N/A";
+
+            const orderTime = order.createdAt
+                ? new Date(order.createdAt).toLocaleTimeString("en-IN", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                })
+                : "";
+
+            const customerName =
+                order.user?.name ||
+                order.address?.name ||
+                "Customer";
+
+            const customerPhone =
+                order.address?.phone ||
+                order.user?.phone ||
+                "N/A";
+
+            const customerEmail =
+                order.user?.email ||
+                "N/A";
+
+            const address = order.address || {};
+
+            const fullAddress = [
+                address.street,
+                address.city,
+                address.state,
+                address.zip,
+                address.country,
+            ]
+                .filter(Boolean)
+                .join(", ");
+
+            /*
+             * Build invoice HTML using ONLY inline styles.
+             *
+             * This is intentionally isolated from your application's
+             * Tailwind/global CSS to prevent html2canvas from seeing
+             * unsupported OKLCH colors.
+             */
+            const invoiceHTML = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8" />
+
+                <style>
+                    * {
+                        box-sizing: border-box;
+                    }
+
+                    html,
+                    body {
+                        margin: 0;
+                        padding: 0;
+                        background: #ffffff;
+                    }
+
+                    body {
+                        font-family: Arial, Helvetica, sans-serif;
+                        color: #111827;
+                    }
+
+                    .invoice {
+                        width: 800px;
+                        background: #ffffff;
+                        padding: 45px;
+                    }
+
+                    .top-border {
+                        height: 6px;
+                        background: #4f46e5;
+                        border-radius: 4px 4px 0 0;
+                    }
+
+                    .header {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: flex-start;
+                        padding: 30px 0 25px;
+                        border-bottom: 1px solid #e5e7eb;
+                    }
+
+                    .store-section {
+                        display: flex;
+                        align-items: center;
+                        gap: 15px;
+                    }
+
+                    .store-logo {
+                        width: 64px;
+                        height: 64px;
+                        object-fit: cover;
+                        border-radius: 12px;
+                        border: 1px solid #e5e7eb;
+                    }
+
+                    .store-name {
+                        margin: 0;
+                        font-size: 24px;
+                        font-weight: 700;
+                        color: #111827;
+                    }
+
+                    .store-subtitle {
+                        margin: 5px 0 0;
+                        font-size: 12px;
+                        color: #6b7280;
+                    }
+
+                    .invoice-title {
+                        text-align: right;
+                    }
+
+                    .invoice-title h2 {
+                        margin: 0;
+                        font-size: 24px;
+                        font-weight: 700;
+                        color: #4f46e5;
+                    }
+
+                    .invoice-number {
+                        margin: 6px 0 0;
+                        font-size: 12px;
+                        color: #6b7280;
+                    }
+
+                    .info-grid {
+                        display: flex;
+                        gap: 25px;
+                        margin-top: 28px;
+                    }
+
+                    .info-card {
+                        flex: 1;
+                        background: #f8fafc;
+                        border: 1px solid #e5e7eb;
+                        border-radius: 10px;
+                        padding: 18px;
+                    }
+
+                    .info-title {
+                        margin: 0 0 10px;
+                        font-size: 11px;
+                        font-weight: 700;
+                        color: #6b7280;
+                        text-transform: uppercase;
+                        letter-spacing: 0.5px;
+                    }
+
+                    .info-main {
+                        margin: 0 0 5px;
+                        font-size: 14px;
+                        font-weight: 700;
+                        color: #111827;
+                    }
+
+                    .info-text {
+                        margin: 3px 0;
+                        font-size: 12px;
+                        line-height: 1.5;
+                        color: #4b5563;
+                    }
+
+                    .items-title {
+                        margin: 30px 0 12px;
+                        font-size: 16px;
+                        font-weight: 700;
+                        color: #111827;
+                    }
+
+                    table {
+                        width: 100%;
+                        border-collapse: collapse;
+                    }
+
+                    thead tr {
+                        background: #111827;
+                        color: #ffffff;
+                    }
+
+                    th {
+                        padding: 12px;
+                        font-size: 11px;
+                        text-align: left;
+                        font-weight: 700;
+                    }
+
+                    th.center {
+                        text-align: center;
+                    }
+
+                    th.right {
+                        text-align: right;
+                    }
+
+                    td {
+                        padding: 13px 12px;
+                        border-bottom: 1px solid #e5e7eb;
+                        font-size: 12px;
+                        color: #374151;
+                    }
+
+                    td.center {
+                        text-align: center;
+                    }
+
+                    td.right {
+                        text-align: right;
+                    }
+
+                    .product-name {
+                        font-weight: 600;
+                        color: #111827;
+                    }
+
+                    .summary-wrapper {
+                        display: flex;
+                        justify-content: flex-end;
+                        margin-top: 25px;
+                    }
+
+                    .summary {
+                        width: 300px;
+                    }
+
+                    .summary-row {
+                        display: flex;
+                        justify-content: space-between;
+                        padding: 7px 0;
+                        font-size: 13px;
+                        color: #6b7280;
+                    }
+
+                    .summary-total {
+                        display: flex;
+                        justify-content: space-between;
+                        margin-top: 10px;
+                        padding-top: 14px;
+                        border-top: 2px solid #111827;
+                        font-size: 18px;
+                        font-weight: 700;
+                        color: #111827;
+                    }
+
+                    .payment-box {
+                        margin-top: 30px;
+                        padding: 15px 18px;
+                        background: #eef2ff;
+                        border: 1px solid #c7d2fe;
+                        border-radius: 10px;
+                    }
+
+                    .payment-label {
+                        margin: 0 0 4px;
+                        font-size: 10px;
+                        font-weight: 700;
+                        color: #6366f1;
+                        text-transform: uppercase;
+                    }
+
+                    .payment-value {
+                        margin: 0;
+                        font-size: 13px;
+                        font-weight: 700;
+                        color: #312e81;
+                    }
+
+                    .footer {
+                        margin-top: 40px;
+                        padding-top: 20px;
+                        border-top: 1px solid #e5e7eb;
+                        text-align: center;
+                    }
+
+                    .footer-title {
+                        margin: 0;
+                        font-size: 14px;
+                        font-weight: 700;
+                        color: #111827;
+                    }
+
+                    .footer-text {
+                        margin: 6px 0 0;
+                        font-size: 11px;
+                        color: #6b7280;
+                    }
+                </style>
+            </head>
+
+            <body>
+                <div class="invoice">
+
+                    <div class="top-border"></div>
+
+                    <!-- HEADER -->
+                    <div class="header">
+
+                        <div class="store-section">
+
+                            ${logoBase64
+                    ? `
+                                    <img
+                                        class="store-logo"
+                                        src="${logoBase64}"
+                                    />
+                                    `
+                    : ""
+                }
+
+                            <div>
+                                <h1 class="store-name">
+                                    ${storeNameSafe(order.store?.name)}
+                                </h1>
+
+                                <p class="store-subtitle">
+                                    Nandurbar Bazar
+                                </p>
+                            </div>
+
+                        </div>
+
+                        <div class="invoice-title">
+
+                            <h2>
+                                INVOICE
+                            </h2>
+
+                            <p class="invoice-number">
+                                #${invoiceNumber}
+                            </p>
+
+                            <p class="invoice-number">
+                                ${orderDate} ${orderTime}
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- CUSTOMER / ORDER INFO -->
+                    <div class="info-grid">
+
+                        <div class="info-card">
+
+                            <p class="info-title">
+                                Bill To
+                            </p>
+
+                            <p class="info-main">
+                                ${escapeHTML(customerName)}
+                            </p>
+
+                            <p class="info-text">
+                                ${escapeHTML(customerEmail)}
+                            </p>
+
+                            <p class="info-text">
+                                ${escapeHTML(customerPhone)}
+                            </p>
+
+                        </div>
+
+
+                        <div class="info-card">
+
+                            <p class="info-title">
+                                Delivery Address
+                            </p>
+
+                            <p class="info-text">
+                                ${escapeHTML(fullAddress || "N/A")}
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- PRODUCTS -->
+                    <h3 class="items-title">
+                        Order Items
+                    </h3>
+
+                    <table>
+
+                        <thead>
+
+                            <tr>
+                                <th>
+                                    Item
+                                </th>
+
+                                <th class="center">
+                                    Qty
+                                </th>
+
+                                <th class="right">
+                                    Price
+                                </th>
+
+                                <th class="right">
+                                    Amount
+                                </th>
+                            </tr>
+
+                        </thead>
+
+                        <tbody>
+
+                            ${(order.orderItems || [])
+                    .map((item) => {
+
+                        const quantity =
+                            Number(item.quantity || 0);
+
+                        const price =
+                            Number(item.price || 0);
+
+                        const amount =
+                            price * quantity;
+
+                        return `
+                                            <tr>
+
+                                                <td>
+                                                    <span class="product-name">
+                                                        ${escapeHTML(
+                            item.product?.name ||
+                            "Product"
+                        )}
+                                                    </span>
+                                                </td>
+
+                                                <td class="center">
+                                                    ${quantity}
+                                                </td>
+
+                                                <td class="right">
+                                                    ₹${price.toFixed(2)}
+                                                </td>
+
+                                                <td class="right">
+                                                    ₹${amount.toFixed(2)}
+                                                </td>
+
+                                            </tr>
+                                        `;
+                    })
+                    .join("")
+                }
+
+                        </tbody>
+
+                    </table>
+
+
+                    <!-- PAYMENT -->
+                    <div class="payment-box">
+
+                        <p class="payment-label">
+                            Payment Method
+                        </p>
+
+                        <p class="payment-value">
+                            ${escapeHTML(
+                    order.paymentMethod || "Cash on Delivery"
+                )}
+                        </p>
+
+                    </div>
+
+
+                    <!-- SUMMARY -->
+                    <div class="summary-wrapper">
+
+                        <div class="summary">
+
+                            <div class="summary-row">
+                                <span>
+                                    Subtotal
+                                </span>
+
+                                <span>
+                                    ₹${productSubtotal.toFixed(2)}
+                                </span>
+                            </div>
+
+                            <div class="summary-row">
+                                <span>
+                                    Delivery Fee
+                                </span>
+
+                                <span>
+                                    ₹${deliveryFee.toFixed(2)}
+                                </span>
+                            </div>
+
+                            <div class="summary-total">
+
+                                <span>
+                                    Total Paid
+                                </span>
+
+                                <span>
+                                    ₹${totalPaid.toFixed(2)}
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- FOOTER -->
+                    <div class="footer">
+
+                        <p class="footer-title">
+                            Thank you for shopping with us!
+                        </p>
+
+                        <p class="footer-text">
+                            We appreciate your order and hope to serve you again.
+                        </p>
+
+                        <p class="footer-text">
+                            This is a computer-generated invoice.
+                        </p>
+
+                    </div>
+
+                </div>
+            </body>
+            </html>
+        `;
+
+            /*
+             * Create a completely isolated iframe.
+             *
+             * Important:
+             * We do NOT append the invoice directly to the application's
+             * document. This prevents Tailwind/OKLCH styles from being
+             * inherited by html2canvas.
+             */
+            const iframe = document.createElement("iframe");
+
+            iframe.style.position = "fixed";
+            iframe.style.left = "-100000px";
+            iframe.style.top = "0";
+            iframe.style.width = "850px";
+            iframe.style.height = "1200px";
+            iframe.style.border = "0";
+            iframe.style.visibility = "hidden";
+
+            document.body.appendChild(iframe);
+
+            const iframeDocument =
+                iframe.contentDocument ||
+                iframe.contentWindow?.document;
+
+            if (!iframeDocument) {
+                throw new Error("Unable to create invoice document.");
+            }
+
+            iframeDocument.open();
+            iframeDocument.write(invoiceHTML);
+            iframeDocument.close();
+
+            /*
+             * Wait for the iframe to finish rendering.
+             */
+            await new Promise((resolve) => {
+                setTimeout(resolve, 500);
+            });
+
+            /*
+             * Wait for invoice images if any.
+             */
+            const images = Array.from(
+                iframeDocument.images
+            );
+
+            await Promise.all(
+                images.map(
+                    (img) =>
+                        new Promise((resolve) => {
+
+                            if (img.complete) {
+                                resolve();
+                                return;
+                            }
+
+                            img.onload = resolve;
+                            img.onerror = resolve;
+                        })
+                )
+            );
+
+            const invoiceElement =
+                iframeDocument.querySelector(".invoice");
+
+            if (!invoiceElement) {
+                throw new Error("Invoice element not found.");
+            }
+
+            /*
+             * Render isolated invoice.
+             */
+            const canvas = await html2canvas(
+                invoiceElement,
+                {
+                    scale: 2,
+                    backgroundColor: "#ffffff",
+                    useCORS: true,
+                    allowTaint: false,
+                    logging: false,
+                }
+            );
+
+            const imgData =
+                canvas.toDataURL("image/png");
+
+            const pdf = new jsPDF({
+                orientation: "portrait",
+                unit: "mm",
+                format: "a4",
+            });
+
+            const pageWidth =
+                pdf.internal.pageSize.getWidth();
+
+            const pageHeight =
+                pdf.internal.pageSize.getHeight();
+
+            const margin = 8;
+
+            const usableWidth =
+                pageWidth - margin * 2;
+
+            const imgHeight =
+                (canvas.height * usableWidth) /
+                canvas.width;
+
+            let heightLeft = imgHeight;
+            let position = margin;
+
+            /*
+             * First page.
+             */
+            pdf.addImage(
+                imgData,
+                "PNG",
+                margin,
+                position,
+                usableWidth,
+                imgHeight
+            );
+
+            heightLeft -=
+                pageHeight - margin * 2;
+
+            /*
+             * Additional pages.
+             */
+            while (heightLeft > 0) {
+
+                pdf.addPage();
+
+                position =
+                    margin -
+                    (imgHeight - heightLeft);
+
+                pdf.addImage(
+                    imgData,
+                    "PNG",
+                    margin,
+                    position,
+                    usableWidth,
+                    imgHeight
+                );
+
+                heightLeft -=
+                    pageHeight - margin * 2;
+            }
+
+            pdf.save(
+                `Invoice_${invoiceNumber}.pdf`
+            );
+
+            toast.success(
+                "Customer invoice downloaded!",
+                {
+                    id: "invoice-pdf",
+                }
+            );
+
+            iframe.remove();
+
+        } catch (error) {
+
+            console.error(
+                "INVOICE PDF ERROR:",
+                error
+            );
+
+            toast.error(
+                "Failed to generate invoice.",
+                {
+                    id: "invoice-pdf",
+                }
+            );
         }
     };
 

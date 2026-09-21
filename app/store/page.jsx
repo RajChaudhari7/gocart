@@ -135,8 +135,8 @@ export default function Dashboard() {
 
       toast.error(
         error?.response?.data?.error ||
-          error?.message ||
-          "Unable to load dashboard.",
+        error?.message ||
+        "Unable to load dashboard.",
       );
     } finally {
       setLoading(false);
@@ -323,28 +323,61 @@ export default function Dashboard() {
         id: "pdf-report",
       });
 
-      await new Promise((resolve) => setTimeout(resolve, 400));
-
       const canvas = await html2canvas(element, {
         scale: 2,
         backgroundColor: "#ffffff",
         useCORS: true,
+
+        // Important:
+        // render the PDF report in isolation from the app's
+        // Tailwind/OKLCH styles.
+        onclone: (clonedDocument) => {
+          const clonedElement =
+            clonedDocument.getElementById("pdf-report");
+
+          if (clonedElement) {
+            clonedElement.style.position = "static";
+            clonedElement.style.left = "0";
+            clonedElement.style.top = "0";
+            clonedElement.style.width = "800px";
+            clonedElement.style.background = "#ffffff";
+            clonedElement.style.color = "#1e293b";
+          }
+
+          // Remove external stylesheets from the cloned document.
+          // This prevents Tailwind's oklch() colors from being parsed.
+          clonedDocument
+            .querySelectorAll("link[rel='stylesheet'], style")
+            .forEach((style) => style.remove());
+        },
       });
 
       const imgData = canvas.toDataURL("image/png");
 
-      const pdf = new jsPDF("p", "mm", "a4");
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+      });
 
       const pageWidth = 210;
       const pageHeight = 297;
 
       const imgWidth = pageWidth;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      const imgHeight =
+        (canvas.height * imgWidth) / canvas.width;
 
       let heightLeft = imgHeight;
       let position = 0;
 
-      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+      pdf.addImage(
+        imgData,
+        "PNG",
+        0,
+        position,
+        imgWidth,
+        imgHeight
+      );
 
       heightLeft -= pageHeight;
 
@@ -353,12 +386,21 @@ export default function Dashboard() {
 
         pdf.addPage();
 
-        pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+        pdf.addImage(
+          imgData,
+          "PNG",
+          0,
+          position,
+          imgWidth,
+          imgHeight
+        );
 
         heightLeft -= pageHeight;
       }
 
-      pdf.save(`Seller-Report-${filterYear}-${filterMonth + 1}.pdf`);
+      pdf.save(
+        `Seller-Report-${filterYear}-${filterMonth + 1}.pdf`
+      );
 
       toast.success("Report downloaded successfully.", {
         id: "pdf-report",
@@ -366,9 +408,12 @@ export default function Dashboard() {
     } catch (error) {
       console.error("PDF ERROR:", error);
 
-      toast.error("Unable to generate the report.", {
-        id: "pdf-report",
-      });
+      toast.error(
+        "Unable to generate the report.",
+        {
+          id: "pdf-report",
+        }
+      );
     }
   };
 
@@ -442,20 +487,18 @@ export default function Dashboard() {
             opacity: 1,
             y: 0,
           }}
-          className={`relative overflow-hidden rounded-3xl border p-5 shadow-sm sm:p-6 ${
-            storeActive
+          className={`relative overflow-hidden rounded-3xl border p-5 shadow-sm sm:p-6 ${storeActive
               ? "border-emerald-200 bg-emerald-50"
               : "border-slate-200 bg-white"
-          }`}
+            }`}
         >
           <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-4">
               <div
-                className={`flex h-14 w-14 items-center justify-center rounded-2xl ${
-                  storeActive
+                className={`flex h-14 w-14 items-center justify-center rounded-2xl ${storeActive
                     ? "bg-emerald-100 text-emerald-600"
                     : "bg-slate-100 text-slate-500"
-                }`}
+                  }`}
               >
                 {storeActive ? <Sun size={26} /> : <Moon size={26} />}
               </div>
@@ -481,9 +524,8 @@ export default function Dashboard() {
               type="button"
               onClick={toggleStore}
               disabled={toggling}
-              className={`relative h-12 w-24 rounded-full p-1 transition ${
-                storeActive ? "bg-emerald-500" : "bg-slate-300"
-              } disabled:cursor-not-allowed disabled:opacity-60`}
+              className={`relative h-12 w-24 rounded-full p-1 transition ${storeActive ? "bg-emerald-500" : "bg-slate-300"
+                } disabled:cursor-not-allowed disabled:opacity-60`}
             >
               <motion.div
                 animate={{
@@ -965,7 +1007,7 @@ export default function Dashboard() {
         <div
           id="pdf-report"
           style={{
-            position: "fixed",
+            position: "absolute",
             left: "-99999px",
             top: 0,
             width: "800px",
