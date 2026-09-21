@@ -3,6 +3,15 @@ import prisma from "@/lib/prisma";
 import { getAuth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
+const normalizeCategory = (value) => {
+    if (!value) return "";
+
+    return value
+        .toString()
+        .trim()
+        .replace(/\s+/g, " ");
+};
+
 // create the Store
 export async function POST(request) {
 
@@ -94,11 +103,43 @@ export async function POST(request) {
             ]
         })
 
-        const category = formData.get("category")
-        const customCategory = formData.get("customCategory")
+        const category = normalizeCategory(
+            formData.get("category")
+        );
+
+        const customCategory = normalizeCategory(
+            formData.get("customCategory")
+        );
+
+        const rawFinalCategory =
+            category === "Other"
+                ? customCategory
+                : category;
 
         const finalCategory =
-            category === "Other" ? customCategory : category
+            normalizeCategory(rawFinalCategory);
+
+        if (!finalCategory) {
+            return NextResponse.json(
+                { error: "Store category is required" },
+                { status: 400 }
+            );
+        }
+
+        const existingCategory = await prisma.store.findFirst({
+            where: {
+                category: {
+                    equals: finalCategory,
+                    mode: "insensitive",
+                },
+            },
+            select: {
+                category: true,
+            },
+        });
+
+        const canonicalCategory =
+            existingCategory?.category || finalCategory;
 
         const newStore = await prisma.store.create({
             data: {
@@ -111,7 +152,7 @@ export async function POST(request) {
                 address,
                 gst,
                 logo: optimizedImage,
-                category: finalCategory,
+                category: canonicalCategory,
                 latitude,
                 longitude
             }
