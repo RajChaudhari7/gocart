@@ -69,25 +69,49 @@ export default function StoreOrders() {
         const pollInterval = setInterval(async () => {
             try {
                 const token = await getToken();
-                const { data } = await axios.get('/api/store/orders', {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
 
-                if (data.orders.length > orders.length) {
-                    audioRef.current.play().catch(e => console.log("Audio play blocked:", e));
+                const { data } = await axios.get(
+                    "/api/store/orders",
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                    }
+                );
+
+                const newOrders = data.orders || [];
+
+                if (
+                    previousOrderCountRef.current > 0 &&
+                    newOrders.length > previousOrderCountRef.current
+                ) {
+                    audioRef.current
+                        ?.play()
+                        .catch((e) =>
+                            console.log("Audio play blocked:", e)
+                        );
+
                     toast.success("New order received!");
                 }
-                setOrders(data.orders);
-                setOrderCount(data.activeCount);
-                setCommission(data.settings?.commissionPercent || 10);
-                setSettings(data.settings);
+
+                previousOrderCountRef.current = newOrders.length;
+
+                setOrders(newOrders);
+                setOrderCount(data.activeCount || 0);
+
+                setCommission(
+                    data.settings?.commissionPercent || 10
+                );
+
+                setSettings(data.settings || {});
+
             } catch (error) {
                 console.error("Polling error:", error);
             }
         }, 5000);
 
         return () => clearInterval(pollInterval);
-    }, [orders.length]);
+    }, [getToken, setOrderCount]);
 
     // Filter only active (non-finished) orders
     const activeOrders = orders.filter(order =>
@@ -116,28 +140,60 @@ export default function StoreOrders() {
         }
     };
     const updateOrderStatus = async (order, newStatus) => {
-        const currentIndex = SELLER_STATUSES.indexOf(order.status)
-        const newIndex = SELLER_STATUSES.indexOf(newStatus)
+        const currentIndex = SELLER_STATUSES.indexOf(order.status);
+        const newIndex = SELLER_STATUSES.indexOf(newStatus);
 
         if (newIndex < currentIndex) {
-            toast.error("You cannot move order status backwards")
-            return
+            toast.error("You cannot move order status backwards");
+            return;
         }
 
         try {
             const token = await getToken();
-            await axios.post(
-                '/api/store/orders',
-                { orderId: order.id, status: newStatus },
-                { headers: { Authorization: `Bearer ${token}` } }
+
+            const { data } = await axios.post(
+                "/api/store/orders",
+                {
+                    orderId: order.id,
+                    status: newStatus,
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
             );
+
+            // Immediately refresh orders from backend
             await fetchOrders();
-            toast.success(`Order status updated to ${newStatus}`);
+
+            // Update currently opened order/modal as well
+            setSelectedOrder((prev) => {
+                if (!prev || prev.id !== order.id) {
+                    return prev;
+                }
+
+                return {
+                    ...prev,
+                    status: newStatus,
+                };
+            });
+
+            toast.success(
+                data?.message || `Order status updated to ${newStatus}`
+            );
+
         } catch (error) {
-            toast.error(error?.response?.data?.error || error.message);
+            console.error("UPDATE ORDER STATUS ERROR:", error);
+
+            toast.error(
+                error?.response?.data?.error ||
+                error?.response?.data?.message ||
+                error.message ||
+                "Failed to update order status"
+            );
         }
     };
-
 
 
     const cancelOrder = async (order) => {
