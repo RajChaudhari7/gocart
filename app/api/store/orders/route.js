@@ -95,44 +95,72 @@ export async function POST(request) {
 
     await prisma.$transaction(async (tx) => {
 
+      // ================= DELIVERY OTP =================
       if (status === "DELIVERY_INITIATED") {
-        // Generate plain OTP and save it DIRECTLY without hashing
         plainOtp = generateOtp()
 
         await tx.order.update({
           where: { id: orderId },
           data: {
-            deliveryOtp: String(plainOtp), // Saved as plain text
-            deliveryOtpExpiry: new Date(Date.now() + 10 * 60 * 1000),
+            deliveryOtp: String(plainOtp),
+            deliveryOtpExpiry: new Date(
+              Date.now() + 10 * 60 * 1000
+            ),
             otpVerified: false,
             otpVerifyAttempts: 0,
-            otpResendCount: 0
+            otpResendCount: 0,
+            status: "DELIVERY_INITIATED",
+            statusHistory: {
+              ...(order.statusHistory || {}),
+              DELIVERY_INITIATED: new Date().toISOString()
+            }
           }
         })
+
+        return
       }
 
+      // ================= CANCEL ORDER =================
       if (status === "CANCELLED") {
+
         for (const item of order.orderItems) {
           await tx.product.update({
             where: { id: item.productId },
             data: {
-              quantity: { increment: item.quantity },
+              quantity: {
+                increment: item.quantity
+              },
               inStock: true
             }
           })
         }
+
+        await tx.order.update({
+          where: { id: orderId },
+          data: {
+            status: "CANCELLED",
+            statusHistory: {
+              ...(order.statusHistory || {}),
+              CANCELLED: new Date().toISOString()
+            }
+          }
+        })
+
+        return
       }
 
-      if (
-        !order.store?.latitude ||
-        !order.store?.longitude
-      ) {
-        throw new Error(
-          "Store location not configured. Please update store location first."
-        )
-      }
-
+      // ================= ORDER PACKED =================
       if (status === "ORDER_PACKED") {
+
+        if (
+          !order.store?.latitude ||
+          !order.store?.longitude
+        ) {
+          throw new Error(
+            "Store location not configured. Please update store location first."
+          )
+        }
+
         const drivers = await tx.driver.findMany({
           where: {
             isOnline: true,
@@ -170,20 +198,42 @@ export async function POST(request) {
         await tx.order.update({
           where: { id: orderId },
           data: {
+            status: "ORDER_PACKED",
             driverId: nearestDriver.id,
             driverAccepted: false,
             assignmentStatus: "PENDING",
-            assignmentExpiresAt: new Date(Date.now() + 10000),
+            assignmentExpiresAt: new Date(
+              Date.now() + 10000
+            ),
             assignedAt: new Date(),
-            status: "ORDER_PACKED",
             statusHistory: {
               ...(order.statusHistory || {}),
               ORDER_PACKED: new Date().toISOString()
             }
           }
         })
+
         return
       }
+
+      // ================= NORMAL SELLER STATUS =================
+      if (SELLER_FLOW.includes(status)) {
+
+        await tx.order.update({
+          where: { id: orderId },
+          data: {
+            status,
+            statusHistory: {
+              ...(order.statusHistory || {}),
+              [status]: new Date().toISOString()
+            }
+          }
+        })
+
+        return
+      }
+
+      throw new Error(`Unsupported order status: ${status}`)
     })
 
     // ================= SEND DELIVERY OTP EMAIL =================
