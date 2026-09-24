@@ -1,445 +1,1187 @@
 import prisma from "@/lib/prisma"
 import { authSeller } from "@/middlewares/authSeller"
-import { getAuth } from "@clerk/nextjs/server"
+import { getAuth } from "@clerkjs/server"
 import { NextResponse } from "next/server"
 import { sendEmail } from "@/lib/sendEmail"
-import { generateOtp } from "@/lib/otp" // Removed hashOtp import
+import { generateOtp } from "@/lib/otp"
 import { calculateDistance } from "@/lib/distance"
 
 const SELLER_FLOW = [
-  "ORDER_PLACED",
-  "ORDER_CONFIRMED",
-  "ORDER_PACKING",
-  "ORDER_PACKED"
+    "ORDER_PLACED",
+    "ORDER_CONFIRMED",
+    "ORDER_PACKING",
+    "ORDER_PACKED"
 ]
 
-// ================= UPDATE SELLER ORDER STATUS =================
+const SELLER_RESPONSE_TIME = 60 * 1000
+
+const FINAL_STATUSES = [
+    "CANCELLED",
+    "DELIVERED",
+    "RETURNED"
+]
+
+/* =========================================================
+   UPDATE SELLER ORDER STATUS
+========================================================= */
+
 export async function POST(request) {
-  try {
-    const { userId } = getAuth(request)
-    const storeId = await authSeller(userId)
 
-    if (!storeId) {
-      return NextResponse.json({ error: "Not authorized" }, { status: 401 })
-    }
+    try {
 
-    const { orderId, status } = await request.json()
+        const { userId } =
+            getAuth(request)
 
-    if (!orderId || !status) {
-      return NextResponse.json({ error: "Invalid request" }, { status: 400 })
-    }
+        const storeId =
+            await authSeller(userId)
 
-    const order = await prisma.order.findUnique({
-      where: { id: orderId },
-      include: {
-        orderItems: {
-          include: {
-            product: true
-          }
-        },
-        user: true,
-        store: true,
-        address: true
-      }
-    })
+        if (!storeId) {
 
-    if (!order || order.storeId !== storeId) {
-      return NextResponse.json({ error: "Order not found" }, { status: 404 })
-    }
+            return NextResponse.json(
+                {
+                    error:
+                        "Not authorized"
+                },
+                {
+                    status: 401
+                }
+            )
 
-    if (["CANCELLED", "DELIVERED"].includes(order.status)) {
-      return NextResponse.json(
-        { error: "Order status cannot be changed once finalized" },
-        { status: 400 }
-      )
-    }
-
-    const currentIndex = SELLER_FLOW.indexOf(order.status)
-    const newIndex = SELLER_FLOW.indexOf(status)
-
-    if (
-      currentIndex !== -1 &&
-      newIndex !== -1 &&
-      newIndex <= currentIndex
-    ) {
-      return NextResponse.json(
-        { error: "Invalid status flow" },
-        { status: 400 }
-      )
-    }
-
-    if (status === "DELIVERED") {
-      if (order.status !== "DELIVERY_INITIATED") {
-        return NextResponse.json(
-          { error: "Order must be in DELIVERY_INITIATED state" },
-          { status: 400 }
-        )
-      }
-
-      if (!order.deliveryOtp) {
-        return NextResponse.json(
-          { error: "Delivery OTP not generated" },
-          { status: 400 }
-        )
-      }
-
-      if (!order.otpVerified) {
-        return NextResponse.json(
-          { error: "Delivery OTP not verified" },
-          { status: 400 }
-        )
-      }
-    }
-
-    let plainOtp = null
-
-    await prisma.$transaction(async (tx) => {
-
-      // ================= DELIVERY OTP =================
-      if (status === "DELIVERY_INITIATED") {
-        plainOtp = generateOtp()
-
-        await tx.order.update({
-          where: { id: orderId },
-          data: {
-            deliveryOtp: String(plainOtp),
-            deliveryOtpExpiry: new Date(
-              Date.now() + 10 * 60 * 1000
-            ),
-            otpVerified: false,
-            otpVerifyAttempts: 0,
-            otpResendCount: 0,
-            status: "DELIVERY_INITIATED",
-            statusHistory: {
-              ...(order.statusHistory || {}),
-              DELIVERY_INITIATED: new Date().toISOString()
-            }
-          }
-        })
-
-        return
-      }
-
-      // ================= CANCEL ORDER =================
-      if (status === "CANCELLED") {
-
-        for (const item of order.orderItems) {
-          await tx.product.update({
-            where: { id: item.productId },
-            data: {
-              quantity: {
-                increment: item.quantity
-              },
-              inStock: true
-            }
-          })
         }
 
-        await tx.order.update({
-          where: { id: orderId },
-          data: {
-            status: "CANCELLED",
-            statusHistory: {
-              ...(order.statusHistory || {}),
-              CANCELLED: new Date().toISOString()
-            }
-          }
-        })
-
-        return
-      }
-
-      // ================= ORDER PACKED =================
-      if (status === "ORDER_PACKED") {
+        const {
+            orderId,
+            status,
+            reason
+        } = await request.json()
 
         if (
-          !order.store?.latitude ||
-          !order.store?.longitude
+            !orderId ||
+            !status
         ) {
-          throw new Error(
-            "Store location not configured. Please update store location first."
-          )
+
+            return NextResponse.json(
+                {
+                    error:
+                        "Invalid request"
+                },
+                {
+                    status: 400
+                }
+            )
+
         }
 
-        const drivers = await tx.driver.findMany({
-          where: {
-            isOnline: true,
-            isActive: true,
-            latitude: { not: null },
-            longitude: { not: null }
-          }
-        })
+        const order =
+            await prisma.order.findUnique({
 
-        if (drivers.length === 0) {
-          throw new Error("No online drivers available")
+                where: {
+                    id: orderId
+                },
+
+                include: {
+
+                    orderItems: {
+                        include: {
+                            product: true
+                        }
+                    },
+
+                    user: true,
+
+                    store: true,
+
+                    address: true
+
+                }
+
+            })
+
+        if (
+            !order ||
+            order.storeId !== storeId
+        ) {
+
+            return NextResponse.json(
+                {
+                    error:
+                        "Order not found"
+                },
+                {
+                    status: 404
+                }
+            )
+
         }
 
-        let nearestDriver = null
-        let shortestDistance = Infinity
+        /* =====================================================
+           FINALIZED ORDER PROTECTION
+        ===================================================== */
 
-        for (const driver of drivers) {
-          const distance = calculateDistance(
-            order.store.latitude,
-            order.store.longitude,
-            driver.latitude,
-            driver.longitude
-          )
+        if (
+            FINAL_STATUSES.includes(
+                order.status
+            )
+        ) {
 
-          if (distance < shortestDistance) {
-            shortestDistance = distance
-            nearestDriver = driver
-          }
+            return NextResponse.json(
+                {
+                    error:
+                        "Order status cannot be changed once finalized"
+                },
+                {
+                    status: 400
+                }
+            )
+
         }
 
-        if (!nearestDriver) {
-          throw new Error("No suitable driver found")
-        }
+        /* =====================================================
+           SELLER ACCEPTANCE
+        ===================================================== */
 
-        await tx.order.update({
-          where: { id: orderId },
-          data: {
-            status: "ORDER_PACKED",
-            driverId: nearestDriver.id,
-            driverAccepted: false,
-            assignmentStatus: "PENDING",
-            assignmentExpiresAt: new Date(
-              Date.now() + 10000
-            ),
-            assignedAt: new Date(),
-            statusHistory: {
-              ...(order.statusHistory || {}),
-              ORDER_PACKED: new Date().toISOString()
+        if (
+            status ===
+            "ORDER_CONFIRMED"
+        ) {
+
+            /*
+             * Seller can accept only from ORDER_PLACED.
+             */
+
+            if (
+                order.status !==
+                "ORDER_PLACED"
+            ) {
+
+                return NextResponse.json(
+                    {
+                        error:
+                            "Order is no longer waiting for seller acceptance"
+                    },
+                    {
+                        status: 400
+                    }
+                )
+
             }
-          }
-        })
 
-        return
-      }
+            /*
+             * Server-side 60 second deadline.
+             *
+             * This is important because frontend timers
+             * cannot be trusted.
+             */
 
-      // ================= NORMAL SELLER STATUS =================
-      if (SELLER_FLOW.includes(status)) {
+            const deadline =
+                new Date(
+                    order.createdAt
+                ).getTime() +
+                SELLER_RESPONSE_TIME
 
-        await tx.order.update({
-          where: { id: orderId },
-          data: {
-            status,
-            statusHistory: {
-              ...(order.statusHistory || {}),
-              [status]: new Date().toISOString()
+            if (
+                Date.now() >
+                deadline
+            ) {
+
+                /*
+                 * Automatically cancel the expired order
+                 * and restore stock atomically.
+                 */
+
+                await prisma.$transaction(
+                    async tx => {
+
+                        const currentOrder =
+                            await tx.order.findUnique({
+
+                                where: {
+                                    id: orderId
+                                },
+
+                                include: {
+                                    orderItems: true
+                                }
+
+                            })
+
+                        if (
+                            !currentOrder ||
+                            currentOrder.status !==
+                            "ORDER_PLACED"
+                        ) {
+                            return
+                        }
+
+                        const updated =
+                            await tx.order.updateMany({
+
+                                where: {
+
+                                    id:
+                                        orderId,
+
+                                    status:
+                                        "ORDER_PLACED"
+
+                                },
+
+                                data: {
+
+                                    status:
+                                        "CANCELLED",
+
+                                    statusHistory: {
+
+                                        ...(currentOrder.statusHistory || {}),
+
+                                        CANCELLED:
+                                            new Date().toISOString()
+
+                                    }
+
+                                }
+
+                            })
+
+                        if (
+                            updated.count !==
+                            1
+                        ) {
+                            return
+                        }
+
+                        for (
+                            const item
+                            of currentOrder.orderItems
+                        ) {
+
+                            await tx.product.update({
+
+                                where: {
+                                    id:
+                                        item.productId
+                                },
+
+                                data: {
+
+                                    quantity: {
+                                        increment:
+                                            item.quantity
+                                    },
+
+                                    inStock:
+                                        true
+
+                                }
+
+                            })
+
+                        }
+
+                    }
+                )
+
+                return NextResponse.json(
+                    {
+                        error:
+                            "Seller acceptance time has expired. Order was cancelled."
+                    },
+                    {
+                        status: 400
+                    }
+                )
+
             }
-          }
+
+            /*
+             * Accept order.
+             */
+
+            await prisma.order.update({
+
+                where: {
+                    id: orderId
+                },
+
+                data: {
+
+                    status:
+                        "ORDER_CONFIRMED",
+
+                    statusHistory: {
+
+                        ...(order.statusHistory || {}),
+
+                        ORDER_CONFIRMED:
+                            new Date().toISOString()
+
+                    }
+
+                }
+
+            })
+
+            return NextResponse.json(
+                {
+                    message:
+                        "Order accepted successfully"
+                }
+            )
+
+        }
+
+        /* =====================================================
+           SELLER DECLINE
+        ===================================================== */
+
+        if (
+            status ===
+            "CANCELLED" &&
+            (
+                reason ===
+                    "SELLER_DECLINED" ||
+                reason ===
+                    "SELLER_RESPONSE_TIMEOUT"
+            )
+        ) {
+
+            /*
+             * Decline is only valid while the order
+             * is waiting for seller acceptance.
+             */
+
+            if (
+                order.status !==
+                "ORDER_PLACED"
+            ) {
+
+                return NextResponse.json(
+                    {
+                        error:
+                            "Order is no longer available for decline"
+                    },
+                    {
+                        status: 400
+                    }
+                )
+
+            }
+
+            await prisma.$transaction(
+                async tx => {
+
+                    /*
+                     * Re-fetch inside transaction.
+                     */
+
+                    const currentOrder =
+                        await tx.order.findUnique({
+
+                            where: {
+                                id: orderId
+                            },
+
+                            include: {
+                                orderItems: true
+                            }
+
+                        })
+
+                    if (
+                        !currentOrder ||
+                        currentOrder.status !==
+                        "ORDER_PLACED"
+                    ) {
+
+                        throw new Error(
+                            "Order has already been processed"
+                        )
+
+                    }
+
+                    /*
+                     * Conditional update makes cancellation
+                     * idempotent.
+                     */
+
+                    const updated =
+                        await tx.order.updateMany({
+
+                            where: {
+
+                                id:
+                                    orderId,
+
+                                status:
+                                    "ORDER_PLACED"
+
+                            },
+
+                            data: {
+
+                                status:
+                                    "CANCELLED",
+
+                                statusHistory: {
+
+                                    ...(currentOrder.statusHistory || {}),
+
+                                    CANCELLED:
+                                        new Date().toISOString()
+
+                                }
+
+                            }
+
+                        })
+
+                    if (
+                        updated.count !==
+                        1
+                    ) {
+
+                        throw new Error(
+                            "Order has already been processed"
+                        )
+
+                    }
+
+                    /*
+                     * Restore stock exactly once.
+                     */
+
+                    for (
+                        const item
+                        of currentOrder.orderItems
+                    ) {
+
+                        await tx.product.update({
+
+                            where: {
+                                id:
+                                    item.productId
+                            },
+
+                            data: {
+
+                                quantity: {
+                                    increment:
+                                        item.quantity
+                                },
+
+                                inStock:
+                                    true
+
+                            }
+
+                        })
+
+                    }
+
+                }
+            )
+
+            return NextResponse.json(
+                {
+                    message:
+                        "Order cancelled successfully"
+                }
+            )
+
+        }
+
+        /* =====================================================
+           DELIVERY OTP
+        ===================================================== */
+
+        let plainOtp = null
+
+        /* =====================================================
+           NORMAL SELLER STATUS FLOW
+        ===================================================== */
+
+        const currentIndex =
+            SELLER_FLOW.indexOf(
+                order.status
+            )
+
+        const newIndex =
+            SELLER_FLOW.indexOf(
+                status
+            )
+
+        /*
+         * ORDER_PACKED is handled separately because it
+         * assigns a driver.
+         */
+
+        if (
+            status !==
+                "ORDER_PACKED" &&
+            currentIndex !== -1 &&
+            newIndex !== -1
+        ) {
+
+            if (
+                newIndex !==
+                currentIndex + 1
+            ) {
+
+                return NextResponse.json(
+                    {
+                        error:
+                            "Invalid status flow"
+                    },
+                    {
+                        status: 400
+                    }
+                )
+
+            }
+
+        }
+
+        /*
+         * Prevent seller from jumping into random statuses.
+         */
+
+        const allowedSellerStatuses = [
+            "ORDER_PACKING",
+            "ORDER_PACKED"
+        ]
+
+        if (
+            allowedSellerStatuses.includes(
+                status
+            )
+        ) {
+
+            if (
+                status ===
+                "ORDER_PACKING" &&
+                order.status !==
+                "ORDER_CONFIRMED"
+            ) {
+
+                return NextResponse.json(
+                    {
+                        error:
+                            "Order must be accepted before packing"
+                    },
+                    {
+                        status: 400
+                    }
+                )
+
+            }
+
+            if (
+                status ===
+                "ORDER_PACKED" &&
+                order.status !==
+                "ORDER_PACKING"
+            ) {
+
+                return NextResponse.json(
+                    {
+                        error:
+                            "Order must be in packing state before it can be packed"
+                    },
+                    {
+                        status: 400
+                    }
+                )
+
+            }
+
+        }
+
+        /* =====================================================
+           DELIVERY INITIATED
+        ===================================================== */
+
+        if (
+            status ===
+            "DELIVERY_INITIATED"
+        ) {
+
+            plainOtp =
+                generateOtp()
+
+            await prisma.order.update({
+
+                where: {
+                    id:
+                        orderId
+                },
+
+                data: {
+
+                    deliveryOtp:
+                        String(
+                            plainOtp
+                        ),
+
+                    deliveryOtpExpiry:
+                        new Date(
+                            Date.now() +
+                            10 *
+                            60 *
+                            1000
+                        ),
+
+                    otpVerified:
+                        false,
+
+                    otpVerifyAttempts:
+                        0,
+
+                    otpResendCount:
+                        0
+
+                }
+
+            })
+
+        }
+
+        /* =====================================================
+           DELIVERED VALIDATION
+        ===================================================== */
+
+        if (
+            status ===
+            "DELIVERED"
+        ) {
+
+            if (
+                order.status !==
+                "DELIVERY_INITIATED"
+            ) {
+
+                return NextResponse.json(
+                    {
+                        error:
+                            "Order must be in DELIVERY_INITIATED state"
+                    },
+                    {
+                        status: 400
+                    }
+                )
+
+            }
+
+            if (
+                !order.deliveryOtp
+            ) {
+
+                return NextResponse.json(
+                    {
+                        error:
+                            "Delivery OTP not generated"
+                    },
+                    {
+                        status: 400
+                    }
+                )
+
+            }
+
+            if (
+                !order.otpVerified
+            ) {
+
+                return NextResponse.json(
+                    {
+                        error:
+                            "Delivery OTP not verified"
+                    },
+                    {
+                        status: 400
+                    }
+                )
+
+            }
+
+        }
+
+        /* =====================================================
+           ORDER PACKED
+           FIND NEAREST DRIVER
+        ===================================================== */
+
+        if (
+            status ===
+            "ORDER_PACKED"
+        ) {
+
+            if (
+                !order.store?.latitude ||
+                !order.store?.longitude
+            ) {
+
+                return NextResponse.json(
+                    {
+                        error:
+                            "Store location not configured. Please update store location first."
+                    },
+                    {
+                        status: 400
+                    }
+                )
+
+            }
+
+            const drivers =
+                await prisma.driver.findMany({
+
+                    where: {
+
+                        isOnline:
+                            true,
+
+                        isActive:
+                            true,
+
+                        latitude: {
+                            not:
+                                null
+                        },
+
+                        longitude: {
+                            not:
+                                null
+                        }
+
+                    }
+
+                })
+
+            if (
+                drivers.length ===
+                0
+            ) {
+
+                return NextResponse.json(
+                    {
+                        error:
+                            "No online drivers available"
+                    },
+                    {
+                        status: 400
+                    }
+                )
+
+            }
+
+            let nearestDriver =
+                null
+
+            let shortestDistance =
+                Infinity
+
+            for (
+                const driver
+                of drivers
+            ) {
+
+                const distance =
+                    calculateDistance(
+
+                        order.store.latitude,
+
+                        order.store.longitude,
+
+                        driver.latitude,
+
+                        driver.longitude
+
+                    )
+
+                if (
+                    distance <
+                    shortestDistance
+                ) {
+
+                    shortestDistance =
+                        distance
+
+                    nearestDriver =
+                        driver
+
+                }
+
+            }
+
+            if (
+                !nearestDriver
+            ) {
+
+                return NextResponse.json(
+                    {
+                        error:
+                            "No suitable driver found"
+                    },
+                    {
+                        status: 400
+                    }
+                )
+
+            }
+
+            await prisma.order.update({
+
+                where: {
+                    id:
+                        orderId
+                },
+
+                data: {
+
+                    driverId:
+                        nearestDriver.id,
+
+                    driverAccepted:
+                        false,
+
+                    assignmentStatus:
+                        "PENDING",
+
+                    assignmentExpiresAt:
+                        new Date(
+                            Date.now() +
+                            60 *
+                            1000
+                        ),
+
+                    assignedAt:
+                        new Date(),
+
+                    status:
+                        "ORDER_PACKED",
+
+                    statusHistory: {
+
+                        ...(order.statusHistory || {}),
+
+                        ORDER_PACKED:
+                            new Date().toISOString()
+
+                    }
+
+                }
+
+            })
+
+            return NextResponse.json(
+                {
+                    message:
+                        "Order packed and driver assigned successfully"
+                }
+            )
+
+        }
+
+        /* =====================================================
+           NORMAL STATUS UPDATE
+        ===================================================== */
+
+        if (
+            [
+                "ORDER_PACKING"
+            ].includes(
+                status
+            )
+        ) {
+
+            await prisma.order.update({
+
+                where: {
+                    id:
+                        orderId
+                },
+
+                data: {
+
+                    status:
+                        status,
+
+                    statusHistory: {
+
+                        ...(order.statusHistory || {}),
+
+                        [status]:
+                            new Date().toISOString()
+
+                    }
+
+                }
+
+            })
+
+            return NextResponse.json(
+                {
+                    message:
+                        "Order status updated successfully"
+                }
+            )
+
+        }
+
+        /* =====================================================
+           DELIVERY OTP EMAIL
+        ===================================================== */
+
+        if (
+            status ===
+                "DELIVERY_INITIATED" &&
+            plainOtp
+        ) {
+
+            try {
+
+                if (
+                    order.user?.email
+                ) {
+
+                    await sendEmail({
+
+                        to:
+                            order.user.email,
+
+                        subject:
+                            "Your Nandurbar Bazar Delivery OTP",
+
+                        html: `
+                            <div style="font-family:Arial,sans-serif">
+
+                                <h2>
+                                    Delivery Verification
+                                </h2>
+
+                                <p>
+                                    Your delivery OTP is:
+                                </p>
+
+                                <h1>
+                                    ${plainOtp}
+                                </h1>
+
+                                <p>
+                                    Please share this OTP with the delivery driver.
+                                </p>
+
+                            </div>
+                        `
+
+                    })
+
+                }
+
+            } catch (emailError) {
+
+                console.error(
+                    "OTP EMAIL ERROR:",
+                    emailError
+                )
+
+            }
+
+        }
+
+        /* =====================================================
+           FALLBACK STATUS UPDATE
+        ===================================================== */
+
+        await prisma.order.update({
+
+            where: {
+                id:
+                    orderId
+            },
+
+            data: {
+
+                status:
+                    status,
+
+                statusHistory: {
+
+                    ...(order.statusHistory || {}),
+
+                    [status]:
+                        new Date().toISOString()
+
+                }
+
+            }
+
         })
 
-        return
-      }
-
-      throw new Error(`Unsupported order status: ${status}`)
-    })
-
-    // ================= SEND DELIVERY OTP EMAIL =================
-    if (status === "DELIVERY_INITIATED" && plainOtp) {
-      try {
-        const userEmail = order.user?.email
-
-        if (userEmail) {
-          await sendEmail({
-            to: userEmail,
-            type: "otp",
-            subject: `Your Delivery OTP for Order #${orderId}`,
-            html: `
-<div style="font-family:Arial;padding:20px;">
-  <h2>Delivery OTP</h2>
-  <p>Your OTP for confirming delivery is:</p>
-  <h1 style="letter-spacing:4px;">${plainOtp}</h1>
-  <p><b>Do NOT share</b> this OTP with anyone except the delivery person.</p>
-  <p>This OTP will expire in 10 minutes.</p>
-</div>
-`
-          })
-        }
-      } catch (err) {
-        console.error("OTP email failed:", err.message)
-      }
-    }
-
-    // ================= SEND INVOICE EMAIL =================
-    try {
-      const userEmail = order.user?.email
-      if (userEmail) {
-
-        const itemsHtml = order.orderItems
-          .map(item => `
-            <tr>
-              <td style="border:1px solid #ddd;padding:8px;">
-                ${item.product?.name || "Product"}
-              </td>
-              <td align="center" style="border:1px solid #ddd;">
-                ${item.quantity}
-              </td>
-              <td align="right" style="border:1px solid #ddd;">
-                ₹${item.price}
-              </td>
-              <td align="right" style="border:1px solid #ddd;">
-                ₹${item.price * item.quantity}
-              </td>
-            </tr>
-          `).join("")
-
-        const productTotal = order.orderItems.reduce(
-          (sum, item) => sum + item.price * item.quantity,
-          0
+        return NextResponse.json(
+            {
+                message:
+                    "Order status updated successfully"
+            }
         )
 
-        const storeName = order.store?.name || "Our Store"
-        const storeLogo = order.store?.logo || null
+    } catch (error) {
 
-        await sendEmail({
-          to: userEmail,
-          type: "order",
-          subject: `Invoice – Order #${orderId} (${status})`,
-          html: `
-<div style="font-family:Arial,Helvetica,sans-serif;background:#f9fafb;padding:20px;">
-  <div style="max-width:600px;margin:auto;background:#ffffff;padding:24px;border-radius:8px;box-shadow:0 4px 10px rgba(0,0,0,0.05);">
+        console.error(
+            "STORE ORDER API ERROR:",
+            error
+        )
 
-    <div style="text-align:center;margin-bottom:20px;">
-      ${storeLogo ? `<img src="${storeLogo}" alt="${storeName}" style="height:60px;margin-bottom:8px;object-fit:contain;" />` : ""}
-      <h2 style="margin:0;color:#111827;">${storeName}</h2>
-      <p style="margin:4px 0;color:#6b7280;font-size:14px;">Order Invoice</p>
-    </div>
+        return NextResponse.json(
+            {
+                error:
+                    error?.message ||
+                    "Something went wrong"
+            },
+            {
+                status: 400
+            }
+        )
 
-    <hr style="border:none;border-top:1px solid #e5e7eb;margin:20px 0;" />
-
-    <div style="display:flex;justify-content:space-between;align-items:center;">
-      <h3 style="margin:0;color:#111827;">INVOICE</h3>
-      <span style="color:#16a34a;font-weight:600;font-size:14px;">${status}</span>
-    </div>
-
-    <p style="color:#374151;font-size:14px;margin-top:12px;">
-      <b>Order ID:</b> #${orderId}<br/>
-      <b>Date:</b> ${new Date().toLocaleDateString()}
-    </p>
-
-    <hr style="border:none;border-top:1px solid #e5e7eb;margin:20px 0;" />
-
-    <p style="font-size:14px;color:#111827;">
-      <b>Billed To:</b><br/>
-      ${order.user?.name || "Customer"}<br/>
-      ${order.user?.email}
-    </p>
-
-    <h3 style="margin-top:24px;color:#111827;">Order Summary</h3>
-
-    <table width="100%" cellspacing="0" cellpadding="8" style="border-collapse:collapse;margin-top:8px;font-size:14px;">
-      <thead>
-        <tr style="background:#f3f4f6;">
-          <th align="left" style="border:1px solid #e5e7eb;">Product</th>
-          <th align="center" style="border:1px solid #e5e7eb;">Qty</th>
-          <th align="right" style="border:1px solid #e5e7eb;">Price</th>
-          <th align="right" style="border:1px solid #e5e7eb;">Total</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${itemsHtml}
-      </tbody>
-    </table>
-
-    <p style="text-align:right;font-size:16px;font-weight:600;margin-top:16px;color:#111827;">
-      Grand Total: ₹${productTotal}
-    </p>
-
-    <hr style="border:none;border-top:1px solid #e5e7eb;margin:20px 0;" />
-
-    <p style="font-size:14px;color:#374151;">
-      Your order is currently <b>${status}</b>.
-      You will receive updates as your order progresses.
-    </p>
-
-    <p style="margin-top:24px;font-size:14px;color:#111827;">
-      Thank you for shopping with us ❤️<br/>
-      <b>${storeName} Team</b>
-    </p>
-
-    <p style="font-size:12px;color:#6b7280;margin-top:12px;">
-      This is an automated email. Please do not reply.
-    </p>
-
-  </div>
-</div>
-`
-        })
-      }
-    } catch (err) {
-      console.error("Email sending failed:", err.message)
     }
 
-    return NextResponse.json({ message: "Order status updated successfully" })
-
-  } catch (error) {
-    console.error(error)
-    return NextResponse.json({ error: error.message }, { status: 400 })
-  }
 }
 
-// ================= GET SELLER ORDERS =================
-export async function GET(request) {
-  try {
-    const { userId } = getAuth(request)
-    const storeId = await authSeller(userId)
 
-    if (!storeId) {
-      return NextResponse.json({ error: "Not authorized" }, { status: 401 })
+/* =========================================================
+   GET SELLER ORDERS
+========================================================= */
+
+export async function GET(request) {
+
+    try {
+
+        const { userId } =
+            getAuth(request)
+
+        const storeId =
+            await authSeller(userId)
+
+        if (!storeId) {
+
+            return NextResponse.json(
+                {
+                    error:
+                        "Not authorized"
+                },
+                {
+                    status: 401
+                }
+            )
+
+        }
+
+        const settings =
+            await prisma.platformSettings.findFirst() ||
+            {
+                commissionPercent:
+                    10,
+
+                deliveryFee:
+                    50,
+
+                driverFee:
+                    30,
+
+                freeDeliveryAbove:
+                    999999
+
+            }
+
+        const orders =
+            await prisma.order.findMany({
+
+                where: {
+                    storeId
+                },
+
+                include: {
+
+                    user: true,
+
+                    address: true,
+
+                    store: true,
+
+                    orderItems: {
+                        include: {
+                            product: true
+                        }
+                    },
+
+                    returnRequests: {
+                        include: {
+                            items: true
+                        }
+                    }
+
+                },
+
+                orderBy: {
+                    createdAt:
+                        "desc"
+                }
+
+            })
+
+        const activeOrdersCount =
+            await prisma.order.count({
+
+                where: {
+
+                    storeId,
+
+                    NOT: {
+
+                        status: {
+                            in: [
+                                "DELIVERED",
+                                "CANCELLED",
+                                "RETURNED"
+                            ]
+                        }
+
+                    }
+
+                }
+
+            })
+
+        return NextResponse.json({
+
+            orders,
+
+            activeCount:
+                activeOrdersCount,
+
+            settings
+
+        })
+
+    } catch (error) {
+
+        console.error(
+            "GET STORE ORDERS ERROR:",
+            error
+        )
+
+        return NextResponse.json(
+            {
+                error:
+                    error?.message ||
+                    "Failed to fetch orders"
+            },
+            {
+                status: 400
+            }
+        )
+
     }
 
-    const settings =
-      await prisma.platformSettings.findFirst() || {
-        commissionPercent: 10,
-        deliveryFee: 50,
-        driverFee: 30,
-        freeDeliveryAbove: 999999,
-      };
-
-    const orders = await prisma.order.findMany({
-      where: { storeId },
-      include: {
-        user: true,
-        address: true,
-        store: true,
-        orderItems: {
-          include: { product: true }
-        },
-        returnRequests: {
-          include: {
-            items: true
-          }
-        }
-      },
-      orderBy: {
-        createdAt: "desc"
-      }
-    })
-
-    const activeOrdersCount = await prisma.order.count({
-      where: {
-        storeId,
-        NOT: {
-          status: {
-            in: ["DELIVERED", "CANCELLED"]
-          }
-        }
-      }
-    })
-
-    return NextResponse.json({
-      orders,
-      activeCount: activeOrdersCount,
-      settings,
-    })
-
-  } catch (error) {
-    console.error(error)
-    return NextResponse.json(
-      { error: error.message },
-      { status: 400 }
-    )
-  }
 }

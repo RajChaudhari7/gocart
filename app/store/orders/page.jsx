@@ -1,13 +1,13 @@
 'use client'
 
-import { useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import Loading from "@/components/Loading"
 import { useAuth } from "@clerk/nextjs"
 import axios from "axios"
-import { toast } from "sonner";
+import { toast } from "sonner"
 import { useOrderStore } from "@/hooks/use-order-store"
-import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
+import jsPDF from "jspdf"
+import html2canvas from "html2canvas"
 
 const SELLER_STATUSES = [
     "ORDER_PLACED",
@@ -16,1071 +16,2508 @@ const SELLER_STATUSES = [
     "ORDER_PACKED"
 ]
 
+const SELLER_RESPONSE_TIME = 60 * 1000
+const POLL_INTERVAL = 3000
 
+const FINAL_STATUSES = [
+    "DELIVERED",
+    "CANCELLED",
+    "RETURNED"
+]
 
 export default function StoreOrders() {
+
     const { getToken } = useAuth()
     const { setOrderCount } = useOrderStore()
+
     const [orders, setOrders] = useState([])
     const [loading, setLoading] = useState(true)
+
     const [selectedOrder, setSelectedOrder] = useState(null)
     const [isModalOpen, setIsModalOpen] = useState(false)
-    const audioRef = useRef(null);
-    const [commission, setCommission] = useState(10);
+
+    const [commission, setCommission] = useState(10)
+
     const [settings, setSettings] = useState({
         commissionPercent: 10,
         deliveryFee: 50,
         driverFee: 30,
-    });
+    })
 
-    const getOrderFinances = (order) => {
+    /* ================= NOTIFICATION ================= */
+
+    const audioRef = useRef(null)
+
+    const [notificationsEnabled, setNotificationsEnabled] = useState(false)
+
+    const previousOrderIdsRef = useRef(new Set())
+    const initializedOrdersRef = useRef(false)
+
+    const processingOrdersRef = useRef(new Set())
+    const cancellingOrdersRef = useRef(new Set())
+
+    /* ================= FINANCE ================= */
+
+    const getOrderFinances = useCallback((order) => {
+
         const productTotal = (order.orderItems || []).reduce(
-            (sum, item) => sum + Number(item.price) * Number(item.quantity),
+            (sum, item) =>
+                sum +
+                Number(item.price || 0) *
+                Number(item.quantity || 0),
             0
-        );
+        )
 
-        const commission =
-            order.commissionPercent ?? settings.commissionPercent ?? 10;
+        const commissionPercent =
+            order.commissionPercent ??
+            settings.commissionPercent ??
+            10
 
-        const platformFee = (productTotal * commission) / 100;
+        const platformFee =
+            (productTotal * commissionPercent) / 100
 
-        const sellerEarnings = productTotal - platformFee;
+        const sellerEarnings =
+            productTotal - platformFee
 
         const deliveryFee =
-            order.deliveryFee ?? settings.deliveryFee ?? 0;
+            order.deliveryFee ??
+            settings.deliveryFee ??
+            0
 
         return {
             productTotal,
             platformFee,
             sellerEarnings,
             deliveryFee
-        };
-    };
+        }
+
+    }, [settings])
+
+    /* ================= AUDIO ================= */
 
     useEffect(() => {
-        fetchOrders()
+
+        const audio = new Audio("/sounds/order.mp3")
+
+        audio.loop = true
+        audio.preload = "auto"
+
+        audioRef.current = audio
+
+        return () => {
+
+            audio.pause()
+            audio.currentTime = 0
+            audio.src = ""
+
+            audioRef.current = null
+
+        }
+
     }, [])
 
-    useEffect(() => {
-        audioRef.current = new Audio("/sounds/order.mp3");
-    }, []);
+    const stopNotificationSound = useCallback(() => {
 
-    useEffect(() => {
-        const pollInterval = setInterval(async () => {
-            try {
-                const token = await getToken();
+        if (!audioRef.current) return
 
-                const { data } = await axios.get(
-                    "/api/store/orders",
-                    {
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                        },
-                    }
-                );
+        audioRef.current.pause()
+        audioRef.current.currentTime = 0
 
-                const newOrders = data.orders || [];
+    }, [])
 
-                if (
-                    previousOrderCountRef.current > 0 &&
-                    newOrders.length > previousOrderCountRef.current
-                ) {
-                    audioRef.current
-                        ?.play()
-                        .catch((e) =>
-                            console.log("Audio play blocked:", e)
-                        );
+    const startNotificationSound = useCallback(async () => {
 
-                    toast.success("New order received!");
-                }
+        if (!notificationsEnabled) return
 
-                previousOrderCountRef.current = newOrders.length;
+        if (!audioRef.current) return
 
-                setOrders(newOrders);
-                setOrderCount(data.activeCount || 0);
-
-                setCommission(
-                    data.settings?.commissionPercent || 10
-                );
-
-                setSettings(data.settings || {});
-
-            } catch (error) {
-                console.error("Polling error:", error);
-            }
-        }, 5000);
-
-        return () => clearInterval(pollInterval);
-    }, [getToken, setOrderCount]);
-
-    // Filter only active (non-finished) orders
-    const activeOrders = orders.filter(order =>
-        !["DELIVERED", "CANCELLED", "RETURNED"].includes(order.status)
-    );
-
-    const fetchOrders = async () => {
         try {
-            const token = await getToken();
 
-            const { data } = await axios.get("/api/store/orders", {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            });
+            audioRef.current.loop = true
 
-            setOrders(data.orders);
-            setOrderCount(data.activeCount);
-            setCommission(data.settings?.commissionPercent || 10);
-            setSettings(data.settings);
+            await audioRef.current.play()
 
         } catch (error) {
-            toast.error(error?.response?.data?.error || error.message);
-        } finally {
-            setLoading(false);
-        }
-    };
-    const updateOrderStatus = async (order, newStatus) => {
-        const currentIndex = SELLER_STATUSES.indexOf(order.status);
-        const newIndex = SELLER_STATUSES.indexOf(newStatus);
 
-        if (newIndex < currentIndex) {
-            toast.error("You cannot move order status backwards");
-            return;
+            console.log(
+                "Notification sound blocked by browser:",
+                error
+            )
+
         }
+
+    }, [notificationsEnabled])
+
+    /*
+     * Browser autoplay protection.
+     *
+     * The seller must click this button once.
+     * After that, the browser allows the notification audio
+     * to play while the page is open.
+     */
+    const enableNotifications = async () => {
 
         try {
-            const token = await getToken();
 
-            const { data } = await axios.post(
+            if (!audioRef.current) return
+
+            audioRef.current.volume = 1
+            audioRef.current.currentTime = 0
+
+            await audioRef.current.play()
+
+            audioRef.current.pause()
+            audioRef.current.currentTime = 0
+
+            setNotificationsEnabled(true)
+
+            toast.success(
+                "Order notifications enabled"
+            )
+
+            /*
+             * If there are already pending orders,
+             * immediately start notification.
+             */
+            const hasPendingOrder = orders.some(
+                order =>
+                    order.status === "ORDER_PLACED" &&
+                    !isSellerResponseExpired(order)
+            )
+
+            if (hasPendingOrder) {
+                setTimeout(() => {
+                    startNotificationSound()
+                }, 100)
+            }
+
+        } catch (error) {
+
+            console.error(
+                "ENABLE NOTIFICATIONS ERROR:",
+                error
+            )
+
+            toast.error(
+                "Please click Enable Notifications again."
+            )
+
+        }
+
+    }
+
+    /* ================= ACCEPTANCE TIMER ================= */
+
+    const getSellerDeadline = (order) => {
+
+        if (!order?.createdAt) return null
+
+        return (
+            new Date(order.createdAt).getTime() +
+            SELLER_RESPONSE_TIME
+        )
+
+    }
+
+    const getRemainingSeconds = (order) => {
+
+        if (!order?.createdAt) return 0
+
+        const deadline =
+            getSellerDeadline(order)
+
+        if (!deadline) return 0
+
+        return Math.max(
+            0,
+            Math.ceil(
+                (deadline - Date.now()) / 1000
+            )
+        )
+
+    }
+
+    const isSellerResponseExpired = (order) => {
+
+        if (!order?.createdAt) return false
+
+        const deadline =
+            getSellerDeadline(order)
+
+        return Date.now() >= deadline
+
+    }
+
+    /* ================= FETCH ORDERS ================= */
+
+    const fetchOrders = useCallback(async (
+        shouldNotify = false
+    ) => {
+
+        try {
+
+            const token = await getToken()
+
+            const { data } = await axios.get(
+                "/api/store/orders",
+                {
+                    headers: {
+                        Authorization:
+                            `Bearer ${token}`,
+                    },
+                }
+            )
+
+            const newOrders =
+                data.orders || []
+
+            /*
+             * Initial load:
+             * Seed existing IDs without treating them
+             * as new orders.
+             */
+            if (!initializedOrdersRef.current) {
+
+                previousOrderIdsRef.current =
+                    new Set(
+                        newOrders.map(
+                            order => order.id
+                        )
+                    )
+
+                initializedOrdersRef.current = true
+
+            } else if (shouldNotify) {
+
+                const newlyArrivedOrders =
+                    newOrders.filter(
+                        order =>
+                            !previousOrderIdsRef.current.has(
+                                order.id
+                            ) &&
+                            order.status ===
+                            "ORDER_PLACED"
+                    )
+
+                if (newlyArrivedOrders.length > 0) {
+
+                    toast.success(
+                        newlyArrivedOrders.length === 1
+                            ? "New order received!"
+                            : `${newlyArrivedOrders.length} new orders received!`
+                    )
+
+                    /*
+                     * Start continuous notification.
+                     */
+                    if (notificationsEnabled) {
+                        startNotificationSound()
+                    }
+
+                }
+
+            }
+
+            previousOrderIdsRef.current =
+                new Set(
+                    newOrders.map(
+                        order => order.id
+                    )
+                )
+
+            setOrders(newOrders)
+
+            setOrderCount(
+                data.activeCount || 0
+            )
+
+            setCommission(
+                data.settings?.commissionPercent ||
+                10
+            )
+
+            setSettings(
+                data.settings || {}
+            )
+
+            return newOrders
+
+        } catch (error) {
+
+            console.error(
+                "FETCH ORDERS ERROR:",
+                error
+            )
+
+            if (!loading) {
+
+                toast.error(
+                    error?.response?.data?.error ||
+                    error.message ||
+                    "Failed to load orders"
+                )
+
+            }
+
+            return []
+
+        } finally {
+
+            setLoading(false)
+
+        }
+
+    }, [
+        getToken,
+        setOrderCount,
+        notificationsEnabled,
+        startNotificationSound,
+        loading
+    ])
+
+    /* ================= INITIAL FETCH ================= */
+
+    useEffect(() => {
+
+        fetchOrders(false)
+
+    }, [fetchOrders])
+
+    /* ================= POLLING ================= */
+
+    useEffect(() => {
+
+        let mounted = true
+
+        const poll = async () => {
+
+            if (!mounted) return
+
+            await fetchOrders(true)
+
+        }
+
+        const interval =
+            setInterval(
+                poll,
+                POLL_INTERVAL
+            )
+
+        return () => {
+
+            mounted = false
+
+            clearInterval(interval)
+
+        }
+
+    }, [fetchOrders])
+
+    /* ================= STOP SOUND ================= */
+
+    useEffect(() => {
+
+        const hasPendingOrder =
+            orders.some(
+                order =>
+                    order.status ===
+                    "ORDER_PLACED" &&
+                    !isSellerResponseExpired(order)
+            )
+
+        if (!hasPendingOrder) {
+
+            stopNotificationSound()
+
+        }
+
+    }, [
+        orders,
+        stopNotificationSound
+    ])
+
+    /* ================= AUTO CANCEL ================= */
+
+    const autoCancelExpiredOrder = useCallback(
+        async (order) => {
+
+            if (!order) return
+
+            if (
+                order.status !==
+                "ORDER_PLACED"
+            ) {
+                return
+            }
+
+            if (
+                cancellingOrdersRef.current.has(
+                    order.id
+                )
+            ) {
+                return
+            }
+
+            cancellingOrdersRef.current.add(
+                order.id
+            )
+
+            try {
+
+                const token =
+                    await getToken()
+
+                await axios.post(
+                    "/api/store/orders",
+                    {
+                        orderId: order.id,
+                        status: "CANCELLED",
+                        reason: "SELLER_RESPONSE_TIMEOUT"
+                    },
+                    {
+                        headers: {
+                            Authorization:
+                                `Bearer ${token}`,
+                        },
+                    }
+                )
+
+                setOrders(prev =>
+                    prev.map(item =>
+                        item.id === order.id
+                            ? {
+                                ...item,
+                                status: "CANCELLED"
+                            }
+                            : item
+                    )
+                )
+
+                toast.error(
+                    `Order #${order.id.slice(-4)} expired and was cancelled`
+                )
+
+            } catch (error) {
+
+                /*
+                 * Backend may reject it because another
+                 * request already handled the order.
+                 *
+                 * Refresh from backend anyway.
+                 */
+                console.error(
+                    "AUTO CANCEL ERROR:",
+                    error
+                )
+
+                await fetchOrders(false)
+
+            } finally {
+
+                cancellingOrdersRef.current.delete(
+                    order.id
+                )
+
+            }
+
+        },
+        [
+            getToken,
+            fetchOrders
+        ]
+    )
+
+    /* ================= COUNTDOWN / EXPIRATION ================= */
+
+    const [, setTimerTick] =
+        useState(0)
+
+    useEffect(() => {
+
+        const timer =
+            setInterval(() => {
+
+                setTimerTick(
+                    value => value + 1
+                )
+
+                const pendingOrders =
+                    orders.filter(
+                        order =>
+                            order.status ===
+                            "ORDER_PLACED"
+                    )
+
+                pendingOrders.forEach(
+                    order => {
+
+                        if (
+                            getRemainingSeconds(
+                                order
+                            ) <= 0
+                        ) {
+
+                            autoCancelExpiredOrder(
+                                order
+                            )
+
+                        }
+
+                    }
+                )
+
+            }, 1000)
+
+        return () =>
+            clearInterval(timer)
+
+    }, [
+        orders,
+        autoCancelExpiredOrder
+    ])
+
+    /* ================= ACCEPT ORDER ================= */
+
+    const acceptOrder = async (order) => {
+
+        if (!order) return
+
+        if (
+            order.status !==
+            "ORDER_PLACED"
+        ) {
+            return
+        }
+
+        if (
+            isSellerResponseExpired(
+                order
+            )
+        ) {
+
+            toast.error(
+                "This order acceptance time has expired."
+            )
+
+            await autoCancelExpiredOrder(
+                order
+            )
+
+            return
+
+        }
+
+        if (
+            processingOrdersRef.current.has(
+                order.id
+            )
+        ) {
+            return
+        }
+
+        processingOrdersRef.current.add(
+            order.id
+        )
+
+        try {
+
+            const token =
+                await getToken()
+
+            await axios.post(
                 "/api/store/orders",
                 {
                     orderId: order.id,
-                    status: newStatus,
+                    status: "ORDER_CONFIRMED"
                 },
                 {
                     headers: {
-                        Authorization: `Bearer ${token}`,
+                        Authorization:
+                            `Bearer ${token}`,
                     },
                 }
-            );
+            )
 
-            // Immediately refresh orders from backend
-            await fetchOrders();
+            /*
+             * Stop sound immediately.
+             */
+            stopNotificationSound()
 
-            // Update currently opened order/modal as well
-            setSelectedOrder((prev) => {
-                if (!prev || prev.id !== order.id) {
-                    return prev;
+            /*
+             * Optimistic update.
+             */
+            setOrders(prev =>
+                prev.map(item =>
+                    item.id === order.id
+                        ? {
+                            ...item,
+                            status:
+                                "ORDER_CONFIRMED"
+                        }
+                        : item
+                )
+            )
+
+            setSelectedOrder(prev =>
+                prev?.id === order.id
+                    ? {
+                        ...prev,
+                        status:
+                            "ORDER_CONFIRMED"
+                    }
+                    : prev
+            )
+
+            toast.success(
+                "Order accepted successfully"
+            )
+
+            /*
+             * Refresh backend state.
+             */
+            await fetchOrders(false)
+
+        } catch (error) {
+
+            toast.error(
+                error?.response?.data?.error ||
+                error?.response?.data?.message ||
+                "Failed to accept order"
+            )
+
+            await fetchOrders(false)
+
+        } finally {
+
+            processingOrdersRef.current.delete(
+                order.id
+            )
+
+        }
+
+    }
+
+    /* ================= DECLINE ORDER ================= */
+
+    const declineOrder = async (order) => {
+
+        if (!order) return
+
+        if (
+            order.status !==
+            "ORDER_PLACED"
+        ) {
+            return
+        }
+
+        if (
+            processingOrdersRef.current.has(
+                order.id
+            )
+        ) {
+            return
+        }
+
+        processingOrdersRef.current.add(
+            order.id
+        )
+
+        try {
+
+            const token =
+                await getToken()
+
+            await axios.post(
+                "/api/store/orders",
+                {
+                    orderId: order.id,
+                    status: "CANCELLED",
+                    reason: "SELLER_DECLINED"
+                },
+                {
+                    headers: {
+                        Authorization:
+                            `Bearer ${token}`,
+                    },
+                }
+            )
+
+            /*
+             * Stop sound.
+             */
+            stopNotificationSound()
+
+            /*
+             * Optimistic update.
+             */
+            setOrders(prev =>
+                prev.map(item =>
+                    item.id === order.id
+                        ? {
+                            ...item,
+                            status:
+                                "CANCELLED"
+                        }
+                        : item
+                )
+            )
+
+            setSelectedOrder(prev =>
+                prev?.id === order.id
+                    ? {
+                        ...prev,
+                        status:
+                            "CANCELLED"
+                    }
+                    : prev
+            )
+
+            toast.success(
+                "Order declined"
+            )
+
+            await fetchOrders(false)
+
+        } catch (error) {
+
+            toast.error(
+                error?.response?.data?.error ||
+                error?.response?.data?.message ||
+                "Failed to decline order"
+            )
+
+            await fetchOrders(false)
+
+        } finally {
+
+            processingOrdersRef.current.delete(
+                order.id
+            )
+
+        }
+
+    }
+
+    /* ================= NORMAL STATUS UPDATE ================= */
+
+    const updateOrderStatus = async (
+        order,
+        newStatus
+    ) => {
+
+        if (
+            order.status ===
+            "ORDER_PLACED"
+        ) {
+
+            toast.error(
+                "Please accept the order first."
+            )
+
+            return
+
+        }
+
+        const currentIndex =
+            SELLER_STATUSES.indexOf(
+                order.status
+            )
+
+        const newIndex =
+            SELLER_STATUSES.indexOf(
+                newStatus
+            )
+
+        if (
+            currentIndex === -1 ||
+            newIndex === -1
+        ) {
+
+            toast.error(
+                "Invalid order status"
+            )
+
+            return
+
+        }
+
+        if (
+            newIndex !==
+            currentIndex + 1
+        ) {
+
+            toast.error(
+                "Please follow the order status sequence."
+            )
+
+            return
+
+        }
+
+        try {
+
+            const token =
+                await getToken()
+
+            const { data } =
+                await axios.post(
+                    "/api/store/orders",
+                    {
+                        orderId:
+                            order.id,
+                        status:
+                            newStatus,
+                    },
+                    {
+                        headers: {
+                            Authorization:
+                                `Bearer ${token}`,
+                        },
+                    }
+                )
+
+            await fetchOrders(false)
+
+            setSelectedOrder(prev => {
+
+                if (
+                    !prev ||
+                    prev.id !== order.id
+                ) {
+                    return prev
                 }
 
                 return {
                     ...prev,
-                    status: newStatus,
-                };
-            });
+                    status:
+                        newStatus,
+                }
+
+            })
 
             toast.success(
-                data?.message || `Order status updated to ${newStatus}`
-            );
+                data?.message ||
+                `Order status updated to ${newStatus}`
+            )
 
         } catch (error) {
-            console.error("UPDATE ORDER STATUS ERROR:", error);
+
+            console.error(
+                "UPDATE ORDER STATUS ERROR:",
+                error
+            )
 
             toast.error(
                 error?.response?.data?.error ||
                 error?.response?.data?.message ||
                 error.message ||
                 "Failed to update order status"
-            );
-        }
-    };
+            )
 
+        }
+
+    }
+
+    /* ================= NORMAL CANCEL ================= */
 
     const cancelOrder = async (order) => {
-        if (order.status === "DELIVERED" || order.status === "CANCELLED") return
-        if (!confirm("Are you sure you want to cancel this order?")) return
+
+        if (
+            [
+                "DELIVERED",
+                "CANCELLED"
+            ].includes(
+                order.status
+            )
+        ) {
+            return
+        }
+
+        if (
+            !confirm(
+                "Are you sure you want to cancel this order?"
+            )
+        ) {
+            return
+        }
 
         try {
-            const token = await getToken()
+
+            const token =
+                await getToken()
+
             await axios.post(
-                '/api/orders/cancel',
-                { orderId: order.id },
-                { headers: { Authorization: `Bearer ${token}` } }
+                "/api/orders/cancel",
+                {
+                    orderId:
+                        order.id
+                },
+                {
+                    headers: {
+                        Authorization:
+                            `Bearer ${token}`
+                    }
+                }
             )
-            toast.success("Order canceled successfully")
-            fetchOrders()
+
+            stopNotificationSound()
+
+            toast.success(
+                "Order canceled successfully"
+            )
+
+            await fetchOrders(false)
+
         } catch (error) {
-            toast.error(error?.response?.data?.error || error.message)
+
+            toast.error(
+                error?.response?.data?.error ||
+                error.message
+            )
+
         }
+
     }
 
+    /* ================= PDF REPORT ================= */
 
-    /* ================= PDF EXPORTS ================= */
     const downloadReportPDF = async () => {
-        const getBase64Image = (url) => {
-            return new Promise((resolve) => {
-                if (!url) return resolve('');
-                const img = new Image();
-                img.crossOrigin = 'anonymous';
-                img.src = url;
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    canvas.width = img.width;
-                    canvas.height = img.height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0);
-                    resolve(canvas.toDataURL('image/png'));
-                };
-                img.onerror = () => resolve('');
-            });
-        };
 
-        const store = filteredOrders[0]?.store || {}
-        const logoBase64 = await getBase64Image(store?.logo)
+        try {
 
-        const reportDiv = document.createElement('div')
-        reportDiv.style.width = '1000px'
-        reportDiv.style.padding = '50px'
-        reportDiv.style.background = '#ffffff'
-        reportDiv.style.fontFamily = 'Inter, system-ui, sans-serif'
-        reportDiv.style.color = '#0f172a'
+            const getBase64Image = (url) => {
 
-        reportDiv.innerHTML = `
-        <div style="border:1px solid #e5e7eb; border-radius:16px; padding:40px; box-shadow:0 10px 30px rgba(0,0,0,0.08);">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:30px;">
-                <div style="display:flex; align-items:center; gap:15px;">
-                    ${logoBase64 ? `<img src="${logoBase64}" style="height:50px; border-radius:10px;" />` : ''}
-                    <div>
-                        <h1 style="margin:0; font-size:24px; font-weight:700;">${store?.name || "Store"}</h1>
-                        <p style="margin:2px 0; font-size:13px; color:#64748b;">Premium Sales & Payout Report</p>
+                return new Promise(
+                    (resolve) => {
+
+                        if (!url) {
+                            return resolve("")
+                        }
+
+                        const img =
+                            new Image()
+
+                        img.crossOrigin =
+                            "anonymous"
+
+                        img.src = url
+
+                        img.onload = () => {
+
+                            const canvas =
+                                document.createElement(
+                                    "canvas"
+                                )
+
+                            canvas.width =
+                                img.width
+
+                            canvas.height =
+                                img.height
+
+                            const ctx =
+                                canvas.getContext(
+                                    "2d"
+                                )
+
+                            ctx.drawImage(
+                                img,
+                                0,
+                                0
+                            )
+
+                            resolve(
+                                canvas.toDataURL(
+                                    "image/png"
+                                )
+                            )
+
+                        }
+
+                        img.onerror = () =>
+                            resolve("")
+
+                    }
+                )
+
+            }
+
+            const store =
+                filteredOrders[0]?.store ||
+                {}
+
+            const logoBase64 =
+                await getBase64Image(
+                    store?.logo
+                )
+
+            const reportDiv =
+                document.createElement(
+                    "div"
+                )
+
+            reportDiv.style.width =
+                "1000px"
+
+            reportDiv.style.padding =
+                "50px"
+
+            reportDiv.style.background =
+                "#ffffff"
+
+            reportDiv.style.fontFamily =
+                "Inter, system-ui, sans-serif"
+
+            reportDiv.style.color =
+                "#0f172a"
+
+            reportDiv.innerHTML = `
+                <div style="
+                    border:1px solid #e5e7eb;
+                    border-radius:16px;
+                    padding:40px;
+                ">
+
+                    <div style="
+                        display:flex;
+                        justify-content:space-between;
+                        align-items:center;
+                        margin-bottom:30px;
+                    ">
+
+                        <div style="
+                            display:flex;
+                            align-items:center;
+                            gap:15px;
+                        ">
+
+                            ${
+                                logoBase64
+                                    ? `
+                                        <img
+                                            src="${logoBase64}"
+                                            style="
+                                                height:50px;
+                                                border-radius:10px;
+                                            "
+                                        />
+                                    `
+                                    : ""
+                            }
+
+                            <div>
+
+                                <h1 style="
+                                    margin:0;
+                                    font-size:24px;
+                                    font-weight:700;
+                                ">
+                                    ${
+                                        store?.name ||
+                                        "Store"
+                                    }
+                                </h1>
+
+                                <p style="
+                                    margin:2px 0;
+                                    font-size:13px;
+                                    color:#64748b;
+                                ">
+                                    Premium Sales & Payout Report
+                                </p>
+
+                            </div>
+
+                        </div>
+
+                        <div style="
+                            text-align:right;
+                        ">
+
+                            <p style="
+                                font-size:12px;
+                                color:#94a3b8;
+                                margin:0;
+                            ">
+                                Generated On
+                            </p>
+
+                            <p style="
+                                font-size:13px;
+                                font-weight:600;
+                            ">
+                                ${new Date().toLocaleString()}
+                            </p>
+
+                        </div>
+
                     </div>
+
+
+                    <div style="
+                        margin-bottom:25px;
+                    ">
+
+                        <h2 style="
+                            margin:0;
+                            font-size:20px;
+                            font-weight:600;
+                            color:#4f46e5;
+                        ">
+                            Earnings Analytics
+                        </h2>
+
+                        <p style="
+                            margin:5px 0;
+                            color:#64748b;
+                        ">
+                            ${
+                                selectedDate
+                                    ? `Date: ${new Date(selectedDate).toLocaleDateString()}`
+                                    : `Month: ${months[selectedMonth]} ${selectedYear}`
+                            }
+                        </p>
+
+                    </div>
+
+
+                    <div style="
+                        display:flex;
+                        gap:20px;
+                        margin-bottom:30px;
+                    ">
+
+                        <div style="
+                            flex:1;
+                            background:#ecfdf5;
+                            padding:20px;
+                            border-radius:12px;
+                        ">
+
+                            <p style="
+                                margin:0;
+                                font-size:13px;
+                                color:#059669;
+                            ">
+                                Net Earnings
+                            </p>
+
+                            <h2 style="
+                                margin-top:5px;
+                            ">
+                                ₹${revenue.toFixed(2)}
+                            </h2>
+
+                        </div>
+
+
+                        <div style="
+                            flex:1;
+                            background:#fee2e2;
+                            padding:20px;
+                            border-radius:12px;
+                        ">
+
+                            <p style="
+                                margin:0;
+                                font-size:13px;
+                                color:#dc2626;
+                            ">
+                                Lost Value (Cancelled)
+                            </p>
+
+                            <h2 style="
+                                margin-top:5px;
+                            ">
+                                ₹${cancelledAmount.toFixed(2)}
+                            </h2>
+
+                        </div>
+
+
+                        <div style="
+                            flex:1;
+                            background:#fff7ed;
+                            padding:20px;
+                            border-radius:12px;
+                        ">
+
+                            <p style="
+                                margin:0;
+                                font-size:13px;
+                                color:#ea580c;
+                            ">
+                                Lost Value (Returned)
+                            </p>
+
+                            <h2 style="
+                                margin-top:5px;
+                            ">
+                                ₹${returnedAmount.toFixed(2)}
+                            </h2>
+
+                        </div>
+
+                    </div>
+
+
+                    <table style="
+                        width:100%;
+                        border-collapse:separate;
+                        border-spacing:0 10px;
+                    ">
+
+                        <thead>
+
+                            <tr style="
+                                text-align:left;
+                                font-size:13px;
+                                color:#64748b;
+                            ">
+
+                                <th style="
+                                    padding:10px;
+                                ">
+                                    Customer
+                                </th>
+
+                                <th style="
+                                    padding:10px;
+                                ">
+                                    Date
+                                </th>
+
+                                <th style="
+                                    padding:10px;
+                                ">
+                                    Status
+                                </th>
+
+                                <th style="
+                                    padding:10px;
+                                    text-align:right;
+                                ">
+                                    Platform Fee
+                                </th>
+
+                                <th style="
+                                    padding:10px;
+                                    text-align:right;
+                                ">
+                                    Your Earnings
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                            ${
+                                filteredOrders
+                                    .map(
+                                        order => {
+
+                                            const finances =
+                                                getOrderFinances(
+                                                    order
+                                                )
+
+                                            let statusColor =
+                                                "#eab308"
+
+                                            let bgColor =
+                                                "#fef9c3"
+
+                                            if (
+                                                order.status ===
+                                                "DELIVERED"
+                                            ) {
+
+                                                statusColor =
+                                                    "#16a34a"
+
+                                                bgColor =
+                                                    "#dcfce7"
+
+                                            }
+
+                                            if (
+                                                order.status ===
+                                                "CANCELLED"
+                                            ) {
+
+                                                statusColor =
+                                                    "#dc2626"
+
+                                                bgColor =
+                                                    "#fee2e2"
+
+                                            }
+
+                                            if (
+                                                order.status ===
+                                                "RETURNED"
+                                            ) {
+
+                                                statusColor =
+                                                    "#ea580c"
+
+                                                bgColor =
+                                                    "#ffedd5"
+
+                                            }
+
+                                            return `
+                                                <tr style="
+                                                    background:#f9fafb;
+                                                ">
+
+                                                    <td style="
+                                                        padding:12px;
+                                                        border-top-left-radius:10px;
+                                                        border-bottom-left-radius:10px;
+                                                    ">
+                                                        ${
+                                                            order.user?.name ||
+                                                            "Customer"
+                                                        }
+                                                    </td>
+
+                                                    <td style="
+                                                        padding:12px;
+                                                    ">
+                                                        ${
+                                                            order.createdAt
+                                                                ? new Date(
+                                                                    order.createdAt
+                                                                ).toLocaleDateString()
+                                                                : "N/A"
+                                                        }
+                                                    </td>
+
+                                                    <td style="
+                                                        padding:12px;
+                                                    ">
+
+                                                        <span style="
+                                                            padding:6px 12px;
+                                                            border-radius:999px;
+                                                            font-size:12px;
+                                                            font-weight:600;
+                                                            color:${statusColor};
+                                                            background:${bgColor};
+                                                            display:inline-block;
+                                                        ">
+                                                            ${
+                                                                order.status
+                                                            }
+                                                        </span>
+
+                                                    </td>
+
+                                                    <td style="
+                                                        padding:12px;
+                                                        text-align:right;
+                                                        color:#ef4444;
+                                                    ">
+                                                        -₹${
+                                                            finances.platformFee.toFixed(
+                                                                2
+                                                            )
+                                                        }
+                                                    </td>
+
+                                                    <td style="
+                                                        padding:12px;
+                                                        text-align:right;
+                                                        font-weight:600;
+                                                        color:#10b981;
+                                                        border-top-right-radius:10px;
+                                                        border-bottom-right-radius:10px;
+                                                    ">
+                                                        ₹${
+                                                            finances.sellerEarnings.toFixed(
+                                                                2
+                                                            )
+                                                        }
+                                                    </td>
+
+                                                </tr>
+                                            `
+
+                                        }
+                                    )
+                                    .join("")
+                            }
+
+                        </tbody>
+
+                    </table>
+
                 </div>
-                <div style="text-align:right;">
-                    <p style="font-size:12px; color:#94a3b8; margin:0;">Generated On</p>
-                    <p style="font-size:13px; font-weight:600;">${new Date().toLocaleString()}</p>
-                </div>
-            </div>
+            `
 
-            <div style="margin-bottom:25px;">
-                <h2 style="margin:0; font-size:20px; font-weight:600; color:#4f46e5;">Earnings Analytics</h2>
-                <p style="margin:5px 0; color:#64748b;">
-                    ${selectedDate ? `Date: ${new Date(selectedDate).toLocaleDateString()}` : `Month: ${months[selectedMonth]} ${selectedYear}`}
-                </p>
-            </div>
+            document.body.appendChild(
+                reportDiv
+            )
 
-            <div style="display:flex; gap:20px; margin-bottom:30px;">
-                <div style="flex:1; background:#ecfdf5; padding:20px; border-radius:12px;">
-                    <p style="margin:0; font-size:13px; color:#059669;">Net Earnings (90%)</p>
-                    <h2 style="margin-top:5px;">₹${revenue.toFixed(2)}</h2>
-                </div>
-                <div style="flex:1; background:#fee2e2; padding:20px; border-radius:12px;">
-                    <p style="margin:0; font-size:13px; color:#dc2626;">Lost Value (Cancelled)</p>
-                    <h2 style="margin-top:5px;">₹${cancelledAmount.toFixed(2)}</h2>
-                </div>
-                <div style="flex:1; background:#fff7ed; padding:20px; border-radius:12px;">
-                    <p style="margin:0; font-size:13px; color:#ea580c;">Lost Value (Returned)</p>
-                    <h2 style="margin-top:5px;">₹${returnedAmount.toFixed(2)}</h2>
-                </div>
-            </div>
+            const canvas =
+                await html2canvas(
+                    reportDiv,
+                    {
+                        scale: 2,
+                        backgroundColor:
+                            "#ffffff"
+                    }
+                )
 
-            <table style="width:100%; border-collapse:separate; border-spacing:0 10px;">
-                <thead>
-                    <tr style="text-align:left; font-size:13px; color:#64748b;">
-                        <th style="padding:10px;">Customer</th>
-                        <th style="padding:10px;">Date</th>
-                        <th style="padding:10px;">Status</th>
-                        <th style="padding:10px; text-align:right;">₹${finances.platformFee.toFixed(2)}</th>
-                        <th style="padding:10px; text-align:right;">Your Earnings</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${filteredOrders.map(order => {
-            const finances = getOrderFinances(order, commission);
-            let statusColor = "#eab308";
-            let bgColor = "#fef9c3";
+            const imgData =
+                canvas.toDataURL(
+                    "image/png"
+                )
 
-            if (order.status === "DELIVERED") { statusColor = "#16a34a"; bgColor = "#dcfce7"; }
-            if (order.status === "CANCELLED") { statusColor = "#dc2626"; bgColor = "#fee2e2"; }
-            if (order.status === "RETURNED") { statusColor = "#ea580c"; bgColor = "#ffedd5"; }
+            const pdf =
+                new jsPDF(
+                    "p",
+                    "pt",
+                    "a4"
+                )
 
-            return `
-                        <tr style="background:#f9fafb;">
-                            <td style="padding:12px; border-top-left-radius:10px; border-bottom-left-radius:10px;">${order.user?.name}</td>
-                            <td style="padding:12px;">${new Date(order.createdAt).toLocaleDateString()}</td>
-                            <td style="padding:12px;">
-                                <span style="padding:6px 12px; border-radius:999px; font-size:12px; font-weight:600; color:${statusColor}; background:${bgColor}; display:inline-block;">
-                                    ${order.status}
-                                </span>
-                            </td>
-                            <td style="padding:12px; text-align:right; color:#ef4444;">-₹${finances.platformFee.toFixed(2)}</td>
-                            <td style="padding:12px; text-align:right; font-weight:600; color:#10b981; border-top-right-radius:10px; border-bottom-right-radius:10px;">
-                                ₹${finances.sellerEarnings.toFixed(2)}
-                            </td>
-                        </tr>
-                        `
-        }).join('')}
-                </tbody>
-            </table>
-        </div>
-        `
+            const pdfWidth =
+                pdf.internal.pageSize.getWidth()
 
-        document.body.appendChild(reportDiv)
-        const canvas = await html2canvas(reportDiv, { scale: 2 })
-        const imgData = canvas.toDataURL('image/png')
-        const pdf = new jsPDF('p', 'pt', 'a4')
-        const pdfWidth = pdf.internal.pageSize.getWidth()
-        const pdfHeight = (canvas.height * pdfWidth) / canvas.width
-        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight)
-        pdf.save(`Earnings-Report-${Date.now()}.pdf`)
-        document.body.removeChild(reportDiv)
+            const pdfHeight =
+                (
+                    canvas.height *
+                    pdfWidth
+                ) /
+                canvas.width
+
+            pdf.addImage(
+                imgData,
+                "PNG",
+                0,
+                0,
+                pdfWidth,
+                pdfHeight
+            )
+
+            pdf.save(
+                `Earnings-Report-${Date.now()}.pdf`
+            )
+
+            document.body.removeChild(
+                reportDiv
+            )
+
+        } catch (error) {
+
+            console.error(
+                "REPORT PDF ERROR:",
+                error
+            )
+
+            toast.error(
+                "Failed to generate earnings report."
+            )
+
+        }
+
     }
+
+    /* ================= HTML HELPERS ================= */
 
     const escapeHTML = (value) => {
-        if (value === null || value === undefined) {
-            return "";
+
+        if (
+            value === null ||
+            value === undefined
+        ) {
+            return ""
         }
 
         return String(value)
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
-    };
+            .replace(
+                /&/g,
+                "&amp;"
+            )
+            .replace(
+                /</g,
+                "&lt;"
+            )
+            .replace(
+                />/g,
+                "&gt;"
+            )
+            .replace(
+                /"/g,
+                "&quot;"
+            )
+            .replace(
+                /'/g,
+                "&#039;"
+            )
+
+    }
 
     const storeNameSafe = (value) => {
-        return escapeHTML(value || "Store");
-    };
 
-    const downloadInvoicePDF = async (order) => {
+        return escapeHTML(
+            value || "Store"
+        )
+
+    }
+
+    /* ================= INVOICE PDF ================= */
+
+    const downloadInvoicePDF = async (
+        order
+    ) => {
+
         if (!order) {
-            toast.error("Order information is unavailable.");
-            return;
+
+            toast.error(
+                "Order information is unavailable."
+            )
+
+            return
         }
 
-        const getBase64Image = async (url) => {
-            if (!url) return null;
+        const getBase64Image =
+            async (url) => {
 
-            try {
-                const response = await fetch(url, {
-                    mode: "cors",
-                });
+                if (!url) return null
 
-                if (!response.ok) return null;
+                try {
 
-                const blob = await response.blob();
+                    const response =
+                        await fetch(
+                            url,
+                            {
+                                mode: "cors"
+                            }
+                        )
 
-                return await new Promise((resolve) => {
-                    const reader = new FileReader();
+                    if (!response.ok) {
+                        return null
+                    }
 
-                    reader.onloadend = () => resolve(reader.result);
-                    reader.onerror = () => resolve(null);
+                    const blob =
+                        await response.blob()
 
-                    reader.readAsDataURL(blob);
-                });
-            } catch (error) {
-                console.error("Invoice image error:", error);
-                return null;
+                    return await new Promise(
+                        resolve => {
+
+                            const reader =
+                                new FileReader()
+
+                            reader.onloadend =
+                                () =>
+                                    resolve(
+                                        reader.result
+                                    )
+
+                            reader.onerror =
+                                () =>
+                                    resolve(
+                                        null
+                                    )
+
+                            reader.readAsDataURL(
+                                blob
+                            )
+
+                        }
+                    )
+
+                } catch (error) {
+
+                    console.error(
+                        "Invoice image error:",
+                        error
+                    )
+
+                    return null
+
+                }
+
             }
-        };
 
         try {
-            toast.loading("Preparing invoice...", {
-                id: "invoice-pdf",
-            });
 
-            const logoBase64 = await getBase64Image(order.store?.logo);
+            toast.loading(
+                "Preparing invoice...",
+                {
+                    id:
+                        "invoice-pdf"
+                }
+            )
 
-            /*
-             * Use the actual order delivery fee.
-             * Fallback only if the order does not contain it.
-             */
-            const deliveryFee = Number(
-                order.deliveryFee ??
-                order.shippingFee ??
-                settings?.deliveryFee ??
-                0
-            );
+            const logoBase64 =
+                await getBase64Image(
+                    order.store?.logo
+                )
 
-            /*
-             * Calculate product subtotal from order items.
-             */
-            const productSubtotal = (order.orderItems || []).reduce(
-                (sum, item) =>
-                    sum +
-                    Number(item.price || 0) *
-                    Number(item.quantity || 0),
-                0
-            );
+            const deliveryFee =
+                Number(
+                    order.deliveryFee ??
+                    order.shippingFee ??
+                    settings?.deliveryFee ??
+                    0
+                )
 
-            /*
-             * Use the actual order total as the final customer-paid amount.
-             * This is important if coupons/discounts are applied.
-             */
-            const totalPaid = Number(order.total || 0);
+            const productSubtotal =
+                (
+                    order.orderItems ||
+                    []
+                ).reduce(
+                    (
+                        sum,
+                        item
+                    ) =>
+                        sum +
+                        Number(
+                            item.price ||
+                            0
+                        ) *
+                        Number(
+                            item.quantity ||
+                            0
+                        ),
+                    0
+                )
+
+            const totalPaid =
+                Number(
+                    order.total ||
+                    0
+                )
 
             const invoiceNumber =
-                order.id?.slice(-8)?.toUpperCase() || "N/A";
+                order.id
+                    ?.slice(-8)
+                    ?.toUpperCase() ||
+                "N/A"
 
-            const orderDate = order.createdAt
-                ? new Date(order.createdAt).toLocaleDateString("en-IN", {
-                    day: "2-digit",
-                    month: "short",
-                    year: "numeric",
-                })
-                : "N/A";
+            const orderDate =
+                order.createdAt
+                    ? new Date(
+                        order.createdAt
+                    ).toLocaleDateString(
+                        "en-IN",
+                        {
+                            day:
+                                "2-digit",
+                            month:
+                                "short",
+                            year:
+                                "numeric"
+                        }
+                    )
+                    : "N/A"
 
-            const orderTime = order.createdAt
-                ? new Date(order.createdAt).toLocaleTimeString("en-IN", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                })
-                : "";
+            const orderTime =
+                order.createdAt
+                    ? new Date(
+                        order.createdAt
+                    ).toLocaleTimeString(
+                        "en-IN",
+                        {
+                            hour:
+                                "2-digit",
+                            minute:
+                                "2-digit"
+                        }
+                    )
+                    : ""
 
             const customerName =
                 order.user?.name ||
                 order.address?.name ||
-                "Customer";
+                "Customer"
 
             const customerPhone =
                 order.address?.phone ||
                 order.user?.phone ||
-                "N/A";
+                "N/A"
 
             const customerEmail =
                 order.user?.email ||
-                "N/A";
+                "N/A"
 
-            const address = order.address || {};
+            const address =
+                order.address || {}
 
             const fullAddress = [
                 address.street,
                 address.city,
                 address.state,
                 address.zip,
-                address.country,
+                address.country
             ]
                 .filter(Boolean)
-                .join(", ");
+                .join(", ")
 
-            /*
-             * Build invoice HTML using ONLY inline styles.
-             *
-             * This is intentionally isolated from your application's
-             * Tailwind/global CSS to prevent html2canvas from seeing
-             * unsupported OKLCH colors.
-             */
             const invoiceHTML = `
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="UTF-8" />
+                <!DOCTYPE html>
 
-                <style>
-                    * {
-                        box-sizing: border-box;
-                    }
+                <html>
 
-                    html,
-                    body {
-                        margin: 0;
-                        padding: 0;
-                        background: #ffffff;
-                    }
+                <head>
 
-                    body {
-                        font-family: Arial, Helvetica, sans-serif;
-                        color: #111827;
-                    }
+                    <meta charset="UTF-8" />
 
-                    .invoice {
-                        width: 800px;
-                        background: #ffffff;
-                        padding: 45px;
-                    }
+                    <style>
 
-                    .top-border {
-                        height: 6px;
-                        background: #4f46e5;
-                        border-radius: 4px 4px 0 0;
-                    }
+                        * {
+                            box-sizing:border-box;
+                        }
 
-                    .header {
-                        display: flex;
-                        justify-content: space-between;
-                        align-items: flex-start;
-                        padding: 30px 0 25px;
-                        border-bottom: 1px solid #e5e7eb;
-                    }
+                        html,
+                        body {
+                            margin:0;
+                            padding:0;
+                            background:#ffffff;
+                        }
 
-                    .store-section {
-                        display: flex;
-                        align-items: center;
-                        gap: 15px;
-                    }
+                        body {
+                            font-family:
+                                Arial,
+                                Helvetica,
+                                sans-serif;
+                            color:#111827;
+                        }
 
-                    .store-logo {
-                        width: 64px;
-                        height: 64px;
-                        object-fit: cover;
-                        border-radius: 12px;
-                        border: 1px solid #e5e7eb;
-                    }
+                        .invoice {
+                            width:800px;
+                            background:#ffffff;
+                            padding:45px;
+                        }
 
-                    .store-name {
-                        margin: 0;
-                        font-size: 24px;
-                        font-weight: 700;
-                        color: #111827;
-                    }
+                        .top-border {
+                            height:6px;
+                            background:#4f46e5;
+                            border-radius:
+                                4px
+                                4px
+                                0
+                                0;
+                        }
 
-                    .store-subtitle {
-                        margin: 5px 0 0;
-                        font-size: 12px;
-                        color: #6b7280;
-                    }
+                        .header {
+                            display:flex;
+                            justify-content:
+                                space-between;
+                            align-items:
+                                flex-start;
+                            padding:
+                                30px
+                                0
+                                25px;
+                            border-bottom:
+                                1px solid
+                                #e5e7eb;
+                        }
 
-                    .invoice-title {
-                        text-align: right;
-                    }
+                        .store-section {
+                            display:flex;
+                            align-items:
+                                center;
+                            gap:15px;
+                        }
 
-                    .invoice-title h2 {
-                        margin: 0;
-                        font-size: 24px;
-                        font-weight: 700;
-                        color: #4f46e5;
-                    }
+                        .store-logo {
+                            width:64px;
+                            height:64px;
+                            object-fit:cover;
+                            border-radius:12px;
+                            border:
+                                1px solid
+                                #e5e7eb;
+                        }
 
-                    .invoice-number {
-                        margin: 6px 0 0;
-                        font-size: 12px;
-                        color: #6b7280;
-                    }
+                        .store-name {
+                            margin:0;
+                            font-size:24px;
+                            font-weight:700;
+                        }
 
-                    .info-grid {
-                        display: flex;
-                        gap: 25px;
-                        margin-top: 28px;
-                    }
+                        .store-subtitle {
+                            margin:
+                                5px
+                                0
+                                0;
+                            font-size:12px;
+                            color:#6b7280;
+                        }
 
-                    .info-card {
-                        flex: 1;
-                        background: #f8fafc;
-                        border: 1px solid #e5e7eb;
-                        border-radius: 10px;
-                        padding: 18px;
-                    }
+                        .invoice-title {
+                            text-align:right;
+                        }
 
-                    .info-title {
-                        margin: 0 0 10px;
-                        font-size: 11px;
-                        font-weight: 700;
-                        color: #6b7280;
-                        text-transform: uppercase;
-                        letter-spacing: 0.5px;
-                    }
+                        .invoice-title h2 {
+                            margin:0;
+                            font-size:24px;
+                            color:#4f46e5;
+                        }
 
-                    .info-main {
-                        margin: 0 0 5px;
-                        font-size: 14px;
-                        font-weight: 700;
-                        color: #111827;
-                    }
+                        .invoice-number {
+                            margin:
+                                6px
+                                0
+                                0;
+                            font-size:12px;
+                            color:#6b7280;
+                        }
 
-                    .info-text {
-                        margin: 3px 0;
-                        font-size: 12px;
-                        line-height: 1.5;
-                        color: #4b5563;
-                    }
+                        .info-grid {
+                            display:flex;
+                            gap:25px;
+                            margin-top:28px;
+                        }
 
-                    .items-title {
-                        margin: 30px 0 12px;
-                        font-size: 16px;
-                        font-weight: 700;
-                        color: #111827;
-                    }
+                        .info-card {
+                            flex:1;
+                            background:#f8fafc;
+                            border:
+                                1px solid
+                                #e5e7eb;
+                            border-radius:10px;
+                            padding:18px;
+                        }
 
-                    table {
-                        width: 100%;
-                        border-collapse: collapse;
-                    }
+                        .info-title {
+                            margin:
+                                0
+                                0
+                                10px;
+                            font-size:11px;
+                            font-weight:700;
+                            color:#6b7280;
+                            text-transform:
+                                uppercase;
+                        }
 
-                    thead tr {
-                        background: #111827;
-                        color: #ffffff;
-                    }
+                        .info-main {
+                            margin:
+                                0
+                                0
+                                5px;
+                            font-size:14px;
+                            font-weight:700;
+                        }
 
-                    th {
-                        padding: 12px;
-                        font-size: 11px;
-                        text-align: left;
-                        font-weight: 700;
-                    }
+                        .info-text {
+                            margin:
+                                3px
+                                0;
+                            font-size:12px;
+                            line-height:1.5;
+                            color:#4b5563;
+                        }
 
-                    th.center {
-                        text-align: center;
-                    }
+                        .items-title {
+                            margin:
+                                30px
+                                0
+                                12px;
+                            font-size:16px;
+                            font-weight:700;
+                        }
 
-                    th.right {
-                        text-align: right;
-                    }
+                        table {
+                            width:100%;
+                            border-collapse:
+                                collapse;
+                        }
 
-                    td {
-                        padding: 13px 12px;
-                        border-bottom: 1px solid #e5e7eb;
-                        font-size: 12px;
-                        color: #374151;
-                    }
+                        thead tr {
+                            background:#111827;
+                            color:#ffffff;
+                        }
 
-                    td.center {
-                        text-align: center;
-                    }
+                        th {
+                            padding:12px;
+                            font-size:11px;
+                            text-align:left;
+                        }
 
-                    td.right {
-                        text-align: right;
-                    }
+                        th.center {
+                            text-align:center;
+                        }
 
-                    .product-name {
-                        font-weight: 600;
-                        color: #111827;
-                    }
+                        th.right {
+                            text-align:right;
+                        }
 
-                    .summary-wrapper {
-                        display: flex;
-                        justify-content: flex-end;
-                        margin-top: 25px;
-                    }
+                        td {
+                            padding:
+                                13px
+                                12px;
+                            border-bottom:
+                                1px solid
+                                #e5e7eb;
+                            font-size:12px;
+                            color:#374151;
+                        }
 
-                    .summary {
-                        width: 300px;
-                    }
+                        td.center {
+                            text-align:center;
+                        }
 
-                    .summary-row {
-                        display: flex;
-                        justify-content: space-between;
-                        padding: 7px 0;
-                        font-size: 13px;
-                        color: #6b7280;
-                    }
+                        td.right {
+                            text-align:right;
+                        }
 
-                    .summary-total {
-                        display: flex;
-                        justify-content: space-between;
-                        margin-top: 10px;
-                        padding-top: 14px;
-                        border-top: 2px solid #111827;
-                        font-size: 18px;
-                        font-weight: 700;
-                        color: #111827;
-                    }
+                        .product-name {
+                            font-weight:600;
+                            color:#111827;
+                        }
 
-                    .payment-box {
-                        margin-top: 30px;
-                        padding: 15px 18px;
-                        background: #eef2ff;
-                        border: 1px solid #c7d2fe;
-                        border-radius: 10px;
-                    }
+                        .summary-wrapper {
+                            display:flex;
+                            justify-content:
+                                flex-end;
+                            margin-top:25px;
+                        }
 
-                    .payment-label {
-                        margin: 0 0 4px;
-                        font-size: 10px;
-                        font-weight: 700;
-                        color: #6366f1;
-                        text-transform: uppercase;
-                    }
+                        .summary {
+                            width:300px;
+                        }
 
-                    .payment-value {
-                        margin: 0;
-                        font-size: 13px;
-                        font-weight: 700;
-                        color: #312e81;
-                    }
+                        .summary-row {
+                            display:flex;
+                            justify-content:
+                                space-between;
+                            padding:7px 0;
+                            font-size:13px;
+                            color:#6b7280;
+                        }
 
-                    .footer {
-                        margin-top: 40px;
-                        padding-top: 20px;
-                        border-top: 1px solid #e5e7eb;
-                        text-align: center;
-                    }
+                        .summary-total {
+                            display:flex;
+                            justify-content:
+                                space-between;
+                            margin-top:10px;
+                            padding-top:14px;
+                            border-top:
+                                2px solid
+                                #111827;
+                            font-size:18px;
+                            font-weight:700;
+                        }
 
-                    .footer-title {
-                        margin: 0;
-                        font-size: 14px;
-                        font-weight: 700;
-                        color: #111827;
-                    }
+                        .payment-box {
+                            margin-top:30px;
+                            padding:
+                                15px
+                                18px;
+                            background:#eef2ff;
+                            border:
+                                1px solid
+                                #c7d2fe;
+                            border-radius:10px;
+                        }
 
-                    .footer-text {
-                        margin: 6px 0 0;
-                        font-size: 11px;
-                        color: #6b7280;
-                    }
-                </style>
-            </head>
+                        .payment-label {
+                            margin:
+                                0
+                                0
+                                4px;
+                            font-size:10px;
+                            font-weight:700;
+                            color:#6366f1;
+                            text-transform:
+                                uppercase;
+                        }
 
-            <body>
-                <div class="invoice">
+                        .payment-value {
+                            margin:0;
+                            font-size:13px;
+                            font-weight:700;
+                            color:#312e81;
+                        }
 
-                    <div class="top-border"></div>
+                        .footer {
+                            margin-top:40px;
+                            padding-top:20px;
+                            border-top:
+                                1px solid
+                                #e5e7eb;
+                            text-align:center;
+                        }
 
-                    <!-- HEADER -->
-                    <div class="header">
+                        .footer-title {
+                            margin:0;
+                            font-size:14px;
+                            font-weight:700;
+                        }
 
-                        <div class="store-section">
+                        .footer-text {
+                            margin:
+                                6px
+                                0
+                                0;
+                            font-size:11px;
+                            color:#6b7280;
+                        }
 
-                            ${logoBase64
-                    ? `
-                                    <img
-                                        class="store-logo"
-                                        src="${logoBase64}"
-                                    />
-                                    `
-                    : ""
-                }
+                    </style>
 
-                            <div>
-                                <h1 class="store-name">
-                                    ${storeNameSafe(order.store?.name)}
-                                </h1>
+                </head>
 
-                                <p class="store-subtitle">
-                                    Nandurbar Bazar
+                <body>
+
+                    <div class="invoice">
+
+                        <div class="top-border"></div>
+
+                        <div class="header">
+
+                            <div class="store-section">
+
+                                ${
+                                    logoBase64
+                                        ? `
+                                            <img
+                                                class="store-logo"
+                                                src="${logoBase64}"
+                                            />
+                                        `
+                                        : ""
+                                }
+
+                                <div>
+
+                                    <h1 class="store-name">
+                                        ${storeNameSafe(
+                                            order.store?.name
+                                        )}
+                                    </h1>
+
+                                    <p class="store-subtitle">
+                                        Nandurbar Bazar
+                                    </p>
+
+                                </div>
+
+                            </div>
+
+                            <div class="invoice-title">
+
+                                <h2>
+                                    INVOICE
+                                </h2>
+
+                                <p class="invoice-number">
+                                    #${invoiceNumber}
                                 </p>
-                            </div>
 
-                        </div>
-
-                        <div class="invoice-title">
-
-                            <h2>
-                                INVOICE
-                            </h2>
-
-                            <p class="invoice-number">
-                                #${invoiceNumber}
-                            </p>
-
-                            <p class="invoice-number">
-                                ${orderDate} ${orderTime}
-                            </p>
-
-                        </div>
-
-                    </div>
-
-
-                    <!-- CUSTOMER / ORDER INFO -->
-                    <div class="info-grid">
-
-                        <div class="info-card">
-
-                            <p class="info-title">
-                                Bill To
-                            </p>
-
-                            <p class="info-main">
-                                ${escapeHTML(customerName)}
-                            </p>
-
-                            <p class="info-text">
-                                ${escapeHTML(customerEmail)}
-                            </p>
-
-                            <p class="info-text">
-                                ${escapeHTML(customerPhone)}
-                            </p>
-
-                        </div>
-
-
-                        <div class="info-card">
-
-                            <p class="info-title">
-                                Delivery Address
-                            </p>
-
-                            <p class="info-text">
-                                ${escapeHTML(fullAddress || "N/A")}
-                            </p>
-
-                        </div>
-
-                    </div>
-
-
-                    <!-- PRODUCTS -->
-                    <h3 class="items-title">
-                        Order Items
-                    </h3>
-
-                    <table>
-
-                        <thead>
-
-                            <tr>
-                                <th>
-                                    Item
-                                </th>
-
-                                <th class="center">
-                                    Qty
-                                </th>
-
-                                <th class="right">
-                                    Price
-                                </th>
-
-                                <th class="right">
-                                    Amount
-                                </th>
-                            </tr>
-
-                        </thead>
-
-                        <tbody>
-
-                            ${(order.orderItems || [])
-                    .map((item) => {
-
-                        const quantity =
-                            Number(item.quantity || 0);
-
-                        const price =
-                            Number(item.price || 0);
-
-                        const amount =
-                            price * quantity;
-
-                        return `
-                                            <tr>
-
-                                                <td>
-                                                    <span class="product-name">
-                                                        ${escapeHTML(
-                            item.product?.name ||
-                            "Product"
-                        )}
-                                                    </span>
-                                                </td>
-
-                                                <td class="center">
-                                                    ${quantity}
-                                                </td>
-
-                                                <td class="right">
-                                                    ₹${price.toFixed(2)}
-                                                </td>
-
-                                                <td class="right">
-                                                    ₹${amount.toFixed(2)}
-                                                </td>
-
-                                            </tr>
-                                        `;
-                    })
-                    .join("")
-                }
-
-                        </tbody>
-
-                    </table>
-
-
-                    <!-- PAYMENT -->
-                    <div class="payment-box">
-
-                        <p class="payment-label">
-                            Payment Method
-                        </p>
-
-                        <p class="payment-value">
-                            ${escapeHTML(
-                    order.paymentMethod || "Cash on Delivery"
-                )}
-                        </p>
-
-                    </div>
-
-
-                    <!-- SUMMARY -->
-                    <div class="summary-wrapper">
-
-                        <div class="summary">
-
-                            <div class="summary-row">
-                                <span>
-                                    Subtotal
-                                </span>
-
-                                <span>
-                                    ₹${productSubtotal.toFixed(2)}
-                                </span>
-                            </div>
-
-                            <div class="summary-row">
-                                <span>
-                                    Delivery Fee
-                                </span>
-
-                                <span>
-                                    ₹${deliveryFee.toFixed(2)}
-                                </span>
-                            </div>
-
-                            <div class="summary-total">
-
-                                <span>
-                                    Total Paid
-                                </span>
-
-                                <span>
-                                    ₹${totalPaid.toFixed(2)}
-                                </span>
+                                <p class="invoice-number">
+                                    ${orderDate}
+                                    ${orderTime}
+                                </p>
 
                             </div>
 
                         </div>
 
+
+                        <div class="info-grid">
+
+                            <div class="info-card">
+
+                                <p class="info-title">
+                                    Bill To
+                                </p>
+
+                                <p class="info-main">
+                                    ${escapeHTML(
+                                        customerName
+                                    )}
+                                </p>
+
+                                <p class="info-text">
+                                    ${escapeHTML(
+                                        customerEmail
+                                    )}
+                                </p>
+
+                                <p class="info-text">
+                                    ${escapeHTML(
+                                        customerPhone
+                                    )}
+                                </p>
+
+                            </div>
+
+
+                            <div class="info-card">
+
+                                <p class="info-title">
+                                    Delivery Address
+                                </p>
+
+                                <p class="info-text">
+                                    ${escapeHTML(
+                                        fullAddress ||
+                                        "N/A"
+                                    )}
+                                </p>
+
+                            </div>
+
+                        </div>
+
+
+                        <h3 class="items-title">
+                            Order Items
+                        </h3>
+
+
+                        <table>
+
+                            <thead>
+
+                                <tr>
+
+                                    <th>
+                                        Item
+                                    </th>
+
+                                    <th class="center">
+                                        Qty
+                                    </th>
+
+                                    <th class="right">
+                                        Price
+                                    </th>
+
+                                    <th class="right">
+                                        Amount
+                                    </th>
+
+                                </tr>
+
+                            </thead>
+
+
+                            <tbody>
+
+                                ${
+                                    (
+                                        order.orderItems ||
+                                        []
+                                    )
+                                        .map(
+                                            item => {
+
+                                                const quantity =
+                                                    Number(
+                                                        item.quantity ||
+                                                        0
+                                                    )
+
+                                                const price =
+                                                    Number(
+                                                        item.price ||
+                                                        0
+                                                    )
+
+                                                const amount =
+                                                    price *
+                                                    quantity
+
+                                                return `
+                                                    <tr>
+
+                                                        <td>
+
+                                                            <span class="product-name">
+
+                                                                ${escapeHTML(
+                                                                    item.product?.name ||
+                                                                    "Product"
+                                                                )}
+
+                                                            </span>
+
+                                                        </td>
+
+                                                        <td class="center">
+                                                            ${quantity}
+                                                        </td>
+
+                                                        <td class="right">
+                                                            ₹${price.toFixed(2)}
+                                                        </td>
+
+                                                        <td class="right">
+                                                            ₹${amount.toFixed(2)}
+                                                        </td>
+
+                                                    </tr>
+                                                `
+
+                                            }
+                                        )
+                                        .join("")
+                                }
+
+                            </tbody>
+
+                        </table>
+
+
+                        <div class="payment-box">
+
+                            <p class="payment-label">
+                                Payment Method
+                            </p>
+
+                            <p class="payment-value">
+
+                                ${escapeHTML(
+                                    order.paymentMethod ||
+                                    "Cash on Delivery"
+                                )}
+
+                            </p>
+
+                        </div>
+
+
+                        <div class="summary-wrapper">
+
+                            <div class="summary">
+
+                                <div class="summary-row">
+
+                                    <span>
+                                        Subtotal
+                                    </span>
+
+                                    <span>
+                                        ₹${productSubtotal.toFixed(2)}
+                                    </span>
+
+                                </div>
+
+
+                                <div class="summary-row">
+
+                                    <span>
+                                        Delivery Fee
+                                    </span>
+
+                                    <span>
+                                        ₹${deliveryFee.toFixed(2)}
+                                    </span>
+
+                                </div>
+
+
+                                <div class="summary-total">
+
+                                    <span>
+                                        Total Paid
+                                    </span>
+
+                                    <span>
+                                        ₹${totalPaid.toFixed(2)}
+                                    </span>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="footer">
+
+                            <p class="footer-title">
+                                Thank you for shopping with us!
+                            </p>
+
+                            <p class="footer-text">
+                                We appreciate your order and hope to serve you again.
+                            </p>
+
+                            <p class="footer-text">
+                                This is a computer-generated invoice.
+                            </p>
+
+                        </div>
+
                     </div>
 
+                </body>
 
-                    <!-- FOOTER -->
-                    <div class="footer">
-
-                        <p class="footer-title">
-                            Thank you for shopping with us!
-                        </p>
-
-                        <p class="footer-text">
-                            We appreciate your order and hope to serve you again.
-                        </p>
-
-                        <p class="footer-text">
-                            This is a computer-generated invoice.
-                        </p>
-
-                    </div>
-
-                </div>
-            </body>
-            </html>
-        `;
+                </html>
+            `
 
             /*
-             * Create a completely isolated iframe.
-             *
-             * Important:
-             * We do NOT append the invoice directly to the application's
-             * document. This prevents Tailwind/OKLCH styles from being
-             * inherited by html2canvas.
+             * Isolated iframe prevents the application's
+             * Tailwind/OKLCH styles from affecting html2canvas.
              */
-            const iframe = document.createElement("iframe");
+            const iframe =
+                document.createElement(
+                    "iframe"
+                )
 
-            iframe.style.position = "fixed";
-            iframe.style.left = "-100000px";
-            iframe.style.top = "0";
-            iframe.style.width = "850px";
-            iframe.style.height = "1200px";
-            iframe.style.border = "0";
-            iframe.style.visibility = "hidden";
+            iframe.style.position =
+                "fixed"
 
-            document.body.appendChild(iframe);
+            iframe.style.left =
+                "-100000px"
+
+            iframe.style.top =
+                "0"
+
+            iframe.style.width =
+                "850px"
+
+            iframe.style.height =
+                "1200px"
+
+            iframe.style.border =
+                "0"
+
+            iframe.style.visibility =
+                "hidden"
+
+            document.body.appendChild(
+                iframe
+            )
 
             const iframeDocument =
                 iframe.contentDocument ||
-                iframe.contentWindow?.document;
+                iframe.contentWindow?.document
 
             if (!iframeDocument) {
-                throw new Error("Unable to create invoice document.");
+
+                throw new Error(
+                    "Unable to create invoice document."
+                )
+
             }
 
-            iframeDocument.open();
-            iframeDocument.write(invoiceHTML);
-            iframeDocument.close();
+            iframeDocument.open()
 
-            /*
-             * Wait for the iframe to finish rendering.
-             */
-            await new Promise((resolve) => {
-                setTimeout(resolve, 500);
-            });
+            iframeDocument.write(
+                invoiceHTML
+            )
 
-            /*
-             * Wait for invoice images if any.
-             */
-            const images = Array.from(
-                iframeDocument.images
-            );
+            iframeDocument.close()
+
+            await new Promise(
+                resolve =>
+                    setTimeout(
+                        resolve,
+                        500
+                    )
+            )
+
+            const images =
+                Array.from(
+                    iframeDocument.images
+                )
 
             await Promise.all(
                 images.map(
-                    (img) =>
-                        new Promise((resolve) => {
+                    img =>
+                        new Promise(
+                            resolve => {
 
-                            if (img.complete) {
-                                resolve();
-                                return;
+                                if (
+                                    img.complete
+                                ) {
+
+                                    resolve()
+                                    return
+
+                                }
+
+                                img.onload =
+                                    resolve
+
+                                img.onerror =
+                                    resolve
+
                             }
-
-                            img.onload = resolve;
-                            img.onerror = resolve;
-                        })
+                        )
                 )
-            );
+            )
 
             const invoiceElement =
-                iframeDocument.querySelector(".invoice");
+                iframeDocument.querySelector(
+                    ".invoice"
+                )
 
             if (!invoiceElement) {
-                throw new Error("Invoice element not found.");
+
+                throw new Error(
+                    "Invoice element not found."
+                )
+
             }
 
-            /*
-             * Render isolated invoice.
-             */
-            const canvas = await html2canvas(
-                invoiceElement,
-                {
-                    scale: 2,
-                    backgroundColor: "#ffffff",
-                    useCORS: true,
-                    allowTaint: false,
-                    logging: false,
-                }
-            );
+            const canvas =
+                await html2canvas(
+                    invoiceElement,
+                    {
+                        scale:2,
+                        backgroundColor:
+                            "#ffffff",
+                        useCORS:true,
+                        allowTaint:false,
+                        logging:false
+                    }
+                )
 
             const imgData =
-                canvas.toDataURL("image/png");
+                canvas.toDataURL(
+                    "image/png"
+                )
 
-            const pdf = new jsPDF({
-                orientation: "portrait",
-                unit: "mm",
-                format: "a4",
-            });
+            const pdf =
+                new jsPDF({
+                    orientation:
+                        "portrait",
+                    unit:
+                        "mm",
+                    format:
+                        "a4"
+                })
 
             const pageWidth =
-                pdf.internal.pageSize.getWidth();
+                pdf.internal.pageSize.getWidth()
 
             const pageHeight =
-                pdf.internal.pageSize.getHeight();
+                pdf.internal.pageSize.getHeight()
 
-            const margin = 8;
+            const margin = 8
 
             const usableWidth =
-                pageWidth - margin * 2;
+                pageWidth -
+                margin * 2
 
             const imgHeight =
-                (canvas.height * usableWidth) /
-                canvas.width;
+                (
+                    canvas.height *
+                    usableWidth
+                ) /
+                canvas.width
 
-            let heightLeft = imgHeight;
-            let position = margin;
+            let heightLeft =
+                imgHeight
 
-            /*
-             * First page.
-             */
+            let position =
+                margin
+
             pdf.addImage(
                 imgData,
                 "PNG",
@@ -1088,21 +2525,24 @@ export default function StoreOrders() {
                 position,
                 usableWidth,
                 imgHeight
-            );
+            )
 
             heightLeft -=
-                pageHeight - margin * 2;
+                pageHeight -
+                margin * 2
 
-            /*
-             * Additional pages.
-             */
-            while (heightLeft > 0) {
+            while (
+                heightLeft > 0
+            ) {
 
-                pdf.addPage();
+                pdf.addPage()
 
                 position =
                     margin -
-                    (imgHeight - heightLeft);
+                    (
+                        imgHeight -
+                        heightLeft
+                    )
 
                 pdf.addImage(
                     imgData,
@@ -1111,245 +2551,1567 @@ export default function StoreOrders() {
                     position,
                     usableWidth,
                     imgHeight
-                );
+                )
 
                 heightLeft -=
-                    pageHeight - margin * 2;
+                    pageHeight -
+                    margin * 2
+
             }
 
             pdf.save(
                 `Invoice_${invoiceNumber}.pdf`
-            );
+            )
 
             toast.success(
                 "Customer invoice downloaded!",
                 {
-                    id: "invoice-pdf",
+                    id:
+                        "invoice-pdf"
                 }
-            );
+            )
 
-            iframe.remove();
+            iframe.remove()
 
         } catch (error) {
 
             console.error(
                 "INVOICE PDF ERROR:",
                 error
-            );
+            )
 
             toast.error(
                 "Failed to generate invoice.",
                 {
-                    id: "invoice-pdf",
+                    id:
+                        "invoice-pdf"
                 }
-            );
-        }
-    };
+            )
 
+        }
+
+    }
+
+    /* ================= MODAL ================= */
 
     const closeModal = () => {
+
         setSelectedOrder(null)
+
         setIsModalOpen(false)
+
     }
 
-    // Helper to highlight the last 4 digits of the order ID
-    const HighlightOrderId = ({ id }) => {
-        if (!id) return null;
-        const start = id.slice(0, -4);
-        const end = id.slice(-4);
+    /* ================= ORDER ID ================= */
+
+    const HighlightOrderId = ({
+        id
+    }) => {
+
+        if (!id) return null
+
+        const start =
+            id.slice(
+                0,
+                -4
+            )
+
+        const end =
+            id.slice(-4)
+
         return (
-            <div className="flex items-center text-sm font-mono text-gray-500 bg-gray-50 px-2 py-1 rounded w-fit border border-gray-200 mb-3 shadow-sm">
-                <span>#{start}</span>
-                <span className="text-indigo-700 font-bold text-base tracking-widest bg-indigo-100 px-1 rounded ml-[1px]">
-                    {end}
+
+            <div className="
+                flex
+                items-center
+                text-sm
+                font-mono
+                text-gray-500
+                bg-gray-50
+                px-2
+                py-1
+                rounded
+                w-fit
+                border
+                border-gray-200
+                mb-3
+                shadow-sm
+            ">
+
+                <span>
+                    #{start}
                 </span>
+
+                <span className="
+                    text-indigo-700
+                    font-bold
+                    text-base
+                    tracking-widest
+                    bg-indigo-100
+                    px-1
+                    rounded
+                    ml-[1px]
+                ">
+
+                    {end}
+
+                </span>
+
             </div>
-        );
+
+        )
+
     }
 
-    if (loading) return <Loading />
+    /* ================= DERIVED DATA ================= */
+
+    /*
+     * Your old report function expected these values.
+     * We calculate them here so the report remains usable.
+     */
+    const filteredOrders =
+        orders
+
+    const selectedDate = null
+
+    const months = [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December"
+    ]
+
+    const selectedMonth =
+        new Date().getMonth()
+
+    const selectedYear =
+        new Date().getFullYear()
+
+    const revenue =
+        filteredOrders
+            .filter(
+                order =>
+                    order.status ===
+                    "DELIVERED"
+            )
+            .reduce(
+                (
+                    sum,
+                    order
+                ) =>
+                    sum +
+                    getOrderFinances(
+                        order
+                    ).sellerEarnings,
+                0
+            )
+
+    const cancelledAmount =
+        filteredOrders
+            .filter(
+                order =>
+                    order.status ===
+                    "CANCELLED"
+            )
+            .reduce(
+                (
+                    sum,
+                    order
+                ) =>
+                    sum +
+                    getOrderFinances(
+                        order
+                    ).productTotal,
+                0
+            )
+
+    const returnedAmount =
+        filteredOrders
+            .filter(
+                order =>
+                    order.status ===
+                    "RETURNED"
+            )
+            .reduce(
+                (
+                    sum,
+                    order
+                ) =>
+                    sum +
+                    getOrderFinances(
+                        order
+                    ).productTotal,
+                0
+            )
+
+    /* ================= LOADING ================= */
+
+    if (loading) {
+        return <Loading />
+    }
+
+    /* ================= ACTIVE ORDERS ================= */
+
+    const activeOrders =
+        orders.filter(
+            order =>
+                !FINAL_STATUSES.includes(
+                    order.status
+                )
+        )
 
     return (
+
         <>
 
-            <div className="hidden">
-                <button onClick={() => audioRef.current?.play().then(() => audioRef.current.pause())}>
-                    Enable Notifications
-                </button>
-            </div>
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
-                <h1 className="text-3xl text-slate-700 font-semibold">Store New Orders</h1>
+            {/* ================= NOTIFICATION BAR ================= */}
+
+            <div className="
+                mb-5
+                flex
+                flex-col
+                sm:flex-row
+                sm:items-center
+                sm:justify-between
+                gap-3
+                bg-white
+                border
+                border-slate-200
+                rounded-xl
+                px-4
+                py-3
+                shadow-sm
+            ">
+
+                <div>
+
+                    <p className="
+                        text-sm
+                        font-semibold
+                        text-slate-800
+                    ">
+
+                        Order Notifications
+
+                    </p>
+
+                    <p className="
+                        text-xs
+                        text-slate-500
+                        mt-1
+                    ">
+
+                        {notificationsEnabled
+                            ? "Sound notifications are enabled."
+                            : "Enable sound to hear new order alerts."}
+
+                    </p>
+
+                </div>
+
+
+                {!notificationsEnabled && (
+
+                    <button
+                        onClick={
+                            enableNotifications
+                        }
+                        className="
+                            px-4
+                            py-2
+                            bg-indigo-600
+                            hover:bg-indigo-700
+                            text-white
+                            rounded-lg
+                            text-sm
+                            font-semibold
+                            transition
+                        "
+                    >
+
+                        Enable Notifications
+
+                    </button>
+
+                )}
+
+                {notificationsEnabled && (
+
+                    <span className="
+                        px-3
+                        py-1.5
+                        bg-emerald-50
+                        text-emerald-700
+                        border
+                        border-emerald-200
+                        rounded-full
+                        text-xs
+                        font-semibold
+                    ">
+
+                        ● Sound Enabled
+
+                    </span>
+
+                )}
+
             </div>
 
 
+            {/* ================= HEADER ================= */}
+
+            <div className="
+                flex
+                flex-col
+                sm:flex-row
+                sm:items-center
+                sm:justify-between
+                mb-6
+                gap-4
+            ">
+
+                <div>
+
+                    <h1 className="
+                        text-3xl
+                        text-slate-700
+                        font-semibold
+                    ">
+
+                        Store New Orders
+
+                    </h1>
+
+                    <p className="
+                        text-sm
+                        text-slate-500
+                        mt-1
+                    ">
+
+                        Accept new orders within 60 seconds.
+
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            {/* ================= ORDERS ================= */}
 
             {activeOrders.length === 0 ? (
-                <div className="text-center py-20 bg-white rounded-xl border border-dashed border-gray-300">
-                    <p className="text-gray-500">No new active orders at the moment.</p>
+
+                <div className="
+                    text-center
+                    py-20
+                    bg-white
+                    rounded-xl
+                    border
+                    border-dashed
+                    border-gray-300
+                ">
+
+                    <p className="
+                        text-gray-500
+                    ">
+
+                        No new active orders at the moment.
+
+                    </p>
+
                 </div>
+
             ) : (
-                <div className="grid gap-5 max-w-5xl">
-                    {activeOrders.map((order) => {
-                        const finances = getOrderFinances(order, commission);
-                        return (
-                            <div
-                                key={order.id}
-                                onClick={() => {
-                                    setSelectedOrder(order);
-                                    setIsModalOpen(true);
-                                }}
-                                className="bg-white rounded-xl shadow-sm border p-5 hover:shadow-md transition cursor-pointer border-l-4 border-indigo-500"
-                            >
-                                <div className="flex justify-between items-start mb-2">
-                                    <h2 className="text-lg font-medium">{order.user?.name}</h2>
-                                    <span className={`px-3 py-1 rounded-full text-xs font-semibold
-                                        ${order.status === "DELIVERED" ? "bg-green-100 text-green-800"
-                                            : order.status === "CANCELLED" ? "bg-red-100 text-red-800"
-                                                : order.status === "RETURNED" ? "bg-orange-100 text-orange-800"
-                                                    : order.status === "DRIVER_ASSIGNED" ? "bg-blue-100 text-blue-800"
-                                                        : "bg-yellow-100 text-yellow-800"}`}>
-                                        {order.status}
-                                    </span>
-                                </div>
 
-                                {/* Inserted Highlighted Order ID here */}
-                                <HighlightOrderId id={order.id} />
+                <div className="
+                    grid
+                    gap-5
+                    max-w-5xl
+                ">
 
-                                <div className="grid grid-cols-2 gap-3 text-gray-600 text-sm mt-4">
-                                    <div><b className="text-gray-800">Your Earnings:</b> <span className="text-emerald-600 font-semibold">₹{finances.sellerEarnings.toFixed(2)}</span></div>
-                                    <div><b className="text-gray-800">Payment:</b> {order.paymentMethod}</div>
-                                    <div><b className="text-gray-800">Date:</b> {new Date(order.createdAt).toLocaleString()}</div>
-                                    <div><b className="text-gray-800">Customer Paid:</b> ₹{order.total}</div>
-                                </div>
+                    {activeOrders.map(
+                        order => {
 
-                                <div className="flex gap-2 mt-4 items-center">
-                                    {order.status !== "CANCELLED" && (
-                                        <select
-                                            value={order.status}
-                                            disabled={
-                                                order.status === "DELIVERED" ||
-                                                order.status === "RETURNED" ||
-                                                order.status === "CANCELLED" ||
-                                                !SELLER_STATUSES.includes(order.status)
-                                            }
-                                            onClick={(e) => e.stopPropagation()}
-                                            onChange={(e) => updateOrderStatus(order, e.target.value)}
-                                            className="border rounded px-3 py-1 text-sm bg-gray-50 focus:ring-2 focus:ring-indigo-500"
-                                        >
-                                            {SELLER_STATUSES.map(status => (
-                                                <option key={status} value={status}>{status}</option>
-                                            ))}
-                                        </select>
+                            const finances =
+                                getOrderFinances(
+                                    order
+                                )
+
+                            const isPending =
+                                order.status ===
+                                "ORDER_PLACED"
+
+                            const remainingSeconds =
+                                isPending
+                                    ? getRemainingSeconds(
+                                        order
+                                    )
+                                    : 0
+
+                            const isExpired =
+                                isPending &&
+                                remainingSeconds <=
+                                0
+
+                            return (
+
+                                <div
+                                    key={
+                                        order.id
+                                    }
+                                    onClick={() => {
+
+                                        setSelectedOrder(
+                                            order
+                                        )
+
+                                        setIsModalOpen(
+                                            true
+                                        )
+
+                                    }}
+                                    className={`
+                                        bg-white
+                                        rounded-xl
+                                        shadow-sm
+                                        border
+                                        p-5
+                                        hover:shadow-md
+                                        transition
+                                        cursor-pointer
+                                        border-l-4
+                                        ${
+                                            isPending
+                                                ? "border-orange-500"
+                                                : "border-indigo-500"
+                                        }
+                                    `}
+                                >
+
+                                    {/* ================= PENDING ALERT ================= */}
+
+                                    {isPending && (
+
+                                        <div className="
+                                            mb-4
+                                            rounded-xl
+                                            border
+                                            border-orange-200
+                                            bg-orange-50
+                                            p-4
+                                        ">
+
+                                            <div className="
+                                                flex
+                                                flex-col
+                                                sm:flex-row
+                                                sm:items-center
+                                                sm:justify-between
+                                                gap-4
+                                            ">
+
+                                                <div>
+
+                                                    <p className="
+                                                        text-sm
+                                                        font-bold
+                                                        text-orange-800
+                                                    ">
+
+                                                        New Order Requires Action
+
+                                                    </p>
+
+                                                    <p className="
+                                                        text-xs
+                                                        text-orange-700
+                                                        mt-1
+                                                    ">
+
+                                                        Accept or decline this order
+                                                        within 1 minute.
+
+                                                    </p>
+
+                                                </div>
+
+
+                                                <div className={`
+                                                    text-2xl
+                                                    font-bold
+                                                    font-mono
+                                                    ${
+                                                        remainingSeconds <=
+                                                        10
+                                                            ? "text-red-600"
+                                                            : "text-orange-600"
+                                                    }
+                                                `}>
+
+                                                    {String(
+                                                        Math.floor(
+                                                            remainingSeconds /
+                                                            60
+                                                        )
+                                                    ).padStart(
+                                                        2,
+                                                        "0"
+                                                    )}
+
+                                                    :
+
+                                                    {String(
+                                                        remainingSeconds %
+                                                        60
+                                                    ).padStart(
+                                                        2,
+                                                        "0"
+                                                    )}
+
+                                                </div>
+
+                                            </div>
+
+
+                                            <div className="
+                                                flex
+                                                flex-col
+                                                sm:flex-row
+                                                gap-3
+                                                mt-4
+                                            ">
+
+                                                <button
+                                                    disabled={
+                                                        isExpired ||
+                                                        processingOrdersRef.current.has(
+                                                            order.id
+                                                        )
+                                                    }
+                                                    onClick={e => {
+
+                                                        e.stopPropagation()
+
+                                                        acceptOrder(
+                                                            order
+                                                        )
+
+                                                    }}
+                                                    className="
+                                                        flex-1
+                                                        px-4
+                                                        py-2.5
+                                                        rounded-lg
+                                                        bg-emerald-600
+                                                        hover:bg-emerald-700
+                                                        disabled:bg-gray-300
+                                                        text-white
+                                                        font-semibold
+                                                        text-sm
+                                                        transition
+                                                    "
+                                                >
+
+                                                    Accept Order
+
+                                                </button>
+
+
+                                                <button
+                                                    disabled={
+                                                        processingOrdersRef.current.has(
+                                                            order.id
+                                                        )
+                                                    }
+                                                    onClick={e => {
+
+                                                        e.stopPropagation()
+
+                                                        declineOrder(
+                                                            order
+                                                        )
+
+                                                    }}
+                                                    className="
+                                                        flex-1
+                                                        px-4
+                                                        py-2.5
+                                                        rounded-lg
+                                                        bg-red-600
+                                                        hover:bg-red-700
+                                                        disabled:bg-gray-300
+                                                        text-white
+                                                        font-semibold
+                                                        text-sm
+                                                        transition
+                                                    "
+                                                >
+
+                                                    Decline Order
+
+                                                </button>
+
+                                            </div>
+
+                                        </div>
+
                                     )}
 
-                                    {![
-                                        "DRIVER_ASSIGNED", "REACHED_SHOP", "PICKED_UP",
-                                        "OUT_FOR_DELIVERY", "DELIVERY_INITIATED",
-                                        "DELIVERED", "CANCELLED"
-                                    ].includes(order.status) && (
-                                            <button
-                                                onClick={(e) => { e.stopPropagation(); cancelOrder(order) }}
-                                                className="px-3 py-1 bg-red-50 text-red-600 hover:bg-red-100 rounded text-sm font-medium transition"
-                                            >
-                                                Cancel
-                                            </button>
-                                        )}
 
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); downloadInvoicePDF(order) }}
-                                        className="px-3 py-1 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded text-sm font-medium transition"
-                                    >
-                                        Customer Invoice
-                                    </button>
+                                    {/* ================= ORDER HEADER ================= */}
+
+                                    <div className="
+                                        flex
+                                        justify-between
+                                        items-start
+                                        mb-2
+                                    ">
+
+                                        <h2 className="
+                                            text-lg
+                                            font-medium
+                                        ">
+
+                                            {
+                                                order.user?.name ||
+                                                "Customer"
+                                            }
+
+                                        </h2>
+
+
+                                        <span className={`
+                                            px-3
+                                            py-1
+                                            rounded-full
+                                            text-xs
+                                            font-semibold
+
+                                            ${
+                                                order.status ===
+                                                "DELIVERED"
+                                                    ? "bg-green-100 text-green-800"
+                                                    : order.status ===
+                                                        "CANCELLED"
+                                                        ? "bg-red-100 text-red-800"
+                                                        : order.status ===
+                                                            "RETURNED"
+                                                            ? "bg-orange-100 text-orange-800"
+                                                            : order.status ===
+                                                                "ORDER_CONFIRMED"
+                                                                ? "bg-blue-100 text-blue-800"
+                                                                : order.status ===
+                                                                    "ORDER_PACKING"
+                                                                    ? "bg-purple-100 text-purple-800"
+                                                                    : order.status ===
+                                                                        "ORDER_PACKED"
+                                                                        ? "bg-indigo-100 text-indigo-800"
+                                                                        : isPending
+                                                                            ? "bg-orange-100 text-orange-800"
+                                                                            : "bg-yellow-100 text-yellow-800"
+                                            }
+                                        `}>
+
+                                            {order.status}
+
+                                        </span>
+
+                                    </div>
+
+
+                                    <HighlightOrderId
+                                        id={
+                                            order.id
+                                        }
+                                    />
+
+
+                                    {/* ================= ORDER INFO ================= */}
+
+                                    <div className="
+                                        grid
+                                        grid-cols-2
+                                        gap-3
+                                        text-gray-600
+                                        text-sm
+                                        mt-4
+                                    ">
+
+                                        <div>
+
+                                            <b className="
+                                                text-gray-800
+                                            ">
+
+                                                Your Earnings:
+
+                                            </b>{" "}
+
+                                            <span className="
+                                                text-emerald-600
+                                                font-semibold
+                                            ">
+
+                                                ₹
+                                                {
+                                                    finances.sellerEarnings.toFixed(
+                                                        2
+                                                    )
+                                                }
+
+                                            </span>
+
+                                        </div>
+
+
+                                        <div>
+
+                                            <b className="
+                                                text-gray-800
+                                            ">
+
+                                                Payment:
+
+                                            </b>{" "}
+
+                                            {
+                                                order.paymentMethod ||
+                                                "COD"
+                                            }
+
+                                        </div>
+
+
+                                        <div>
+
+                                            <b className="
+                                                text-gray-800
+                                            ">
+
+                                                Date:
+
+                                            </b>{" "}
+
+                                            {
+                                                order.createdAt
+                                                    ? new Date(
+                                                        order.createdAt
+                                                    ).toLocaleString()
+                                                    : "N/A"
+                                            }
+
+                                        </div>
+
+
+                                        <div>
+
+                                            <b className="
+                                                text-gray-800
+                                            ">
+
+                                                Customer Paid:
+
+                                            </b>{" "}
+
+                                            ₹
+                                            {
+                                                Number(
+                                                    order.total ||
+                                                    0
+                                                ).toFixed(
+                                                    2
+                                                )
+                                            }
+
+                                        </div>
+
+                                    </div>
+
+
+                                    {/* ================= ACTIONS ================= */}
+
+                                    <div className="
+                                        flex
+                                        flex-wrap
+                                        gap-2
+                                        mt-4
+                                        items-center
+                                    ">
+
+                                        {!isPending &&
+                                            SELLER_STATUSES.includes(
+                                                order.status
+                                            ) && (
+
+                                                <select
+                                                    value={
+                                                        order.status
+                                                    }
+                                                    disabled={
+                                                        order.status ===
+                                                        "DELIVERED" ||
+                                                        order.status ===
+                                                        "RETURNED" ||
+                                                        order.status ===
+                                                        "CANCELLED"
+                                                    }
+                                                    onClick={e =>
+                                                        e.stopPropagation()
+                                                    }
+                                                    onChange={e =>
+                                                        updateOrderStatus(
+                                                            order,
+                                                            e.target.value
+                                                        )
+                                                    }
+                                                    className="
+                                                        border
+                                                        rounded
+                                                        px-3
+                                                        py-1
+                                                        text-sm
+                                                        bg-gray-50
+                                                        focus:ring-2
+                                                        focus:ring-indigo-500
+                                                    "
+                                                >
+
+                                                    {SELLER_STATUSES
+                                                        .filter(
+                                                            status =>
+                                                                status !==
+                                                                "ORDER_PLACED"
+                                                        )
+                                                        .map(
+                                                            status => (
+
+                                                                <option
+                                                                    key={
+                                                                        status
+                                                                    }
+                                                                    value={
+                                                                        status
+                                                                    }
+                                                                >
+
+                                                                    {status}
+
+                                                                </option>
+
+                                                            )
+                                                        )}
+
+                                                </select>
+
+                                            )}
+
+
+                                        {![
+                                            "DRIVER_ASSIGNED",
+                                            "REACHED_SHOP",
+                                            "PICKED_UP",
+                                            "OUT_FOR_DELIVERY",
+                                            "DELIVERY_INITIATED",
+                                            "DELIVERED",
+                                            "CANCELLED"
+                                        ].includes(
+                                            order.status
+                                        ) &&
+                                            !isPending && (
+
+                                                <button
+                                                    onClick={e => {
+
+                                                        e.stopPropagation()
+
+                                                        cancelOrder(
+                                                            order
+                                                        )
+
+                                                    }}
+                                                    className="
+                                                        px-3
+                                                        py-1
+                                                        bg-red-50
+                                                        text-red-600
+                                                        hover:bg-red-100
+                                                        rounded
+                                                        text-sm
+                                                        font-medium
+                                                        transition
+                                                    "
+                                                >
+
+                                                    Cancel
+
+                                                </button>
+
+                                            )}
+
+
+                                        <button
+                                            onClick={e => {
+
+                                                e.stopPropagation()
+
+                                                downloadInvoicePDF(
+                                                    order
+                                                )
+
+                                            }}
+                                            className="
+                                                px-3
+                                                py-1
+                                                bg-indigo-50
+                                                text-indigo-600
+                                                hover:bg-indigo-100
+                                                rounded
+                                                text-sm
+                                                font-medium
+                                                transition
+                                            "
+                                        >
+
+                                            Customer Invoice
+
+                                        </button>
+
+                                    </div>
+
                                 </div>
-                            </div>
-                        )
-                    })}
+
+                            )
+
+                        }
+                    )}
+
                 </div>
+
             )}
 
 
             {/* ================= MODAL ================= */}
-            {isModalOpen && selectedOrder && (
-                <div onClick={closeModal} className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div onClick={e => e.stopPropagation()} className="bg-white rounded-2xl p-6 max-w-2xl w-full shadow-2xl max-h-[90vh] overflow-y-auto">
-                        <div className="mb-6">
-                            <h2 className="text-xl font-bold text-gray-800 mb-2">Order Finances & Details</h2>
-                            <HighlightOrderId id={selectedOrder.id} />
-                        </div>
 
-                        {/* FINANCIAL BREAKDOWN */}
-                        {(() => {
-                            const stats = getOrderFinances(selectedOrder);
-                            return (
-                                <div className="bg-slate-50 rounded-xl p-5 mb-6 border border-slate-200">
-                                    <h3 className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-4">Payout Breakdown</h3>
-                                    <div className="space-y-3 text-sm">
-                                        <div className="flex justify-between text-slate-600">
-                                            <span>Product Total</span>
-                                            <span>₹{stats.productTotal?.toFixed(2)}</span>
-                                        </div>
-                                        <div className="flex justify-between text-red-500">
-                                            <span>Platform Commission ({commission}%)</span>
-                                            <span>- ₹{stats.platformFee?.toFixed(2)}</span>
-                                        </div>
-                                        <div className="flex justify-between text-slate-400 border-b pb-3">
-                                            <span>Delivery Fee (Paid by Customer)</span>
-                                            <span>₹{stats.deliveryFee?.toFixed(2)}</span>
-                                        </div>
-                                        <div className="flex justify-between text-lg font-bold text-emerald-600 pt-1">
-                                            <span>Your Net Earnings</span>
-                                            <span>₹{stats.sellerEarnings?.toFixed(2)}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            );
-                        })()}
+            {isModalOpen &&
+                selectedOrder && (
 
-                        {/* CUSTOMER INFO */}
-                        <div className="bg-white border rounded-xl p-5 mb-6">
-                            <h3 className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-3">Customer Details</h3>
-                            <div className="text-sm space-y-2 text-slate-700">
-                                <p><b>Name:</b> {selectedOrder.user?.name}</p>
-                                <p><b>Email:</b> {selectedOrder.user?.email}</p>
-                                <p><b>Phone:</b> {selectedOrder.address?.phone || "N/A"}</p>
-                                <p>
-                                    <b>Address:</b>{" "}
-                                    {selectedOrder.address
-                                        ? `${selectedOrder.address.street}, ${selectedOrder.address.city}, ${selectedOrder.address.state}, ${selectedOrder.address.zip}, ${selectedOrder.address.country}`
-                                        : "N/A"}
-                                </p>
+                    <div
+                        onClick={
+                            closeModal
+                        }
+                        className="
+                            fixed
+                            inset-0
+                            bg-black/50
+                            backdrop-blur-sm
+                            flex
+                            items-center
+                            justify-center
+                            z-50
+                            p-4
+                        "
+                    >
+
+                        <div
+                            onClick={e =>
+                                e.stopPropagation()
+                            }
+                            className="
+                                bg-white
+                                rounded-2xl
+                                p-6
+                                max-w-2xl
+                                w-full
+                                shadow-2xl
+                                max-h-[90vh]
+                                overflow-y-auto
+                            "
+                        >
+
+                            <div className="
+                                mb-6
+                            ">
+
+                                <h2 className="
+                                    text-xl
+                                    font-bold
+                                    text-gray-800
+                                    mb-2
+                                ">
+
+                                    Order Finances & Details
+
+                                </h2>
+
+                                <HighlightOrderId
+                                    id={
+                                        selectedOrder.id
+                                    }
+                                />
+
                             </div>
-                        </div>
 
-                        {/* PRODUCTS */}
-                        <div className="space-y-3 mb-6">
-                            <h3 className="text-xs uppercase tracking-wider font-bold text-slate-500">Ordered Items</h3>
-                            {selectedOrder?.orderItems?.map((item, i) => (
-                                <div key={i} className="flex gap-4 border p-3 rounded-xl bg-white">
-                                    <img src={item.product?.images?.[0]?.src || item.product?.images?.[0]} className="w-16 h-16 object-cover rounded-lg border" />
-                                    <div className="flex-1">
-                                        <p className="font-semibold text-gray-800">{item.product?.name}</p>
-                                        <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
+
+                            {/* FINANCIAL BREAKDOWN */}
+
+                            {(() => {
+
+                                const stats =
+                                    getOrderFinances(
+                                        selectedOrder
+                                    )
+
+                                return (
+
+                                    <div className="
+                                        bg-slate-50
+                                        rounded-xl
+                                        p-5
+                                        mb-6
+                                        border
+                                        border-slate-200
+                                    ">
+
+                                        <h3 className="
+                                            text-xs
+                                            uppercase
+                                            tracking-wider
+                                            font-bold
+                                            text-slate-500
+                                            mb-4
+                                        ">
+
+                                            Payout Breakdown
+
+                                        </h3>
+
+
+                                        <div className="
+                                            space-y-3
+                                            text-sm
+                                        ">
+
+                                            <div className="
+                                                flex
+                                                justify-between
+                                                text-slate-600
+                                            ">
+
+                                                <span>
+                                                    Product Total
+                                                </span>
+
+                                                <span>
+                                                    ₹
+                                                    {
+                                                        stats.productTotal.toFixed(
+                                                            2
+                                                        )
+                                                    }
+                                                </span>
+
+                                            </div>
+
+
+                                            <div className="
+                                                flex
+                                                justify-between
+                                                text-red-500
+                                            ">
+
+                                                <span>
+                                                    Platform Commission (
+                                                    {
+                                                        commission
+                                                    }%)
+                                                </span>
+
+                                                <span>
+                                                    - ₹
+                                                    {
+                                                        stats.platformFee.toFixed(
+                                                            2
+                                                        )
+                                                    }
+                                                </span>
+
+                                            </div>
+
+
+                                            <div className="
+                                                flex
+                                                justify-between
+                                                text-slate-400
+                                                border-b
+                                                pb-3
+                                            ">
+
+                                                <span>
+                                                    Delivery Fee
+                                                    (Paid by Customer)
+                                                </span>
+
+                                                <span>
+                                                    ₹
+                                                    {
+                                                        stats.deliveryFee.toFixed(
+                                                            2
+                                                        )
+                                                    }
+                                                </span>
+
+                                            </div>
+
+
+                                            <div className="
+                                                flex
+                                                justify-between
+                                                text-lg
+                                                font-bold
+                                                text-emerald-600
+                                                pt-1
+                                            ">
+
+                                                <span>
+                                                    Your Net Earnings
+                                                </span>
+
+                                                <span>
+                                                    ₹
+                                                    {
+                                                        stats.sellerEarnings.toFixed(
+                                                            2
+                                                        )
+                                                    }
+                                                </span>
+
+                                            </div>
+
+                                        </div>
+
                                     </div>
-                                    <div className="text-right">
-                                        <p className="text-sm font-bold text-gray-800">₹{(item.price * item.quantity).toFixed(2)}</p>
-                                    </div>
+
+                                )
+
+                            })()}
+
+
+                            {/* CUSTOMER */}
+
+                            <div className="
+                                bg-white
+                                border
+                                rounded-xl
+                                p-5
+                                mb-6
+                            ">
+
+                                <h3 className="
+                                    text-xs
+                                    uppercase
+                                    tracking-wider
+                                    font-bold
+                                    text-slate-500
+                                    mb-3
+                                ">
+
+                                    Customer Details
+
+                                </h3>
+
+
+                                <div className="
+                                    text-sm
+                                    space-y-2
+                                    text-slate-700
+                                ">
+
+                                    <p>
+
+                                        <b>
+                                            Name:
+                                        </b>{" "}
+
+                                        {
+                                            selectedOrder.user?.name ||
+                                            "N/A"
+                                        }
+
+                                    </p>
+
+
+                                    <p>
+
+                                        <b>
+                                            Email:
+                                        </b>{" "}
+
+                                        {
+                                            selectedOrder.user?.email ||
+                                            "N/A"
+                                        }
+
+                                    </p>
+
+
+                                    <p>
+
+                                        <b>
+                                            Phone:
+                                        </b>{" "}
+
+                                        {
+                                            selectedOrder.address?.phone ||
+                                            "N/A"
+                                        }
+
+                                    </p>
+
+
+                                    <p>
+
+                                        <b>
+                                            Address:
+                                        </b>{" "}
+
+                                        {
+                                            selectedOrder.address
+                                                ? [
+                                                    selectedOrder.address.street,
+                                                    selectedOrder.address.city,
+                                                    selectedOrder.address.state,
+                                                    selectedOrder.address.zip,
+                                                    selectedOrder.address.country
+                                                ]
+                                                    .filter(
+                                                        Boolean
+                                                    )
+                                                    .join(
+                                                        ", "
+                                                    )
+                                                : "N/A"
+                                        }
+
+                                    </p>
+
                                 </div>
-                            ))}
+
+                            </div>
+
+
+                            {/* PRODUCTS */}
+
+                            <div className="
+                                space-y-3
+                                mb-6
+                            ">
+
+                                <h3 className="
+                                    text-xs
+                                    uppercase
+                                    tracking-wider
+                                    font-bold
+                                    text-slate-500
+                                ">
+
+                                    Ordered Items
+
+                                </h3>
+
+
+                                {selectedOrder?.orderItems?.map(
+                                    (
+                                        item,
+                                        i
+                                    ) => (
+
+                                        <div
+                                            key={i}
+                                            className="
+                                                flex
+                                                gap-4
+                                                border
+                                                p-3
+                                                rounded-xl
+                                                bg-white
+                                            "
+                                        >
+
+                                            <img
+                                                src={
+                                                    item.product?.images?.[0]?.src ||
+                                                    item.product?.images?.[0]
+                                                }
+                                                className="
+                                                    w-16
+                                                    h-16
+                                                    object-cover
+                                                    rounded-lg
+                                                    border
+                                                "
+                                                alt=""
+                                            />
+
+
+                                            <div className="
+                                                flex-1
+                                            ">
+
+                                                <p className="
+                                                    font-semibold
+                                                    text-gray-800
+                                                ">
+
+                                                    {
+                                                        item.product?.name ||
+                                                        "Product"
+                                                    }
+
+                                                </p>
+
+                                                <p className="
+                                                    text-sm
+                                                    text-gray-500
+                                                ">
+
+                                                    Qty:
+                                                    {
+                                                        item.quantity
+                                                    }
+
+                                                </p>
+
+                                            </div>
+
+
+                                            <div className="
+                                                text-right
+                                            ">
+
+                                                <p className="
+                                                    text-sm
+                                                    font-bold
+                                                    text-gray-800
+                                                ">
+
+                                                    ₹
+                                                    {
+                                                        (
+                                                            Number(
+                                                                item.price ||
+                                                                0
+                                                            ) *
+                                                            Number(
+                                                                item.quantity ||
+                                                                0
+                                                            )
+                                                        ).toFixed(
+                                                            2
+                                                        )
+                                                    }
+
+                                                </p>
+
+                                            </div>
+
+                                        </div>
+
+                                    )
+                                )}
+
+                            </div>
+
+
+                            {/* PENDING MODAL ACTIONS */}
+
+                            {selectedOrder.status ===
+                                "ORDER_PLACED" && (
+
+                                    <div className="
+                                        border
+                                        border-orange-200
+                                        bg-orange-50
+                                        rounded-xl
+                                        p-4
+                                        mb-5
+                                    ">
+
+                                        <div className="
+                                            flex
+                                            justify-between
+                                            items-center
+                                            mb-3
+                                        ">
+
+                                            <p className="
+                                                text-sm
+                                                font-semibold
+                                                text-orange-800
+                                            ">
+
+                                                Response Time
+
+                                            </p>
+
+                                            <p className="
+                                                font-mono
+                                                font-bold
+                                                text-orange-700
+                                            ">
+
+                                                {String(
+                                                    Math.floor(
+                                                        getRemainingSeconds(
+                                                            selectedOrder
+                                                        ) /
+                                                        60
+                                                    )
+                                                ).padStart(
+                                                    2,
+                                                    "0"
+                                                )}
+
+                                                :
+
+                                                {String(
+                                                    getRemainingSeconds(
+                                                        selectedOrder
+                                                    ) %
+                                                    60
+                                                ).padStart(
+                                                    2,
+                                                    "0"
+                                                )}
+
+                                            </p>
+
+                                        </div>
+
+
+                                        <div className="
+                                            grid
+                                            grid-cols-2
+                                            gap-3
+                                        ">
+
+                                            <button
+                                                onClick={() =>
+                                                    acceptOrder(
+                                                        selectedOrder
+                                                    )
+                                                }
+                                                className="
+                                                    py-2.5
+                                                    rounded-lg
+                                                    bg-emerald-600
+                                                    hover:bg-emerald-700
+                                                    text-white
+                                                    font-semibold
+                                                "
+                                            >
+
+                                                Accept
+
+                                            </button>
+
+
+                                            <button
+                                                onClick={() =>
+                                                    declineOrder(
+                                                        selectedOrder
+                                                    )
+                                                }
+                                                className="
+                                                    py-2.5
+                                                    rounded-lg
+                                                    bg-red-600
+                                                    hover:bg-red-700
+                                                    text-white
+                                                    font-semibold
+                                                "
+                                            >
+
+                                                Decline
+
+                                            </button>
+
+                                        </div>
+
+                                    </div>
+
+                                )}
+
+
+                            <div className="
+                                flex
+                                justify-end
+                                gap-3
+                                mt-6
+                                border-t
+                                pt-4
+                            ">
+
+                                <button
+                                    onClick={() =>
+                                        downloadInvoicePDF(
+                                            selectedOrder
+                                        )
+                                    }
+                                    className="
+                                        px-5
+                                        py-2.5
+                                        bg-indigo-600
+                                        hover:bg-indigo-700
+                                        text-white
+                                        font-medium
+                                        rounded-lg
+                                        transition
+                                    "
+                                >
+
+                                    Download Customer Invoice
+
+                                </button>
+
+
+                                <button
+                                    onClick={
+                                        closeModal
+                                    }
+                                    className="
+                                        px-5
+                                        py-2.5
+                                        bg-slate-100
+                                        hover:bg-slate-200
+                                        text-slate-700
+                                        font-medium
+                                        rounded-lg
+                                        transition
+                                    "
+                                >
+
+                                    Close
+
+                                </button>
+
+                            </div>
+
                         </div>
 
-                        <div className="flex justify-end gap-3 mt-6 border-t pt-4">
-                            <button onClick={() => downloadInvoicePDF(selectedOrder)} className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition">
-                                Download Customer Invoice
-                            </button>
-                            <button onClick={closeModal} className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg transition">
-                                Close
-                            </button>
-                        </div>
                     </div>
-                </div>
-            )}
+
+                )}
+
         </>
+
     )
+
 }
