@@ -1,10 +1,10 @@
 import prisma from "@/lib/prisma"
 import { authSeller } from "@/middlewares/authSeller"
-import { getAuth } from "@clerkjs/server"
 import { NextResponse } from "next/server"
 import { sendEmail } from "@/lib/sendEmail"
 import { generateOtp } from "@/lib/otp"
 import { calculateDistance } from "@/lib/distance"
+import { getAuth } from "@clerk/nextjs/server"
 
 const SELLER_FLOW = [
     "ORDER_PLACED",
