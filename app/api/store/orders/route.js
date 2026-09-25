@@ -430,7 +430,6 @@ export async function POST(request) {
                                 quantity: {
                                     increment: item.quantity,
                                 },
-                                inStock: true,
                             },
                         });
                     }
