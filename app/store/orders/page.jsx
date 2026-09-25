@@ -55,6 +55,7 @@ export default function StoreOrders() {
 
     const processingOrdersRef = useRef(new Set())
     const cancellingOrdersRef = useRef(new Set())
+    const autoCancelledOrdersRef = useRef(new Set());
 
     /* ================= FINANCE ================= */
 
@@ -224,9 +225,8 @@ export default function StoreOrders() {
         if (!order?.createdAt) return 0
 
         const deadline =
-            getSellerDeadline(order)
-
-        if (!deadline) return 0
+            new Date(order.createdAt).getTime() +
+            SELLER_RESPONSE_TIME;
 
         return Math.max(
             0,
@@ -247,6 +247,70 @@ export default function StoreOrders() {
         return Date.now() >= deadline
 
     }
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            const pendingOrders = orders.filter(
+                (order) => order.status === "ORDER_PLACED"
+            );
+
+            pendingOrders.forEach(async (order) => {
+                const remaining = getRemainingSeconds(order);
+
+                if (
+                    remaining <= 0 &&
+                    !autoCancelledOrdersRef.current.has(order.id)
+                ) {
+                    // Prevent multiple API calls for the same order
+                    autoCancelledOrdersRef.current.add(order.id);
+
+                    try {
+                        const token = await getToken();
+
+                        await axios.post(
+                            "/api/store/orders",
+                            {
+                                orderId: order.id,
+                                status: "CANCELLED",
+                                reason: "SELLER_RESPONSE_TIMEOUT",
+                            },
+                            {
+                                headers: {
+                                    Authorization: `Bearer ${token}`,
+                                },
+                            }
+                        );
+
+                        toast.info("Order automatically declined after 1 minute.");
+
+                        // Remove/update immediately
+                        setOrders((currentOrders) =>
+                            currentOrders.map((currentOrder) =>
+                                currentOrder.id === order.id
+                                    ? {
+                                        ...currentOrder,
+                                        status: "CANCELLED",
+                                    }
+                                    : currentOrder
+                            )
+                        );
+
+                        await fetchOrders();
+                    } catch (error) {
+                        console.error(
+                            "AUTO DECLINE ERROR:",
+                            error?.response?.data || error
+                        );
+
+                        // Allow retry if API failed
+                        autoCancelledOrdersRef.current.delete(order.id);
+                    }
+                }
+            });
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, [orders, getToken]);
 
     /* ================= FETCH ORDERS ================= */
 
@@ -1091,9 +1155,8 @@ export default function StoreOrders() {
                             gap:15px;
                         ">
 
-                            ${
-                                logoBase64
-                                    ? `
+                            ${logoBase64
+                    ? `
                                         <img
                                             src="${logoBase64}"
                                             style="
@@ -1102,8 +1165,8 @@ export default function StoreOrders() {
                                             "
                                         />
                                     `
-                                    : ""
-                            }
+                    : ""
+                }
 
                             <div>
 
@@ -1112,10 +1175,9 @@ export default function StoreOrders() {
                                     font-size:24px;
                                     font-weight:700;
                                 ">
-                                    ${
-                                        store?.name ||
-                                        "Store"
-                                    }
+                                    ${store?.name ||
+                "Store"
+                }
                                 </h1>
 
                                 <p style="
@@ -1171,11 +1233,10 @@ export default function StoreOrders() {
                             margin:5px 0;
                             color:#64748b;
                         ">
-                            ${
-                                selectedDate
-                                    ? `Date: ${new Date(selectedDate).toLocaleDateString()}`
-                                    : `Month: ${months[selectedMonth]} ${selectedYear}`
-                            }
+                            ${selectedDate
+                    ? `Date: ${new Date(selectedDate).toLocaleDateString()}`
+                    : `Month: ${months[selectedMonth]} ${selectedYear}`
+                }
                         </p>
 
                     </div>
@@ -1314,62 +1375,61 @@ export default function StoreOrders() {
 
                         <tbody>
 
-                            ${
-                                filteredOrders
-                                    .map(
-                                        order => {
+                            ${filteredOrders
+                    .map(
+                        order => {
 
-                                            const finances =
-                                                getOrderFinances(
-                                                    order
-                                                )
+                            const finances =
+                                getOrderFinances(
+                                    order
+                                )
 
-                                            let statusColor =
-                                                "#eab308"
+                            let statusColor =
+                                "#eab308"
 
-                                            let bgColor =
-                                                "#fef9c3"
+                            let bgColor =
+                                "#fef9c3"
 
-                                            if (
-                                                order.status ===
-                                                "DELIVERED"
-                                            ) {
+                            if (
+                                order.status ===
+                                "DELIVERED"
+                            ) {
 
-                                                statusColor =
-                                                    "#16a34a"
+                                statusColor =
+                                    "#16a34a"
 
-                                                bgColor =
-                                                    "#dcfce7"
+                                bgColor =
+                                    "#dcfce7"
 
-                                            }
+                            }
 
-                                            if (
-                                                order.status ===
-                                                "CANCELLED"
-                                            ) {
+                            if (
+                                order.status ===
+                                "CANCELLED"
+                            ) {
 
-                                                statusColor =
-                                                    "#dc2626"
+                                statusColor =
+                                    "#dc2626"
 
-                                                bgColor =
-                                                    "#fee2e2"
+                                bgColor =
+                                    "#fee2e2"
 
-                                            }
+                            }
 
-                                            if (
-                                                order.status ===
-                                                "RETURNED"
-                                            ) {
+                            if (
+                                order.status ===
+                                "RETURNED"
+                            ) {
 
-                                                statusColor =
-                                                    "#ea580c"
+                                statusColor =
+                                    "#ea580c"
 
-                                                bgColor =
-                                                    "#ffedd5"
+                                bgColor =
+                                    "#ffedd5"
 
-                                            }
+                            }
 
-                                            return `
+                            return `
                                                 <tr style="
                                                     background:#f9fafb;
                                                 ">
@@ -1379,22 +1439,20 @@ export default function StoreOrders() {
                                                         border-top-left-radius:10px;
                                                         border-bottom-left-radius:10px;
                                                     ">
-                                                        ${
-                                                            order.user?.name ||
-                                                            "Customer"
-                                                        }
+                                                        ${order.user?.name ||
+                                "Customer"
+                                }
                                                     </td>
 
                                                     <td style="
                                                         padding:12px;
                                                     ">
-                                                        ${
-                                                            order.createdAt
-                                                                ? new Date(
-                                                                    order.createdAt
-                                                                ).toLocaleDateString()
-                                                                : "N/A"
-                                                        }
+                                                        ${order.createdAt
+                                    ? new Date(
+                                        order.createdAt
+                                    ).toLocaleDateString()
+                                    : "N/A"
+                                }
                                                     </td>
 
                                                     <td style="
@@ -1410,9 +1468,8 @@ export default function StoreOrders() {
                                                             background:${bgColor};
                                                             display:inline-block;
                                                         ">
-                                                            ${
-                                                                order.status
-                                                            }
+                                                            ${order.status
+                                }
                                                         </span>
 
                                                     </td>
@@ -1422,11 +1479,10 @@ export default function StoreOrders() {
                                                         text-align:right;
                                                         color:#ef4444;
                                                     ">
-                                                        -₹${
-                                                            finances.platformFee.toFixed(
-                                                                2
-                                                            )
-                                                        }
+                                                        -₹${finances.platformFee.toFixed(
+                                    2
+                                )
+                                }
                                                     </td>
 
                                                     <td style="
@@ -1437,20 +1493,19 @@ export default function StoreOrders() {
                                                         border-top-right-radius:10px;
                                                         border-bottom-right-radius:10px;
                                                     ">
-                                                        ₹${
-                                                            finances.sellerEarnings.toFixed(
-                                                                2
-                                                            )
-                                                        }
+                                                        ₹${finances.sellerEarnings.toFixed(
+                                    2
+                                )
+                                }
                                                     </td>
 
                                                 </tr>
                                             `
 
-                                        }
-                                    )
-                                    .join("")
-                            }
+                        }
+                    )
+                    .join("")
+                }
 
                         </tbody>
 
@@ -2078,23 +2133,22 @@ export default function StoreOrders() {
 
                             <div class="store-section">
 
-                                ${
-                                    logoBase64
-                                        ? `
+                                ${logoBase64
+                    ? `
                                             <img
                                                 class="store-logo"
                                                 src="${logoBase64}"
                                             />
                                         `
-                                        : ""
-                                }
+                    : ""
+                }
 
                                 <div>
 
                                     <h1 class="store-name">
                                         ${storeNameSafe(
-                                            order.store?.name
-                                        )}
+                    order.store?.name
+                )}
                                     </h1>
 
                                     <p class="store-subtitle">
@@ -2135,20 +2189,20 @@ export default function StoreOrders() {
 
                                 <p class="info-main">
                                     ${escapeHTML(
-                                        customerName
-                                    )}
+                    customerName
+                )}
                                 </p>
 
                                 <p class="info-text">
                                     ${escapeHTML(
-                                        customerEmail
-                                    )}
+                    customerEmail
+                )}
                                 </p>
 
                                 <p class="info-text">
                                     ${escapeHTML(
-                                        customerPhone
-                                    )}
+                    customerPhone
+                )}
                                 </p>
 
                             </div>
@@ -2162,9 +2216,9 @@ export default function StoreOrders() {
 
                                 <p class="info-text">
                                     ${escapeHTML(
-                                        fullAddress ||
-                                        "N/A"
-                                    )}
+                    fullAddress ||
+                    "N/A"
+                )}
                                 </p>
 
                             </div>
@@ -2206,31 +2260,30 @@ export default function StoreOrders() {
 
                             <tbody>
 
-                                ${
-                                    (
-                                        order.orderItems ||
-                                        []
-                                    )
-                                        .map(
-                                            item => {
+                                ${(
+                    order.orderItems ||
+                    []
+                )
+                    .map(
+                        item => {
 
-                                                const quantity =
-                                                    Number(
-                                                        item.quantity ||
-                                                        0
-                                                    )
+                            const quantity =
+                                Number(
+                                    item.quantity ||
+                                    0
+                                )
 
-                                                const price =
-                                                    Number(
-                                                        item.price ||
-                                                        0
-                                                    )
+                            const price =
+                                Number(
+                                    item.price ||
+                                    0
+                                )
 
-                                                const amount =
-                                                    price *
-                                                    quantity
+                            const amount =
+                                price *
+                                quantity
 
-                                                return `
+                            return `
                                                     <tr>
 
                                                         <td>
@@ -2238,9 +2291,9 @@ export default function StoreOrders() {
                                                             <span class="product-name">
 
                                                                 ${escapeHTML(
-                                                                    item.product?.name ||
-                                                                    "Product"
-                                                                )}
+                                item.product?.name ||
+                                "Product"
+                            )}
 
                                                             </span>
 
@@ -2261,10 +2314,10 @@ export default function StoreOrders() {
                                                     </tr>
                                                 `
 
-                                            }
-                                        )
-                                        .join("")
-                                }
+                        }
+                    )
+                    .join("")
+                }
 
                             </tbody>
 
@@ -2280,9 +2333,9 @@ export default function StoreOrders() {
                             <p class="payment-value">
 
                                 ${escapeHTML(
-                                    order.paymentMethod ||
-                                    "Cash on Delivery"
-                                )}
+                    order.paymentMethod ||
+                    "Cash on Delivery"
+                )}
 
                             </p>
 
@@ -2469,12 +2522,12 @@ export default function StoreOrders() {
                 await html2canvas(
                     invoiceElement,
                     {
-                        scale:2,
+                        scale: 2,
                         backgroundColor:
                             "#ffffff",
-                        useCORS:true,
-                        allowTaint:false,
-                        logging:false
+                        useCORS: true,
+                        allowTaint: false,
+                        logging: false
                     }
                 )
 
@@ -2988,10 +3041,9 @@ export default function StoreOrders() {
                                         transition
                                         cursor-pointer
                                         border-l-4
-                                        ${
-                                            isPending
-                                                ? "border-orange-500"
-                                                : "border-indigo-500"
+                                        ${isPending
+                                            ? "border-orange-500"
+                                            : "border-indigo-500"
                                         }
                                     `}
                                 >
@@ -3048,11 +3100,10 @@ export default function StoreOrders() {
                                                     text-2xl
                                                     font-bold
                                                     font-mono
-                                                    ${
-                                                        remainingSeconds <=
+                                                    ${remainingSeconds <=
                                                         10
-                                                            ? "text-red-600"
-                                                            : "text-orange-600"
+                                                        ? "text-red-600"
+                                                        : "text-orange-600"
                                                     }
                                                 `}>
 
@@ -3195,28 +3246,27 @@ export default function StoreOrders() {
                                             text-xs
                                             font-semibold
 
-                                            ${
-                                                order.status ===
+                                            ${order.status ===
                                                 "DELIVERED"
-                                                    ? "bg-green-100 text-green-800"
+                                                ? "bg-green-100 text-green-800"
+                                                : order.status ===
+                                                    "CANCELLED"
+                                                    ? "bg-red-100 text-red-800"
                                                     : order.status ===
-                                                        "CANCELLED"
-                                                        ? "bg-red-100 text-red-800"
+                                                        "RETURNED"
+                                                        ? "bg-orange-100 text-orange-800"
                                                         : order.status ===
-                                                            "RETURNED"
-                                                            ? "bg-orange-100 text-orange-800"
+                                                            "ORDER_CONFIRMED"
+                                                            ? "bg-blue-100 text-blue-800"
                                                             : order.status ===
-                                                                "ORDER_CONFIRMED"
-                                                                ? "bg-blue-100 text-blue-800"
+                                                                "ORDER_PACKING"
+                                                                ? "bg-purple-100 text-purple-800"
                                                                 : order.status ===
-                                                                    "ORDER_PACKING"
-                                                                    ? "bg-purple-100 text-purple-800"
-                                                                    : order.status ===
-                                                                        "ORDER_PACKED"
-                                                                        ? "bg-indigo-100 text-indigo-800"
-                                                                        : isPending
-                                                                            ? "bg-orange-100 text-orange-800"
-                                                                            : "bg-yellow-100 text-yellow-800"
+                                                                    "ORDER_PACKED"
+                                                                    ? "bg-indigo-100 text-indigo-800"
+                                                                    : isPending
+                                                                        ? "bg-orange-100 text-orange-800"
+                                                                        : "bg-yellow-100 text-yellow-800"
                                             }
                                         `}>
 

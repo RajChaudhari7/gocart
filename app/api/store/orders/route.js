@@ -336,113 +336,130 @@ export async function POST(request) {
          */
 
         if (
-            status ===
-            "CANCELLED" &&
+            status === "CANCELLED" &&
             (
-                reason ===
-                "SELLER_DECLINED" ||
-                reason ===
-                "SELLER_RESPONSE_TIMEOUT"
+                reason === "SELLER_DECLINED" ||
+                reason === "SELLER_RESPONSE_TIMEOUT"
             )
         ) {
-
-            /*
-             * Decline is only valid while the order
-             * is waiting for seller acceptance.
-             */
-
-            if (
-                order.status !==
-                "ORDER_PLACED"
-            ) {
-
+            if (order.status !== "ORDER_PLACED") {
                 return NextResponse.json(
                     {
                         error:
-                            "Order is no longer available for decline"
+                            "Order is no longer available for seller decline."
                     },
-                    {
-                        status: 400
-                    }
-                )
-
+                    { status: 400 }
+                );
             }
 
             try {
-
                 await prisma.$transaction(async (tx) => {
                     const currentOrder = await tx.order.findUnique({
                         where: {
-                            id: orderId
+                            id: orderId,
                         },
-
                         include: {
-                            orderItems: true
-                        }
-                    })
+                            orderItems: true,
+                        },
+                    });
 
-                    if (currentOrder) {
+                    if (!currentOrder) {
                         throw new Error(
-                            "Order not found"
-                        )
+                            `Order not found: ${orderId}`
+                        );
                     }
 
                     if (currentOrder.status !== "ORDER_PLACED") {
                         throw new Error(
-                            "Order has already been processed"
-                        )
+                            "Order has already been processed."
+                        );
                     }
 
-                    await tx.order.update({
-                        where: {
-                            id: orderId
-                        },
+                    const previousHistory =
+                        currentOrder.statusHistory &&
+                            typeof currentOrder.statusHistory === "object" &&
+                            !Array.isArray(currentOrder.statusHistory)
+                            ? currentOrder.statusHistory
+                            : {};
 
+                    const updated = await tx.order.updateMany({
+                        where: {
+                            id: orderId,
+                            status: "ORDER_PLACED",
+                        },
                         data: {
                             status: "CANCELLED",
 
                             statusHistory: {
-                                ...(currentOrder.statusHistory || {}),
+                                ...previousHistory,
+                                CANCELLED: new Date().toISOString(),
+                            },
+                        },
+                    });
 
-                                CANCELLED: new Date().toISOString()
-                            }
-                        }
-                    })
+                    if (updated.count !== 1) {
+                        throw new Error(
+                            "Order was already processed."
+                        );
+                    }
 
+                    // Restore product stock
                     for (const item of currentOrder.orderItems) {
+                        const product = await tx.product.findUnique({
+                            where: {
+                                id: item.productId,
+                            },
+                            select: {
+                                id: true,
+                            },
+                        });
+
+                        if (!product) {
+                            console.warn(
+                                `Product ${item.productId} no longer exists. Stock cannot be restored.`
+                            );
+
+                            continue;
+                        }
+
                         await tx.product.update({
                             where: {
-                                id: item.productId
+                                id: item.productId,
                             },
-
                             data: {
                                 quantity: {
-                                    increment: item.quantity
+                                    increment: item.quantity,
                                 },
-
-                                inStock: true
-                            }
-                        })
+                                inStock: true,
+                            },
+                        });
                     }
-                })
+                });
+
+                return NextResponse.json({
+                    message:
+                        reason === "SELLER_RESPONSE_TIMEOUT"
+                            ? "Order automatically declined after timeout."
+                            : "Order declined successfully.",
+                });
+            } catch (error) {
+                console.error("SELLER DECLINE ERROR:", {
+                    message: error?.message,
+                    code: error?.code,
+                    meta: error?.meta,
+                    orderId,
+                    reason,
+                });
 
                 return NextResponse.json(
                     {
-                        message:
-                            "Order declined successfully"
-                    }
-                )
-
-            } catch (error) {
-                console.error("Seller Decline Error:", error);
-
-                return NextResponse.json({
-                    error: error?.message || "Failed to decline order"
-                },
+                        error:
+                            error?.message ||
+                            "Failed to decline order.",
+                    },
                     { status: 400 }
-                )
+                );
             }
-
         }
 
         /* 
