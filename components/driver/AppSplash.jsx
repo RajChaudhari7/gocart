@@ -1,142 +1,277 @@
+
 'use client'
 
 import { motion } from 'framer-motion'
 import Image from 'next/image'
-import { MapPin, Package } from 'lucide-react'
+import { MapPin, Package, Truck } from 'lucide-react'
 
 export default function AppSplash() {
     return (
-        <div className="fixed inset-0 z-[9999] bg-gradient-to-b from-slate-950 via-black to-slate-950 overflow-hidden flex items-center justify-center">
+        <div className="fixed inset-0 z-[9999] overflow-hidden bg-gradient-to-b from-slate-950 via-black to-slate-950 flex items-center justify-center">
 
-            {/* Background Glow */}
-            <div className="absolute w-[700px] h-[700px] bg-green-500/10 rounded-full blur-3xl" />
-
-            {/* Map Route */}
-            <div className="absolute bottom-36 w-[80%] h-[2px] bg-white/10 overflow-hidden rounded-full">
-
-                <motion.div
-                    initial={{ x: '-100%' }}
-                    animate={{ x: '100%' }}
-                    transition={{
-                        duration: 2,
-                        repeat: Infinity,
-                        ease: 'linear'
-                    }}
-                    className="absolute top-0 left-0 h-full w-32 bg-green-400"
-                />
-
-            </div>
-
-            {/* Start Pin */}
+            {/* Ambient Background Glow */}
             <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="absolute bottom-32 left-[12%]"
-            >
-                <MapPin className="text-green-400" size={34} />
-            </motion.div>
-
-            {/* Destination */}
-            <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="absolute bottom-32 right-[12%]"
-            >
-                <Package className="text-cyan-400" size={34} />
-            </motion.div>
-
-            {/* Delivery Rider */}
-            <motion.div
-                initial={{ x: -500 }}
-                animate={{ x: 500 }}
-                transition={{
-                    duration: 2.5,
-                    ease: 'easeInOut'
-                }}
-                className="absolute bottom-28 text-6xl"
-            >
-                🛵
-            </motion.div>
-
-            {/* Logo */}
-            <motion.div
-                initial={{
-                    opacity: 0,
-                    scale: 0.4,
-                    rotateY: -30
-                }}
                 animate={{
-                    opacity: 1,
-                    scale: 1,
-                    rotateY: 0
+                    scale: [1, 1.15, 1],
+                    opacity: [0.15, 0.25, 0.15],
                 }}
                 transition={{
-                    delay: 1.2,
-                    duration: 1
+                    duration: 4,
+                    repeat: Infinity,
+                    ease: 'easeInOut',
                 }}
-                className="flex flex-col items-center"
-            >
+                className="absolute w-[500px] h-[500px] rounded-full bg-green-500/20 blur-[120px]"
+            />
 
+            {/* Small Background Glows */}
+            <div className="absolute top-20 left-10 w-32 h-32 bg-green-500/5 rounded-full blur-3xl" />
+            <div className="absolute bottom-20 right-10 w-40 h-40 bg-cyan-500/5 rounded-full blur-3xl" />
+
+            {/* Main Content */}
+            <div className="relative z-10 w-full h-full flex flex-col items-center justify-center">
+
+                {/* Logo */}
                 <motion.div
+                    initial={{
+                        opacity: 0,
+                        scale: 0.7,
+                        y: 20,
+                    }}
                     animate={{
-                        filter: [
-                            'drop-shadow(0 0 15px #22c55e)',
-                            'drop-shadow(0 0 40px #22c55e)',
-                            'drop-shadow(0 0 15px #22c55e)',
-                        ]
+                        opacity: 1,
+                        scale: 1,
+                        y: 0,
                     }}
                     transition={{
-                        duration: 2,
-                        repeat: Infinity
+                        duration: 0.8,
+                        ease: 'easeOut',
                     }}
+                    className="flex flex-col items-center"
                 >
-                    <Image
-                        src="/driver.png"
-                        alt="Driver App"
-                        width={180}
-                        height={180}
-                        priority
-                    />
+
+                    {/* Logo Glow */}
+                    <motion.div
+                        animate={{
+                            filter: [
+                                'drop-shadow(0 0 12px rgba(34,197,94,0.4))',
+                                'drop-shadow(0 0 35px rgba(34,197,94,0.8))',
+                                'drop-shadow(0 0 12px rgba(34,197,94,0.4))',
+                            ],
+                        }}
+                        transition={{
+                            duration: 2.5,
+                            repeat: Infinity,
+                            ease: 'easeInOut',
+                        }}
+                    >
+                        <Image
+                            src="/driver.png"
+                            alt="Nandurbar Bazar Driver"
+                            width={150}
+                            height={150}
+                            priority
+                            className="object-contain"
+                        />
+                    </motion.div>
+
+                    {/* App Name */}
+                    <motion.h1
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{
+                            delay: 0.3,
+                            duration: 0.6,
+                        }}
+                        className="mt-5 text-2xl sm:text-3xl font-bold text-white tracking-tight"
+                    >
+                        Nandurbar Bazar
+                    </motion.h1>
+
+                    {/* Driver App */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{
+                            delay: 0.5,
+                            duration: 0.5,
+                        }}
+                        className="mt-2 flex items-center gap-2"
+                    >
+                        <span className="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse" />
+
+                        <span className="text-green-400 text-xs sm:text-sm font-medium tracking-[0.35em]">
+                            DRIVER APP
+                        </span>
+
+                        <span className="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse" />
+                    </motion.div>
+
                 </motion.div>
 
-                <motion.h1
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{
-                        delay: 1.7
-                    }}
-                    className="text-white text-3xl font-bold mt-6"
-                >
-                    Nandurbar Bazar
-                </motion.h1>
+                {/* Delivery Route */}
+                <div className="absolute bottom-[25%] sm:bottom-[22%] w-[82%] max-w-[700px]">
 
-                <motion.p
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{
-                        delay: 2
-                    }}
-                    className="text-green-400 tracking-[0.4em] text-sm mt-2"
-                >
-                    DRIVER APP
-                </motion.p>
+                    {/* Route Background */}
+                    <div className="relative h-[3px] bg-white/10 rounded-full">
 
-            </motion.div>
+                        {/* Animated Route */}
+                        <motion.div
+                            initial={{ width: '0%' }}
+                            animate={{ width: '100%' }}
+                            transition={{
+                                duration: 2.8,
+                                ease: 'easeInOut',
+                            }}
+                            className="absolute left-0 top-0 h-full rounded-full bg-gradient-to-r from-green-500 via-emerald-400 to-cyan-400 shadow-[0_0_12px_rgba(34,197,94,0.8)]"
+                        />
 
-            {/* Loading Text */}
-            <motion.div
-                animate={{
-                    opacity: [0.3, 1, 0.3]
-                }}
-                transition={{
-                    repeat: Infinity,
-                    duration: 1.5
-                }}
-                className="absolute bottom-14 text-green-400 text-sm tracking-wider"
-            >
-                Delivering Orders...
-            </motion.div>
+                        {/* Moving Rider */}
+                        <motion.div
+                            initial={{ left: '0%' }}
+                            animate={{ left: '100%' }}
+                            transition={{
+                                duration: 2.8,
+                                ease: 'easeInOut',
+                            }}
+                            className="absolute -top-7 -translate-x-1/2"
+                        >
+                            <motion.div
+                                animate={{
+                                    y: [0, -3, 0],
+                                }}
+                                transition={{
+                                    duration: 0.5,
+                                    repeat: Infinity,
+                                    ease: 'easeInOut',
+                                }}
+                            >
+                                <Truck
+                                    size={30}
+                                    strokeWidth={2}
+                                    className="text-green-400 drop-shadow-[0_0_8px_rgba(34,197,94,0.8)]"
+                                />
+                            </motion.div>
+                        </motion.div>
+
+                        {/* Start Point */}
+                        <div className="absolute -left-1 -top-[7px]">
+                            <motion.div
+                                animate={{
+                                    scale: [1, 1.4, 1],
+                                    opacity: [1, 0.5, 1],
+                                }}
+                                transition={{
+                                    duration: 1.5,
+                                    repeat: Infinity,
+                                }}
+                                className="w-4 h-4 rounded-full bg-green-500 shadow-[0_0_12px_rgba(34,197,94,0.9)]"
+                            />
+                        </div>
+
+                        {/* Destination Point */}
+                        <div className="absolute -right-1 -top-[7px]">
+                            <motion.div
+                                animate={{
+                                    scale: [1, 1.4, 1],
+                                    opacity: [1, 0.5, 1],
+                                }}
+                                transition={{
+                                    duration: 1.5,
+                                    repeat: Infinity,
+                                    delay: 0.7,
+                                }}
+                                className="w-4 h-4 rounded-full bg-cyan-400 shadow-[0_0_12px_rgba(34,211,238,0.9)]"
+                            />
+                        </div>
+
+                    </div>
+
+                    {/* Route Labels */}
+                    <div className="flex justify-between mt-4">
+
+                        <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                            <MapPin size={13} className="text-green-400" />
+                            Pickup
+                        </div>
+
+                        <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                            <Package size={13} className="text-cyan-400" />
+                            Delivery
+                        </div>
+
+                    </div>
+
+                </div>
+
+                {/* Loading Section */}
+                <div className="absolute bottom-10 flex flex-col items-center">
+
+                    {/* Loading Text */}
+                    <div className="flex items-center gap-1 text-sm text-slate-400">
+
+                        <span>Connecting to delivery network</span>
+
+                        <motion.span
+                            animate={{
+                                opacity: [0, 1, 1, 0],
+                            }}
+                            transition={{
+                                duration: 1.2,
+                                repeat: Infinity,
+                                times: [0, 0.2, 0.7, 1],
+                            }}
+                        >
+                            .
+                        </motion.span>
+
+                        <motion.span
+                            animate={{
+                                opacity: [0, 0, 1, 1, 0],
+                            }}
+                            transition={{
+                                duration: 1.2,
+                                repeat: Infinity,
+                                times: [0, 0.2, 0.4, 0.7, 1],
+                            }}
+                        >
+                            .
+                        </motion.span>
+
+                        <motion.span
+                            animate={{
+                                opacity: [0, 0, 0, 1, 0],
+                            }}
+                            transition={{
+                                duration: 1.2,
+                                repeat: Infinity,
+                                times: [0, 0.2, 0.4, 0.7, 1],
+                            }}
+                        >
+                            .
+                        </motion.span>
+
+                    </div>
+
+                    {/* Progress Bar */}
+                    <div className="mt-3 w-40 sm:w-48 h-1 rounded-full bg-white/10 overflow-hidden">
+
+                        <motion.div
+                            initial={{ width: '0%' }}
+                            animate={{ width: '100%' }}
+                            transition={{
+                                duration: 3,
+                                ease: 'easeInOut',
+                            }}
+                            className="h-full rounded-full bg-gradient-to-r from-green-500 to-emerald-300"
+                        />
+
+                    </div>
+
+                </div>
+
+            </div>
 
         </div>
     )
 }
+
