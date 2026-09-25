@@ -21,9 +21,9 @@ const FINAL_STATUSES = [
     "RETURNED"
 ]
 
-/* =========================================================
+/* ====
    UPDATE SELLER ORDER STATUS
-========================================================= */
+==== */
 
 export async function POST(request) {
 
@@ -114,9 +114,9 @@ export async function POST(request) {
 
         }
 
-        /* =====================================================
+        /* 
            FINALIZED ORDER PROTECTION
-        ===================================================== */
+         */
 
         if (
             FINAL_STATUSES.includes(
@@ -136,9 +136,9 @@ export async function POST(request) {
 
         }
 
-        /* =====================================================
+        /* 
            SELLER ACCEPTANCE
-        ===================================================== */
+         */
 
         if (
             status ===
@@ -331,18 +331,18 @@ export async function POST(request) {
 
         }
 
-        /* =====================================================
+        /* 
            SELLER DECLINE
-        ===================================================== */
+         */
 
         if (
             status ===
             "CANCELLED" &&
             (
                 reason ===
-                    "SELLER_DECLINED" ||
+                "SELLER_DECLINED" ||
                 reason ===
-                    "SELLER_RESPONSE_TIMEOUT"
+                "SELLER_RESPONSE_TIMEOUT"
             )
         ) {
 
@@ -368,138 +368,92 @@ export async function POST(request) {
 
             }
 
-            await prisma.$transaction(
-                async tx => {
+            try {
 
-                    /*
-                     * Re-fetch inside transaction.
-                     */
+                await prisma.$transaction(async (tx) => {
+                    const currentOrder = await tx.order.findUnique({
+                        where: {
+                            id: orderId
+                        },
 
-                    const currentOrder =
-                        await tx.order.findUnique({
+                        include: {
+                            orderItems: true
+                        }
+                    })
 
-                            where: {
-                                id: orderId
-                            },
+                    if (currentOrder) {
+                        throw new Error(
+                            "Order not found"
+                        )
+                    }
 
-                            include: {
-                                orderItems: true
-                            }
-
-                        })
-
-                    if (
-                        !currentOrder ||
-                        currentOrder.status !==
-                        "ORDER_PLACED"
-                    ) {
-
+                    if (currentOrder.status !== "ORDER_PLACED") {
                         throw new Error(
                             "Order has already been processed"
                         )
-
                     }
 
-                    /*
-                     * Conditional update makes cancellation
-                     * idempotent.
-                     */
+                    await tx.order.update({
+                        where: {
+                            id: orderId
+                        },
 
-                    const updated =
-                        await tx.order.updateMany({
+                        data: {
+                            status: "CANCELLED",
 
-                            where: {
+                            statusHistory: {
+                                ...(currentOrder.statusHistory || {}),
 
-                                id:
-                                    orderId,
-
-                                status:
-                                    "ORDER_PLACED"
-
-                            },
-
-                            data: {
-
-                                status:
-                                    "CANCELLED",
-
-                                statusHistory: {
-
-                                    ...(currentOrder.statusHistory || {}),
-
-                                    CANCELLED:
-                                        new Date().toISOString()
-
-                                }
-
+                                CANCELLED: new Date().toISOString()
                             }
+                        }
+                    })
 
-                        })
-
-                    if (
-                        updated.count !==
-                        1
-                    ) {
-
-                        throw new Error(
-                            "Order has already been processed"
-                        )
-
-                    }
-
-                    /*
-                     * Restore stock exactly once.
-                     */
-
-                    for (
-                        const item
-                        of currentOrder.orderItems
-                    ) {
-
+                    for (const item of currentOrder.orderItems) {
                         await tx.product.update({
-
                             where: {
-                                id:
-                                    item.productId
+                                id: item.productId
                             },
 
                             data: {
-
                                 quantity: {
-                                    increment:
-                                        item.quantity
+                                    increment: item.quantity
                                 },
 
-                                inStock:
-                                    true
-
+                                inStock: true
                             }
-
                         })
-
                     }
+                })
 
-                }
-            )
+                return NextResponse.json(
+                    {
+                        message:
+                            "Order declined successfully"
+                    }
+                )
 
-            return NextResponse.json(
-                {
-                    message:
-                        "Order cancelled successfully"
-                }
-            )
+            } catch (error) {
+                console.error("Seller Decline Error:", error);
+
+                return NextResponse.json({
+                    error: error?.message || "Failed to decline order"
+                },
+                    { status: 400 }
+                )
+            }
 
         }
 
-        /* =====================================================
+        /* 
            DELIVERY OTP
-        ===================================================== */
+         */
 
         let plainOtp = null
 
-        /* =====================================================
+        /* 
            NORMAL SELLER STATUS FLOW
-        ===================================================== */
+         */
 
         const currentIndex =
             SELLER_FLOW.indexOf(
@@ -518,7 +472,7 @@ export async function POST(request) {
 
         if (
             status !==
-                "ORDER_PACKED" &&
+            "ORDER_PACKED" &&
             currentIndex !== -1 &&
             newIndex !== -1
         ) {
@@ -597,9 +551,9 @@ export async function POST(request) {
 
         }
 
-        /* =====================================================
+        /* 
            DELIVERY INITIATED
-        ===================================================== */
+         */
 
         if (
             status ===
@@ -646,9 +600,9 @@ export async function POST(request) {
 
         }
 
-        /* =====================================================
+        /* 
            DELIVERED VALIDATION
-        ===================================================== */
+         */
 
         if (
             status ===
@@ -706,10 +660,10 @@ export async function POST(request) {
 
         }
 
-        /* =====================================================
+        /* 
            ORDER PACKED
            FIND NEAREST DRIVER
-        ===================================================== */
+         */
 
         if (
             status ===
@@ -883,9 +837,9 @@ export async function POST(request) {
 
         }
 
-        /* =====================================================
+        /* 
            NORMAL STATUS UPDATE
-        ===================================================== */
+         */
 
         if (
             [
@@ -929,13 +883,13 @@ export async function POST(request) {
 
         }
 
-        /* =====================================================
+        /* 
            DELIVERY OTP EMAIL
-        ===================================================== */
+         */
 
         if (
             status ===
-                "DELIVERY_INITIATED" &&
+            "DELIVERY_INITIATED" &&
             plainOtp
         ) {
 
@@ -990,9 +944,9 @@ export async function POST(request) {
 
         }
 
-        /* =====================================================
+        /* 
            FALLBACK STATUS UPDATE
-        ===================================================== */
+         */
 
         await prisma.order.update({
 
@@ -1049,9 +1003,9 @@ export async function POST(request) {
 }
 
 
-/* =========================================================
+/* ====
    GET SELLER ORDERS
-========================================================= */
+==== */
 
 export async function GET(request) {
 
