@@ -88,15 +88,13 @@ function ShopContent() {
 
   /* ================= SEARCH ================= */
 
-  const searchProducts = (text) => {
-    const cleanText = text.trim();
+  const openProduct = (product) => {
+    if (!product?.id) return;
 
-    if (!cleanText) return;
-
-    setSearchInput(cleanText);
     setShowDropdown(false);
+    setSearchInput("");
 
-    router.push(`/product?search=${encodeURIComponent(cleanText)}`);
+    router.push(`/product/${product.id}`);
   };
 
   const filterCategory = (cat) => {
@@ -115,17 +113,30 @@ function ShopContent() {
   };
 
   /* ================= URL SYNC ================= */
-
   useEffect(() => {
+    // Search URL
+    if (searchFromURL) {
+      setSearchInput(searchFromURL);
+      setCategory("all");
+      setSubCategory("all");
+      return;
+    }
+
+    // Category URL
     if (categoryFromURL) {
       setCategory(categoryFromURL);
       setSubCategory("all");
       setSearchInput("");
       setSmartProducts([]);
-    } else {
-      setCategory("all");
+      return;
     }
-  }, [categoryFromURL]);
+
+    // Normal /product page
+    setCategory("all");
+    setSubCategory("all");
+    setSearchInput("");
+    setSmartProducts([]);
+  }, [searchFromURL, categoryFromURL]);
 
   /* ================= DEBOUNCED SEARCH ================= */
 
@@ -293,6 +304,17 @@ function ShopContent() {
       product.averageRating * 25 +
       product.totalViews * 0.2
     );
+  };
+
+  const clearSearch = () => {
+    setSearchInput("");
+    setShowDropdown(false);
+    setSmartProducts([]);
+    setCategory("all");
+    setSubCategory("all");
+    setPriceRange("ALL");
+
+    router.replace("/product");
   };
 
   /* ================= FILTER + SORT ================= */
@@ -611,14 +633,38 @@ function ShopContent() {
             <div className="mx-auto max-w-5xl px-4 py-3 sm:py-4">
               <div className="relative">
                 <Search
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                  className="
+      pointer-events-none
+      absolute
+      left-4
+      top-1/2
+      -translate-y-1/2
+      text-slate-400
+    "
                   size={19}
                 />
 
                 <input
                   type="text"
                   value={searchInput}
-                  onChange={(e) => setSearchInput(e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value;
+
+                    setSearchInput(value);
+
+                    if (!value.trim()) {
+                      setShowDropdown(false);
+                      setSmartProducts([]);
+
+                      if (searchFromURL) {
+                        router.replace("/product");
+                      }
+
+                      return;
+                    }
+
+                    setShowDropdown(true);
+                  }}
                   onFocus={() => {
                     if (dropdownData.products.length) {
                       setShowDropdown(true);
@@ -636,39 +682,79 @@ function ShopContent() {
                     setShowDropdown(false);
 
                     router.push(
-                      `/product?search=${encodeURIComponent(cleanSearch)}`,
+                      `/product?search=${encodeURIComponent(cleanSearch)}`
                     );
                   }}
                   placeholder="Search products, categories or stores..."
                   className="
-                    w-full
-                    rounded-2xl
-                    border
-                    border-slate-200
-                    bg-slate-50
-                    py-3.5
-                    pl-11
-                    pr-5
-                    text-sm
-                    font-medium
-                    text-slate-900
-                    placeholder:text-slate-400
-                    outline-none
-                    transition
-                    focus:border-emerald-400
-                    focus:bg-white
-                    focus:ring-4
-                    focus:ring-emerald-50
-                    sm:rounded-full
-                  "
+      w-full
+      rounded-2xl
+      border
+      border-slate-200
+      bg-slate-50
+      py-3.5
+      pl-11
+      pr-12
+
+      text-sm
+      font-medium
+      text-slate-900
+
+      placeholder:text-slate-400
+
+      outline-none
+      transition
+
+      focus:border-emerald-400
+      focus:bg-white
+      focus:ring-4
+      focus:ring-emerald-50
+
+      sm:rounded-full
+    "
                 />
+
+                {/* Clear Search */}
+
+                {searchInput.trim() && (
+                  <button
+                    type="button"
+                    onClick={clearSearch}
+                    aria-label="Clear search"
+                    className="
+        absolute
+        right-3
+        top-1/2
+        -translate-y-1/2
+
+        flex
+        h-8
+        w-8
+        items-center
+        justify-center
+
+        rounded-full
+
+        text-slate-400
+
+        transition
+
+        hover:bg-slate-200
+        hover:text-slate-700
+
+        active:scale-95
+      "
+                  >
+                    <X size={17} />
+                  </button>
+                )}
 
                 {showDropdown && (
                   <SearchDropdown
                     loading={loadingSearch}
                     results={dropdownData}
                     onClose={() => setShowDropdown(false)}
-                    onProductClick={searchProducts}
+                    onProductClick={openProduct}
                     onCategoryClick={filterCategory}
                     onStoreClick={openStore}
                   />
@@ -704,8 +790,8 @@ function ShopContent() {
                           key={cat}
                           onClick={() => handleCategoryChange(cat)}
                           className={`group flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm capitalize transition ${category === cat
-                              ? "bg-emerald-50 font-bold text-emerald-700"
-                              : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                            ? "bg-emerald-50 font-bold text-emerald-700"
+                            : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                             }`}
                         >
                           <span>{cat === "all" ? "All Products" : cat}</span>
@@ -752,8 +838,8 @@ function ShopContent() {
                                 key={subCat}
                                 onClick={() => setSubCategory(subCat)}
                                 className={`flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-xs capitalize transition ${subCategory === subCat
-                                    ? "bg-indigo-50 font-bold text-indigo-600"
-                                    : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                                  ? "bg-indigo-50 font-bold text-indigo-600"
+                                  : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
                                   }`}
                               >
                                 {subCategory === subCat && (
@@ -784,8 +870,8 @@ function ShopContent() {
                           key={range.value}
                           onClick={() => setPriceRange(range.value)}
                           className={`w-full rounded-xl px-3 py-2.5 text-left text-xs font-semibold transition ${priceRange === range.value
-                              ? "bg-orange-50 text-orange-700"
-                              : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                            ? "bg-orange-50 text-orange-700"
+                            : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
                             }`}
                         >
                           {range.label}
@@ -1033,8 +1119,8 @@ function ShopContent() {
                             key={cat}
                             onClick={() => handleCategoryChange(cat)}
                             className={`rounded-full border px-4 py-2.5 text-xs font-bold capitalize transition ${category === cat
-                                ? "border-emerald-600 bg-emerald-600 text-white shadow-sm"
-                                : "border-slate-200 bg-white text-slate-600 hover:border-emerald-200 hover:bg-emerald-50"
+                              ? "border-emerald-600 bg-emerald-600 text-white shadow-sm"
+                              : "border-slate-200 bg-white text-slate-600 hover:border-emerald-200 hover:bg-emerald-50"
                               }`}
                           >
                             {cat === "all" ? "All Products" : cat}
@@ -1077,8 +1163,8 @@ function ShopContent() {
                                     setShowMobileFilter(false);
                                   }}
                                   className={`rounded-full border px-4 py-2 text-xs font-bold capitalize transition ${subCategory === subCat
-                                      ? "border-indigo-600 bg-indigo-600 text-white"
-                                      : "border-indigo-100 bg-white text-indigo-600"
+                                    ? "border-indigo-600 bg-indigo-600 text-white"
+                                    : "border-indigo-100 bg-white text-indigo-600"
                                     }`}
                                 >
                                   {subCat === "all"
@@ -1108,8 +1194,8 @@ function ShopContent() {
                               setShowMobileFilter(false);
                             }}
                             className={`rounded-full border px-4 py-2.5 text-xs font-bold transition ${priceRange === range.value
-                                ? "border-orange-500 bg-orange-500 text-white"
-                                : "border-slate-200 bg-white text-slate-600 hover:border-orange-200 hover:bg-orange-50"
+                              ? "border-orange-500 bg-orange-500 text-white"
+                              : "border-slate-200 bg-white text-slate-600 hover:border-orange-200 hover:bg-orange-50"
                               }`}
                           >
                             {range.label}
