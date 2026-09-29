@@ -21,6 +21,18 @@ const FINAL_STATUSES = [
     "RETURNED"
 ]
 
+const createOrderEvent = async (tx, { orderId, status, actorType = "SELLER", actorId = null, note = null, }) => {
+    return tx.orderEvent.create({
+        data: {
+            orderId,
+            status,
+            actorType,
+            actorId,
+            note,
+        },
+    });
+};
+
 /* ====
    UPDATE SELLER ORDER STATUS
 ==== */
@@ -270,9 +282,6 @@ export async function POST(request) {
                                             item.quantity
                                     },
 
-                                    inStock:
-                                        true
-
                                 }
 
                             })
@@ -297,30 +306,38 @@ export async function POST(request) {
             /*
              * Accept order.
              */
+            await prisma.$transaction(async (tx) => {
+                await prisma.order.update({
 
-            await prisma.order.update({
+                    where: {
+                        id: orderId
+                    },
 
-                where: {
-                    id: orderId
-                },
+                    data: {
 
-                data: {
+                        status:
+                            "ORDER_CONFIRMED",
 
-                    status:
-                        "ORDER_CONFIRMED",
+                        statusHistory: {
 
-                    statusHistory: {
+                            ...(order.statusHistory || {}),
 
-                        ...(order.statusHistory || {}),
+                            ORDER_CONFIRMED:
+                                new Date().toISOString()
 
-                        ORDER_CONFIRMED:
-                            new Date().toISOString()
+                        }
 
                     }
 
-                }
-
-            })
+                })
+                await createOrderEvent(tx, {
+                    orderId,
+                    status: "ORDER_CONFIRMED",
+                    actorType: "SELLER",
+                    actorId: userId,
+                    note: "Seller accepted order"
+                });
+            });
 
             return NextResponse.json(
                 {
@@ -402,6 +419,17 @@ export async function POST(request) {
                             "Order was already processed."
                         );
                     }
+
+                    await createOrderEvent(tx, {
+                        orderId,
+                        status: "CANCELLED",
+                        actorType: "SELLER",
+                        actorId: userId,
+                        note:
+                            reason === "SELLER_RESPONSE_TIMEOUT"
+                                ? "Seller response timeout"
+                                : "Seller declined the order"
+                    });
 
                     // Restore product stock
                     for (const item of currentOrder.orderItems) {
@@ -799,50 +827,52 @@ export async function POST(request) {
                 )
 
             }
+            await prisma.$transaction(async (tx) => {
+                await prisma.order.update({
 
-            await prisma.order.update({
+                    where: {
+                        id:
+                            orderId
+                    },
 
-                where: {
-                    id:
-                        orderId
-                },
+                    data: {
 
-                data: {
+                        driverId: nearestDriver.id,
+                        driverAccepted: false,
+                        assignmentStatus: "PENDING",
+                        assignmentExpiresAt:
+                            new Date(
+                                Date.now() +
+                                60 * 1000
+                            ),
+                        assignedAt: new Date(),
 
-                    driverId:
-                        nearestDriver.id,
+                        status: "ORDER_PACKED",
 
-                    driverAccepted:
-                        false,
-
-                    assignmentStatus:
-                        "PENDING",
-
-                    assignmentExpiresAt:
-                        new Date(
-                            Date.now() +
-                            60 *
-                            1000
-                        ),
-
-                    assignedAt:
-                        new Date(),
-
-                    status:
-                        "ORDER_PACKED",
-
-                    statusHistory: {
-
-                        ...(order.statusHistory || {}),
-
-                        ORDER_PACKED:
-                            new Date().toISOString()
-
+                        statusHistory: {
+                            ...(order.statusHistory || {}),
+                            ORDER_PACKED:
+                                new Date().toISOString()
+                        }
                     }
+                });
 
-                }
+                await createOrderEvent(tx, {
+                    orderId,
+                    status: "ORDER_PACKED",
+                    actorType: "SELLER",
+                    actorId: userId,
+                    note: "Order packed"
+                });
 
-            })
+                await createOrderEvent(tx, {
+                    orderId,
+                    status: "DRIVER_ASSIGNED",
+                    actorType: "SYSTEM",
+                    actorId: nearestDriver.id,
+                    note: `Driver ${nearestDriver.name} assigned`
+                });
+            });
 
             return NextResponse.json(
                 {
@@ -864,31 +894,37 @@ export async function POST(request) {
                 status
             )
         ) {
+            await prisma.$transaction(async (tx) => {
+                await prisma.order.update({
 
-            await prisma.order.update({
+                    where: {
+                        id:
+                            orderId
+                    },
 
-                where: {
-                    id:
-                        orderId
-                },
+                    data: {
 
-                data: {
+                        status:
+                            "ORDER_PACKING",
 
-                    status:
-                        status,
+                        statusHistory: {
 
-                    statusHistory: {
+                            ...(order.statusHistory || {}),
 
-                        ...(order.statusHistory || {}),
+                            ORDER_PACKING: new Date().toISOString()
 
-                        [status]:
-                            new Date().toISOString()
-
+                        }
                     }
+                });
 
-                }
-
-            })
+                await createOrderEvent(tx, {
+                    orderId,
+                    status: "ORDER_PACKING",
+                    actorType: "SELLER",
+                    actorId: userId,
+                    note: "Seller started packing your order"
+                });
+            });
 
             return NextResponse.json(
                 {
@@ -963,30 +999,30 @@ export async function POST(request) {
         /* 
            FALLBACK STATUS UPDATE
          */
+        await prisma.$transaction(async (tx) => {
+            await prisma.order.update({
+                where: {
+                    id: orderId
+                },
 
-        await prisma.order.update({
+                data: {
+                    status: "DELIVERY_INITIATED",
+                    statusHistory: {
+                        ...(order.statusHistory || {}),
+                        DELIVERY_INITIATED: new Date().toISOString()
 
-            where: {
-                id:
-                    orderId
-            },
-
-            data: {
-
-                status:
-                    status,
-
-                statusHistory: {
-
-                    ...(order.statusHistory || {}),
-
-                    [status]:
-                        new Date().toISOString()
+                    }
 
                 }
 
-            }
+            });
 
+            await createOrderEvent(tx, {
+                orderId,
+                status: "DELIVERY_INITIATED",
+                actorType: "DRIVER",
+                note: "Delivery initiated and OTP generated"
+            })
         })
 
         return NextResponse.json(

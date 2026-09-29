@@ -80,9 +80,7 @@ model SearchSynonym {
   synonyms String[]
 }
 
-////////////////////////////////////
-// ✅ UPDATED ORDER STATUS ENUM
-////////////////////////////////////
+// UPDATED ORDER STATUS ENUM
 enum OrderStatus {
   ORDER_PLACED
   PACKED
@@ -107,9 +105,8 @@ enum PaymentMethod {
   RAZORPAY
 }
 
-////////////////////////////////////
-// ✅ UPDATED ORDER MODEL
-////////////////////////////////////
+//  UPDATED ORDER MODEL
+
 model Order {
   id     String      @id @default(cuid())
   total  Float
@@ -168,9 +165,13 @@ model Order {
   orderItems     OrderItem[]
   returnRequests ReturnRequest[]
 
-  user    User    @relation("BuyerRelation", fields: [userId], references: [id])
-  store   Store   @relation(fields: [storeId], references: [id])
-  address Address @relation(fields: [addressId], references: [id])
+  user            User             @relation("BuyerRelation", fields: [userId], references: [id])
+  store           Store            @relation(fields: [storeId], references: [id])
+  address         Address          @relation(fields: [addressId], references: [id])
+  orderEvents     OrderEvent[]
+  driverLocations DriverLocation[]
+  driverEarnings  DriverEarning[]
+  sellerEarnings  SellerEarning?
 
   @@index([userId, createdAt])
   @@index([storeId, createdAt])
@@ -342,10 +343,12 @@ model Store {
   category       String?
   customCategory String?
 
-  Product   Product[]
-  Order     Order[]
-  user      User            @relation(fields: [userId], references: [id])
-  followers StoreFollower[]
+  Product        Product[]
+  Order          Order[]
+  user           User            @relation(fields: [userId], references: [id])
+  followers      StoreFollower[]
+  sellerEarnings SellerEarning[]
+  payouts        Payout[]
 }
 
 model Driver {
@@ -378,9 +381,12 @@ model Driver {
 
   orders Order[]
 
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
   driverRatings DriverRating[]
+  locations     DriverLocation[]
+  earnings      DriverEarning[]
+  payouts       Payout[]
 }
 
 model DriverRating {
@@ -582,4 +588,143 @@ model StoreFollower {
   @@unique([userId, storeId])
   @@index([userId])
   @@index([storeId])
+}
+
+model OrderEvent {
+  id      String      @id @default(cuid())
+  orderId String
+  status  OrderStatus
+
+  actorType String?
+  actorId   String?
+
+  note String?
+
+  createdAt DateTime @default(now())
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId, createdAt])
+  @@index([status, createdAt])
+}
+
+model DriverLocation {
+  id String @id @default(cuid())
+
+  driverId String
+  orderId  String
+
+  latitude  Float
+  longitude Float
+
+  accuracy Float?
+
+  recordedAt DateTime @default(now())
+
+  driver Driver @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  order  Order? @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([driverId, recordedAt])
+  @@index([orderId, recordedAt])
+}
+
+enum EarningStatus {
+  PENDING
+  AVAILABLE
+  PAID
+  ADJUSTED
+}
+
+model DriverEarning {
+  id String @id @default(cuid())
+
+  driverId String
+  orderId  String
+
+  amount Float
+
+  type   String
+  status EarningStatus @default(PENDING)
+
+  description String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  driver Driver @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  order  Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([driverId, status])
+  @@index([orderId, createdAt])
+  @@index([orderId])
+}
+
+model SellerEarning {
+  id String @id @default(cuid())
+
+  storeId String
+  orderId String @unique
+
+  grossAmount      Float
+  commissionAmount Float
+  refundAdjustment Float @default(0)
+  netAmount        Float
+
+  status EarningStatus @default(PENDING)
+
+  description String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([storeId, status])
+  @@index([storeId, createdAt])
+  @@index([orderId])
+}
+
+enum PayoutRecipientType {
+  SELLER
+  DRIVER
+}
+
+enum PayoutStatus {
+  PENDING
+  PROCESSING
+  SUCCESS
+  FAILED
+  CANCELLED
+}
+
+model Payout {
+  id String @id @default(cuid())
+
+  recipientType PayoutRecipientType
+
+  storeId  String?
+  driverId String?
+
+  amount Float
+
+  status PayoutStatus @default(PENDING)
+
+  provider         String?
+  providerPayoutId String?
+
+  failureReason String?
+
+  requestedAt DateTime  @default(now())
+  processedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  store  Store?  @relation(fields: [storeId], references: [id])
+  driver Driver? @relation(fields: [driverId], references: [id])
+
+  @@index([storeId, status])
+  @@index([driverId, status])
+  @@index([status, createdAt])
 }
