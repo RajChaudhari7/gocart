@@ -50,7 +50,13 @@ export async function GET(request) {
                             mode: "insensitive",
                         },
                     },
-                }
+                },
+                {
+                    orderId: {
+                        contains: search,
+                        mode: "insensitive",
+                    },
+                },
             ]
         }
 
