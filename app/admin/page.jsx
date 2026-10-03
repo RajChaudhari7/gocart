@@ -5,194 +5,561 @@ import OrdersAreaChart from "@/components/OrdersAreaChart"
 import { useAuth } from "@clerk/nextjs"
 import axios from "axios"
 import {
-    IndianRupeeIcon,
-    ShoppingBasketIcon,
-    StoreIcon,
-    TagsIcon,
-    XCircleIcon
+    IndianRupee,
+    ShoppingCart,
+    Truck,
+    Users,
+    Store,
+    Wallet,
+    Clock3,
+    PackageCheck,
+    ArrowRight,
 } from "lucide-react"
-import { useEffect, useState, useRef } from "react"
-import { toast } from "sonner";
-import { motion, useMotionValue, useTransform } from "framer-motion"
+import { useEffect, useState } from "react"
+import { toast } from "sonner"
 import Link from "next/link"
 
 export default function AdminDashboard() {
 
-    const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '₹'
+    const currency =
+        process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || "₹"
+
     const { getToken } = useAuth()
 
     const [loading, setLoading] = useState(true)
+
     const [month, setMonth] = useState(new Date().getMonth() + 1)
     const [year, setYear] = useState(new Date().getFullYear())
 
     const [dashboardData, setDashboardData] = useState({
+        ordersToday: 0,
+        gmvToday: 0,
+        platformRevenueToday: 0,
+
+        activeDeliveries: 0,
+        activeDrivers: 0,
+        onlineDrivers: 0,
+
+        sellerPayable: 0,
+        driverPayable: 0,
+
+        pendingSellerPayouts: 0,
+        pendingDriverPayouts: 0,
+
         products: 0,
-        orders: 0,
         stores: 0,
-        sellerRevenue: 0,
-        adminRevenue: 0,
-        canceledOrders: 0,
+
         allOrders: [],
     })
 
-    const dashboardCardsData = [
-        { title: 'Total Products', value: dashboardData.products, icon: ShoppingBasketIcon, color: 'bg-blue-100 text-blue-600' },
-        {
-            title: "Seller Revenue",
-            value: currency + dashboardData.sellerRevenue,
-            icon: IndianRupeeIcon,
-            link: '/admin/sales',
-            color: "bg-green-100 text-green-600"
-        },
-
-        {
-            title: "Admin Revenue",
-            value: currency + dashboardData.adminRevenue,
-            icon: IndianRupeeIcon,
-            color: "bg-purple-100 text-purple-700"
-        },
-
-        { title: 'Total Orders', value: dashboardData.orders, icon: TagsIcon, color: 'bg-indigo-100 text-indigo-600' },
-        { title: 'Total Stores', value: dashboardData.stores, icon: StoreIcon, color: 'bg-orange-100 text-orange-600' },
-    ]
-
-
-
     const fetchDashboardData = async () => {
         try {
+            setLoading(true)
+
             const token = await getToken()
 
-            const { data } = await axios.get('/api/admin/dashboard', {
-                headers: { Authorization: `Bearer ${token}` },
-                params: { month, year } // ✅ send filters
-            })
+            const { data } = await axios.get(
+                "/api/admin/dashboard",
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                    params: {
+                        month,
+                        year,
+                    },
+                }
+            )
 
             setDashboardData(data.dashboardData)
+
         } catch (error) {
-            toast.error(error?.response?.data?.error || error.message)
+
+            toast.error(
+                error?.response?.data?.error ||
+                error.message ||
+                "Failed to load dashboard"
+            )
+
+        } finally {
+            setLoading(false)
         }
-        setLoading(false)
     }
 
     useEffect(() => {
         fetchDashboardData()
-    }, [month, year]) // ✅ refetch on change
+    }, [month, year])
 
-    if (loading) return <Loading />
-
-
-
-
-    const TiltCard = ({ card }) => {
-        const cardRef = useRef(null)
-        const x = useMotionValue(0)
-        const y = useMotionValue(0)
-
-        const rotateX = useTransform(y, [-50, 50], [15, -15])
-        const rotateY = useTransform(x, [-50, 50], [-15, 15])
-
-        const handleMouseMove = (e) => {
-            const rect = cardRef.current.getBoundingClientRect()
-            const px = e.clientX - rect.left - rect.width / 2
-            const py = e.clientY - rect.top - rect.height / 2
-
-            x.set(px / 2)
-            y.set(py / 2)
-        }
-
-        const handleMouseLeave = () => {
-            x.set(0)
-            y.set(0)
-        }
-
-        const content = (
-            <motion.div
-                ref={cardRef}
-                className={`flex items-center justify-between p-6 rounded-xl shadow-2xl ${card.color} cursor-pointer`}
-                style={{ rotateX, rotateY }}
-                onMouseMove={handleMouseMove}
-                onMouseLeave={handleMouseLeave}
-                whileHover={{ scale: 1.05 }}
-            >
-                <div className="flex flex-col">
-                    <p className="text-sm font-medium">{card.title}</p>
-                    <b className="text-2xl md:text-3xl font-semibold">
-                        {card.value}
-                    </b>
-                </div>
-
-                <card.icon size={50} className="opacity-80" />
-            </motion.div>
-        )
-
-        return card.link ? (
-            <Link href={card.link}>
-                {content}
-            </Link>
-        ) : (
-            content
-        )
+    if (loading) {
+        return <Loading />
     }
 
+    const formatCurrency = (value) => {
+        return `${currency}${Number(value || 0).toLocaleString("en-IN", {
+            maximumFractionDigits: 2,
+        })}`
+    }
+
+    const overviewCards = [
+        {
+            title: "Orders Today",
+            value: dashboardData.ordersToday,
+            icon: ShoppingCart,
+            description: "Orders created today",
+            href: "/admin/orders",
+        },
+        {
+            title: "GMV Today",
+            value: formatCurrency(dashboardData.gmvToday),
+            icon: IndianRupee,
+            description: "Merchandise value",
+            href: "/admin/orders",
+        },
+        {
+            title: "Platform Revenue",
+            value: formatCurrency(
+                dashboardData.platformRevenueToday
+            ),
+            icon: Wallet,
+            description: "Today's platform revenue",
+            href: "/admin/reconciliation",
+        },
+        {
+            title: "Active Deliveries",
+            value: dashboardData.activeDeliveries,
+            icon: Truck,
+            description: "Currently in delivery",
+            href: "/admin/live-deliveries",
+        },
+    ]
+
+    const driverCards = [
+        {
+            title: "Active Drivers",
+            value: dashboardData.activeDrivers,
+            icon: Users,
+            description: "Drivers with active deliveries",
+            href: "/admin/drivers",
+        },
+        {
+            title: "Online Drivers",
+            value: dashboardData.onlineDrivers,
+            icon: Users,
+            description: "Currently online",
+            href: "/admin/drivers",
+        },
+    ]
+
+    const financeCards = [
+        {
+            title: "Seller Payable",
+            value: formatCurrency(
+                dashboardData.sellerPayable
+            ),
+            icon: Wallet,
+            description: "Available seller earnings",
+            href: "/admin/seller-earnings",
+        },
+        {
+            title: "Driver Payable",
+            value: formatCurrency(
+                dashboardData.driverPayable
+            ),
+            icon: Wallet,
+            description: "Available driver earnings",
+            href: "/admin/driver-earnings",
+        },
+        {
+            title: "Pending Seller Payouts",
+            value: dashboardData.pendingSellerPayouts,
+            icon: Clock3,
+            description: "Payouts awaiting processing",
+            href: "/admin/seller-payouts",
+        },
+        {
+            title: "Pending Driver Payouts",
+            value: dashboardData.pendingDriverPayouts,
+            icon: Clock3,
+            description: "Payouts awaiting processing",
+            href: "/admin/driver-payouts",
+        },
+    ]
+
     return (
-        <div className="text-slate-500 p-6">
-            <h1 className="text-3xl font-bold mb-6 text-slate-800">
-                Admin <span className="text-indigo-600">Dashboard</span>
-            </h1>
+        <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8">
 
-            <div className="flex gap-4 mb-6">
+            {/* Header */}
 
-                {/* Month Filter */}
-                <select
-                    value={month}
-                    onChange={(e) => setMonth(Number(e.target.value))}
-                    className="p-2 border rounded-lg"
-                >
-                    {/* ✅ All Months Option */}
-                    <option value={0}>All Months</option>
+            <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
 
-                    {[
-                        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-                        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-                    ].map((m, i) => (
-                        <option key={i} value={i + 1}>
-                            {m}
-                        </option>
-                    ))}
-                </select>
+                <div>
+                    <p className="text-sm font-medium text-gray-500">
+                        ADMIN COMMAND CENTER
+                    </p>
 
-                {/* Year Filter */}
-                <select
-                    value={year}
-                    onChange={(e) => setYear(Number(e.target.value))}
-                    className="p-2 border rounded-lg"
-                >
-                    {[2023, 2024, 2025, 2026].map((y) => (
-                        <option key={y} value={y}>
-                            {y}
-                        </option>
-                    ))}
-                </select>
+                    <h1 className="mt-1 text-2xl md:text-3xl font-bold text-gray-900">
+                        Overview
+                    </h1>
+
+                    <p className="mt-1 text-sm text-gray-500">
+                        Monitor marketplace operations, deliveries and finance.
+                    </p>
+                </div>
+
+                {/* Date filters */}
+
+                <div className="flex gap-2">
+
+                    <select
+                        value={month}
+                        onChange={(e) =>
+                            setMonth(Number(e.target.value))
+                        }
+                        className="rounded-lg border bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black/10"
+                    >
+                        {[
+                            "January",
+                            "February",
+                            "March",
+                            "April",
+                            "May",
+                            "June",
+                            "July",
+                            "August",
+                            "September",
+                            "October",
+                            "November",
+                            "December",
+                        ].map((name, index) => (
+                            <option
+                                key={index}
+                                value={index + 1}
+                            >
+                                {name}
+                            </option>
+                        ))}
+                    </select>
+
+                    <select
+                        value={year}
+                        onChange={(e) =>
+                            setYear(Number(e.target.value))
+                        }
+                        className="rounded-lg border bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black/10"
+                    >
+                        {[2024, 2025, 2026, 2027].map(
+                            (item) => (
+                                <option
+                                    key={item}
+                                    value={item}
+                                >
+                                    {item}
+                                </option>
+                            )
+                        )}
+                    </select>
+
+                </div>
 
             </div>
 
-            {/* 3D Cards Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-6 mb-10">
-                {dashboardCardsData.map((card, index) => (
-                    <TiltCard key={index} card={card} />
-                ))}
-            </div>
 
-            {/* Orders Area Chart */}
-            <motion.div
-                className="bg-white p-6 rounded-xl shadow-2xl"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-            >
-                <h2 className="text-xl font-semibold mb-4">Orders Overview</h2>
-                <OrdersAreaChart allOrders={dashboardData.allOrders} />
-            </motion.div>
+            {/* TODAY */}
+
+            <section className="mb-8">
+
+                <div className="mb-4 flex items-center justify-between">
+
+                    <div>
+                        <h2 className="text-lg font-semibold text-gray-900">
+                            Today
+                        </h2>
+
+                        <p className="text-sm text-gray-500">
+                            Marketplace activity
+                        </p>
+                    </div>
+
+                </div>
+
+
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+
+                    {overviewCards.map((card) => {
+
+                        const Icon = card.icon
+
+                        return (
+                            <Link
+                                key={card.title}
+                                href={card.href}
+                                className="group rounded-2xl border bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-md"
+                            >
+
+                                <div className="flex items-start justify-between">
+
+                                    <div className="rounded-xl bg-gray-100 p-3">
+                                        <Icon
+                                            size={21}
+                                            className="text-gray-700"
+                                        />
+                                    </div>
+
+                                    <ArrowRight
+                                        size={18}
+                                        className="text-gray-300 transition group-hover:translate-x-1 group-hover:text-gray-600"
+                                    />
+
+                                </div>
+
+                                <p className="mt-5 text-sm text-gray-500">
+                                    {card.title}
+                                </p>
+
+                                <p className="mt-1 text-2xl font-bold text-gray-900">
+                                    {card.value}
+                                </p>
+
+                                <p className="mt-1 text-xs text-gray-400">
+                                    {card.description}
+                                </p>
+
+                            </Link>
+                        )
+                    })}
+
+                </div>
+
+            </section>
+
+
+            {/* DELIVERY OPERATIONS */}
+
+            <section className="mb-8">
+
+                <div className="mb-4">
+
+                    <h2 className="text-lg font-semibold text-gray-900">
+                        Delivery Operations
+                    </h2>
+
+                    <p className="text-sm text-gray-500">
+                        Current driver and delivery activity
+                    </p>
+
+                </div>
+
+
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+
+                    {driverCards.map((card) => {
+
+                        const Icon = card.icon
+
+                        return (
+                            <Link
+                                key={card.title}
+                                href={card.href}
+                                className="group rounded-2xl border bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-md"
+                            >
+
+                                <div className="flex items-center justify-between">
+
+                                    <div className="flex items-center gap-4">
+
+                                        <div className="rounded-xl bg-gray-100 p-3">
+                                            <Icon
+                                                size={22}
+                                                className="text-gray-700"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <p className="text-sm text-gray-500">
+                                                {card.title}
+                                            </p>
+
+                                            <p className="text-2xl font-bold text-gray-900">
+                                                {card.value}
+                                            </p>
+
+                                            <p className="text-xs text-gray-400">
+                                                {card.description}
+                                            </p>
+                                        </div>
+
+                                    </div>
+
+                                    <ArrowRight
+                                        size={18}
+                                        className="text-gray-300 transition group-hover:translate-x-1 group-hover:text-gray-600"
+                                    />
+
+                                </div>
+
+                            </Link>
+                        )
+                    })}
+
+                </div>
+
+            </section>
+
+
+            {/* FINANCE */}
+
+            <section className="mb-8">
+
+                <div className="mb-4">
+
+                    <h2 className="text-lg font-semibold text-gray-900">
+                        Finance
+                    </h2>
+
+                    <p className="text-sm text-gray-500">
+                        Seller and driver settlement overview
+                    </p>
+
+                </div>
+
+
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+
+                    {financeCards.map((card) => {
+
+                        const Icon = card.icon
+
+                        return (
+                            <Link
+                                key={card.title}
+                                href={card.href}
+                                className="group rounded-2xl border bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-md"
+                            >
+
+                                <div className="flex items-start justify-between">
+
+                                    <div className="rounded-xl bg-gray-100 p-3">
+                                        <Icon
+                                            size={21}
+                                            className="text-gray-700"
+                                        />
+                                    </div>
+
+                                    <ArrowRight
+                                        size={18}
+                                        className="text-gray-300 transition group-hover:translate-x-1 group-hover:text-gray-600"
+                                    />
+
+                                </div>
+
+                                <p className="mt-5 text-sm text-gray-500">
+                                    {card.title}
+                                </p>
+
+                                <p className="mt-1 text-2xl font-bold text-gray-900">
+                                    {card.value}
+                                </p>
+
+                                <p className="mt-1 text-xs text-gray-400">
+                                    {card.description}
+                                </p>
+
+                            </Link>
+                        )
+                    })}
+
+                </div>
+
+            </section>
+
+
+            {/* PLATFORM */}
+
+            <section className="mb-8">
+
+                <div className="mb-4">
+
+                    <h2 className="text-lg font-semibold text-gray-900">
+                        Marketplace
+                    </h2>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+
+                    <Link
+                        href="/admin/stores"
+                        className="rounded-2xl border bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-md"
+                    >
+
+                        <div className="flex items-center gap-4">
+
+                            <div className="rounded-xl bg-gray-100 p-3">
+                                <Store size={22} />
+                            </div>
+
+                            <div>
+                                <p className="text-sm text-gray-500">
+                                    Approved Stores
+                                </p>
+
+                                <p className="text-2xl font-bold">
+                                    {dashboardData.stores}
+                                </p>
+                            </div>
+
+                        </div>
+
+                    </Link>
+
+
+                    <div className="rounded-2xl border bg-white p-5 shadow-sm">
+
+                        <div className="flex items-center gap-4">
+
+                            <div className="rounded-xl bg-gray-100 p-3">
+                                <PackageCheck size={22} />
+                            </div>
+
+                            <div>
+                                <p className="text-sm text-gray-500">
+                                    Products
+                                </p>
+
+                                <p className="text-2xl font-bold">
+                                    {dashboardData.products}
+                                </p>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            {/* EXISTING CHART */}
+
+            <section className="rounded-2xl border bg-white p-4 md:p-6 shadow-sm">
+
+                <div className="mb-5">
+
+                    <h2 className="text-lg font-semibold text-gray-900">
+                        Orders Overview
+                    </h2>
+
+                    <p className="text-sm text-gray-500">
+                        Delivered orders for the selected period
+                    </p>
+
+                </div>
+
+                <OrdersAreaChart
+                    allOrders={dashboardData.allOrders}
+                />
+
+            </section>
 
         </div>
     )
