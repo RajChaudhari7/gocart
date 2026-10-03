@@ -213,7 +213,6 @@ export async function GET(request) {
         // Response
         const dashboardData = {
             ordersToday,
-            gmToday,
             gmvToday: gmvToday.toFixed(2),
             platformRevenueToday: platformRevenueToday.toFixed(2),
             activeDeliveries,
