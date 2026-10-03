@@ -19,7 +19,7 @@ async function createDeliveryFinancialRecords(tx, order, actorId) {
         data: {
             orderId: order.id,
             status: "DELIVERED",
-            actortype: "DRIVER",
+            actorType: "DRIVER",
             actorId,
             note: "Delivery completed after OTP verification",
         },

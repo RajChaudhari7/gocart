@@ -29,7 +29,7 @@ export async function GET(request) {
 
         const where = {}
 
-        if (status && status !== " ALL") {
+        if (status && status !== "ALL") {
             where.status = status
         }
 
