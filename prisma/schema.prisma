@@ -654,6 +654,7 @@ model DriverEarning {
   driver Driver @relation(fields: [driverId], references: [id], onDelete: Cascade)
   order  Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
+  @@unique([driverId, orderId, type])
   @@index([driverId, status])
   @@index([orderId, createdAt])
   @@index([orderId])

@@ -1,6 +1,71 @@
 import prisma from "@/lib/prisma"
 import { NextResponse } from "next/server"
 
+async function createDeliveryFinancialRecords(tx, order, actorId) {
+    const productGross = order.orderItems.reduce(
+        (sum, item) => sum + Number(item.price) * Number(item.quantity),
+        0
+    )
+
+    const commissionPercent = Number(order.commissionPercent ?? 10)
+
+    const commissionAmount = (productGross * commissionPercent) / 100
+
+    const sellerNet = productGross - commissionAmount
+
+    const driverFee = Number(order.driverFee ?? 0)
+
+    await tx.orderEvent.create({
+        data: {
+            orderId: order.id,
+            status: "DELIVERED",
+            actortype: "DRIVER",
+            actorId,
+            note: "Delivery completed after OTP verification",
+        },
+    })
+
+    // driver earning
+    if (order.driverId && driverFee > 0) {
+        await tx.driverEarning.upsert({
+            where: {
+                driverId_orderId_type: {
+                    driverId: order.driverId,
+                    orderId: order.id,
+                    type: "DELIVERY",
+                },
+            },
+            update: {},
+            create: {
+                driverId: order.driverId,
+                orderId: order.id,
+                amount: driverFee,
+                type: "DELIVERY",
+                status: "AVAILABLE",
+                description: `Delivery earning for order ${order.id}`,
+            },
+        })
+    }
+
+    // seller earning
+    await tx.sellerEarning.upsert({
+        where: {
+            orderId: order.id,
+        },
+        update: {},
+        create: {
+            storeId: order.storeId,
+            orderId: order.id,
+            grossAmount: productGross,
+            commissionAmount,
+            refundAdjustment: 0,
+            netAmount: sellerNet,
+            status: "AVAILABLE",
+            description: `Seller earning for order ${order.id}`,
+        },
+    })
+}
+
 export async function POST(request) {
     try {
         const { orderId, otp } = await request.json()
@@ -28,6 +93,15 @@ export async function POST(request) {
             return NextResponse.json(
                 { error: "Order not found" },
                 { status: 404 }
+            )
+        }
+
+        if (order.status === "DELIVERED" || order.otpVerified) {
+            return NextResponse.json({
+                error: "Order has already been delivered"
+            }, {
+                status: 400
+            }
             )
         }
 
@@ -61,19 +135,27 @@ export async function POST(request) {
         }
 
         // 3. Mark as Delivered
-        await prisma.order.update({
-            where: {
-                id: orderId
-            },
-            data: {
-                otpVerified: true,
-                deliveredAt: new Date(),
-                status: "DELIVERED",
-                statusHistory: {
-                    ...(order.statusHistory || {}),
-                    DELIVERED: new Date().toISOString()
+        await prisma.$transaction(async (tx) => {
+            await tx.order.update({
+                where: {
+                    id: orderId
+                },
+                data: {
+                    otpVerified: true,
+                    deliveredAt: new Date(),
+                    status: "DELIVERED",
+                    statusHistory: {
+                        ...(order.statusHistory || {}),
+                        DELIVERED: new Date().toString()
+                    }
                 }
-            }
+            })
+
+            await createDeliveryFinancialRecords(
+                tx,
+                order,
+                order.driverId
+            )
         })
 
         // Save user preferences for AI recommendations
