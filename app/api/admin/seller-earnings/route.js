@@ -1,32 +1,32 @@
-import prisma from "@/lib/prisma";
-import { authAdmin } from "@/middlewares/authAdmin";
-import { NextResponse } from "next/server";
+import prisma from "@/lib/prisma"
+import { authAdmin } from "@/middlewares/authAdmin"
+import { NextResponse } from "next/server"
+
 
 export async function GET(request) {
     try {
-
         const admin = await authAdmin()
 
         if (!admin) {
-            return NextResponse.json({
-                error: "Unauthorized"
-            }, {
-                status: 401
-            }
+            return NextResponse.json(
+                { error: "Unauthorized" },
+                { status: 401 }
             )
         }
 
         const { searchParams } = new URL(request.url)
 
-        const status = searchParams.get("status")
-        const search = searchParams.get("sarch")?.trim()
+        const status = searchParams.get("status") || "ALL"
+        const search = searchParams.get("search")?.trim() || ""
 
         const where = {}
 
-        if (status && status !== "ALL") {
+        // Status filter
+        if (status !== "ALL") {
             where.status = status
         }
 
+        // Search filter
         if (search) {
             where.OR = [
                 {
@@ -35,7 +35,6 @@ export async function GET(request) {
                         mode: "insensitive",
                     },
                 },
-
                 {
                     store: {
                         name: {
@@ -44,7 +43,6 @@ export async function GET(request) {
                         },
                     },
                 },
-
                 {
                     store: {
                         username: {
@@ -56,49 +54,46 @@ export async function GET(request) {
             ]
         }
 
-        const [earnings, summary] = await Promise.all([
-            prisma.sellerEarning.findMany({
-                where,
-                include: {
-                    store: {
-                        select: {
-                            id: true,
-                            name: true,
-                            username: true,
-                            logo: true,
-                        },
-                    },
+        const earnings = await prisma.sellerEarning.findMany({
+            where,
 
-                    order: {
-                        select: {
-                            id: true,
-                            status: true,
-                            createdAt: true,
-                            deliveredAt: true,
-                            total: true,
-                        },
+            include: {
+                store: {
+                    select: {
+                        id: true,
+                        name: true,
+                        username: true,
+                        logo: true,
                     },
                 },
 
-                orderBy: {
-                    createdAt: "desc",
+                order: {
+                    select: {
+                        id: true,
+                        status: true,
+                        total: true,
+                        createdAt: true,
+                        deliveredAt: true,
+                    },
                 },
+            },
 
-                take: 200,
-            }),
+            orderBy: {
+                createdAt: "desc",
+            },
 
-            prisma.sellerEarning.groupBy({
-                by: ["status"],
-                _sum: {
-                    netAmount: true,
-                },
-                _count: {
-                    id: true,
-                },
-            }),
-        ])
+            take: 200,
+        })
 
-        const summaryData = {
+        // Calculate summary from ALL seller earnings.
+        const allEarnings = await prisma.sellerEarning.findMany({
+            select: {
+                netAmount: true,
+                status: true,
+            },
+        })
+
+        const summary = {
             total: 0,
             pending: 0,
             available: 0,
@@ -106,38 +101,42 @@ export async function GET(request) {
             adjusted: 0,
         }
 
-        for (const item of summary) {
-            const amount = Number(item._sum.netAmount || 0)
+        for (const earning of allEarnings) {
+            const amount = Number(earning.netAmount || 0)
 
-            summaryData.total += amount
+            summary.total += amount
 
-            if (item.status === "PENDING") {
-                summaryData.pending += amount
+            if (earning.status === "PENDING") {
+                summary.pending += amount
             }
 
-            if (item.status === "AVAILABLE") {
-                summaryData.available += amount
+            if (earning.status === "AVAILABLE") {
+                summary.available += amount
             }
 
-            if (item.status === "PAID") {
-                summaryData.paid += amount
+            if (earning.status === "PAID") {
+                summary.paid += amount
             }
 
-            if (item.status === "ADJUSTED") {
-                summaryData.adjusted += amount
+            if (earning.status === "ADJUSTED") {
+                summary.adjusted += amount
             }
         }
 
         return NextResponse.json({
+            success: true,
             earnings,
-            summary: summaryData,
+            summary,
         })
 
     } catch (error) {
-        console.error("Seller Earnings Error:", error);
-        return NextResponse.json({
-            error: error.message || "Failed to fetch seller earnings",
-        },
+        console.error("SELLER EARNINGS API ERROR:", error)
+
+        return NextResponse.json(
+            {
+                success: false,
+                error: error.message || "Failed to fetch seller earnings",
+            },
             {
                 status: 500,
             }
