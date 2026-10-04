@@ -1,15 +1,20 @@
 import prisma from "@/lib/prisma"
 import { authAdmin } from "@/middlewares/authAdmin"
+import { getAuth } from "@clerk/nextjs/server"
 import { NextResponse } from "next/server"
 
 
 export async function GET(request) {
     try {
-        const admin = await authAdmin()
 
-        if (!admin) {
-            return NextResponse.json(
-                { error: "Unauthorized" },
+        const { userId } = getAuth(request)
+
+        const isAdmin = await authAdmin(userId)
+
+        if (!isAdmin) {
+            return NextResponse.json({
+                error: "Not authorized"
+            },
                 { status: 401 }
             )
         }
