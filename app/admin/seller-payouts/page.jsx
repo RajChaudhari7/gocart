@@ -116,6 +116,8 @@ export default function SellerPayoutsPage() {
 
     const [payouts, setPayouts] = useState([])
 
+    const [sellerPayables, setSellerPayables] = useState([])
+
     const [payableMap, setPayableMap] =
         useState({})
 
@@ -178,6 +180,12 @@ export default function SellerPayoutsPage() {
             setPayouts(
                 Array.isArray(data.payouts)
                     ? data.payouts
+                    : []
+            )
+
+            setSellerPayables(
+                Array.isArray(data.sellerPayables)
+                    ? data.sellerPayables
                     : []
             )
 
@@ -279,11 +287,9 @@ export default function SellerPayoutsPage() {
 
                     <SummaryCard
                         icon={Wallet}
-                        title="Total Payouts"
-                        value={formatCurrency(
-                            summary.total
-                        )}
-                        description="All seller payouts"
+                        title="Total Payable"
+                        value={formatCurrency(summary.payable)}
+                        description="Available seller earnings"
                     />
 
                     <SummaryCard
@@ -387,6 +393,183 @@ export default function SellerPayoutsPage() {
                         >
                             Search
                         </button>
+
+                    </div>
+
+                </div>
+
+                <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden mb-6">
+
+                    <div className="px-5 py-4 border-b border-gray-200">
+
+                        <h2 className="font-semibold text-gray-900">
+                            Seller Payables
+                        </h2>
+
+                        <p className="text-xs text-gray-500 mt-1">
+                            Seller earnings currently available for payout
+                        </p>
+
+                    </div>
+
+                    <div className="overflow-x-auto">
+
+                        <table className="w-full min-w-[850px]">
+
+                            <thead className="bg-gray-50 border-b border-gray-200">
+
+                                <tr className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+
+                                    <th className="px-5 py-4">
+                                        Seller
+                                    </th>
+
+                                    <th className="px-5 py-4">
+                                        Payable Amount
+                                    </th>
+
+                                    <th className="px-5 py-4">
+                                        Earnings
+                                    </th>
+
+                                    <th className="px-5 py-4">
+                                        Last Earning
+                                    </th>
+
+                                    <th className="px-5 py-4">
+                                        Status
+                                    </th>
+
+                                </tr>
+
+                            </thead>
+
+                            <tbody className="divide-y divide-gray-100">
+
+                                {loading ? (
+
+                                    <tr>
+                                        <td
+                                            colSpan="5"
+                                            className="px-5 py-16 text-center text-gray-500"
+                                        >
+                                            <div className="flex justify-center items-center gap-2">
+
+                                                <RefreshCw
+                                                    size={16}
+                                                    className="animate-spin"
+                                                />
+
+                                                Loading seller payables...
+
+                                            </div>
+                                        </td>
+                                    </tr>
+
+                                ) : sellerPayables.length === 0 ? (
+
+                                    <tr>
+                                        <td
+                                            colSpan="5"
+                                            className="px-5 py-16 text-center text-gray-500"
+                                        >
+                                            No seller earnings are currently available for payout.
+                                        </td>
+                                    </tr>
+
+                                ) : (
+
+                                    sellerPayables.map((seller) => (
+
+                                        <tr
+                                            key={seller.storeId}
+                                            className="hover:bg-gray-50"
+                                        >
+
+                                            <td className="px-5 py-4">
+
+                                                <div className="flex items-center gap-3">
+
+                                                    {seller.store?.logo ? (
+
+                                                        <img
+                                                            src={seller.store.logo}
+                                                            alt=""
+                                                            className="w-10 h-10 rounded-lg object-cover border border-gray-200"
+                                                        />
+
+                                                    ) : (
+
+                                                        <div className="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center">
+
+                                                            <Store
+                                                                size={17}
+                                                                className="text-emerald-600"
+                                                            />
+
+                                                        </div>
+
+                                                    )}
+
+                                                    <div>
+
+                                                        <p className="font-semibold text-gray-900">
+                                                            {seller.store?.name || "Unknown Store"}
+                                                        </p>
+
+                                                        <p className="text-xs text-gray-500">
+                                                            @{seller.store?.username || "-"}
+                                                        </p>
+
+                                                    </div>
+
+                                                </div>
+
+                                            </td>
+
+                                            <td className="px-5 py-4">
+
+                                                <span className="text-lg font-bold text-emerald-600">
+                                                    {formatCurrency(
+                                                        seller.amount
+                                                    )}
+                                                </span>
+
+                                            </td>
+
+                                            <td className="px-5 py-4 text-sm text-gray-600">
+
+                                                {seller.earningCount}
+
+                                            </td>
+
+                                            <td className="px-5 py-4 text-sm text-gray-500">
+
+                                                {formatDate(
+                                                    seller.lastEarningAt
+                                                )}
+
+                                            </td>
+
+                                            <td className="px-5 py-4">
+
+                                                <span className="inline-flex px-2.5 py-1 rounded-full border text-xs font-semibold bg-amber-50 text-amber-700 border-amber-200">
+
+                                                    AVAILABLE
+
+                                                </span>
+
+                                            </td>
+
+                                        </tr>
+
+                                    ))
+
+                                )}
+
+                            </tbody>
+
+                        </table>
 
                     </div>
 

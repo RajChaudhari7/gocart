@@ -5,8 +5,9 @@ import { NextResponse } from "next/server";
 
 export async function GET(request) {
     try {
-        
+        // ---------------------------------------
         // ADMIN AUTH
+        // ---------------------------------------
         const { userId } = getAuth(request);
 
         const isAdmin = await authAdmin(userId);
@@ -17,24 +18,28 @@ export async function GET(request) {
                 { status: 401 }
             );
         }
-        
-        // QUERY PARAMS 
+
+        // ---------------------------------------
+        // QUERY PARAMS
+        // ---------------------------------------
         const { searchParams } = new URL(request.url);
 
         const status = searchParams.get("status") || "ALL";
         const search = searchParams.get("search")?.trim() || "";
 
-        // PAYOUT FILTER   
-        const where = {
+        // ---------------------------------------
+        // PAYOUT HISTORY FILTER
+        // ---------------------------------------
+        const payoutWhere = {
             recipientType: "SELLER",
         };
 
         if (status !== "ALL") {
-            where.status = status;
+            payoutWhere.status = status;
         }
 
         if (search) {
-            where.store = {
+            payoutWhere.store = {
                 OR: [
                     {
                         name: {
@@ -51,10 +56,13 @@ export async function GET(request) {
                 ],
             };
         }
-        
-        // PAYOUT HISTORY        
+
+        // ---------------------------------------
+        // ACTUAL PAYOUT HISTORY
+        // ---------------------------------------
         const payouts = await prisma.payout.findMany({
-            where,
+            where: payoutWhere,
+
             include: {
                 store: {
                     select: {
@@ -67,62 +75,163 @@ export async function GET(request) {
                     },
                 },
             },
+
             orderBy: {
                 createdAt: "desc",
             },
+
             take: 200,
         });
-        
-        // SELLER PAYABLE        
-        const totalSellerPayable = await prisma.sellerEarning.aggregate({
+
+        // ---------------------------------------
+        // SELLER PAYABLES
+        // ---------------------------------------
+        // These are earnings that are available
+        // to be paid to sellers.
+        //
+        // IMPORTANT:
+        // These do NOT require a Payout record.
+        // ---------------------------------------
+
+        const sellerEarnings = await prisma.sellerEarning.findMany({
             where: {
                 status: "AVAILABLE",
+
+                ...(search
+                    ? {
+                        store: {
+                            OR: [
+                                {
+                                    name: {
+                                        contains: search,
+                                        mode: "insensitive",
+                                    },
+                                },
+                                {
+                                    username: {
+                                        contains: search,
+                                        mode: "insensitive",
+                                    },
+                                },
+                            ],
+                        },
+                    }
+                    : {}),
             },
-            _sum: {
-                netAmount: true,
+
+            include: {
+                store: {
+                    select: {
+                        id: true,
+                        name: true,
+                        username: true,
+                        logo: true,
+                        email: true,
+                        contact: true,
+                    },
+                },
+
+                order: {
+                    select: {
+                        id: true,
+                        total: true,
+                        createdAt: true,
+                        deliveredAt: true,
+                    },
+                },
+            },
+
+            orderBy: {
+                createdAt: "desc",
             },
         });
 
-        const payable = Number(
-            totalSellerPayable._sum.netAmount || 0
+        // ---------------------------------------
+        // TOTAL SELLER PAYABLE
+        // ---------------------------------------
+        const payable = sellerEarnings.reduce(
+            (sum, earning) =>
+                sum + Number(earning.netAmount || 0),
+            0
         );
-        
-        // PAYABLE BY STORE       
-        const sellerPayables = await prisma.sellerEarning.groupBy({
-            by: ["storeId"],
-            where: {
-                status: "AVAILABLE",
-            },
-            _sum: {
-                netAmount: true,
-            },
-        });
 
-        const payableMap = {};
+        // ---------------------------------------
+        // PAYABLE BY STORE
+        // ---------------------------------------
+        const payableByStore = {};
 
-        for (const item of sellerPayables) {
-            payableMap[item.storeId] = Number(
-                item._sum.netAmount || 0
+        for (const earning of sellerEarnings) {
+            if (!payableByStore[earning.storeId]) {
+                payableByStore[earning.storeId] = 0;
+            }
+
+            payableByStore[earning.storeId] += Number(
+                earning.netAmount || 0
             );
         }
-        
-        // PAYOUT SUMMARY        
+
+        // ---------------------------------------
+        // GROUP PAYABLES BY STORE
+        // ---------------------------------------
+        const sellerPayablesMap = {};
+
+        for (const earning of sellerEarnings) {
+            const storeId = earning.storeId;
+
+            if (!sellerPayablesMap[storeId]) {
+                sellerPayablesMap[storeId] = {
+                    storeId,
+                    store: earning.store,
+                    amount: 0,
+                    earningCount: 0,
+                    lastEarningAt: earning.createdAt,
+                };
+            }
+
+            sellerPayablesMap[storeId].amount += Number(
+                earning.netAmount || 0
+            );
+
+            sellerPayablesMap[storeId].earningCount += 1;
+
+            if (
+                new Date(earning.createdAt) >
+                new Date(
+                    sellerPayablesMap[storeId].lastEarningAt
+                )
+            ) {
+                sellerPayablesMap[storeId].lastEarningAt =
+                    earning.createdAt;
+            }
+        }
+
+        const sellerPayables = Object.values(
+            sellerPayablesMap
+        );
+
+        // ---------------------------------------
+        // PAYOUT SUMMARY
+        // ---------------------------------------
         const allPayouts = await prisma.payout.groupBy({
             by: ["status"],
+
             where: {
                 recipientType: "SELLER",
             },
+
             _sum: {
                 amount: true,
             },
+
             _count: {
                 id: true,
             },
         });
 
         const summary = {
-            // Current unpaid seller earnings
+            // Money currently owed to sellers
             payable,
+
             // Actual payout history
             total: 0,
             pending: 0,
@@ -177,14 +286,26 @@ export async function GET(request) {
                 summary.cancelledCount += count;
             }
         }
-        
+
+        // ---------------------------------------
+        // RESPONSE
+        // ---------------------------------------
         return NextResponse.json({
             success: true,
 
+            // Actual payout records
             payouts,
 
-            payableMap,
+            // Seller earnings available for payout
+            sellerPayables,
 
+            // Raw earnings
+            sellerEarnings,
+
+            // Store -> payable amount
+            payableByStore,
+
+            // Summary
             summary,
         });
 
@@ -201,7 +322,9 @@ export async function GET(request) {
                     error.message ||
                     "Failed to fetch seller payouts",
             },
-            { status: 500 }
+            {
+                status: 500,
+            }
         );
     }
 }
