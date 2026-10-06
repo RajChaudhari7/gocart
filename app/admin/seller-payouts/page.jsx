@@ -137,7 +137,82 @@ export default function SellerPayoutsPage() {
     const [loading, setLoading] = useState(true)
     const [creatingPayout, setCreatingPayout] = useState(null);
 
+    const [selectedPayout, setSelectedPayout] = useState(null);
+
+    const [transactionId, setTransactionId] = useState("");
+
+    const [markingPaid, setMarkingPaid] = useState(false);
+
     const [error, setError] = useState("")
+
+    const openMarkPaidModal = (payout) => {
+        setSelectedPayout(payout);
+        setTransactionId("");
+    };
+
+    const markPayoutAsPaid = async () => {
+        if (!selectedPayout) return;
+
+        if (!transactionId.trim()) {
+            alert(
+                "Please enter the UTR / transaction ID"
+            );
+            return;
+        }
+
+        try {
+            setMarkingPaid(true);
+
+            const response = await fetch(
+                "/api/admin/seller-payouts",
+                {
+                    method: "PATCH",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json",
+                    },
+
+                    body: JSON.stringify({
+                        payoutId:
+                            selectedPayout.id,
+
+                        action: "MARK_PAID",
+
+                        transactionId:
+                            transactionId.trim(),
+                    }),
+                }
+            );
+
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                throw new Error(
+                    data.error ||
+                    "Failed to mark payout as paid"
+                );
+            }
+
+            alert(
+                "Payout marked as paid successfully."
+            );
+
+            setSelectedPayout(null);
+            setTransactionId("");
+
+            await fetchPayouts();
+        } catch (error) {
+            console.error(error);
+
+            alert(
+                error.message ||
+                "Failed to mark payout as paid"
+            );
+        } finally {
+            setMarkingPaid(false);
+        }
+    };
 
     async function fetchPayouts() {
 
@@ -480,6 +555,28 @@ export default function SellerPayoutsPage() {
                                     <th className="text-right px-5 py-3">
                                         Action
                                     </th>
+
+                                    <td className="px-5 py-4 text-right">
+                                        {payout.status === "PENDING" ? (
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    openMarkPaidModal(payout)
+                                                }
+                                                className="rounded-lg bg-black px-4 py-2 text-sm font-medium text-white"
+                                            >
+                                                Mark Paid
+                                            </button>
+                                        ) : payout.status === "SUCCESS" ? (
+                                            <span className="text-sm font-medium text-green-600">
+                                                Paid
+                                            </span>
+                                        ) : (
+                                            <span className="text-sm text-gray-500">
+                                                {payout.status}
+                                            </span>
+                                        )}
+                                    </td>
                                 </tr>
                             </thead>
 
@@ -782,6 +879,98 @@ export default function SellerPayoutsPage() {
                 </div>
 
             </div>
+
+            {selectedPayout && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                    <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+                        <div className="mb-5">
+                            <h2 className="text-xl font-semibold text-gray-900">
+                                Mark Seller Payout as Paid
+                            </h2>
+
+                            <p className="mt-1 text-sm text-gray-500">
+                                Confirm that the money has actually
+                                been transferred to the seller.
+                            </p>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div className="rounded-xl bg-gray-50 p-4">
+                                <div className="text-xs text-gray-500">
+                                    Seller
+                                </div>
+
+                                <div className="mt-1 font-medium text-gray-900">
+                                    {selectedPayout.store?.name ||
+                                        selectedPayout.store?.username ||
+                                        "Seller"}
+                                </div>
+                            </div>
+
+                            <div className="rounded-xl bg-gray-50 p-4">
+                                <div className="text-xs text-gray-500">
+                                    Amount
+                                </div>
+
+                                <div className="mt-1 text-xl font-bold text-gray-900">
+                                    ₹
+                                    {Number(
+                                        selectedPayout.amount || 0
+                                    ).toLocaleString("en-IN", {
+                                        minimumFractionDigits: 2,
+                                    })}
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="mb-2 block text-sm font-medium text-gray-700">
+                                    UTR / Transaction ID
+                                </label>
+
+                                <input
+                                    type="text"
+                                    value={transactionId}
+                                    onChange={(e) =>
+                                        setTransactionId(
+                                            e.target.value
+                                        )
+                                    }
+                                    placeholder="Enter UTR or transaction reference"
+                                    className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-black"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="mt-6 flex justify-end gap-3">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setSelectedPayout(null);
+                                    setTransactionId("");
+                                }}
+                                disabled={markingPaid}
+                                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700"
+                            >
+                                Cancel
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={markPayoutAsPaid}
+                                disabled={
+                                    markingPaid ||
+                                    !transactionId.trim()
+                                }
+                                className="rounded-lg bg-black px-5 py-2 text-sm font-medium text-white disabled:opacity-50"
+                            >
+                                {markingPaid
+                                    ? "Processing..."
+                                    : "Confirm Payment"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
         </div>
     )

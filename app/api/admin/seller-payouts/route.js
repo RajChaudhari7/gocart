@@ -465,3 +465,193 @@ export async function POST(request) {
         );
     }
 }
+
+export async function PATCH(request) {
+    try {
+        const { userId } = getAuth(request);
+
+        const isAdmin = await authAdmin(userId);
+
+        if (!isAdmin) {
+            return NextResponse.json({
+                success: false,
+                error: "Unauthorized",
+            },
+                {
+                    status: 401
+                }
+            );
+        }
+
+        const body = await request.json();
+
+        const { payoutId, action, transactionId } = body;
+
+        if (!payoutId) {
+            return NextResponse.json(
+                {
+                    success: false,
+                    error: "Payout ID is required",
+                },
+                {
+                    status: 400
+                }
+            );
+        }
+
+        if (action !== "MARK_PAID") {
+            return NextResponse.json(
+                {
+                    success: false,
+                    error: "Invalid payout action",
+                },
+
+                {
+                    status: 400
+                }
+            );
+        }
+
+        if (!transactionId?.trim()) {
+            return NextResponse.json(
+                {
+                    success: false,
+                    error: "UTR/transaction ID is required",
+                },
+
+                {
+                    status: 400
+                }
+            );
+        }
+
+        const result = await prisma.$transaction(async (tx) => {
+            // find payout
+            const payout = await tx.payout.findUnique({
+                where: {
+                    id: payoutId,
+                },
+                include: {
+                    items: {
+                        include: {
+                            sellerEarning: true,
+                        },
+                    },
+                    store: {
+                        select: {
+                            id: true,
+                            name: true,
+                            username: true,
+                        },
+                    },
+                },
+            });
+
+            if (!payout) {
+                throw new Error("Payout not found");
+            }
+
+            // Must be seller payout
+
+            if (payout.recipientType !== "SELLER") {
+                throw new Error("This payable does not belong to a seller ");
+            }
+
+            // prevent duplicate payment
+
+            if (payout.status === "SUCCESS") {
+                throw new Error("This payout has already been marked as paid");
+            }
+
+            // only pending payouts can be paid
+            if (payout.status !== "PENDING") {
+                throw new Error(`Cannot mark payout as paid from ${payout.status} status`);
+            }
+
+            // validate payout items
+
+            if (!payout.items.length) {
+                throw new Error("Payout has no earning items");
+            }
+
+            // make sure earnings are still available
+
+            for (const item of payout.items) {
+                if (item.sellerEarning.status !== "AVAILABLE") {
+                    throw new Error(`Seller earning ${item.sellerEarningId} is no longer available`);
+                }
+            }
+
+            // mark payout success
+
+            const updatedPayout = await tx.payout.update({
+                where: {
+                    id: payout.id,
+                },
+
+                data: {
+                    status: "SUCCESS",
+                    provider: "MANUAL",
+
+                    providerPayoutId: transactionId.trim(),
+
+                    processedAt: new Date(),
+                },
+
+                include: {
+                    store: {
+                        select: {
+                            id: true,
+                            name: true,
+                            username: true,
+                        },
+                    },
+                },
+            });
+
+            // mark seller earnings paid
+
+            const earningIds = payout.items.map((item) => item.sellerEarningId);
+
+            await tx.sellerEarning.updateMany({
+                where: {
+                    id: {
+                        in: earningIds,
+                    },
+
+                    status: "AVAILABLE",
+                },
+
+                data: {
+                    status: "PAID",
+                },
+            });
+
+            return updatedPayout;
+        },
+            {
+                isolationLevel: "Serializable",
+            }
+        );
+
+        return NextResponse.json(
+            {
+                success: true,
+                message: "Seller payout marked as paid successfully",
+                payout: result,
+            }
+        );
+    } catch (error) {
+        console.error("Mark seller payout paid error", error);
+        return NextResponse.json(
+            {
+                success: false,
+                error: error.message || "Failed to mark payout as paid",
+            },
+
+            {
+                status: 500
+            }
+        );
+    }
+} 
