@@ -135,6 +135,7 @@ export default function SellerPayoutsPage() {
     const [status, setStatus] = useState("ALL")
 
     const [loading, setLoading] = useState(true)
+    const [creatingPayout, setCreatingPayout] = useState(null);
 
     const [error, setError] = useState("")
 
@@ -223,9 +224,56 @@ export default function SellerPayoutsPage() {
         }
     }
 
+
+
     useEffect(() => {
         fetchPayouts()
     }, [status])
+
+    const createSellerPayout = async (storeId) => {
+        try {
+            setCreatingPayout(storeId);
+
+            const response = await fetch(
+                "/api/admin/seller-payouts",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        storeId,
+                    }),
+                }
+            );
+
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                throw new Error(
+                    data.error || "Failed to create payout"
+                );
+            }
+
+            alert(
+                `Payout created successfully: ₹${Number(
+                    data.amount
+                ).toLocaleString("en-IN")}`
+            );
+
+            // Refresh seller payout data
+            await fetchPayouts();
+        } catch (error) {
+            console.error(error);
+
+            alert(
+                error.message ||
+                "Failed to create seller payout"
+            );
+        } finally {
+            setCreatingPayout(null);
+        }
+    };
 
     return (
         <div className="min-h-screen bg-gray-50 text-gray-900">
@@ -398,181 +446,124 @@ export default function SellerPayoutsPage() {
 
                 </div>
 
-                <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden mb-6">
-
-                    <div className="px-5 py-4 border-b border-gray-200">
-
-                        <h2 className="font-semibold text-gray-900">
+                <div className="rounded-xl border bg-white overflow-hidden">
+                    <div className="p-5 border-b">
+                        <h2 className="text-lg font-semibold text-gray-900">
                             Seller Payables
                         </h2>
 
-                        <p className="text-xs text-gray-500 mt-1">
-                            Seller earnings currently available for payout
+                        <p className="text-sm text-gray-500 mt-1">
+                            Available seller earnings ready for payout.
                         </p>
-
                     </div>
 
                     <div className="overflow-x-auto">
-
-                        <table className="w-full min-w-[850px]">
-
-                            <thead className="bg-gray-50 border-b border-gray-200">
-
-                                <tr className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-
-                                    <th className="px-5 py-4">
+                        <table className="w-full text-sm">
+                            <thead className="bg-gray-50 border-b">
+                                <tr>
+                                    <th className="text-left px-5 py-3">
                                         Seller
                                     </th>
 
-                                    <th className="px-5 py-4">
-                                        Payable Amount
-                                    </th>
-
-                                    <th className="px-5 py-4">
+                                    <th className="text-left px-5 py-3">
                                         Earnings
                                     </th>
 
-                                    <th className="px-5 py-4">
+                                    <th className="text-left px-5 py-3">
                                         Last Earning
                                     </th>
 
-                                    <th className="px-5 py-4">
-                                        Status
+                                    <th className="text-right px-5 py-3">
+                                        Payable
                                     </th>
 
+                                    <th className="text-right px-5 py-3">
+                                        Action
+                                    </th>
                                 </tr>
-
                             </thead>
 
-                            <tbody className="divide-y divide-gray-100">
+                            <tbody className="divide-y">
+                                {sellerPayables.map((item) => (
+                                    <tr key={item.storeId}>
+                                        <td className="px-5 py-4">
+                                            <div className="font-medium text-gray-900">
+                                                {item.store?.name ||
+                                                    item.store?.username ||
+                                                    "Unknown Seller"}
+                                            </div>
 
-                                {loading ? (
-
-                                    <tr>
-                                        <td
-                                            colSpan="5"
-                                            className="px-5 py-16 text-center text-gray-500"
-                                        >
-                                            <div className="flex justify-center items-center gap-2">
-
-                                                <RefreshCw
-                                                    size={16}
-                                                    className="animate-spin"
-                                                />
-
-                                                Loading seller payables...
-
+                                            <div className="text-xs text-gray-500">
+                                                {item.store?.email ||
+                                                    item.store?.contact ||
+                                                    ""}
                                             </div>
                                         </td>
-                                    </tr>
 
-                                ) : sellerPayables.length === 0 ? (
+                                        <td className="px-5 py-4 text-gray-700">
+                                            {item.earningCount}
+                                        </td>
 
-                                    <tr>
-                                        <td
-                                            colSpan="5"
-                                            className="px-5 py-16 text-center text-gray-500"
-                                        >
-                                            No seller earnings are currently available for payout.
+                                        <td className="px-5 py-4 text-gray-600">
+                                            {item.lastEarningAt
+                                                ? new Date(
+                                                    item.lastEarningAt
+                                                ).toLocaleDateString(
+                                                    "en-IN"
+                                                )
+                                                : "-"}
+                                        </td>
+
+                                        <td className="px-5 py-4 text-right">
+                                            <span className="font-semibold text-gray-900">
+                                                ₹
+                                                {Number(
+                                                    item.amount || 0
+                                                ).toLocaleString(
+                                                    "en-IN",
+                                                    {
+                                                        minimumFractionDigits: 2,
+                                                    }
+                                                )}
+                                            </span>
+                                        </td>
+
+                                        <td className="px-5 py-4 text-right">
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    createSellerPayout(
+                                                        item.storeId
+                                                    )
+                                                }
+                                                disabled={
+                                                    creatingPayout ===
+                                                    item.storeId
+                                                }
+                                                className="inline-flex items-center justify-center rounded-lg bg-black px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+                                            >
+                                                {creatingPayout ===
+                                                    item.storeId
+                                                    ? "Creating..."
+                                                    : "Create Payout"}
+                                            </button>
                                         </td>
                                     </tr>
+                                ))}
 
-                                ) : (
-
-                                    sellerPayables.map((seller) => (
-
-                                        <tr
-                                            key={seller.storeId}
-                                            className="hover:bg-gray-50"
+                                {sellerPayables.length === 0 && (
+                                    <tr>
+                                        <td
+                                            colSpan={5}
+                                            className="px-5 py-10 text-center text-gray-500"
                                         >
-
-                                            <td className="px-5 py-4">
-
-                                                <div className="flex items-center gap-3">
-
-                                                    {seller.store?.logo ? (
-
-                                                        <img
-                                                            src={seller.store.logo}
-                                                            alt=""
-                                                            className="w-10 h-10 rounded-lg object-cover border border-gray-200"
-                                                        />
-
-                                                    ) : (
-
-                                                        <div className="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center">
-
-                                                            <Store
-                                                                size={17}
-                                                                className="text-emerald-600"
-                                                            />
-
-                                                        </div>
-
-                                                    )}
-
-                                                    <div>
-
-                                                        <p className="font-semibold text-gray-900">
-                                                            {seller.store?.name || "Unknown Store"}
-                                                        </p>
-
-                                                        <p className="text-xs text-gray-500">
-                                                            @{seller.store?.username || "-"}
-                                                        </p>
-
-                                                    </div>
-
-                                                </div>
-
-                                            </td>
-
-                                            <td className="px-5 py-4">
-
-                                                <span className="text-lg font-bold text-emerald-600">
-                                                    {formatCurrency(
-                                                        seller.amount
-                                                    )}
-                                                </span>
-
-                                            </td>
-
-                                            <td className="px-5 py-4 text-sm text-gray-600">
-
-                                                {seller.earningCount}
-
-                                            </td>
-
-                                            <td className="px-5 py-4 text-sm text-gray-500">
-
-                                                {formatDate(
-                                                    seller.lastEarningAt
-                                                )}
-
-                                            </td>
-
-                                            <td className="px-5 py-4">
-
-                                                <span className="inline-flex px-2.5 py-1 rounded-full border text-xs font-semibold bg-amber-50 text-amber-700 border-amber-200">
-
-                                                    AVAILABLE
-
-                                                </span>
-
-                                            </td>
-
-                                        </tr>
-
-                                    ))
-
+                                            No seller payable earnings found.
+                                        </td>
+                                    </tr>
                                 )}
-
                             </tbody>
-
                         </table>
-
                     </div>
-
                 </div>
 
                 {/* Table */}

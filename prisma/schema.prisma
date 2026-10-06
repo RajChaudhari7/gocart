@@ -345,10 +345,11 @@ model Store {
 
   Product        Product[]
   Order          Order[]
-  user           User            @relation(fields: [userId], references: [id])
+  user           User                 @relation(fields: [userId], references: [id])
   followers      StoreFollower[]
   sellerEarnings SellerEarning[]
   payouts        Payout[]
+  payoutProfile  SellerPayoutProfile?
 }
 
 model Driver {
@@ -678,8 +679,9 @@ model SellerEarning {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  store      Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  order      Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  payoutItems PayoutItem[]
 
   @@index([storeId, status])
   @@index([storeId, createdAt])
@@ -722,10 +724,54 @@ model Payout {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  store  Store?  @relation(fields: [storeId], references: [id])
-  driver Driver? @relation(fields: [driverId], references: [id])
+  store       Store?       @relation(fields: [storeId], references: [id])
+  driver      Driver?      @relation(fields: [driverId], references: [id])
+  items PayoutItem[]
 
   @@index([storeId, status])
   @@index([driverId, status])
   @@index([status, createdAt])
+}
+
+enum PayoutMethod {
+  BANK
+  UPI
+}
+
+model SellerPayoutProfile {
+  id String @id @default(cuid())
+
+  storeId String @unique
+
+  method PayoutMethod
+
+  accountHolderName String?
+  accountNumber     String?
+  ifsc              String?
+
+  upiId String?
+
+  isVerified Boolean @default(false)
+  isActive   Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+}
+
+model PayoutItem {
+  id String @id @default(cuid())
+
+  payoutId        String
+  sellerEarningId String
+
+  amount Float
+
+  payout Payout @relation(fields: [payoutId], references: [id], onDelete: Cascade)
+
+  sellerEarning SellerEarning @relation(fields: [sellerEarningId], references: [id], onDelete: Cascade)
+
+  @@unique([sellerEarningId])
+  @@index([payoutId])
 }

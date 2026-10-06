@@ -328,3 +328,140 @@ export async function GET(request) {
         );
     }
 }
+
+export async function POST(request) {
+    try {
+
+        const { userId } = getAuth(request)
+        const isAdmin = await authAdmin(userId)
+
+        if (!isAdmin) {
+            return NextResponse.json({
+                success: false, error: "Unauthorized"
+            },
+                {
+                    status: 401
+                }
+            );
+        }
+
+        const body = await request.json();
+        const { storeId } = body;
+
+        if (!storeId) {
+            return NextResponse.json(
+                { success: false, error: "Store Id required" },
+                { status: 400 }
+            );
+        }
+
+        const result = await prisma.$transaction(
+            async (tx) => {
+                // check store
+                const store = await tx.store.findUnique({
+                    where: {
+                        id: storeId,
+                    },
+
+                    include: {
+                        payoutProfile: true,
+                    },
+                });
+
+                if (!store) {
+                    throw new Error("Store not found");
+                }
+
+                // seller must have payout profile
+
+                if (!store.payoutProfile) {
+                    throw new Error("Seller payout profile is not configured");
+                }
+
+                if (!store.payoutProfile.isActive) {
+                    throw new Error("Seller payout profile is inactive");
+                }
+
+                if (!store.payoutProfile.isVerified) {
+                    throw new Error("Seller payout profile is not verified");
+                }
+
+                // Get all available seller earnings
+
+                const earnings = await tx.sellerEarning.findMany({
+                    where: {
+                        storeId,
+                        status: "AVAILABLE",
+                    },
+
+                    orderBy: {
+                        createdAt: "asc",
+                    },
+                });
+
+                // calculate payable amount
+
+                const amount = earnings.reduce((sum, earning) => sum + Number(earning.netAmount || 0), 0);
+
+                if (amount <= 0) {
+                    throw new Error("Seller payable amount must be greater than zero");
+                }
+
+                // create payout
+
+                const payout = await tx.payout.create({
+                    data: {
+                        recipientType: "SELLER",
+                        storeId,
+                        amount,
+                        status: "PENDING",
+                        provider: "MANUAL"
+                    },
+                });
+
+                // attach earnings to payout
+
+                await tx.payoutItem.createMany({
+                    data: earnings.map((earning) => ({
+                        payoutId: payout.id,
+                        sellerEarningId: earning.id,
+                        amount: Number(earning.netAmount || 0),
+                    })),
+                });
+
+                // payable becomes PAID when admin transfer the money
+                return {
+                    payout,
+                    earningCount: earnings.length,
+                    amount,
+                };
+            },
+
+            {
+
+                isolationLevel: "Serializable",
+            }
+        );
+
+        return NextResponse.json({
+            success: true,
+            message: "Seller Payout created successfully",
+            payout: result.payout,
+            earningCount: result.earningCount,
+            amount: result.amount,
+        });
+
+    } catch (error) {
+        console.error("CREATE SELLER PAYOUT ERROR:", error);
+
+        return NextResponse.json(
+            {
+                success: false,
+                error:
+                    error.message ||
+                    "Failed to create seller payout",
+            },
+            { status: 500 }
+        );
+    }
+}
