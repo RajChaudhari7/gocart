@@ -63,6 +63,13 @@ const StoreSidebar = ({
       href: "/store/profile",
       icon: StoreIcon,
     },
+
+    {
+      name: "Payout Settings",
+      href: "/store/payout-profile",
+      icon: StoreIcon
+    }
+
   ];
 
   return (
@@ -114,8 +121,8 @@ const StoreSidebar = ({
 
               <span
                 className={`h-1.5 w-1.5 rounded-full ${storeInfo?.isActive
-                    ? "bg-emerald-500"
-                    : "bg-red-400"
+                  ? "bg-emerald-500"
+                  : "bg-red-400"
                   }`}
               />
             </div>
@@ -136,8 +143,8 @@ const StoreSidebar = ({
                 key={link.href}
                 href={link.href}
                 className={`group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all duration-200 ${active
-                    ? "bg-orange-50 text-orange-600"
-                    : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                  ? "bg-orange-50 text-orange-600"
+                  : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
                   }`}
               >
 
@@ -153,8 +160,8 @@ const StoreSidebar = ({
                   size={18}
                   strokeWidth={active ? 2.4 : 2}
                   className={`shrink-0 ${active
-                      ? "text-orange-500"
-                      : "text-slate-400 group-hover:text-slate-600"
+                    ? "text-orange-500"
+                    : "text-slate-400 group-hover:text-slate-600"
                     }`}
                 />
 
@@ -187,8 +194,8 @@ const StoreSidebar = ({
 
               <span
                 className={`h-2 w-2 rounded-full ${storeInfo?.isActive
-                    ? "bg-emerald-500"
-                    : "bg-red-400"
+                  ? "bg-emerald-500"
+                  : "bg-red-400"
                   }`}
               />
 
@@ -230,8 +237,8 @@ const StoreSidebar = ({
 
                 <div
                   className={`relative flex h-9 w-9 items-center justify-center rounded-xl transition-all ${active
-                      ? "bg-orange-500 text-white shadow-sm shadow-orange-200"
-                      : "text-slate-400"
+                    ? "bg-orange-500 text-white shadow-sm shadow-orange-200"
+                    : "text-slate-400"
                     }`}
                 >
                   <Icon
@@ -252,8 +259,8 @@ const StoreSidebar = ({
 
                 <span
                   className={`max-w-[72px] truncate text-[9px] font-bold ${active
-                      ? "text-orange-600"
-                      : "text-slate-400"
+                    ? "text-orange-600"
+                    : "text-slate-400"
                     }`}
                 >
                   {link.name}
