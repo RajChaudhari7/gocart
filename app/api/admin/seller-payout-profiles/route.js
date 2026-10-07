@@ -139,7 +139,7 @@ export async function PATCH(request) {
             );
         }
 
-        if (!["VERIFIED", "DISABLE", "ENABLE"].includes(
+        if (!["VERIFY", "DISABLE", "ENABLE"].includes(
             action
         )) {
             return NextResponse.json(
