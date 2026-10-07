@@ -29,6 +29,7 @@ const AdminSidebar = () => {
     { name: 'DriversList', href: '/admin/driverTable', icon: PersonStandingIcon },
     { name: 'Platform', href: '/admin/platform-settings', icon: Settings2Icon },
     { name: 'Features', href: '/admin/featured', icon: SparklesIcon },
+    { name: 'Verify-Store', href: '/admin/verify-store-payout', icon: Settings2Icon },
   ]
 
   if (!user) return null
