@@ -286,9 +286,7 @@ export default function SellerPayoutsPage() {
                     : []
             )
 
-            setPayableMap(
-                data.payableMap || {}
-            )
+            setPayableMap(data.payableByStore || {})
 
             setSummary({
                 payable: Number(
@@ -375,11 +373,22 @@ export default function SellerPayoutsPage() {
                 )
             }
 
-            alert(
-                `Payout created successfully: ${formatCurrency(
-                    data.amount
-                )}`
-            )
+            if (data.outcomeUnknown) {
+                alert(
+                    "Payout status is not confirmed yet. Refresh the ledger and check its status before retrying."
+                )
+            } else if (data.alreadySubmitted) {
+                alert(
+                    "This seller already has a payout in progress. Check the ledger for its latest status."
+                )
+            } else {
+                alert(
+                    `${data.message || "Payout request submitted."}${data.payout?.amount != null
+                        ? ` Amount: ${formatCurrency(data.payout.amount)}`
+                        : ""
+                    }`
+                )
+            }
 
             await fetchPayouts()
         } catch (error) {
@@ -556,6 +565,7 @@ export default function SellerPayoutsPage() {
 
                         <button
                             onClick={fetchPayouts}
+                            disabled={loading}
                             className="px-5 py-3 bg-emerald-600 text-white rounded-xl font-semibold hover:bg-emerald-700"
                         >
                             Search
@@ -977,29 +987,29 @@ export default function SellerPayoutsPage() {
 
                                                     <td className="px-5 py-4 text-right">
 
-                                                        {payout.status ===
-                                                            "PENDING" ? (
+                                                        {payout.status === "SUCCESS" ? (
+                                                            <span className="text-sm font-medium text-emerald-600">
+                                                                Paid
+                                                            </span>
+                                                        ) : payout.provider === "RAZORPAYX" ? (
+                                                            <span className="text-sm text-gray-500">
+                                                                {payout.status === "FAILED"
+                                                                    ? "Failed — review before retrying"
+                                                                    : payout.status === "CANCELLED"
+                                                                        ? "Cancelled"
+                                                                        : "Awaiting provider"}
+                                                            </span>
+                                                        ) : payout.status === "PENDING" ? (
                                                             <button
                                                                 type="button"
-                                                                onClick={() =>
-                                                                    openMarkPaidModal(
-                                                                        payout
-                                                                    )
-                                                                }
+                                                                onClick={() => openMarkPaidModal(payout)}
                                                                 className="rounded-lg bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
                                                             >
                                                                 Mark Paid
                                                             </button>
-                                                        ) : payout.status ===
-                                                            "SUCCESS" ? (
-                                                            <span className="text-sm font-medium text-emerald-600">
-                                                                Paid
-                                                            </span>
                                                         ) : (
                                                             <span className="text-sm text-gray-500">
-                                                                {
-                                                                    payout.status
-                                                                }
+                                                                {payout.status}
                                                             </span>
                                                         )}
 

@@ -679,8 +679,8 @@ model SellerEarning {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  store      Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  order      Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  store       Store        @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  order       Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
   payoutItems PayoutItem[]
 
   @@index([storeId, status])
@@ -716,6 +716,8 @@ model Payout {
   provider         String?
   providerPayoutId String?
 
+  idempotencyKey String? @unique
+
   failureReason String?
 
   requestedAt DateTime  @default(now())
@@ -724,9 +726,9 @@ model Payout {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  store       Store?       @relation(fields: [storeId], references: [id])
-  driver      Driver?      @relation(fields: [driverId], references: [id])
-  items PayoutItem[]
+  store  Store?       @relation(fields: [storeId], references: [id])
+  driver Driver?      @relation(fields: [driverId], references: [id])
+  items  PayoutItem[]
 
   @@index([storeId, status])
   @@index([driverId, status])
@@ -750,6 +752,10 @@ model SellerPayoutProfile {
   ifsc              String?
 
   upiId String?
+
+  provider              String?
+  providerContactId     String?
+  providerFundAccountId String?
 
   isVerified Boolean @default(false)
   isActive   Boolean @default(true)
