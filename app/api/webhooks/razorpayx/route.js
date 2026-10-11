@@ -27,6 +27,12 @@ export async function POST(request) {
         const signature = request.headers.get("x-razorpay-signature");
 
         if (!validSignature(rawBody, signature)) {
+            console.error("RazorpayX webhook signature validation failed", {
+                hasSignature: Boolean(signature),
+                hasSecret: Boolean(process.env.RAZORPAYX_WEBHOOK_SECRET),
+                signatureLength: signature?.length ?? 0,
+            });
+
             return NextResponse.json(
                 { success: false, error: "Invalid webhook signature" },
                 { status: 400 }
@@ -123,11 +129,11 @@ export async function POST(request) {
                     },
                     data: { status: "PAID" },
                 });
-            } else if (isFailure) {
+            } else if (isFailure && eventName !== "payout.reversed") {
                 await tx.sellerEarning.updateMany({
                     where: {
                         id: { in: earningIds },
-                        status: "PAID",
+                        status: { not: "PAID" },
                     },
                     data: { status: "AVAILABLE" },
                 });
