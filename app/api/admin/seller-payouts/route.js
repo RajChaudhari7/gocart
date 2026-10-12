@@ -557,11 +557,15 @@ export async function POST(request) {
 
             // Keep the payout record and its idempotency key intact.
             // The next attempt must resume this same logical payout.
-            console.error("RazorpayX outcome needs reconciliation", {
-                payoutId: payout.id,
+
+            console.error("RazorpayX payout request needs reconciliation", {
+                internalPayoutId: payout.id,
                 providerStatus: error.providerStatus || null,
+                providerRejected: Boolean(error.providerRejected),
+                providerError: error.providerError || null,
                 message: error.message,
             });
+
 
             return NextResponse.json(
                 {
@@ -592,10 +596,21 @@ export async function POST(request) {
             providerPayout.status || ""
         ).toLowerCase();
 
+
         const confirmedFailure = [
             "failed",
             "rejected",
+            "reversed",
         ].includes(providerStatus);
+
+        const providerFailureReason =
+            providerPayout.failure_reason ||
+            providerPayout.status_details?.description ||
+            providerPayout.status_details?.reason ||
+            (providerStatus
+                ? `RazorpayX status: ${providerStatus}`
+                : null);
+
 
         // Do not mark earnings PAID here. The verified webhook is the
         // authoritative confirmation path for successful payouts.
@@ -624,8 +639,7 @@ export async function POST(request) {
                     providerPayoutId: providerPayout.id,
                     status: confirmedFailure ? "FAILED" : "PROCESSING",
                     failureReason: confirmedFailure
-                        ? providerPayout.failure_reason ||
-                        `RazorpayX status: ${providerStatus}`
+                        ? providerFailureReason
                         : null,
                     processedAt: confirmedFailure ? new Date() : null,
                 },

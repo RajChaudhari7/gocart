@@ -3,29 +3,31 @@ import crypto from "node:crypto";
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
+
 function validSignature(rawBody, signature) {
     const secret = process.env.RAZORPAYX_WEBHOOK_SECRET;
 
-    if (!secret || !signature) return false;
+    if (
+        !secret ||
+        !signature ||
+        !/^[a-f0-9]{64}$/i.test(signature)
+    ) {
+        return false;
+    }
 
     const expected = crypto
         .createHmac("sha256", secret)
         .update(rawBody)
         .digest();
 
-    let received;
-
-    try {
-        received = Buffer.from(signature, "hex");
-    } catch {
-        return false;
-    }
+    const received = Buffer.from(signature, "hex");
 
     return (
         received.length === expected.length &&
         crypto.timingSafeEqual(received, expected)
     );
 }
+
 
 export async function POST(request) {
     try {
@@ -78,6 +80,7 @@ export async function POST(request) {
             });
 
             // Fall back to our internal payout ID.
+
             if (!payout && payoutEntity.reference_id) {
                 payout = await tx.payout.findFirst({
                     where: {
@@ -87,6 +90,7 @@ export async function POST(request) {
                     include: { items: true },
                 });
             }
+
 
             if (!payout) {
                 console.error("Unmatched RazorpayX payout webhook", {
@@ -101,19 +105,24 @@ export async function POST(request) {
                 );
             }
 
+
             const terminalStatuses = [
                 "SUCCESS",
                 "FAILED",
                 "CANCELLED",
             ];
 
-            // Ignore delayed events unless this is a confirmed reversal.
-            if (
-                terminalStatuses.includes(payout.status) &&
-                !isReversed
-            ) {
+            if (terminalStatuses.includes(payout.status)) {
+                console.warn("Ignoring webhook for terminal payout", {
+                    internalPayoutId: payout.id,
+                    providerPayoutId: payoutEntity.id,
+                    currentStatus: payout.status,
+                    eventName,
+                });
+
                 return;
             }
+
 
             // Do not let an old in-progress event undo a terminal state.
             if (
@@ -124,12 +133,15 @@ export async function POST(request) {
             }
 
             const statusDetails = payoutEntity.status_details;
+
             const failureReason =
                 statusDetails?.description ||
                 statusDetails?.reason ||
                 payoutEntity.failure_reason ||
                 payoutEntity.error?.description ||
-                `RazorpayX event: ${eventName}`;
+                `RazorpayX event: ${eventName}; status: ${payoutEntity.status || "unknown"
+                }`;
+
 
             const nextStatus = isSuccess
                 ? "SUCCESS"
