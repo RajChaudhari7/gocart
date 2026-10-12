@@ -13,7 +13,13 @@ function validSignature(rawBody, signature) {
         .update(rawBody)
         .digest();
 
-    const received = Buffer.from(signature, "hex");
+    let received;
+
+    try {
+        received = Buffer.from(signature, "hex");
+    } catch {
+        return false;
+    }
 
     return (
         received.length === expected.length &&
@@ -27,12 +33,6 @@ export async function POST(request) {
         const signature = request.headers.get("x-razorpay-signature");
 
         if (!validSignature(rawBody, signature)) {
-            console.error("RazorpayX webhook signature validation failed", {
-                hasSignature: Boolean(signature),
-                hasSecret: Boolean(process.env.RAZORPAYX_WEBHOOK_SECRET),
-                signatureLength: signature?.length ?? 0,
-            });
-
             return NextResponse.json(
                 { success: false, error: "Invalid webhook signature" },
                 { status: 400 }
@@ -41,18 +41,19 @@ export async function POST(request) {
 
         const event = JSON.parse(rawBody);
         const payoutEntity = event?.payload?.payout?.entity;
+        const eventName = event?.event;
 
-        if (!payoutEntity?.id) {
+        if (!payoutEntity?.id || !eventName) {
             return NextResponse.json({ received: true });
         }
 
-        const eventName = event.event;
-
         const isSuccess = eventName === "payout.processed";
+        const isReversed = eventName === "payout.reversed";
+
         const isFailure = [
             "payout.failed",
-            "payout.reversed",
             "payout.rejected",
+            "payout.reversed",
         ].includes(eventName);
 
         const isInProgress = [
@@ -67,35 +68,68 @@ export async function POST(request) {
         }
 
         await prisma.$transaction(async (tx) => {
-            // reference_id is the internal payout ID we send to RazorpayX.
+            // Prefer the provider's unique payout ID.
             let payout = await tx.payout.findFirst({
                 where: {
                     provider: "RAZORPAYX",
-                    OR: [
-                        { providerPayoutId: payoutEntity.id },
-                        ...(payoutEntity.reference_id
-                            ? [{ id: payoutEntity.reference_id }]
-                            : []),
-                    ],
+                    providerPayoutId: payoutEntity.id,
                 },
                 include: { items: true },
             });
 
+            // Fall back to our internal payout ID.
+            if (!payout && payoutEntity.reference_id) {
+                payout = await tx.payout.findFirst({
+                    where: {
+                        provider: "RAZORPAYX",
+                        id: payoutEntity.reference_id,
+                    },
+                    include: { items: true },
+                });
+            }
+
             if (!payout) {
-                // Acknowledge valid but currently unmatched events. Log and
-                // reconcile them operationally rather than inventing a record.
                 console.error("Unmatched RazorpayX payout webhook", {
                     providerPayoutId: payoutEntity.id,
-                    referenceId: payoutEntity.reference_id,
+                    referenceId: payoutEntity.reference_id ?? null,
                     eventName,
                 });
+
+                // Let the provider retry while we investigate the mismatch.
+                throw new Error(
+                    `Unmatched RazorpayX payout: ${payoutEntity.id}`
+                );
+            }
+
+            const terminalStatuses = [
+                "SUCCESS",
+                "FAILED",
+                "CANCELLED",
+            ];
+
+            // Ignore delayed events unless this is a confirmed reversal.
+            if (
+                terminalStatuses.includes(payout.status) &&
+                !isReversed
+            ) {
                 return;
             }
 
-            // Never overwrite a terminal state due to delayed webhook delivery.
-            if (["SUCCESS", "FAILED", "CANCELLED"].includes(payout.status)) {
+            // Do not let an old in-progress event undo a terminal state.
+            if (
+                payout.status === "SUCCESS" &&
+                isInProgress
+            ) {
                 return;
             }
+
+            const statusDetails = payoutEntity.status_details;
+            const failureReason =
+                statusDetails?.description ||
+                statusDetails?.reason ||
+                payoutEntity.failure_reason ||
+                payoutEntity.error?.description ||
+                `RazorpayX event: ${eventName}`;
 
             const nextStatus = isSuccess
                 ? "SUCCESS"
@@ -109,11 +143,12 @@ export async function POST(request) {
                     providerPayoutId: payoutEntity.id,
                     status: nextStatus,
                     failureReason: isFailure
-                        ? payoutEntity.failure_reason ||
-                        payoutEntity.error?.description ||
-                        `RazorpayX event: ${eventName}`
+                        ? failureReason
                         : null,
-                    processedAt: isSuccess || isFailure ? new Date() : null,
+                    processedAt:
+                        isSuccess || isFailure
+                            ? new Date()
+                            : null,
                 },
             });
 
@@ -129,7 +164,17 @@ export async function POST(request) {
                     },
                     data: { status: "PAID" },
                 });
-            } else if (isFailure && eventName !== "payout.reversed") {
+            } else if (isReversed) {
+                // The provider reports that the transfer was reversed.
+                // Reconcile previously paid earnings so they can be paid again.
+                await tx.sellerEarning.updateMany({
+                    where: {
+                        id: { in: earningIds },
+                        status: "PAID",
+                    },
+                    data: { status: "AVAILABLE" },
+                });
+            } else if (isFailure) {
                 await tx.sellerEarning.updateMany({
                     where: {
                         id: { in: earningIds },
