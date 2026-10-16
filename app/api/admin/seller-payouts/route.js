@@ -747,12 +747,19 @@ export async function PATCH(request) {
                     );
                 }
 
-                if (payout.provider === "RAZORPAYX") {
+
+                if (
+                    payout.provider === "RAZORPAYX" ||
+                    payout.provider === "TEST_SIMULATION"
+                ) {
                     throw new ApiError(
-                        "RazorpayX payouts can only be completed through provider confirmation",
+                        payout.provider === "TEST_SIMULATION"
+                            ? "Test simulation payouts cannot be marked as paid"
+                            : "RazorpayX payouts can only be completed through provider confirmation",
                         400
                     );
                 }
+
 
                 if (payout.status === "SUCCESS") {
                     throw new ApiError(
