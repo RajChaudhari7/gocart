@@ -730,6 +730,8 @@ model Payout {
   driver Driver?      @relation(fields: [driverId], references: [id])
   items  PayoutItem[]
 
+  providerEventAt Int?
+
   @@index([storeId, status])
   @@index([driverId, status])
   @@index([status, createdAt])
@@ -778,6 +780,15 @@ model PayoutItem {
 
   sellerEarning SellerEarning @relation(fields: [sellerEarningId], references: [id], onDelete: Cascade)
 
-  @@unique([sellerEarningId])
+  @@index([sellerEarningId])
   @@index([payoutId])
+}
+
+model RazorpayWebhookEvent {
+  id               String   @id @default(cuid())
+  eventId          String   @unique
+  eventType        String
+  providerPayoutId String?
+  providerEventAt  Int?
+  createdAt        DateTime @default(now())
 }
