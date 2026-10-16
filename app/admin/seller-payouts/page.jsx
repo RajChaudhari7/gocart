@@ -151,18 +151,25 @@ export default function SellerPayoutsPage() {
             }
 
             const response = await fetch(
-                `/api/admin/sellerpayout?${params.toString()}`,
-                {
-                    cache: "no-store",
-                }
-            )
+                `/api/admin/sellerpayout?${params.toString()}`
+            );
 
-            const data = await response.json()
+            const contentType = response.headers.get("content-type") || "";
 
-            if (!response.ok || !data.success) {
+            if (!contentType.includes("application/json")) {
+                const responseText = await response.text();
+
                 throw new Error(
-                    data.error || "Failed to load seller payouts"
-                )
+                    `Payout API returned HTML instead of JSON. ` +
+                    `Status: ${response.status}. ` +
+                    `Response: ${responseText.slice(0, 200)}`
+                );
+            }
+
+            const data = await response.json();
+
+            if (!response.ok || data.success === false) {
+                throw new Error(data.error || "Failed to load seller payouts");
             }
 
             setPayouts(
