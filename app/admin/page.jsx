@@ -181,7 +181,7 @@ export default function AdminDashboard() {
             value: dashboardData.pendingDriverPayouts,
             icon: Clock3,
             description: "Payouts awaiting processing",
-            href: "/admin/driver-payouts",
+            href: "/admin/driver-payables",
         },
     ]
 
