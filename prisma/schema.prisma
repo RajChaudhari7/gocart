@@ -655,6 +655,8 @@ model DriverEarning {
   driver Driver @relation(fields: [driverId], references: [id], onDelete: Cascade)
   order  Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
+  payoutItems PayoutItem[]
+
   @@unique([driverId, orderId, type])
   @@index([driverId, status])
   @@index([orderId, createdAt])
@@ -772,15 +774,18 @@ model PayoutItem {
   id String @id @default(cuid())
 
   payoutId        String
-  sellerEarningId String
+  sellerEarningId String?
+  driverEarningId String?
 
   amount Float
 
   payout Payout @relation(fields: [payoutId], references: [id], onDelete: Cascade)
 
-  sellerEarning SellerEarning @relation(fields: [sellerEarningId], references: [id], onDelete: Cascade)
+  sellerEarning SellerEarning?  @relation(fields: [sellerEarningId], references: [id], onDelete: Cascade)
+  driverEarning DriverEarning? @relation(fields: [driverEarningId], references: [id])
 
   @@index([sellerEarningId])
+  @@unique([driverEarningId])
   @@index([payoutId])
 }
 
